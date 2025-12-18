@@ -1,6 +1,7 @@
 // storage-adapter-import-placeholder
 import { sqliteD1Adapter } from '@payloadcms/db-d1-sqlite' // database-adapter-import
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import { resendAdapter } from '@payloadcms/email-resend'
 import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
@@ -57,6 +58,11 @@ export default buildConfig({
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
+  email: resendAdapter({
+    defaultFromAddress: process.env.FROM_EMAIL || 'noreply@botcafe.app',
+    defaultFromName: process.env.FROM_NAME || 'BotCafe Admin',
+    apiKey: process.env.RESEND_API_KEY || '',
+  }),
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },

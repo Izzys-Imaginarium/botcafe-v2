@@ -10,6 +10,18 @@ import { r2Storage } from '@payloadcms/storage-r2'
 
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
+import { Bot } from './collections/Bot'
+import { ApiKey } from './collections/ApiKey'
+import { Mood } from './collections/Mood'
+import { Knowledge } from './collections/Knowledge'
+import { KnowledgeCollections } from './collections/KnowledgeCollections'
+import { Conversation } from './collections/Conversation'
+import { Message } from './collections/Message'
+import { Memory } from './collections/Memory'
+import { TokenGifts } from './collections/TokenGifts'
+import { SubscriptionPayments } from './collections/SubscriptionPayments'
+import { SubscriptionTiers } from './collections/SubscriptionTiers'
+import { TokenPackages } from './collections/TokenPackages'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -27,7 +39,22 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media],
+  collections: [
+    Users,
+    Media,
+    Bot,
+    ApiKey,
+    Mood,
+    Knowledge,
+    KnowledgeCollections,
+    Conversation,
+    Message,
+    Memory,
+    TokenGifts,
+    SubscriptionPayments,
+    SubscriptionTiers,
+    TokenPackages,
+  ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

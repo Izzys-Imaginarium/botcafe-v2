@@ -69,6 +69,18 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    bot: Bot;
+    'api-key': ApiKey;
+    mood: Mood;
+    knowledge: Knowledge;
+    knowledgeCollections: KnowledgeCollection;
+    conversation: Conversation;
+    message: Message;
+    memory: Memory;
+    tokenGifts: TokenGift;
+    subscriptionPayments: SubscriptionPayment;
+    subscriptionTiers: SubscriptionTier;
+    tokenPackages: TokenPackage;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -77,6 +89,18 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    bot: BotSelect<false> | BotSelect<true>;
+    'api-key': ApiKeySelect<false> | ApiKeySelect<true>;
+    mood: MoodSelect<false> | MoodSelect<true>;
+    knowledge: KnowledgeSelect<false> | KnowledgeSelect<true>;
+    knowledgeCollections: KnowledgeCollectionsSelect<false> | KnowledgeCollectionsSelect<true>;
+    conversation: ConversationSelect<false> | ConversationSelect<true>;
+    message: MessageSelect<false> | MessageSelect<true>;
+    memory: MemorySelect<false> | MemorySelect<true>;
+    tokenGifts: TokenGiftsSelect<false> | TokenGiftsSelect<true>;
+    subscriptionPayments: SubscriptionPaymentsSelect<false> | SubscriptionPaymentsSelect<true>;
+    subscriptionTiers: SubscriptionTiersSelect<false> | SubscriptionTiersSelect<true>;
+    tokenPackages: TokenPackagesSelect<false> | TokenPackagesSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -119,6 +143,17 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: number;
+  username: string;
+  profile_pic?: (number | null) | Media;
+  bio?: string | null;
+  pronouns?: string | null;
+  slug?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  birthday?: string | null;
+  discord?: string | null;
+  google_id?: string | null;
+  api_keys?: (number | ApiKey)[] | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -156,6 +191,217 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "api-key".
+ */
+export interface ApiKey {
+  id: number;
+  user: number | User;
+  nickname: string;
+  provider: 'openai' | 'anthropic' | 'google' | 'huggingface' | 'other';
+  key: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "bot".
+ */
+export interface Bot {
+  id: number;
+  user: number | User;
+  created_date?: string | null;
+  name: string;
+  picture?: (number | null) | Media;
+  gender?: ('male' | 'female' | 'non-binary' | 'other' | 'prefer-not-to-say') | null;
+  age?: number | null;
+  description?: string | null;
+  system_prompt: string;
+  is_public?: boolean | null;
+  greeting?: string | null;
+  speech_examples?:
+    | {
+        example?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  slug: string;
+  knowledge_collections?: (number | KnowledgeCollection)[] | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "knowledgeCollections".
+ */
+export interface KnowledgeCollection {
+  id: number;
+  name: string;
+  user: number | User;
+  bot?: (number | Bot)[] | null;
+  created_timestamp?: string | null;
+  modified_timestamp?: string | null;
+  description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "mood".
+ */
+export interface Mood {
+  id: number;
+  user: number | User;
+  timestamp?: string | null;
+  mood:
+    | 'very-happy'
+    | 'happy'
+    | 'content'
+    | 'neutral'
+    | 'sad'
+    | 'very-sad'
+    | 'anxious'
+    | 'excited'
+    | 'angry'
+    | 'frustrated';
+  note?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "knowledge".
+ */
+export interface Knowledge {
+  id: number;
+  user: number | User;
+  created_timestamp?: string | null;
+  modified_timestamp?: string | null;
+  type: 'document' | 'url' | 'text' | 'image' | 'audio' | 'video' | 'code';
+  tags?:
+    | {
+        tag?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  tokens?: number | null;
+  entry: string;
+  knowledge_collection: number | KnowledgeCollection;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "conversation".
+ */
+export interface Conversation {
+  id: number;
+  user: number | User;
+  created_timestamp?: string | null;
+  modified_timestamp?: string | null;
+  bot?: (number | Bot)[] | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "message".
+ */
+export interface Message {
+  id: number;
+  user: number | User;
+  created_timestamp?: string | null;
+  modified_timestamp?: string | null;
+  conversation: number | Conversation;
+  bot?: (number | null) | Bot;
+  byo_key?: boolean | null;
+  tokens?: number | null;
+  entry: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "memory".
+ */
+export interface Memory {
+  id: number;
+  user: number | User;
+  created_timestamp?: string | null;
+  modified_timestamp?: string | null;
+  bot: number | Bot;
+  conversation?: (number | null) | Conversation;
+  tokens?: number | null;
+  entry: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tokenGifts".
+ */
+export interface TokenGift {
+  id: number;
+  sender: number | User;
+  receiver: number | User;
+  message?: string | null;
+  tokens: number;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscriptionPayments".
+ */
+export interface SubscriptionPayment {
+  id: number;
+  user: number | User;
+  date?: string | null;
+  tokens: number;
+  amount: number;
+  currency: 'usd' | 'eur' | 'gbp';
+  payment_method?: ('credit-card' | 'paypal' | 'stripe' | 'other') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscriptionTiers".
+ */
+export interface SubscriptionTier {
+  id: number;
+  title: string;
+  cost: number;
+  tokens: number;
+  currency: 'usd' | 'eur' | 'gbp';
+  billing_period: 'monthly' | 'yearly' | 'one-time';
+  features?:
+    | {
+        feature?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  is_active?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tokenPackages".
+ */
+export interface TokenPackage {
+  id: number;
+  title: string;
+  cost: number;
+  tokens: number;
+  currency: 'usd' | 'eur' | 'gbp';
+  description?: string | null;
+  is_popular?: boolean | null;
+  is_active?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -168,6 +414,54 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'bot';
+        value: number | Bot;
+      } | null)
+    | ({
+        relationTo: 'api-key';
+        value: number | ApiKey;
+      } | null)
+    | ({
+        relationTo: 'mood';
+        value: number | Mood;
+      } | null)
+    | ({
+        relationTo: 'knowledge';
+        value: number | Knowledge;
+      } | null)
+    | ({
+        relationTo: 'knowledgeCollections';
+        value: number | KnowledgeCollection;
+      } | null)
+    | ({
+        relationTo: 'conversation';
+        value: number | Conversation;
+      } | null)
+    | ({
+        relationTo: 'message';
+        value: number | Message;
+      } | null)
+    | ({
+        relationTo: 'memory';
+        value: number | Memory;
+      } | null)
+    | ({
+        relationTo: 'tokenGifts';
+        value: number | TokenGift;
+      } | null)
+    | ({
+        relationTo: 'subscriptionPayments';
+        value: number | SubscriptionPayment;
+      } | null)
+    | ({
+        relationTo: 'subscriptionTiers';
+        value: number | SubscriptionTier;
+      } | null)
+    | ({
+        relationTo: 'tokenPackages';
+        value: number | TokenPackage;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -216,6 +510,17 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  username?: T;
+  profile_pic?: T;
+  bio?: T;
+  pronouns?: T;
+  slug?: T;
+  first_name?: T;
+  last_name?: T;
+  birthday?: T;
+  discord?: T;
+  google_id?: T;
+  api_keys?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -248,6 +553,195 @@ export interface MediaSelect<T extends boolean = true> {
   filesize?: T;
   width?: T;
   height?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "bot_select".
+ */
+export interface BotSelect<T extends boolean = true> {
+  user?: T;
+  created_date?: T;
+  name?: T;
+  picture?: T;
+  gender?: T;
+  age?: T;
+  description?: T;
+  system_prompt?: T;
+  is_public?: T;
+  greeting?: T;
+  speech_examples?:
+    | T
+    | {
+        example?: T;
+        id?: T;
+      };
+  slug?: T;
+  knowledge_collections?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "api-key_select".
+ */
+export interface ApiKeySelect<T extends boolean = true> {
+  user?: T;
+  nickname?: T;
+  provider?: T;
+  key?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "mood_select".
+ */
+export interface MoodSelect<T extends boolean = true> {
+  user?: T;
+  timestamp?: T;
+  mood?: T;
+  note?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "knowledge_select".
+ */
+export interface KnowledgeSelect<T extends boolean = true> {
+  user?: T;
+  created_timestamp?: T;
+  modified_timestamp?: T;
+  type?: T;
+  tags?:
+    | T
+    | {
+        tag?: T;
+        id?: T;
+      };
+  tokens?: T;
+  entry?: T;
+  knowledge_collection?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "knowledgeCollections_select".
+ */
+export interface KnowledgeCollectionsSelect<T extends boolean = true> {
+  name?: T;
+  user?: T;
+  bot?: T;
+  created_timestamp?: T;
+  modified_timestamp?: T;
+  description?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "conversation_select".
+ */
+export interface ConversationSelect<T extends boolean = true> {
+  user?: T;
+  created_timestamp?: T;
+  modified_timestamp?: T;
+  bot?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "message_select".
+ */
+export interface MessageSelect<T extends boolean = true> {
+  user?: T;
+  created_timestamp?: T;
+  modified_timestamp?: T;
+  conversation?: T;
+  bot?: T;
+  byo_key?: T;
+  tokens?: T;
+  entry?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "memory_select".
+ */
+export interface MemorySelect<T extends boolean = true> {
+  user?: T;
+  created_timestamp?: T;
+  modified_timestamp?: T;
+  bot?: T;
+  conversation?: T;
+  tokens?: T;
+  entry?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tokenGifts_select".
+ */
+export interface TokenGiftsSelect<T extends boolean = true> {
+  sender?: T;
+  receiver?: T;
+  message?: T;
+  tokens?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscriptionPayments_select".
+ */
+export interface SubscriptionPaymentsSelect<T extends boolean = true> {
+  user?: T;
+  date?: T;
+  tokens?: T;
+  amount?: T;
+  currency?: T;
+  payment_method?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscriptionTiers_select".
+ */
+export interface SubscriptionTiersSelect<T extends boolean = true> {
+  title?: T;
+  cost?: T;
+  tokens?: T;
+  currency?: T;
+  billing_period?: T;
+  features?:
+    | T
+    | {
+        feature?: T;
+        id?: T;
+      };
+  is_active?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tokenPackages_select".
+ */
+export interface TokenPackagesSelect<T extends boolean = true> {
+  title?: T;
+  cost?: T;
+  tokens?: T;
+  currency?: T;
+  description?: T;
+  is_popular?: T;
+  is_active?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

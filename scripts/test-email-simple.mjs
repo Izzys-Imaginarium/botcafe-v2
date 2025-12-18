@@ -18,7 +18,7 @@ async function testResendEmail() {
     console.log('✅ Resend client initialized')
 
     // Test email configuration
-    const fromEmail = process.env.FROM_EMAIL || 'noreply@botcafe.app'
+    const fromEmail = process.env.FROM_EMAIL || 'noreply@botcafe.ai'
     const fromName = process.env.FROM_NAME || 'BotCafe Admin'
 
     console.log('✅ Email configuration:')

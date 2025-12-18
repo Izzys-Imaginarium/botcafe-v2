@@ -1,5 +1,5 @@
 // Test script to verify Resend email integration
-import { createEmailService } from './src/services/email.service'
+import { createEmailService } from '../src/services/email.service'
 
 async function testEmailService() {
   console.log('Testing Email Service...')

@@ -17,7 +17,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
     })
 
     if (users.docs && users.docs.length > 0) {
-      for (const user of users.docs) {
+      for (let i = 0; i < users.docs.length; i++) {
+        const user = users.docs[i]
+        const relId = i + 1 // Use integer ID for the relationship
+
         // Create locked document entries for each user
         await db.run(sql`
           INSERT OR IGNORE INTO payload_locked_documents (id, updated_at, created_at) 
@@ -27,7 +30,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
         // Create relationships for the user's documents
         await db.run(sql`
           INSERT OR IGNORE INTO payload_locked_documents_rels (id, parent_id, path, users_id, \`order\`)
-          VALUES (${`users_${user.id}`}, ${user.id}, 'users', ${user.id}, 1);
+          VALUES (${relId}, ${user.id}, 'users', ${user.id}, 1);
         `)
       }
     }
@@ -43,13 +46,10 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   try {
     payload.logger.info('Reverting locked documents migration...')
 
-    // Clean up the relationships we created
+    // Clean up the relationships we created (by path = 'users')
     await db.run(sql`
       DELETE FROM payload_locked_documents_rels 
-      WHERE id LIKE 'users_%' OR id LIKE 'bot_%' OR id LIKE 'api_key_%' 
-      OR id LIKE 'mood_%' OR id LIKE 'knowledge_%' OR id LIKE 'knowledge_collections_%'
-      OR id LIKE 'conversation_%' OR id LIKE 'message_%' OR id LIKE 'memory_%'
-      OR id LIKE 'token_gifts_%' OR id LIKE 'subscription_payments_%'
+      WHERE path = 'users'
     `)
 
     // Keep the basic locked document entries but don't delete them all

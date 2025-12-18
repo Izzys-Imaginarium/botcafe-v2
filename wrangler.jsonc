@@ -22,12 +22,10 @@
     "logs": {
       "enabled": true,
       "head_sampling_rate": 1,
-      "persist": true,
       "invocation_logs": true,
     },
     "traces": {
       "enabled": false,
-      "persist": true,
       "head_sampling_rate": 1,
     },
   },
@@ -97,23 +95,10 @@
   //   }
   // }
 
-  "cloudflare": {
-    "bindings": {
-      "PAYLOAD_SECRET": {
-        "description": "Generate a random string using `openssl rand -hex 32`",
-      },
-      "RESEND_API_KEY": {
-        "description": "Resend API key for email functionality",
-      },
-      "FROM_EMAIL": {
-        "description": "Sender email address for notifications",
-      },
-      "FROM_NAME": {
-        "description": "Sender name for email notifications",
-      },
-      "NEXT_PUBLIC_SITE_URL": {
-        "description": "Public site URL for email links",
-      },
-    },
-  },
+  // Custom bindings documentation (not a wrangler field):
+  // PAYLOAD_SECRET: Generate a random string using `openssl rand -hex 32`
+  // RESEND_API_KEY: Resend API key for email functionality
+  // FROM_EMAIL: Sender email address for notifications
+  // FROM_NAME: Sender name for email notifications
+  // NEXT_PUBLIC_SITE_URL: Public site URL for email links
 }

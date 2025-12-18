@@ -11,6 +11,11 @@
     // see https://developers.cloudflare.com/workers/configuration/compatibility-flags/#global-fetch-strictly-public
     "global_fetch_strictly_public",
   ],
+  "vars": {
+    "FROM_EMAIL": "noreply@botcafe.ai",
+    "FROM_NAME": "BotCafe Admin",
+    "NEXT_PUBLIC_SITE_URL": "https://dev.botcafe.ai",
+  },
   "observability": {
     "enabled": false,
     "head_sampling_rate": 1,

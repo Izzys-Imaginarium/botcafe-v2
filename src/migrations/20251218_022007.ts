@@ -26,7 +26,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
 
         // Create relationships for the user's documents
         await db.run(sql`
-          INSERT OR IGNORE INTO payload_locked_documents_rels (id, parent_id, path, users_id, order)
+          INSERT OR IGNORE INTO payload_locked_documents_rels (id, parent_id, path, users_id, \`order\`)
           VALUES (${`users_${user.id}`}, ${user.id}, 'users', ${user.id}, 1);
         `)
       }

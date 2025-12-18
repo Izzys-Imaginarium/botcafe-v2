@@ -143,17 +143,6 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: number;
-  username: string;
-  profile_pic?: (number | null) | Media;
-  bio?: string | null;
-  pronouns?: string | null;
-  slug?: string | null;
-  first_name?: string | null;
-  last_name?: string | null;
-  birthday?: string | null;
-  discord?: string | null;
-  google_id?: string | null;
-  api_keys?: (number | ApiKey)[] | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -188,19 +177,6 @@ export interface Media {
   filesize?: number | null;
   width?: number | null;
   height?: number | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "api-key".
- */
-export interface ApiKey {
-  id: number;
-  user: number | User;
-  nickname: string;
-  provider: 'openai' | 'anthropic' | 'google' | 'huggingface' | 'other';
-  key: string;
-  updatedAt: string;
-  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -241,6 +217,19 @@ export interface KnowledgeCollection {
   created_timestamp?: string | null;
   modified_timestamp?: string | null;
   description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "api-key".
+ */
+export interface ApiKey {
+  id: number;
+  user: number | User;
+  nickname: string;
+  provider: 'openai' | 'anthropic' | 'google' | 'huggingface' | 'other';
+  key: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -510,17 +499,6 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
-  username?: T;
-  profile_pic?: T;
-  bio?: T;
-  pronouns?: T;
-  slug?: T;
-  first_name?: T;
-  last_name?: T;
-  birthday?: T;
-  discord?: T;
-  google_id?: T;
-  api_keys?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;

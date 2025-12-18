@@ -91,4 +91,24 @@
   //     ]
   //   }
   // }
+
+  "cloudflare": {
+    "bindings": {
+      "PAYLOAD_SECRET": {
+        "description": "Generate a random string using `openssl rand -hex 32`",
+      },
+      "RESEND_API_KEY": {
+        "description": "Resend API key for email functionality",
+      },
+      "FROM_EMAIL": {
+        "description": "Sender email address for notifications",
+      },
+      "FROM_NAME": {
+        "description": "Sender name for email notifications",
+      },
+      "NEXT_PUBLIC_SITE_URL": {
+        "description": "Public site URL for email links",
+      },
+    },
+  },
 }

@@ -38,7 +38,8 @@
     "payload": "3.59.1",
     "pnpm": "^10.26.0",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "resend": "^6.6.0"
   },
   "devDependencies": {
     "@playwright/test": "1.54.1",

@@ -1,5 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
+  "account_id": "dc8a986fb90d4539bb136b41b607788c",
   "main": ".open-next/worker.js",
   "name": "botcafe-v2",
   "compatibility_date": "2025-08-15",

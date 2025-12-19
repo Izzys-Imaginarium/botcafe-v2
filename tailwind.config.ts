@@ -54,11 +54,37 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        // Fantasy theme extended colors
+        'gold-rich': 'hsl(46, 65%, 52%)',
+        'gold-ancient': 'hsl(42, 43%, 39%)',
+        parchment: {
+          DEFAULT: 'hsl(38, 47%, 81%)',
+          dim: 'hsl(31, 30%, 66%)',
+        },
+        forest: {
+          DEFAULT: 'hsl(84, 80%, 27%)',
+          deep: 'hsl(120, 29%, 14%)',
+        },
+        magic: {
+          glow: 'hsl(142, 69%, 58%)',
+          teal: 'hsl(174, 72%, 50%)',
+        },
+        'wood-dark': 'hsl(21, 42%, 12%)',
+      },
+      fontFamily: {
+        display: ['Cinzel Decorative', 'cursive'],
+        lore: ['Crimson Text', 'serif'],
+        body: ['Inter', 'sans-serif'],
       },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+      },
+      backgroundImage: {
+        vignette: 'radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.8) 100%)',
+        'magical-glow':
+          'radial-gradient(circle at 50% 50%, rgba(77, 124, 15, 0.15) 0%, transparent 50%)',
       },
       keyframes: {
         'accordion-down': {
@@ -69,10 +95,22 @@ const config: Config = {
           from: { height: 'var(--radix-accordion-content-height)' },
           to: { height: '0' },
         },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-15px)' },
+        },
+        twinkle: {
+          '0%, 100%': { opacity: '0.3', transform: 'scale(1)' },
+          '50%': { opacity: '1', transform: 'scale(1.2)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        float: 'float 8s ease-in-out infinite',
+        'float-delayed': 'float 8s ease-in-out 4s infinite',
+        'pulse-slow': 'pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        twinkle: 'twinkle 4s ease-in-out infinite',
       },
     },
   },

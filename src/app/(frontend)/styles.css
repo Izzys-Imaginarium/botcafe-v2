@@ -1,7 +1,6 @@
-@import "tailwindcss/preflight";
+@import "tailwindcss";
+@import "tw-animate-css";
 @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600&display=swap');
-
-@plugin "tailwindcss-animate";
 
 @custom-variant dark (&:is(.dark *));
 @tailwind utilities;

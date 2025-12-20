@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
-import { Menu, Coffee } from 'lucide-react'
+import { Menu, Coffee, Moon, MessageCircle } from 'lucide-react'
 import { NavbarSidebar } from './navbar-sidebar'
 
 interface NavbarItemProps {
@@ -16,22 +16,23 @@ interface NavbarItemProps {
 
 const NavbarItem = ({ href, children, isActive }: NavbarItemProps) => {
   return (
-    <Button
-      asChild
-      variant="ghost"
+    <Link
+      href={href}
       className={cn(
-        'text-sm font-lore italic text-foreground hover:text-primary transition-colors',
-        isActive && 'text-primary',
+        'text-base font-lore italic text-parchment hover:text-gold-rich transition-colors duration-200 relative group py-2 px-3 rounded-sm',
+        isActive && 'text-gold-rich',
       )}
     >
-      <Link href={href}>{children}</Link>
-    </Button>
+      {children}
+      <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-gold-rich transition-all group-hover:w-full"></span>
+    </Link>
   )
 }
 
 const navbarItems = [
   { href: '/', children: 'Home' },
   { href: '/explore', children: 'Explore' },
+  { href: '/grimoire', children: 'Grimoire' },
   { href: '/create', children: 'Create' },
 ]
 
@@ -44,51 +45,67 @@ export const Navbar = ({ user }: NavbarProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   return (
-    <header className="fixed top-0 w-full z-50 border-b border-border/30 bg-background/80 backdrop-blur-md">
+    <header className="fixed top-0 w-full z-50 border-b border-gold-ancient/30 bg-[#0a140a]/80 backdrop-blur-md transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-24">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 relative flex items-center justify-center">
-              <div className="absolute inset-0 border border-primary/50 rounded-full animate-[spin_12s_linear_infinite]"></div>
-              <div className="absolute inset-1 border border-accent/50 rounded-full animate-[spin_8s_linear_infinite_reverse]"></div>
-              <Coffee className="text-primary w-5 h-5" />
+          <Link href="/" className="flex-shrink-0 flex items-center gap-4 cursor-pointer group">
+            <div className="w-12 h-12 relative flex items-center justify-center">
+              <div className="absolute inset-0 border border-gold-rich/50 rounded-full animate-[spin_12s_linear_infinite]"></div>
+              <div className="absolute inset-1 border border-forest/50 rounded-full animate-[spin_8s_linear_infinite_reverse]"></div>
+              <Coffee className="text-gold-rich text-2xl drop-shadow-[0_0_8px_rgba(212,175,55,0.6)]" />
             </div>
             <div className="flex flex-col">
-              <span className="font-display font-bold text-xl text-foreground tracking-wider">
-                Bot<span className="text-primary">Café</span>
+              <span className="font-display font-bold text-2xl text-parchment tracking-wider text-glow-gold">
+                Bot<span className="text-gold-rich">Café</span>
               </span>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-6 px-6 py-2 bg-secondary/40 rounded-full border border-border/20">
-            {navbarItems.map((item) => (
-              <NavbarItem key={item.href} href={item.href} isActive={pathname === item.href}>
-                {item.children}
-              </NavbarItem>
-            ))}
+          <nav className="hidden lg:flex items-center gap-8">
+            <div className="flex items-center gap-4 px-6 py-3 bg-[#0a140a]/30 rounded-full border border-gold-ancient/20 backdrop-blur-sm">
+              {navbarItems.map((item) => (
+                <NavbarItem key={item.href} href={item.href} isActive={pathname === item.href}>
+                  {item.children}
+                </NavbarItem>
+              ))}
+            </div>
           </nav>
 
           {/* Right Side Actions */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="flex items-center gap-4">
+            <Button
+              aria-label="Theme Toggle"
+              className="p-2 rounded-full hover:bg-gold-rich/10 text-gold-ancient hover:text-gold-rich transition-all"
+            >
+              <Moon className="h-5 w-5" />
+            </Button>
+            <div className="h-8 w-px bg-gold-ancient/30 hidden sm:block mx-2"></div>
             {user ? (
-              <span className="text-sm text-muted-foreground">{user.email}</span>
+              <span className="text-sm font-display font-bold text-gold-rich tracking-widest">
+                {user.email}
+              </span>
             ) : (
-              <Button
-                variant="ghost"
-                className="font-display text-primary hover:text-foreground tracking-widest"
+              <Link
+                href="#"
+                className="text-sm font-display font-bold text-gold-rich hover:text-parchment transition-colors hidden sm:block tracking-widest"
               >
                 LOGIN
-              </Button>
+              </Link>
             )}
-            <Button asChild>
-              <Link href="/admin">Admin</Link>
-            </Button>
+            <div className="hidden xl:flex items-center gap-3 ml-2 text-gold-ancient/70">
+              <Link href="#" className="hover:text-[#5865F2] transition-colors">
+                <MessageCircle className="h-5 w-5" />
+              </Link>
+              <Link href="#" className="hover:text-[#13C3FF] transition-colors">
+                <Coffee className="h-5 w-5" />
+              </Link>
+            </div>
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="flex md:hidden items-center">
+          <div className="flex lg:hidden items-center">
             <NavbarSidebar
               items={navbarItems}
               open={isSidebarOpen}

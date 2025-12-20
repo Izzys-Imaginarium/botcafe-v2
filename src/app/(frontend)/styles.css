@@ -55,8 +55,8 @@
 }
 
 .dark {
-  /* Dark mode - fantasy dark forest theme */
-  --background: 120 33% 2%;
+  /* Dark mode - fantasy dark forest theme - MATCHING ORIGINAL DESIGN */
+  --background: 2 4% 1%; /* Almost black like #020402 */
   --foreground: 38 47% 81%;
   
   --card: 120 29% 10%;
@@ -151,13 +151,14 @@
   --color-sidebar-border: hsl(var(--sidebar-border));
   --color-sidebar-ring: hsl(var(--sidebar-ring));
   
-  /* Fantasy theme custom colors */
+  /* Fantasy theme custom colors - MATCHING ORIGINAL DESIGN */
   --color-gold-rich: hsl(46, 65%, 52%);
   --color-gold-ancient: hsl(42, 43%, 39%);
   --color-parchment: hsl(38, 47%, 81%);
   --color-parchment-dim: hsl(31, 30%, 66%);
   --color-forest: hsl(84, 80%, 27%);
   --color-forest-deep: hsl(120, 29%, 14%);
+  --color-fantasy-bg: hsl(2, 4%, 1%); /* #020402 - almost black */
   --color-magic-glow: hsl(142, 69%, 58%);
   --color-magic-teal: hsl(174, 72%, 50%);
   --color-wood-dark: hsl(21, 42%, 12%);
@@ -252,4 +253,27 @@
 }
 .dark ::-webkit-scrollbar-thumb:hover {
   background: hsl(46, 65%, 52%);
+}
+
+/* Firefly animation - MATCHING ORIGINAL DESIGN */
+@keyframes fly {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(100px, -100px);
+    opacity: 0;
+  }
+}
+
+/* Additional magical background texture */
+.bg-texture {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234d7c0f' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }

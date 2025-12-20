@@ -74,6 +74,9 @@ export default buildConfig({
     push: process.env.NODE_ENV !== 'production',
     // Provide migrations for production builds
     prodMigrations: migrations,
+    // Skip migration checks during build
+    migrationDir:
+      process.env.NODE_ENV === 'production' ? undefined : path.resolve(dirname, 'migrations'),
   }),
   // database-adapter-config-end
   plugins: [

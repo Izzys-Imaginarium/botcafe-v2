@@ -23,6 +23,7 @@ import { TokenGifts } from './collections/TokenGifts'
 import { SubscriptionPayments } from './collections/SubscriptionPayments'
 import { SubscriptionTiers } from './collections/SubscriptionTiers'
 import { TokenPackages } from './collections/TokenPackages'
+import { migrations } from './migrations'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -67,7 +68,13 @@ export default buildConfig({
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
   // database-adapter-config-start
-  db: sqliteD1Adapter({ binding: cloudflare.env.D1 }),
+  db: sqliteD1Adapter({
+    binding: cloudflare.env.D1,
+    // Disable schema push in production - use migrations only
+    push: process.env.NODE_ENV !== 'production',
+    // Provide migrations for production builds
+    prodMigrations: migrations,
+  }),
   // database-adapter-config-end
   plugins: [
     // storage-adapter-placeholder

@@ -52,8 +52,8 @@ export default async function HomePage() {
                 </>
               ) : (
                 <>
-                  Step into the liminal space between worlds. Where fictional characters relax
-                  between stories and adventures.
+                  Step into the liminal space between worlds. Visit a space where fictional
+                  characters relax between stories and adventures.
                   <span className="text-primary font-semibold"> Conjure companions</span> from the
                   ether, make a new friends, or find familar faces.
                 </>

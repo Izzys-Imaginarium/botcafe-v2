@@ -58,9 +58,6 @@ export const Navbar = ({ user }: NavbarProps) => {
               <span className="font-display font-bold text-xl text-foreground tracking-wider">
                 Bot<span className="text-primary">Café</span>
               </span>
-              <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-                Sanctuary
-              </span>
             </div>
           </Link>
 

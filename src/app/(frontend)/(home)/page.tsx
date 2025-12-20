@@ -32,9 +32,6 @@ export default async function HomePage() {
           </div>
 
           {/* Title */}
-          <span className="text-sm font-lore text-accent/60 tracking-[0.5em] uppercase opacity-70 mb-4">
-            The Enchanted
-          </span>
           <h1 className="font-display font-bold text-5xl sm:text-7xl md:text-8xl mb-6 text-transparent bg-clip-text bg-gradient-to-br from-primary via-foreground to-secondary tracking-tight drop-shadow-lg pb-4">
             BotCafé
           </h1>
@@ -55,9 +52,10 @@ export default async function HomePage() {
                 </>
               ) : (
                 <>
-                  Step into the liminal space between worlds. <br className="hidden md:block" />
-                  <span className="text-primary font-semibold">Conjure companions</span> from the
-                  ether and find cozy sanctuary.
+                  Step into the liminal space between worlds. Where fictional characters relax
+                  between stories and adventures.
+                  <span className="text-primary font-semibold"> Conjure companions</span> from the
+                  ether, make a new friends, or find familar faces.
                 </>
               )}
             </p>

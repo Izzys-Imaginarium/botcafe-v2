@@ -52,7 +52,8 @@
       "binding": "D1",
       "database_id": "7908e1d3-6b00-4a21-bed3-9ca9aebfe8e3",
       "database_name": "botcafe-v2",
-      "remote": true,
+      // Set to false for local dev, production deployments always use remote
+      "remote": false,
     },
   ],
   "r2_buckets": [

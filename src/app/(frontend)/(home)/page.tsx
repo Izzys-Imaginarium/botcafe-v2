@@ -3,6 +3,7 @@ import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { BookOpenText, Sparkles, ArrowRight, Brain, MessageSquare, DoorOpen } from 'lucide-react'
 
 export default async function HomePage() {
   const headers = await getHeaders()
@@ -27,7 +28,7 @@ export default async function HomePage() {
             <div className="absolute -inset-4 bg-accent/20 rounded-full blur-xl group-hover:bg-primary/20 transition-all duration-700"></div>
             <div className="w-24 h-24 glass-rune rounded-full flex items-center justify-center relative animate-float">
               <div className="absolute inset-2 border border-dashed border-border/40 rounded-full animate-[spin_20s_linear_infinite]"></div>
-              <span className="text-4xl text-primary drop-shadow-lg">📚</span>
+              <BookOpenText className="w-10 h-10 text-primary drop-shadow-lg" />
             </div>
           </div>
 
@@ -67,14 +68,14 @@ export default async function HomePage() {
               size="lg"
               className="w-full sm:w-auto px-8 py-6 font-display font-bold text-lg tracking-wider"
             >
-              ✨ Create Companion
+              <Sparkles className="w-5 h-5 mr-2" /> Create Companion
             </Button>
             <Button
               variant="outline"
               size="lg"
               className="w-full sm:w-auto px-8 py-6 font-display font-bold text-lg tracking-wider"
             >
-              Explore →
+              Explore <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </div>
 
@@ -85,8 +86,8 @@ export default async function HomePage() {
                 <CardTitle className="font-display text-3xl text-primary">100+</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-xs uppercase tracking-[0.2em] font-bold">
-                  🧠 Spirits Bound
+                <CardDescription className="text-xs uppercase tracking-[0.2em] font-bold flex items-center justify-center gap-2">
+                  <Brain className="w-4 h-4" /> Spirits Bound
                 </CardDescription>
               </CardContent>
             </Card>
@@ -95,8 +96,8 @@ export default async function HomePage() {
                 <CardTitle className="font-display text-3xl text-primary">5k+</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-xs uppercase tracking-[0.2em] font-bold">
-                  💬 Tales Told
+                <CardDescription className="text-xs uppercase tracking-[0.2em] font-bold flex items-center justify-center gap-2">
+                  <MessageSquare className="w-4 h-4" /> Tales Told
                 </CardDescription>
               </CardContent>
             </Card>
@@ -105,8 +106,8 @@ export default async function HomePage() {
                 <CardTitle className="font-display text-3xl accent">Open</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-xs uppercase tracking-[0.2em] font-bold">
-                  🚪 To All
+                <CardDescription className="text-xs uppercase tracking-[0.2em] font-bold flex items-center justify-center gap-2">
+                  <DoorOpen className="w-4 h-4" /> To All
                 </CardDescription>
               </CardContent>
             </Card>

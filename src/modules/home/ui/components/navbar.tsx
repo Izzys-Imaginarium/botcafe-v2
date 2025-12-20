@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
-import { MenuIcon } from 'lucide-react'
+import { Menu, Coffee } from 'lucide-react'
 import { NavbarSidebar } from './navbar-sidebar'
 
 interface NavbarItemProps {
@@ -52,7 +52,7 @@ export const Navbar = ({ user }: NavbarProps) => {
             <div className="w-10 h-10 relative flex items-center justify-center">
               <div className="absolute inset-0 border border-primary/50 rounded-full animate-[spin_12s_linear_infinite]"></div>
               <div className="absolute inset-1 border border-accent/50 rounded-full animate-[spin_8s_linear_infinite_reverse]"></div>
-              <span className="text-primary text-xl">☕</span>
+              <Coffee className="text-primary w-5 h-5" />
             </div>
             <div className="flex flex-col">
               <span className="font-display font-bold text-xl text-foreground tracking-wider">
@@ -96,7 +96,7 @@ export const Navbar = ({ user }: NavbarProps) => {
               user={user}
             />
             <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(true)}>
-              <MenuIcon className="h-6 w-6" />
+              <Menu className="h-6 w-6" />
             </Button>
           </div>
         </div>

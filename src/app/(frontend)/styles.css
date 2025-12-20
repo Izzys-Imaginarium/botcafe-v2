@@ -1,9 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600&display=swap');
 
 @custom-variant dark (&:is(.dark *));
-@tailwind utilities;
 
 /* BotCafé Fantasy Theme - Based on Google Stitch splash page */
 :root {
@@ -164,10 +162,10 @@
   --color-magic-teal: hsl(174, 72%, 50%);
   --color-wood-dark: hsl(21, 42%, 12%);
   
-  /* Font families */
-  --font-display: "Cinzel Decorative", cursive;
-  --font-lore: "Crimson Text", serif;
-  --font-body: "Inter", sans-serif;
+  /* Font families - using CSS variables from next/font */
+  --font-display: var(--font-display), cursive;
+  --font-lore: var(--font-lore), serif;
+  --font-body: var(--font-body), sans-serif;
   
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;

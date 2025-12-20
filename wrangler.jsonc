@@ -50,7 +50,7 @@
   "d1_databases": [
     {
       "binding": "D1",
-      "database_id": "5a0c1c33-c361-4006-9d6c-aeb9ab11c41a",
+      "database_id": "7908e1d3-6b00-4a21-bed3-9ca9aebfe8e3",
       "database_name": "botcafe-v2",
       "remote": true,
     },

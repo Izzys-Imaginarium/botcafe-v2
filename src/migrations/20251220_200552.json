@@ -86,76 +86,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "username": {
-          "name": "username",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "profile_pic_id": {
-          "name": "profile_pic_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "bio": {
-          "name": "bio",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "pronouns": {
-          "name": "pronouns",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "slug": {
-          "name": "slug",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "first_name": {
-          "name": "first_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "last_name": {
-          "name": "last_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "birthday": {
-          "name": "birthday",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "discord": {
-          "name": "discord",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "google_id": {
-          "name": "google_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "updated_at": {
           "name": "updated_at",
           "type": "text",
@@ -224,34 +154,6 @@
         }
       },
       "indexes": {
-        "users_username_idx": {
-          "name": "users_username_idx",
-          "columns": [
-            "username"
-          ],
-          "isUnique": true
-        },
-        "users_profile_pic_idx": {
-          "name": "users_profile_pic_idx",
-          "columns": [
-            "profile_pic_id"
-          ],
-          "isUnique": false
-        },
-        "users_slug_idx": {
-          "name": "users_slug_idx",
-          "columns": [
-            "slug"
-          ],
-          "isUnique": true
-        },
-        "users_google_id_idx": {
-          "name": "users_google_id_idx",
-          "columns": [
-            "google_id"
-          ],
-          "isUnique": true
-        },
         "users_updated_at_idx": {
           "name": "users_updated_at_idx",
           "columns": [
@@ -274,122 +176,7 @@
           "isUnique": true
         }
       },
-      "foreignKeys": {
-        "users_profile_pic_id_media_id_fk": {
-          "name": "users_profile_pic_id_media_id_fk",
-          "tableFrom": "users",
-          "tableTo": "media",
-          "columnsFrom": [
-            "profile_pic_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "users_rels": {
-      "name": "users_rels",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "order": {
-          "name": "order",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "parent_id": {
-          "name": "parent_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "path": {
-          "name": "path",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "api_key_id": {
-          "name": "api_key_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "users_rels_order_idx": {
-          "name": "users_rels_order_idx",
-          "columns": [
-            "order"
-          ],
-          "isUnique": false
-        },
-        "users_rels_parent_idx": {
-          "name": "users_rels_parent_idx",
-          "columns": [
-            "parent_id"
-          ],
-          "isUnique": false
-        },
-        "users_rels_path_idx": {
-          "name": "users_rels_path_idx",
-          "columns": [
-            "path"
-          ],
-          "isUnique": false
-        },
-        "users_rels_api_key_id_idx": {
-          "name": "users_rels_api_key_id_idx",
-          "columns": [
-            "api_key_id"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "users_rels_parent_fk": {
-          "name": "users_rels_parent_fk",
-          "tableFrom": "users_rels",
-          "tableTo": "users",
-          "columnsFrom": [
-            "parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "users_rels_api_key_fk": {
-          "name": "users_rels_api_key_fk",
-          "tableFrom": "users_rels",
-          "tableTo": "api_key",
-          "columnsFrom": [
-            "api_key_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
@@ -3210,6 +2997,6 @@
   "internal": {
     "indexes": {}
   },
-  "id": "c784ce80-678a-4586-ad27-3e61850eaeff",
+  "id": "eca8f56e-050e-4e2b-a889-f5e0c6bdd104",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

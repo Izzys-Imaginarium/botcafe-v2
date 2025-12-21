@@ -13,6 +13,8 @@ BotCafé is a dark fantasy-themed AI chatbot platform with advanced RAG capabili
 🔍 Explore                 (Browse bots & conversations)  
 📚 Grimoire               (Knowledge & RAG management)
 🎭 Create                 (Bot creation & persona management)
+👑 Creators               (Bot creator profiles & showcase)
+💬 Chat                  (Personal conversations)
 👤 Account               (User profile & settings)
 ```
 
@@ -57,8 +59,9 @@ BotCafé is a dark fantasy-themed AI chatbot platform with advanced RAG capabili
 #### Sub-pages:
 - **Bots Directory** (`/explore/bots`)
   - Grid view of available bots
-  - Filtering by category, popularity, creator
+  - Filtering by category, popularity, creator, privacy level
   - Search functionality
+  - Public bots only (private/shared-with-select bots hidden)
 - **Conversations Gallery** (`/explore/conversations`)
   - Public chat transcripts
   - Notable conversation examples
@@ -85,12 +88,15 @@ BotCafé is a dark fantasy-themed AI chatbot platform with advanced RAG capabili
 │   ├── All Entries
 │   ├── Create New
 │   ├── Import/Export
-│   └── Search & Filter
+│   ├── Search & Filter
+│   └── Privacy Controls (Private/Shared/Select People)
 ├── 📚 Collections
 │   ├── My Collections
 │   ├── Shared Collections
+│   ├── Curated Collections (Moderator-Approved)
 │   ├── Create Collection
-│   └── Manage Organization
+│   ├── Manage Organization
+│   └── Privacy Settings & Access Control
 ├── 🏷️ Metadata Tags
 │   ├── Tag Management
 │   ├── Tag Categories
@@ -115,10 +121,13 @@ BotCafé is a dark fantasy-themed AI chatbot platform with advanced RAG capabili
   - List view of all entries
   - Create/edit individual knowledge pieces
   - Bulk import functionality
+  - Privacy controls (Private/Shared/Select People)
 - **Collections** (`/grimoire/collections`)
   - Organize knowledge into themed collections
+  - **Curated Collections** (moderator-approved, pre-configured features)
   - Collaborative sharing options
   - Collection analytics
+  - **Legal Compliance Collections** (guard rails, slash commands, etc.)
 - **Metadata Management** (`/grimoire/tags`)
   - Tag creation and management
   - Category organization
@@ -141,7 +150,8 @@ BotCafé is a dark fantasy-themed AI chatbot platform with advanced RAG capabili
 │   ├── Bot Builder Wizard
 │   ├── Template Gallery
 │   ├── Personality Design
-│   └── Knowledge Assignment
+│   ├── Knowledge Assignment
+│   └── Privacy Controls (Private/Shared/Select People)
 ├── 🎭 Persona System
 │   ├── My Personas
 │   ├── Create Persona
@@ -165,6 +175,9 @@ BotCafé is a dark fantasy-themed AI chatbot platform with advanced RAG capabili
   - Template selection
   - Knowledge base assignment
   - Personality configuration
+  - **Privacy Settings**: Private/Public/Shared with Select People
+  - **Access Control**: User permission management
+  - **Sharing Options**: Bot visibility and collaboration settings
 - **Persona Management** (`/create/personas`)
   - Create custom personas
   - Apply personas to conversations
@@ -180,18 +193,91 @@ BotCafé is a dark fantasy-themed AI chatbot platform with advanced RAG capabili
 
 ---
 
-### 5. 💬 Chat Interface
+### 5. 👑 Creators (Bot Creator Profiles & Showcase)
+**Path:** `/creators`
+**Description:** Multi-tenant platform featuring bot creator profiles and showcases
+
+#### Navigation Structure:
+```
+📁 /creators
+├── 🏠 Creator Directory
+│   ├── All Creators
+│   ├── Featured Artisans
+│   ├── Rising Stars
+│   └── Search & Filters
+├── 👑 Creator Profiles
+│   ├── Public Profiles
+│   ├── Creator Portfolios
+│   ├── Bot Showcases
+│   └── Creator Stories
+├── 🏪 Creator Showcase
+│   ├── Featured Bot Gallery
+│   ├── Free Bot Collections
+│   ├── Creator Spotlights
+│   └── Community Highlights
+├── 📊 Creator Analytics
+│   ├── Creator Dashboard
+│   ├── Bot Performance Stats
+│   ├── Usage Analytics
+│   └── Community Engagement
+├── 🎨 Creator Tools
+│   ├── Portfolio Builder
+│   ├── Bot Promotion Tools
+│   ├── Social Features
+│   └── Collaboration Hub
+└── 🏆 Creator Programs
+    ├── Featured Creator Program
+    ├── Community Recognition
+    ├── Creator Challenges
+    └── Future: Monetization Features
+```
+
+#### Sub-pages:
+- **Creator Directory** (`/creators/directory`)
+  - Browse all bot creators
+  - Filter by specialty, popularity, rating
+  - Featured creator spotlights
+- **Creator Profile Pages** (`/creators/[username]`)
+  - Public creator profiles
+  - Bot portfolio showcase
+  - Creator bio and story
+  - Social links and contact
+- **Creator Dashboard** (`/creators/dashboard`)
+  - Personal creator analytics
+  - Bot performance metrics
+  - Usage tracking
+  - Community engagement stats
+- **Bot Showcase Gallery** (`/creators/showcase`)
+  - Curated bot galleries
+  - Creator collections
+  - Community favorites
+  - Trending creations
+- **Creator Programs** (`/creators/programs`)
+  - Featured creator applications
+  - Community recognition system
+  - Creator challenges and events
+  - **Future:** Monetization features (revenue sharing, premium content)
+
+---
+
+### 6. 💬 Chat Interface
 **Path:** `/chat/[conversationId]`
-**Description:** Main conversation interface with memory integration
+**Description:** Main conversation interface with memory integration and multi-bot support
 
 #### Navigation Structure:
 ```
 📁 /chat/[id]
 ├── 💬 Active Conversation
 │   ├── Message Interface
-│   ├── Real-time Responses
+│   ├── Multi-bot Response Generation
+│   ├── Dynamic Bot Add/Remove
 │   ├── File Sharing
 │   └── Voice Input
+├── 🤖 Active Bots Panel
+│   ├── Current Conversation Bots
+│   ├── Add/Remove Bots Interface
+│   ├── Bot Performance Comparison
+│   └── Minimum One Bot Enforcement
 ├── 🧠 Memory Management
 │   ├── Memory Preview
 │   ├── Edit Memories
@@ -203,29 +289,36 @@ BotCafé is a dark fantasy-themed AI chatbot platform with advanced RAG capabili
 │   ├── Persona Effects
 │   └── Custom Instructions
 └── ⚙️ Chat Settings
-    ├── Bot Selection
-    ├── Knowledge Access
-    ├── Privacy Controls
-    └── Export Options
+    ├── Bot Configuration
+    ├── Knowledge Access Controls
+    ├── Privacy & Sharing Options
+    └── Multi-bot Conversation Settings
 ```
 
 #### Sub-pages:
 - **Main Chat** (`/chat/[id]`)
-  - Real-time messaging interface
-  - Bot response generation
+  - Real-time messaging interface with multiple bots
+  - Multi-bot response generation and comparison
+  - Dynamic bot add/remove (drop-in/drop-out)
   - Memory integration display
+- **Active Bots Panel** (`/chat/[id]/bots`)
+  - Current conversation bots
+  - Add/remove bots interface
+  - Bot performance comparison
+  - Minimum one bot requirement enforcement
 - **Memory Review** (`/chat/[id]/memories`)
   - Generated conversation memories
   - Edit and refine memories
   - Memory timeline visualization
 - **Chat Settings** (`/chat/[id]/settings`)
-  - Bot configuration
+  - Bot configuration and preferences
   - Knowledge access controls
   - Privacy and sharing options
+  - Multi-bot conversation settings
 
 ---
 
-### 6. 👤 Account & Profile
+### 7. 👤 Account & Profile
 **Path:** `/account`
 **Description:** User profile, settings, and account management
 
@@ -247,6 +340,12 @@ BotCafé is a dark fantasy-themed AI chatbot platform with advanced RAG capabili
 │   ├── Two-Factor Auth
 │   ├── Session Management
 │   └── Login History
+├── 🔑 API Key Management
+│   ├── OpenAI API Keys
+│   ├── Anthropic Claude API Keys
+│   ├── DeepSeek, Google, ElectronHub Keys
+│   ├── OpenRouter Integration
+│   └── Usage Tracking & Limits
 ├── 💳 Billing & Subscriptions
 │   ├── Current Plan
 │   ├── Usage Statistics
@@ -272,6 +371,12 @@ BotCafé is a dark fantasy-themed AI chatbot platform with advanced RAG capabili
   - Password and authentication
   - Login session management
   - Security audit log
+- **API Key Management** (`/account/api-keys`)
+  - OpenAI API key configuration
+  - Anthropic Claude API key management
+  - DeepSeek, Google, ElectronHub, OpenRouter integration
+  - API usage tracking and cost monitoring
+  - Secure key storage and rotation
 - **Billing** (`/account/billing`)
   - Subscription management
   - Usage tracking
@@ -279,7 +384,7 @@ BotCafé is a dark fantasy-themed AI chatbot platform with advanced RAG capabili
 
 ---
 
-### 7. 🧠 Mood Journal & Mental Health
+### 8. 🧠 Mood Journal & Mental Health
 **Path:** `/wellbeing`
 **Description:** Mental health tracking and self-moderation tools
 
@@ -333,7 +438,7 @@ BotCafé is a dark fantasy-themed AI chatbot platform with advanced RAG capabili
 
 ---
 
-### 8. 📚 Memory Archive
+### 9. 📚 Memory Archive
 **Path:** `/memories`
 **Description:** Comprehensive memory management and story progression
 
@@ -383,7 +488,7 @@ BotCafé is a dark fantasy-themed AI chatbot platform with advanced RAG capabili
 
 ---
 
-### 9. 📊 Analytics & Insights
+### 10. 📊 Analytics & Insights
 **Path:** `/analytics`
 **Description:** Detailed usage analytics and insights
 
@@ -414,7 +519,52 @@ BotCafé is a dark fantasy-themed AI chatbot platform with advanced RAG capabili
 
 ---
 
-### 10. ❓ Help & Support
+### 11. ⚖️ Legal & Compliance
+**Path:** `/legal`
+**Description:** Legal disclaimers and responsible use policies
+
+#### Navigation Structure:
+```
+📁 /legal
+├── 📜 Terms of Service
+│   ├── Platform Usage Rules
+│   ├── User Responsibilities
+│   └── Service Limitations
+├── 🔒 Privacy Policy
+│   ├── Data Usage Policies
+│   ├── Data Collection Notice
+│   └── User Rights & Controls
+├── 🛡️ Responsible AI Use
+│   ├── Ethical Guidelines
+│   ├── AI Safety Protocols
+│   └── Community Standards
+└── ⚠️ Legal Disclaimers
+    ├── AI Response Disclaimers
+    ├── Content Responsibility
+    └── Limitation of Liability
+```
+
+#### Sub-pages:
+- **Terms of Service** (`/legal/terms`)
+  - Platform usage rules and guidelines
+  - User responsibilities and obligations
+  - Service limitations and restrictions
+- **Privacy Policy** (`/legal/privacy`)
+  - Data usage and collection policies
+  - User privacy rights and controls
+  - Data retention and deletion policies
+- **Responsible AI Use** (`/legal/responsible-use`)
+  - Ethical AI usage guidelines
+  - Safety protocols and best practices
+  - Community standards and moderation
+- **Legal Disclaimers** (`/legal/disclaimers`)
+  - AI response accuracy disclaimers
+  - Content responsibility notices
+  - Limitation of liability statements
+
+---
+
+### 12. ❓ Help & Support
 **Path:** `/help`
 **Description:** Documentation, tutorials, and support resources
 
@@ -456,160 +606,7 @@ BotCafé is a dark fantasy-themed AI chatbot platform with advanced RAG capabili
 - **Chat** → "Converse" or "Dialogue"
 - **Memories** → "Chronicles" or "Lore"
 - **Mood Journal** → "Reflective Waters" or "Soul Mirror"
+- **Creators** → "Artisan Guild" (master craftsperson theme)
+- **Legal** → "Council Chambers" (official documentation theme)
 
 ### Visual Hierarchy
-- **Primary Navigation:** Header with fantasy-styled menu items
-- **Secondary Navigation:** Sidebar with magical iconography
-- **Tertiary Navigation:** Breadcrumbs with runic separators
-- **Action Items:** Glowing buttons with hover effects
-
-### User Experience Flow
-1. **Onboarding:** Fantasy-themed tutorial introduction
-2. **Discovery:** Explore existing content with magical elements
-3. **Creation:** Guided bot and persona creation wizard
-4. **Conversation:** Immersive chat with memory integration
-5. **Management:** Comprehensive memory and knowledge tools
-6. **Wellbeing:** Gentle mental health monitoring and support
-
----
-
-## 🔄 User Journey Mapping
-
-### New User Journey
-```
-1. Landing (Home) 
-   → Introduction to BotCafé
-   → Sign up/Sign in
-   
-2. Onboarding Tutorial
-   → Basic features walkthrough
-   → Create first persona
-   
-3. First Conversation
-   → Select a bot
-   → Start chatting
-   → View first memories
-   
-4. Explore Features
-   → Try Grimoire (knowledge)
-   → Experiment with personas
-   → Check mood journal
-```
-
-### Power User Journey
-```
-1. Dashboard (Account)
-   → Quick overview of activity
-   
-2. Grimoire Management
-   → Import/organize knowledge
-   → Create collections
-   → Tag management
-   
-3. Bot Creation
-   → Build custom bots
-   → Apply personas
-   → Test configurations
-   
-4. Memory Archive
-   → Review story progression
-   → Edit memories
-   → Export chronicles
-   
-5. Analytics Review
-   → Usage patterns
-   → Performance insights
-   → Optimization opportunities
-```
-
-### Mental Health Journey
-```
-1. Daily Check-in
-   → Mood assessment
-   → Usage review
-   
-2. Self-Moderation
-   → Set limits
-   → Monitor patterns
-   
-3. Intervention (if needed)
-   → Healthy break suggestions
-   → Support resource access
-   
-4. Progress Tracking
-   → Wellbeing trends
-   → Habit formation
-```
-
----
-
-## 🎯 Key Design Principles
-
-### Accessibility
-- Clear navigation hierarchy
-- Consistent iconography
-- Keyboard navigation support
-- Screen reader compatibility
-
-### Fantasy Theme Consistency
-- Consistent magical terminology
-- Visual metaphors throughout
-- Immersive user experience
-- Thematic color usage
-
-### Mental Health Integration
-- Gentle, non-intrusive monitoring
-- Positive reinforcement
-- Clear intervention protocols
-- Professional resource connections
-
-### Performance
-- Fast page loads
-- Efficient data fetching
-- Smooth animations
-- Mobile responsiveness
-
----
-
-## 📱 Mobile Considerations
-
-### Responsive Navigation
-- Collapsible hamburger menu
-- Touch-friendly interface
-- Swipe gestures for chat
-- Mobile-optimized forms
-
-### Mobile-Specific Features
-- Voice input for chat
-- Quick mood check-ins
-- Push notifications
-- Offline reading for documentation
-
----
-
-## 🚀 Implementation Priorities
-
-### Phase 1: Core Navigation
-- [ ] Basic site structure
-- [ ] Primary navigation implementation
-- [ ] User authentication flow
-
-### Phase 2: Feature Pages
-- [ ] Chat interface
-- [ ] Grimoire (knowledge management)
-- [ ] Memory archive
-- [ ] Basic persona system
-
-### Phase 3: Advanced Features
-- [ ] Mood journal integration
-- [ ] Analytics dashboard
-- [ ] Self-moderation tools
-- [ ] Advanced customization
-
-### Phase 4: Polish & Enhancement
-- [ ] Fantasy theme refinement
-- [ ] Animation and effects
-- [ ] Performance optimization
-- [ ] Mobile experience enhancement
-
-This sitemap provides a comprehensive foundation for BotCafé's user interface, ensuring all features are discoverable while maintaining the magical, fantasy theme throughout the user experience.

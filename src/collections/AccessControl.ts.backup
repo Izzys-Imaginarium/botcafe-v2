@@ -243,10 +243,14 @@ export const AccessControl: CollectionConfig = {
   hooks: {
     afterChange: [
       async ({ doc, operation }) => {
-        // Log access control changes for valid operations only
+        // Log access control changes
         if (operation === 'create') {
           console.log(
             `Access granted: ${doc.permission_type} on ${doc.resource_type} to user ${doc.user}`,
+          )
+        } else if (operation === 'delete') {
+          console.log(
+            `Access revoked: ${doc.permission_type} on ${doc.resource_type} from user ${doc.user}`,
           )
         }
       },

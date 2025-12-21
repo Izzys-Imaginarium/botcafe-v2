@@ -1,10 +1,10 @@
 # BotCafé Payload CMS Database Schema Update Plan
 
 ## Current Status
-- **Existing Collections:** 14 total
+- **Existing Collections:** 23+ total
 - **Required for Full Sitemap:** 25+ collections
-- **New Collections Needed:** 11+
-- **Implementation Priority:** Multi-tenant architecture first
+- **New Collections Needed:** 2+ (Phases 5 & 6)
+- **Implementation Priority:** Legal & Support system completion
 
 ---
 
@@ -50,27 +50,47 @@
 
 ---
 
-## 🎯 **Remaining Phases for Full Implementation**
+## 🎯 **NEXT PHASES - Database Additions Required**
 
 ### **Phase 5: Legal & Compliance System**
 - [ ] **LegalDocuments.ts** - Terms, privacy, disclaimers
+  - Document types (Terms of Service, Privacy Policy, Cookie Policy, Disclaimer)
+  - Version tracking and effective dates
+  - Multi-language support
+  - Creator/Platform level documents
+  - User acceptance tracking
 - [ ] **UserAgreements.ts** - Legal acceptance tracking
+  - User acceptance records
+  - Version control for document revisions
+  - Timestamp tracking
+  - Creator agreement relationships
 
 ### **Phase 6: Help & Support System**
 - [ ] **Documentation.ts** - Help documentation
+  - Category-based organization
+  - Search functionality support
+  - Multi-language content
+  - Version tracking for updates
+  - Creator-specific documentation
 - [ ] **Tutorials.ts** - Interactive tutorials
+  - Step-by-step guides
+  - Media attachments (images/videos)
+  - Progress tracking
+  - User completion status
+  - Creator-customized tutorials
 - [ ] **SupportTickets.ts** - Help desk system
-
-### **Phase 7: Enhanced Chat System**
-- [ ] **Update Conversation.ts** - Multi-bot support
-- [ ] **Update Message.ts** - Enhanced messaging
-
-### **Phase 8: API Key Management Enhancement**
-- [ ] **Update ApiKey.ts** - Multi-provider support
+  - Ticket categorization and priority
+  - Status tracking (open, in-progress, resolved)
+  - Creator and user relationships
+  - Assignment and escalation workflows
+  - Response time tracking
 
 ### **Updates to Existing Collections (Pending)**
 - [ ] **Update Knowledge.ts** - Enhanced privacy
 - [ ] **Update KnowledgeCollections.ts** - Collection sharing
+- [ ] **Update Conversation.ts** - Multi-bot support
+- [ ] **Update Message.ts** - [ ] **Update Enhanced messaging
+- ApiKey.ts** - Multi-provider support
 
 ---
 
@@ -81,10 +101,11 @@
 - **Analytics System**: 100% complete (usage analytics and insights)
 - **Configuration**: 100% complete (proper integration resolved)
 - **Build Status**: 100% clean (all errors eliminated)
-- **Total Platform**: ~85% complete (ready for feature expansion)
+- **Legal & Support Systems**: 0% complete (5 collections needed)
+- **Total Platform**: ~85% complete (ready for final database expansion)
 
-### **Ready for Next Phase**
-The foundational database architecture is now complete with mental health and analytics systems fully implemented and ready for expansion with remaining collections (Legal, Support systems).
+### **Ready for Phases 5 & 6**
+The foundational database architecture is complete with mental health and analytics systems fully implemented. Ready to add the final 5 collections for Legal & Support systems.
 
 **Status**: Core infrastructure, mental health, and analytics systems complete, all build errors resolved, production-ready ✅
-**Next Phase**: Database foundation ready for remaining collection implementations (Legal & Support systems)
+**Next Phase**: Implement Legal & Compliance System (Phase 5) and Help & Support System (Phase 6)

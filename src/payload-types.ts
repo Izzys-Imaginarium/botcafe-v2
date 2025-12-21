@@ -81,6 +81,15 @@ export interface Config {
     subscriptionPayments: SubscriptionPayment;
     subscriptionTiers: SubscriptionTier;
     tokenPackages: TokenPackage;
+    personas: Persona;
+    creatorProfiles: CreatorProfile;
+    creatorPrograms: CreatorProgram;
+    'access-control': AccessControl;
+    'self-moderation': SelfModeration;
+    'crisis-support': CrisisSupport;
+    'usage-analytics': UsageAnalytic;
+    'memory-insights': MemoryInsight;
+    'persona-analytics': PersonaAnalytic;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -101,6 +110,15 @@ export interface Config {
     subscriptionPayments: SubscriptionPaymentsSelect<false> | SubscriptionPaymentsSelect<true>;
     subscriptionTiers: SubscriptionTiersSelect<false> | SubscriptionTiersSelect<true>;
     tokenPackages: TokenPackagesSelect<false> | TokenPackagesSelect<true>;
+    personas: PersonasSelect<false> | PersonasSelect<true>;
+    creatorProfiles: CreatorProfilesSelect<false> | CreatorProfilesSelect<true>;
+    creatorPrograms: CreatorProgramsSelect<false> | CreatorProgramsSelect<true>;
+    'access-control': AccessControlSelect<false> | AccessControlSelect<true>;
+    'self-moderation': SelfModerationSelect<false> | SelfModerationSelect<true>;
+    'crisis-support': CrisisSupportSelect<false> | CrisisSupportSelect<true>;
+    'usage-analytics': UsageAnalyticsSelect<false> | UsageAnalyticsSelect<true>;
+    'memory-insights': MemoryInsightsSelect<false> | MemoryInsightsSelect<true>;
+    'persona-analytics': PersonaAnalyticsSelect<false> | PersonaAnalyticsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -390,6 +408,1236 @@ export interface TokenPackage {
   createdAt: string;
 }
 /**
+ * User personas/masks system for bot interactions
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "personas".
+ */
+export interface Persona {
+  id: number;
+  user: number | User;
+  name: string;
+  description: string;
+  personality_traits?: {
+    tone?:
+      | ('friendly' | 'professional' | 'playful' | 'mysterious' | 'wise' | 'humorous' | 'empathetic' | 'authoritative')
+      | null;
+    formality_level?: ('very-casual' | 'casual' | 'neutral' | 'formal' | 'very-formal') | null;
+    humor_style?: ('none' | 'light' | 'moderate' | 'dark' | 'sarcastic') | null;
+    communication_style?: ('direct' | 'elaborate' | 'concise' | 'storytelling' | 'questioning') | null;
+  };
+  appearance?: {
+    avatar?: (number | null) | Media;
+    visual_theme?: ('classic' | 'modern' | 'fantasy' | 'minimalist' | 'vintage' | 'futuristic') | null;
+    color_scheme?: string | null;
+  };
+  behavior_settings?: {
+    response_length?: ('very-short' | 'short' | 'medium' | 'long' | 'very-long') | null;
+    creativity_level?: ('conservative' | 'moderate' | 'creative' | 'highly-creative') | null;
+    knowledge_sharing?: ('very-limited' | 'limited' | 'balanced' | 'generous' | 'very-generous') | null;
+  };
+  interaction_preferences?: {
+    preferred_topics?:
+      | {
+          topic?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    avoid_topics?:
+      | {
+          topic?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    conversation_starter?: string | null;
+    signature_phrases?:
+      | {
+          phrase?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  /**
+   * Set as default persona for new conversations
+   */
+  is_default?: boolean | null;
+  /**
+   * Allow other users to view and use this persona
+   */
+  is_public?: boolean | null;
+  /**
+   * Number of times this persona has been used
+   */
+  usage_count?: number | null;
+  created_timestamp?: string | null;
+  modified_timestamp?: string | null;
+  /**
+   * Tags to help categorize and find this persona
+   */
+  tags?:
+    | {
+        tag?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Additional custom instructions for this persona
+   */
+  custom_instructions?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Multi-tenant creator showcase and profile management
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "creatorProfiles".
+ */
+export interface CreatorProfile {
+  id: number;
+  /**
+   * The user who owns this creator profile
+   */
+  user: number | User;
+  /**
+   * Unique username for creator profile (used in URLs)
+   */
+  username: string;
+  /**
+   * Public display name for the creator
+   */
+  display_name: string;
+  /**
+   * Creator biography and description
+   */
+  bio: string;
+  profile_media?: {
+    /**
+     * Creator profile picture
+     */
+    avatar?: (number | null) | Media;
+    /**
+     * Profile banner/header image
+     */
+    banner_image?: (number | null) | Media;
+  };
+  social_links?: {
+    /**
+     * Personal or professional website URL
+     */
+    website?: string | null;
+    /**
+     * GitHub profile URL
+     */
+    github?: string | null;
+    /**
+     * Twitter/X profile URL
+     */
+    twitter?: string | null;
+    /**
+     * LinkedIn profile URL
+     */
+    linkedin?: string | null;
+    /**
+     * Discord username or server invite
+     */
+    discord?: string | null;
+    /**
+     * YouTube channel URL
+     */
+    youtube?: string | null;
+    /**
+     * Additional social media or professional links
+     */
+    other_links?:
+      | {
+          platform: string;
+          url: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  creator_info: {
+    creator_type: 'individual' | 'studio' | 'organization' | 'educational' | 'open-source';
+    /**
+     * Areas of expertise and bot creation specialties
+     */
+    specialties?:
+      | {
+          specialty?:
+            | (
+                | 'conversational-ai'
+                | 'fantasy-rpg'
+                | 'educational'
+                | 'creative-writing'
+                | 'technical-support'
+                | 'entertainment'
+                | 'productivity'
+                | 'mental-health'
+                | 'gaming'
+                | 'business'
+              )
+            | null;
+          id?: string | null;
+        }[]
+      | null;
+    experience_level?: ('beginner' | 'intermediate' | 'advanced' | 'expert' | 'professional') | null;
+    /**
+     * Geographic location (optional)
+     */
+    location?: string | null;
+    /**
+     * Languages supported in created bots
+     */
+    languages?:
+      | {
+          language?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  portfolio?: {
+    /**
+     * Bots to feature prominently on creator profile
+     */
+    featured_bots?: (number | Bot)[] | null;
+    /**
+     * Total number of bots created by this creator
+     */
+    bot_count?: number | null;
+    /**
+     * Total conversations across all created bots
+     */
+    total_conversations?: number | null;
+    /**
+     * Average rating of creator's bots
+     */
+    average_rating?: number | null;
+  };
+  community_stats?: {
+    /**
+     * Number of followers
+     */
+    follower_count?: number | null;
+    /**
+     * Number of creators being followed
+     */
+    following_count?: number | null;
+    /**
+     * Total likes received across all content
+     */
+    total_likes?: number | null;
+  };
+  /**
+   * Creator verification and trust status
+   */
+  verification_status?: ('unverified' | 'pending' | 'verified' | 'premium') | null;
+  /**
+   * Feature this creator prominently on the platform
+   */
+  featured_creator?: boolean | null;
+  profile_settings?: {
+    profile_visibility?: ('public' | 'unlisted' | 'private') | null;
+    /**
+     * Allow other creators to collaborate on bots
+     */
+    allow_collaborations?: boolean | null;
+    /**
+     * Available for custom bot commissions
+     */
+    accept_commissions?: boolean | null;
+    /**
+     * Commission rates and availability information
+     */
+    commission_info?: string | null;
+  };
+  created_timestamp?: string | null;
+  modified_timestamp?: string | null;
+  /**
+   * Last time the creator was active on the platform
+   */
+  last_active?: string | null;
+  /**
+   * Tags to help categorize and discover this creator
+   */
+  tags?:
+    | {
+        tag?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Featured creator program management and applications
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "creatorPrograms".
+ */
+export interface CreatorProgram {
+  id: number;
+  /**
+   * Name of the creator program
+   */
+  program_name: string;
+  /**
+   * URL-friendly identifier for the program
+   */
+  program_slug: string;
+  /**
+   * Detailed description of the program
+   */
+  description: string;
+  /**
+   * Brief description for program listings
+   */
+  short_description: string;
+  /**
+   * Type of creator program
+   */
+  program_type:
+    | 'featured-creator'
+    | 'verified-creator'
+    | 'premium-creator'
+    | 'mentorship'
+    | 'ambassador'
+    | 'educational'
+    | 'innovation-lab';
+  /**
+   * Current status of the program
+   */
+  program_status: 'active' | 'closed' | 'paused' | 'archived';
+  program_media?: {
+    /**
+     * Program banner/hero image
+     */
+    banner_image?: (number | null) | Media;
+    /**
+     * Program icon or logo
+     */
+    icon?: (number | null) | Media;
+  };
+  app_requirements?: {
+    /**
+     * Minimum number of bots required to apply
+     */
+    min_bot_count?: number | null;
+    /**
+     * Minimum total conversations required
+     */
+    min_conversations?: number | null;
+    /**
+     * Minimum average bot rating required
+     */
+    min_rating?: number | null;
+    /**
+     * Required specialties for this program
+     */
+    specialties?:
+      | {
+          specialty?:
+            | (
+                | 'conversational-ai'
+                | 'fantasy-rpg'
+                | 'educational'
+                | 'creative-writing'
+                | 'technical-support'
+                | 'entertainment'
+                | 'productivity'
+                | 'mental-health'
+                | 'gaming'
+                | 'business'
+              )
+            | null;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Requires identity verification
+     */
+    verification_required?: boolean | null;
+    /**
+     * Requires manual portfolio review
+     */
+    portfolio_review?: boolean | null;
+    /**
+     * Required community standing
+     */
+    community_standing?: ('none' | 'good' | 'excellent' | 'clean') | null;
+  };
+  app_process?: {
+    /**
+     * Application deadline (if applicable)
+     */
+    deadline?: string | null;
+    method?: ('automatic' | 'form' | 'portfolio' | 'interview' | 'voting') | null;
+    /**
+     * Custom application questions for this program
+     */
+    questions?:
+      | {
+          question: string;
+          question_type?: ('short-text' | 'long-text' | 'multiple-choice' | 'yes-no') | null;
+          required?: boolean | null;
+          options?:
+            | {
+                option?: string | null;
+                id?: string | null;
+              }[]
+            | null;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Description of how applications are reviewed
+     */
+    review_process?: string | null;
+    /**
+     * Expected timeline for application review
+     */
+    review_timeline?: string | null;
+  };
+  program_benefits?: {
+    /**
+     * Primary benefits of joining this program
+     */
+    primary_benefits?:
+      | {
+          benefit: string;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Promotional and marketing benefits
+     */
+    promotional_benefits?:
+      | {
+          benefit?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Technical or feature benefits
+     */
+    technical_benefits?:
+      | {
+          benefit?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Community and networking benefits
+     */
+    community_benefits?:
+      | {
+          benefit?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Financial or monetization benefits
+     */
+    financial_benefits?:
+      | {
+          benefit?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  /**
+   * Multiple tiers within the program (if applicable)
+   */
+  program_tiers?:
+    | {
+        tier_name: string;
+        tier_level: number;
+        tier_description: string;
+        tier_benefits?:
+          | {
+              benefit?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        requirements?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  program_stats?: {
+    /**
+     * Total number of applications received
+     */
+    total_applicants?: number | null;
+    /**
+     * Number of creators accepted into the program
+     */
+    accepted_creators?: number | null;
+    /**
+     * Number of currently active program participants
+     */
+    active_creators?: number | null;
+  };
+  program_settings?: {
+    /**
+     * Maximum number of participants (leave empty for unlimited)
+     */
+    max_participants?: number | null;
+    /**
+     * Program membership requires periodic renewal
+     */
+    renewal_required?: boolean | null;
+    /**
+     * Renewal period in months
+     */
+    renewal_period_months?: number | null;
+    /**
+     * Criteria for automatic acceptance (if applicable)
+     */
+    auto_accept_criteria?: string | null;
+  };
+  created_timestamp?: string | null;
+  modified_timestamp?: string | null;
+  /**
+   * Date when the program was launched
+   */
+  launch_date?: string | null;
+  /**
+   * Tags to categorize and discover this program
+   */
+  tags?:
+    | {
+        tag?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Internal notes about the program (admin only)
+   */
+  program_notes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Fine-grained permissions management for all resources
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "access-control".
+ */
+export interface AccessControl {
+  id: number;
+  /**
+   * Type of resource this access control applies to
+   */
+  resource_type: 'bot' | 'knowledge' | 'knowledgeCollection' | 'memory' | 'conversation' | 'persona' | 'creatorProfile';
+  /**
+   * ID of the specific resource
+   */
+  resource_id: string;
+  /**
+   * Human-readable title/name of the resource (for display purposes)
+   */
+  resource_title?: string | null;
+  /**
+   * Type of permission granted
+   */
+  permission_type: 'read' | 'write' | 'admin' | 'share' | 'delete';
+  /**
+   * Scope of the permission
+   */
+  permission_scope?: ('full' | 'limited' | 'view-only' | 'comment-only' | 'share-only') | null;
+  /**
+   * User being granted access
+   */
+  user: number | User;
+  /**
+   * User who granted this access
+   */
+  granted_by: number | User;
+  /**
+   * Reason or context for granting this access
+   */
+  granted_reason?: string | null;
+  grant_method?:
+    | (
+        | 'direct-share'
+        | 'collaboration-invite'
+        | 'public-access'
+        | 'program-membership'
+        | 'role-assignment'
+        | 'system-generated'
+      )
+    | null;
+  /**
+   * When this access was granted
+   */
+  created_timestamp?: string | null;
+  /**
+   * When this access was last used
+   */
+  last_used?: string | null;
+  /**
+   * When this access expires (optional)
+   */
+  expiration_date?: string | null;
+  /**
+   * Number of times this access has been used
+   */
+  access_count?: number | null;
+  /**
+   * Whether this access has been revoked
+   */
+  is_revoked?: boolean | null;
+  /**
+   * User who revoked this access
+   */
+  revoked_by?: (number | null) | User;
+  /**
+   * Reason for revoking this access
+   */
+  revoked_reason?: string | null;
+  /**
+   * When this access was revoked
+   */
+  revoked_timestamp?: string | null;
+  /**
+   * Notify resource owner when access is granted
+   */
+  notify_on_access?: boolean | null;
+  /**
+   * Tags for organizing and searching access controls
+   */
+  tags?:
+    | {
+        tag?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Specific conditions or limitations for this permission
+   */
+  conditions?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "self-moderation".
+ */
+export interface SelfModeration {
+  id: number;
+  user: number | User;
+  /**
+   * Daily usage limit in minutes
+   */
+  daily_usage_limit?: number | null;
+  /**
+   * Weekly usage limit in minutes
+   */
+  weekly_usage_limit?: number | null;
+  /**
+   * Break reminder interval in minutes
+   */
+  break_reminder_interval?: number | null;
+  healthy_habits?: {
+    enable_break_reminders?: boolean | null;
+    enable_usage_tracking?: boolean | null;
+    enable_mood_checkins?: boolean | null;
+    night_mode_hours?: {
+      enabled?: boolean | null;
+      start_hour?: number | null;
+      end_hour?: number | null;
+    };
+    /**
+     * Enable guided mindfulness break reminders
+     */
+    mindfulness_breaks?: boolean | null;
+  };
+  intervention_triggers?: {
+    /**
+     * Alert when daily limit is exceeded
+     */
+    excessive_daily_usage?: boolean | null;
+    /**
+     * Alert for usage during night mode hours
+     */
+    late_night_usage?: boolean | null;
+    /**
+     * Alert after consecutive days of overuse
+     */
+    consecutive_days_overuse?: number | null;
+    /**
+     * Alert when mood trends decline over time
+     */
+    declining_mood_trend?: boolean | null;
+  };
+  progress_tracking?: {
+    total_usage_minutes_today?: number | null;
+    total_usage_minutes_week?: number | null;
+    last_reset_date?: string | null;
+    consecutive_healthy_days?: number | null;
+    last_break_time?: string | null;
+    mood_entries_count_week?: number | null;
+  };
+  /**
+   * Last time user checked in with self-moderation system
+   */
+  last_checkin?: string | null;
+  is_active?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "crisis-support".
+ */
+export interface CrisisSupport {
+  id: number;
+  /**
+   * Name/title of the crisis support resource
+   */
+  title: string;
+  resource_type: 'hotline' | 'chat' | 'text' | 'online' | 'emergency' | 'apps' | 'groups' | 'professional';
+  resource_category:
+    | 'suicide-prevention'
+    | 'mental-health'
+    | 'domestic-violence'
+    | 'substance-abuse'
+    | 'lgbtq'
+    | 'youth'
+    | 'senior'
+    | 'general'
+    | 'financial'
+    | 'relationship';
+  /**
+   * Detailed description of the resource and what it offers
+   */
+  description: string;
+  contact_info: {
+    phone_number?: string | null;
+    text_number?: string | null;
+    website?: string | null;
+    email?: string | null;
+    chat_url?: string | null;
+    app_download_url?: string | null;
+  };
+  availability?: {
+    /**
+     * Available 24/7
+     */
+    is_24_7?: boolean | null;
+    operating_hours?: {
+      monday?: string | null;
+      tuesday?: string | null;
+      wednesday?: string | null;
+      thursday?: string | null;
+      friday?: string | null;
+      saturday?: string | null;
+      sunday?: string | null;
+    };
+    /**
+     * Operating timezone (e.g., EST, PST, UTC)
+     */
+    timezone?: string | null;
+  };
+  geographic_region:
+    | 'us-national'
+    | 'ca-national'
+    | 'uk'
+    | 'au'
+    | 'eu'
+    | 'worldwide'
+    | 'ca-state'
+    | 'ny-state'
+    | 'tx-state'
+    | 'fl-state'
+    | 'custom';
+  /**
+   * Support available in multiple languages
+   */
+  language_support?: boolean | null;
+  /**
+   * Comma-separated list of supported languages
+   */
+  languages_available?: string | null;
+  cost_information: 'free' | 'insurance' | 'sliding-scale' | 'low-cost' | 'paid';
+  specialized_features?: {
+    anonymous_support?: boolean | null;
+    peer_support?: boolean | null;
+    professional_counselors?: boolean | null;
+    volunteer_support?: boolean | null;
+    family_support?: boolean | null;
+    trauma_informed?: boolean | null;
+  };
+  /**
+   * Verification status of the resource
+   */
+  verification_status?: ('verified' | 'pending' | 'under-review' | 'expired' | 'needs-update') | null;
+  /**
+   * Last time this resource was verified
+   */
+  last_verified?: string | null;
+  /**
+   * Notes about verification process or status
+   */
+  verification_notes?: string | null;
+  /**
+   * Comma-separated tags for filtering
+   */
+  tags?: string | null;
+  /**
+   * Mark as emergency resource (high priority display)
+   */
+  is_emergency?: boolean | null;
+  /**
+   * Lower numbers display first (0 = highest priority)
+   */
+  display_order?: number | null;
+  is_active?: boolean | null;
+  created_by?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "usage-analytics".
+ */
+export interface UsageAnalytic {
+  id: number;
+  user: number | User;
+  timestamp: string;
+  /**
+   * Unique session identifier
+   */
+  session_id?: string | null;
+  event_type:
+    | 'page_view'
+    | 'bot_interaction'
+    | 'conversation_start'
+    | 'conversation_end'
+    | 'message_sent'
+    | 'message_received'
+    | 'persona_switch'
+    | 'bot_creation'
+    | 'bot_deletion'
+    | 'knowledge_upload'
+    | 'settings_change'
+    | 'export_data'
+    | 'import_data'
+    | 'search_query'
+    | 'filter_applied'
+    | 'sort_applied'
+    | 'pagination'
+    | 'download'
+    | 'upload'
+    | 'share_action'
+    | 'login'
+    | 'logout'
+    | 'registration'
+    | 'password_reset'
+    | 'profile_update';
+  event_category:
+    | 'user_interaction'
+    | 'bot_management'
+    | 'conversation'
+    | 'content'
+    | 'system'
+    | 'authentication'
+    | 'data_management'
+    | 'analytics'
+    | 'ui_ux';
+  resource_details?: {
+    /**
+     * Related bot (if applicable)
+     */
+    bot_id?: (number | null) | Bot;
+    /**
+     * Related conversation (if applicable)
+     */
+    conversation_id?: (number | null) | Conversation;
+    /**
+     * Related persona (if applicable)
+     */
+    persona_id?: (number | null) | Persona;
+    /**
+     * URL of the page (if applicable)
+     */
+    page_url?: string | null;
+    /**
+     * Element or feature that was interacted with
+     */
+    action_target?: string | null;
+  };
+  performance_metrics?: {
+    /**
+     * Response time in milliseconds
+     */
+    response_time_ms?: number | null;
+    /**
+     * Page/feature load time in milliseconds
+     */
+    load_time_ms?: number | null;
+    /**
+     * Duration of the interaction in seconds
+     */
+    duration_seconds?: number | null;
+    /**
+     * Whether an error occurred during this event
+     */
+    error_occurred?: boolean | null;
+    /**
+     * Error message if an error occurred
+     */
+    error_message?: string | null;
+  };
+  context_data?: {
+    /**
+     * Browser/user agent information
+     */
+    user_agent?: string | null;
+    device_type?: ('desktop' | 'mobile' | 'tablet' | 'unknown') | null;
+    /**
+     * Browser name and version
+     */
+    browser?: string | null;
+    /**
+     * Operating system information
+     */
+    operating_system?: string | null;
+    /**
+     * Screen resolution (e.g., 1920x1080)
+     */
+    screen_resolution?: string | null;
+    /**
+     * URL that referred to this page
+     */
+    referrer?: string | null;
+    /**
+     * IP address (hashed or masked for privacy)
+     */
+    ip_address?: string | null;
+  };
+  custom_properties?: {
+    /**
+     * Additional custom data as JSON
+     */
+    metadata?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+    /**
+     * Comma-separated custom tags
+     */
+    tags?: string | null;
+    importance_level?: ('low' | 'normal' | 'high' | 'critical') | null;
+  };
+  /**
+   * Whether this event is ready for aggregation
+   */
+  aggregation_ready?: boolean | null;
+  /**
+   * Whether this event has been processed for analytics aggregation
+   */
+  processed_for_aggregation?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "memory-insights".
+ */
+export interface MemoryInsight {
+  id: number;
+  user: number | User;
+  bot: number | Bot;
+  conversation?: (number | null) | Conversation;
+  period: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'session' | 'custom';
+  start_date: string;
+  end_date: string;
+  total_memories_created?: number | null;
+  total_memories_accessed?: number | null;
+  memory_recall_accuracy?: number | null;
+  context_relevance_score?: number | null;
+  story_continuity_score?: number | null;
+  episodic_memories?: number | null;
+  semantic_memories?: number | null;
+  procedural_memories?: number | null;
+  emotional_memories?: number | null;
+  total_conversations?: number | null;
+  avg_conversation_length?: number | null;
+  topic_diversity_score?: number | null;
+  sentiment_trend?:
+    | ('very-negative' | 'negative' | 'neutral' | 'positive' | 'very-positive' | 'mixed' | 'fluctuating')
+    | null;
+  learning_velocity?: number | null;
+  retention_rate?: number | null;
+  pattern_accuracy?: number | null;
+  adaptation_score?: number | null;
+  access_speed_ms?: number | null;
+  search_accuracy?: number | null;
+  confidence_score?: number | null;
+  key_insights?: string | null;
+  suggestions?: string | null;
+  anomaly_flags?: string | null;
+  analysis_version?: string | null;
+  data_points?: number | null;
+  processing_time_ms?: number | null;
+  confidence_level?: number | null;
+  generated_at?: string | null;
+  is_automated?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "persona-analytics".
+ */
+export interface PersonaAnalytic {
+  id: number;
+  user: number | User;
+  persona: number | Persona;
+  bot: number | Bot;
+  analysis_period: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'session' | 'custom';
+  period_start_date: string;
+  period_end_date: string;
+  usage_metrics?: {
+    /**
+     * Total number of interactions with this persona
+     */
+    total_interactions?: number | null;
+    /**
+     * Total time spent in conversation (minutes)
+     */
+    total_conversation_time_minutes?: number | null;
+    /**
+     * Average duration of each session (minutes)
+     */
+    average_session_duration_minutes?: number | null;
+    /**
+     * Number of interactions per day on average
+     */
+    interaction_frequency?: number | null;
+    /**
+     * Percentage of users who return to use this persona
+     */
+    return_user_rate_percentage?: number | null;
+    /**
+     * Number of unique users who interacted with this persona
+     */
+    unique_users_count?: number | null;
+  };
+  engagement_metrics?: {
+    /**
+     * Percentage of user messages that received responses
+     */
+    message_response_rate?: number | null;
+    /**
+     * Average number of messages per conversation
+     */
+    average_conversation_length?: number | null;
+    /**
+     * Percentage of conversations that reach natural completion
+     */
+    conversation_completion_rate?: number | null;
+    /**
+     * Average user satisfaction score (1-10)
+     */
+    user_satisfaction_score?: number | null;
+    /**
+     * Percentage of users who switch to different personas
+     */
+    persona_switch_rate?: number | null;
+    /**
+     * Percentage of users who interact with persona multiple times
+     */
+    repeat_interaction_rate?: number | null;
+  };
+  persona_effectiveness?: {
+    /**
+     * How consistently the persona maintains its character (1-10)
+     */
+    persona_consistency_score?: number | null;
+    /**
+     * How relevant the persona responses are (1-10)
+     */
+    persona_relevance_score?: number | null;
+    /**
+     * How creative the persona responses are (1-10)
+     */
+    persona_creativity_score?: number | null;
+    /**
+     * How engaging the persona is (1-10)
+     */
+    persona_engagement_score?: number | null;
+    /**
+     * How helpful the persona is (1-10)
+     */
+    persona_helpfulness_score?: number | null;
+    /**
+     * How appropriate the persona responses are (1-10)
+     */
+    persona_appropriateness_score?: number | null;
+  };
+  conversation_quality?: {
+    /**
+     * Percentage of responses deemed relevant by users
+     */
+    response_relevance_percentage?: number | null;
+    /**
+     * Percentage of responses that are factually accurate
+     */
+    response_accuracy_percentage?: number | null;
+    /**
+     * How complete the responses are (1-10)
+     */
+    response_completeness_score?: number | null;
+    /**
+     * How natural the conversation flow feels (1-10)
+     */
+    conversation_flow_score?: number | null;
+    /**
+     * How well the persona understands context (1-10)
+     */
+    context_understanding_score?: number | null;
+    /**
+     * How well the persona recognizes and responds to emotions (1-10)
+     */
+    emotional_intelligence_score?: number | null;
+  };
+  user_feedback?: {
+    /**
+     * Number of positive feedback messages
+     */
+    positive_feedback_count?: number | null;
+    /**
+     * Number of negative feedback messages
+     */
+    negative_feedback_count?: number | null;
+    /**
+     * Number of neutral feedback messages
+     */
+    neutral_feedback_count?: number | null;
+    /**
+     * Number of improvement suggestions from users
+     */
+    user_suggestions_count?: number | null;
+    /**
+     * Most commonly praised aspects
+     */
+    common_praise_topics?: string | null;
+    /**
+     * Most commonly criticized aspects
+     */
+    common_criticism_topics?: string | null;
+    /**
+     * User requests for persona improvements
+     */
+    improvement_requests?: string | null;
+  };
+  technical_performance?: {
+    /**
+     * Average response time in milliseconds
+     */
+    average_response_time_ms?: number | null;
+    /**
+     * Percentage of interactions that resulted in errors
+     */
+    error_rate_percentage?: number | null;
+    /**
+     * Percentage of interactions that timed out
+     */
+    timeout_rate_percentage?: number | null;
+    /**
+     * Resource usage efficiency (1-10)
+     */
+    system_resource_usage_score?: number | null;
+    /**
+     * Percentage of time the persona was available
+     */
+    availability_percentage?: number | null;
+  };
+  comparison_metrics?: {
+    /**
+     * Ranking among all personas by usage
+     */
+    ranking_among_personas?: number | null;
+    /**
+     * Percentage of total persona usage this persona receives
+     */
+    usage_percentage_of_total?: number | null;
+    /**
+     * Performance difference from average persona (negative to positive)
+     */
+    performance_vs_average?: number | null;
+    /**
+     * Areas where this persona excels compared to others
+     */
+    unique_strengths?: string | null;
+    /**
+     * Areas that need improvement compared to others
+     */
+    areas_for_improvement?: string | null;
+  };
+  insights_and_recommendations?: {
+    /**
+     * Key insights from persona performance analysis
+     */
+    key_insights?: string | null;
+    /**
+     * Suggestions for optimizing persona performance
+     */
+    optimization_suggestions?: string | null;
+    /**
+     * Recommendations for persona training improvements
+     */
+    training_recommendations?: string | null;
+    /**
+     * New features users would like to see
+     */
+    feature_requests?: string | null;
+    /**
+     * Unusual patterns or anomalies detected
+     */
+    anomaly_flags?: string | null;
+  };
+  analysis_metadata?: {
+    /**
+     * Version of analysis algorithm used
+     */
+    analysis_version?: string | null;
+    /**
+     * Number of data points included in analysis
+     */
+    data_points_analyzed?: number | null;
+    /**
+     * Time taken to complete analysis in milliseconds
+     */
+    processing_time_ms?: number | null;
+    /**
+     * Overall confidence level of the analysis (%)
+     */
+    confidence_level?: number | null;
+    /**
+     * When this analysis was last updated
+     */
+    last_updated?: string | null;
+  };
+  /**
+   * When this analysis was generated
+   */
+  generated_at?: string | null;
+  /**
+   * Whether this was generated by automated analysis
+   */
+  is_automated_analysis?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
@@ -451,6 +1699,42 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'tokenPackages';
         value: number | TokenPackage;
+      } | null)
+    | ({
+        relationTo: 'personas';
+        value: number | Persona;
+      } | null)
+    | ({
+        relationTo: 'creatorProfiles';
+        value: number | CreatorProfile;
+      } | null)
+    | ({
+        relationTo: 'creatorPrograms';
+        value: number | CreatorProgram;
+      } | null)
+    | ({
+        relationTo: 'access-control';
+        value: number | AccessControl;
+      } | null)
+    | ({
+        relationTo: 'self-moderation';
+        value: number | SelfModeration;
+      } | null)
+    | ({
+        relationTo: 'crisis-support';
+        value: number | CrisisSupport;
+      } | null)
+    | ({
+        relationTo: 'usage-analytics';
+        value: number | UsageAnalytic;
+      } | null)
+    | ({
+        relationTo: 'memory-insights';
+        value: number | MemoryInsight;
+      } | null)
+    | ({
+        relationTo: 'persona-analytics';
+        value: number | PersonaAnalytic;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -718,6 +2002,632 @@ export interface TokenPackagesSelect<T extends boolean = true> {
   description?: T;
   is_popular?: T;
   is_active?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "personas_select".
+ */
+export interface PersonasSelect<T extends boolean = true> {
+  user?: T;
+  name?: T;
+  description?: T;
+  personality_traits?:
+    | T
+    | {
+        tone?: T;
+        formality_level?: T;
+        humor_style?: T;
+        communication_style?: T;
+      };
+  appearance?:
+    | T
+    | {
+        avatar?: T;
+        visual_theme?: T;
+        color_scheme?: T;
+      };
+  behavior_settings?:
+    | T
+    | {
+        response_length?: T;
+        creativity_level?: T;
+        knowledge_sharing?: T;
+      };
+  interaction_preferences?:
+    | T
+    | {
+        preferred_topics?:
+          | T
+          | {
+              topic?: T;
+              id?: T;
+            };
+        avoid_topics?:
+          | T
+          | {
+              topic?: T;
+              id?: T;
+            };
+        conversation_starter?: T;
+        signature_phrases?:
+          | T
+          | {
+              phrase?: T;
+              id?: T;
+            };
+      };
+  is_default?: T;
+  is_public?: T;
+  usage_count?: T;
+  created_timestamp?: T;
+  modified_timestamp?: T;
+  tags?:
+    | T
+    | {
+        tag?: T;
+        id?: T;
+      };
+  custom_instructions?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "creatorProfiles_select".
+ */
+export interface CreatorProfilesSelect<T extends boolean = true> {
+  user?: T;
+  username?: T;
+  display_name?: T;
+  bio?: T;
+  profile_media?:
+    | T
+    | {
+        avatar?: T;
+        banner_image?: T;
+      };
+  social_links?:
+    | T
+    | {
+        website?: T;
+        github?: T;
+        twitter?: T;
+        linkedin?: T;
+        discord?: T;
+        youtube?: T;
+        other_links?:
+          | T
+          | {
+              platform?: T;
+              url?: T;
+              id?: T;
+            };
+      };
+  creator_info?:
+    | T
+    | {
+        creator_type?: T;
+        specialties?:
+          | T
+          | {
+              specialty?: T;
+              id?: T;
+            };
+        experience_level?: T;
+        location?: T;
+        languages?:
+          | T
+          | {
+              language?: T;
+              id?: T;
+            };
+      };
+  portfolio?:
+    | T
+    | {
+        featured_bots?: T;
+        bot_count?: T;
+        total_conversations?: T;
+        average_rating?: T;
+      };
+  community_stats?:
+    | T
+    | {
+        follower_count?: T;
+        following_count?: T;
+        total_likes?: T;
+      };
+  verification_status?: T;
+  featured_creator?: T;
+  profile_settings?:
+    | T
+    | {
+        profile_visibility?: T;
+        allow_collaborations?: T;
+        accept_commissions?: T;
+        commission_info?: T;
+      };
+  created_timestamp?: T;
+  modified_timestamp?: T;
+  last_active?: T;
+  tags?:
+    | T
+    | {
+        tag?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "creatorPrograms_select".
+ */
+export interface CreatorProgramsSelect<T extends boolean = true> {
+  program_name?: T;
+  program_slug?: T;
+  description?: T;
+  short_description?: T;
+  program_type?: T;
+  program_status?: T;
+  program_media?:
+    | T
+    | {
+        banner_image?: T;
+        icon?: T;
+      };
+  app_requirements?:
+    | T
+    | {
+        min_bot_count?: T;
+        min_conversations?: T;
+        min_rating?: T;
+        specialties?:
+          | T
+          | {
+              specialty?: T;
+              id?: T;
+            };
+        verification_required?: T;
+        portfolio_review?: T;
+        community_standing?: T;
+      };
+  app_process?:
+    | T
+    | {
+        deadline?: T;
+        method?: T;
+        questions?:
+          | T
+          | {
+              question?: T;
+              question_type?: T;
+              required?: T;
+              options?:
+                | T
+                | {
+                    option?: T;
+                    id?: T;
+                  };
+              id?: T;
+            };
+        review_process?: T;
+        review_timeline?: T;
+      };
+  program_benefits?:
+    | T
+    | {
+        primary_benefits?:
+          | T
+          | {
+              benefit?: T;
+              id?: T;
+            };
+        promotional_benefits?:
+          | T
+          | {
+              benefit?: T;
+              id?: T;
+            };
+        technical_benefits?:
+          | T
+          | {
+              benefit?: T;
+              id?: T;
+            };
+        community_benefits?:
+          | T
+          | {
+              benefit?: T;
+              id?: T;
+            };
+        financial_benefits?:
+          | T
+          | {
+              benefit?: T;
+              id?: T;
+            };
+      };
+  program_tiers?:
+    | T
+    | {
+        tier_name?: T;
+        tier_level?: T;
+        tier_description?: T;
+        tier_benefits?:
+          | T
+          | {
+              benefit?: T;
+              id?: T;
+            };
+        requirements?: T;
+        id?: T;
+      };
+  program_stats?:
+    | T
+    | {
+        total_applicants?: T;
+        accepted_creators?: T;
+        active_creators?: T;
+      };
+  program_settings?:
+    | T
+    | {
+        max_participants?: T;
+        renewal_required?: T;
+        renewal_period_months?: T;
+        auto_accept_criteria?: T;
+      };
+  created_timestamp?: T;
+  modified_timestamp?: T;
+  launch_date?: T;
+  tags?:
+    | T
+    | {
+        tag?: T;
+        id?: T;
+      };
+  program_notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "access-control_select".
+ */
+export interface AccessControlSelect<T extends boolean = true> {
+  resource_type?: T;
+  resource_id?: T;
+  resource_title?: T;
+  permission_type?: T;
+  permission_scope?: T;
+  user?: T;
+  granted_by?: T;
+  granted_reason?: T;
+  grant_method?: T;
+  created_timestamp?: T;
+  last_used?: T;
+  expiration_date?: T;
+  access_count?: T;
+  is_revoked?: T;
+  revoked_by?: T;
+  revoked_reason?: T;
+  revoked_timestamp?: T;
+  notify_on_access?: T;
+  tags?:
+    | T
+    | {
+        tag?: T;
+        id?: T;
+      };
+  conditions?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "self-moderation_select".
+ */
+export interface SelfModerationSelect<T extends boolean = true> {
+  user?: T;
+  daily_usage_limit?: T;
+  weekly_usage_limit?: T;
+  break_reminder_interval?: T;
+  healthy_habits?:
+    | T
+    | {
+        enable_break_reminders?: T;
+        enable_usage_tracking?: T;
+        enable_mood_checkins?: T;
+        night_mode_hours?:
+          | T
+          | {
+              enabled?: T;
+              start_hour?: T;
+              end_hour?: T;
+            };
+        mindfulness_breaks?: T;
+      };
+  intervention_triggers?:
+    | T
+    | {
+        excessive_daily_usage?: T;
+        late_night_usage?: T;
+        consecutive_days_overuse?: T;
+        declining_mood_trend?: T;
+      };
+  progress_tracking?:
+    | T
+    | {
+        total_usage_minutes_today?: T;
+        total_usage_minutes_week?: T;
+        last_reset_date?: T;
+        consecutive_healthy_days?: T;
+        last_break_time?: T;
+        mood_entries_count_week?: T;
+      };
+  last_checkin?: T;
+  is_active?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "crisis-support_select".
+ */
+export interface CrisisSupportSelect<T extends boolean = true> {
+  title?: T;
+  resource_type?: T;
+  resource_category?: T;
+  description?: T;
+  contact_info?:
+    | T
+    | {
+        phone_number?: T;
+        text_number?: T;
+        website?: T;
+        email?: T;
+        chat_url?: T;
+        app_download_url?: T;
+      };
+  availability?:
+    | T
+    | {
+        is_24_7?: T;
+        operating_hours?:
+          | T
+          | {
+              monday?: T;
+              tuesday?: T;
+              wednesday?: T;
+              thursday?: T;
+              friday?: T;
+              saturday?: T;
+              sunday?: T;
+            };
+        timezone?: T;
+      };
+  geographic_region?: T;
+  language_support?: T;
+  languages_available?: T;
+  cost_information?: T;
+  specialized_features?:
+    | T
+    | {
+        anonymous_support?: T;
+        peer_support?: T;
+        professional_counselors?: T;
+        volunteer_support?: T;
+        family_support?: T;
+        trauma_informed?: T;
+      };
+  verification_status?: T;
+  last_verified?: T;
+  verification_notes?: T;
+  tags?: T;
+  is_emergency?: T;
+  display_order?: T;
+  is_active?: T;
+  created_by?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "usage-analytics_select".
+ */
+export interface UsageAnalyticsSelect<T extends boolean = true> {
+  user?: T;
+  timestamp?: T;
+  session_id?: T;
+  event_type?: T;
+  event_category?: T;
+  resource_details?:
+    | T
+    | {
+        bot_id?: T;
+        conversation_id?: T;
+        persona_id?: T;
+        page_url?: T;
+        action_target?: T;
+      };
+  performance_metrics?:
+    | T
+    | {
+        response_time_ms?: T;
+        load_time_ms?: T;
+        duration_seconds?: T;
+        error_occurred?: T;
+        error_message?: T;
+      };
+  context_data?:
+    | T
+    | {
+        user_agent?: T;
+        device_type?: T;
+        browser?: T;
+        operating_system?: T;
+        screen_resolution?: T;
+        referrer?: T;
+        ip_address?: T;
+      };
+  custom_properties?:
+    | T
+    | {
+        metadata?: T;
+        tags?: T;
+        importance_level?: T;
+      };
+  aggregation_ready?: T;
+  processed_for_aggregation?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "memory-insights_select".
+ */
+export interface MemoryInsightsSelect<T extends boolean = true> {
+  user?: T;
+  bot?: T;
+  conversation?: T;
+  period?: T;
+  start_date?: T;
+  end_date?: T;
+  total_memories_created?: T;
+  total_memories_accessed?: T;
+  memory_recall_accuracy?: T;
+  context_relevance_score?: T;
+  story_continuity_score?: T;
+  episodic_memories?: T;
+  semantic_memories?: T;
+  procedural_memories?: T;
+  emotional_memories?: T;
+  total_conversations?: T;
+  avg_conversation_length?: T;
+  topic_diversity_score?: T;
+  sentiment_trend?: T;
+  learning_velocity?: T;
+  retention_rate?: T;
+  pattern_accuracy?: T;
+  adaptation_score?: T;
+  access_speed_ms?: T;
+  search_accuracy?: T;
+  confidence_score?: T;
+  key_insights?: T;
+  suggestions?: T;
+  anomaly_flags?: T;
+  analysis_version?: T;
+  data_points?: T;
+  processing_time_ms?: T;
+  confidence_level?: T;
+  generated_at?: T;
+  is_automated?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "persona-analytics_select".
+ */
+export interface PersonaAnalyticsSelect<T extends boolean = true> {
+  user?: T;
+  persona?: T;
+  bot?: T;
+  analysis_period?: T;
+  period_start_date?: T;
+  period_end_date?: T;
+  usage_metrics?:
+    | T
+    | {
+        total_interactions?: T;
+        total_conversation_time_minutes?: T;
+        average_session_duration_minutes?: T;
+        interaction_frequency?: T;
+        return_user_rate_percentage?: T;
+        unique_users_count?: T;
+      };
+  engagement_metrics?:
+    | T
+    | {
+        message_response_rate?: T;
+        average_conversation_length?: T;
+        conversation_completion_rate?: T;
+        user_satisfaction_score?: T;
+        persona_switch_rate?: T;
+        repeat_interaction_rate?: T;
+      };
+  persona_effectiveness?:
+    | T
+    | {
+        persona_consistency_score?: T;
+        persona_relevance_score?: T;
+        persona_creativity_score?: T;
+        persona_engagement_score?: T;
+        persona_helpfulness_score?: T;
+        persona_appropriateness_score?: T;
+      };
+  conversation_quality?:
+    | T
+    | {
+        response_relevance_percentage?: T;
+        response_accuracy_percentage?: T;
+        response_completeness_score?: T;
+        conversation_flow_score?: T;
+        context_understanding_score?: T;
+        emotional_intelligence_score?: T;
+      };
+  user_feedback?:
+    | T
+    | {
+        positive_feedback_count?: T;
+        negative_feedback_count?: T;
+        neutral_feedback_count?: T;
+        user_suggestions_count?: T;
+        common_praise_topics?: T;
+        common_criticism_topics?: T;
+        improvement_requests?: T;
+      };
+  technical_performance?:
+    | T
+    | {
+        average_response_time_ms?: T;
+        error_rate_percentage?: T;
+        timeout_rate_percentage?: T;
+        system_resource_usage_score?: T;
+        availability_percentage?: T;
+      };
+  comparison_metrics?:
+    | T
+    | {
+        ranking_among_personas?: T;
+        usage_percentage_of_total?: T;
+        performance_vs_average?: T;
+        unique_strengths?: T;
+        areas_for_improvement?: T;
+      };
+  insights_and_recommendations?:
+    | T
+    | {
+        key_insights?: T;
+        optimization_suggestions?: T;
+        training_recommendations?: T;
+        feature_requests?: T;
+        anomaly_flags?: T;
+      };
+  analysis_metadata?:
+    | T
+    | {
+        analysis_version?: T;
+        data_points_analyzed?: T;
+        processing_time_ms?: T;
+        confidence_level?: T;
+        last_updated?: T;
+      };
+  generated_at?: T;
+  is_automated_analysis?: T;
   updatedAt?: T;
   createdAt?: T;
 }

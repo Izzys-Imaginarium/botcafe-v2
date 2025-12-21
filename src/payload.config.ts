@@ -27,6 +27,11 @@ import { Personas } from './collections/Personas'
 import { CreatorProfiles } from './collections/CreatorProfiles'
 import { CreatorPrograms } from './collections/CreatorPrograms'
 import { AccessControl } from './collections/AccessControl'
+import { SelfModeration } from './collections/SelfModeration'
+import { CrisisSupport } from './collections/CrisisSupport'
+import { UsageAnalytics } from './collections/UsageAnalytics'
+import { MemoryInsights } from './collections/MemoryInsights'
+import { PersonaAnalytics } from './collections/PersonaAnalytics'
 import { migrations } from './migrations'
 
 const filename = fileURLToPath(import.meta.url)
@@ -65,6 +70,13 @@ export default buildConfig({
     CreatorProfiles,
     CreatorPrograms,
     AccessControl,
+    // Mental Health & Wellbeing System (Phase 3)
+    SelfModeration,
+    CrisisSupport,
+    // Analytics & Insights System (Phase 4)
+    UsageAnalytics,
+    MemoryInsights,
+    PersonaAnalytics,
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

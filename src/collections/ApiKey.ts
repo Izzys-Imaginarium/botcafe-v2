@@ -4,6 +4,14 @@ export const ApiKey: CollectionConfig = {
   slug: 'api-key',
   admin: {
     useAsTitle: 'nickname',
+    defaultColumns: [
+      'user',
+      'provider',
+      'nickname',
+      'key_encryption_level',
+      'is_active',
+      'last_used',
+    ],
   },
   access: {
     read: ({ req: { user } }) => {
@@ -53,16 +61,207 @@ export const ApiKey: CollectionConfig = {
       required: true,
       options: [
         { label: 'OpenAI', value: 'openai' },
+        { label: 'OpenAI GPT-3.5', value: 'openai-gpt3.5' },
+        { label: 'OpenAI GPT-4', value: 'openai-gpt4' },
+        { label: 'OpenAI GPT-4-Turbo', value: 'openai-gpt4-turbo' },
         { label: 'Anthropic', value: 'anthropic' },
+        { label: 'Anthropic Claude-3-Sonnet', value: 'anthropic-claude3-sonnet' },
+        { label: 'Anthropic Claude-3-Opus', value: 'anthropic-claude3-opus' },
         { label: 'Google AI', value: 'google' },
+        { label: 'Google Gemini-Pro', value: 'google-gemini-pro' },
+        { label: 'Google Gemini-Ultra', value: 'google-gemini-ultra' },
+        { label: 'Cohere', value: 'cohere' },
+        { label: 'AI21', value: 'ai21' },
+        { label: 'Together AI', value: 'together' },
+        { label: 'Replicate', value: 'replicate' },
         { label: 'Hugging Face', value: 'huggingface' },
-        { label: 'Other', value: 'other' },
+        { label: 'Custom', value: 'custom' },
       ],
     },
     {
       name: 'key',
       type: 'text',
       required: true,
+    },
+    {
+      name: 'key_configuration',
+      type: 'group',
+      fields: [
+        {
+          name: 'model_preferences',
+          type: 'array',
+          fields: [
+            {
+              name: 'model',
+              type: 'text',
+            },
+          ],
+        },
+        {
+          name: 'rate_limits',
+          type: 'group',
+          fields: [
+            {
+              name: 'requests_per_hour',
+              type: 'number',
+            },
+            {
+              name: 'tokens_per_minute',
+              type: 'number',
+            },
+          ],
+        },
+        {
+          name: 'usage_tracking',
+          type: 'group',
+          fields: [
+            {
+              name: 'monthly_quota',
+              type: 'number',
+            },
+            {
+              name: 'daily_limit',
+              type: 'number',
+            },
+          ],
+        },
+        {
+          name: 'fallback_providers',
+          type: 'array',
+          fields: [
+            {
+              name: 'provider_id',
+              type: 'text',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'usage_analytics',
+      type: 'group',
+      fields: [
+        {
+          name: 'total_requests',
+          type: 'number',
+          defaultValue: 0,
+        },
+        {
+          name: 'total_tokens_used',
+          type: 'number',
+          defaultValue: 0,
+        },
+        {
+          name: 'monthly_usage',
+          type: 'json',
+        },
+        {
+          name: 'average_response_time',
+          type: 'number',
+          defaultValue: 0,
+        },
+        {
+          name: 'error_rate',
+          type: 'number',
+          defaultValue: 0,
+        },
+      ],
+    },
+    {
+      name: 'security_features',
+      type: 'group',
+      fields: [
+        {
+          name: 'key_encryption_level',
+          type: 'select',
+          defaultValue: 'basic',
+          options: [
+            { label: 'Basic', value: 'basic' },
+            { label: 'Advanced', value: 'advanced' },
+            { label: 'Military-Grade', value: 'military-grade' },
+          ],
+        },
+        {
+          name: 'auto_rotation_enabled',
+          type: 'checkbox',
+          defaultValue: false,
+        },
+        {
+          name: 'rotation_schedule',
+          type: 'text',
+        },
+        {
+          name: 'last_rotation_date',
+          type: 'date',
+        },
+        {
+          name: 'key_expiry_date',
+          type: 'date',
+        },
+        {
+          name: 'is_active',
+          type: 'checkbox',
+          defaultValue: true,
+        },
+        {
+          name: 'last_used',
+          type: 'date',
+        },
+      ],
+    },
+    {
+      name: 'provider_specific_settings',
+      type: 'group',
+      fields: [
+        {
+          name: 'openai_settings',
+          type: 'group',
+          fields: [
+            {
+              name: 'organization_id',
+              type: 'text',
+            },
+            {
+              name: 'project_id',
+              type: 'text',
+            },
+          ],
+        },
+        {
+          name: 'anthropic_settings',
+          type: 'group',
+          fields: [
+            {
+              name: 'account_preferences',
+              type: 'json',
+            },
+          ],
+        },
+        {
+          name: 'google_settings',
+          type: 'group',
+          fields: [
+            {
+              name: 'project_configuration',
+              type: 'json',
+            },
+          ],
+        },
+        {
+          name: 'custom_settings',
+          type: 'group',
+          fields: [
+            {
+              name: 'configuration',
+              type: 'json',
+            },
+            {
+              name: 'api_endpoint',
+              type: 'text',
+            },
+          ],
+        },
+      ],
     },
   ],
 }

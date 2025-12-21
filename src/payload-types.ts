@@ -258,8 +258,110 @@ export interface ApiKey {
   id: number;
   user: number | User;
   nickname: string;
-  provider: 'openai' | 'anthropic' | 'google' | 'huggingface' | 'other';
+  provider:
+    | 'openai'
+    | 'openai-gpt3.5'
+    | 'openai-gpt4'
+    | 'openai-gpt4-turbo'
+    | 'anthropic'
+    | 'anthropic-claude3-sonnet'
+    | 'anthropic-claude3-opus'
+    | 'google'
+    | 'google-gemini-pro'
+    | 'google-gemini-ultra'
+    | 'cohere'
+    | 'ai21'
+    | 'together'
+    | 'replicate'
+    | 'huggingface'
+    | 'custom';
   key: string;
+  key_configuration?: {
+    model_preferences?:
+      | {
+          model?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    rate_limits?: {
+      requests_per_hour?: number | null;
+      tokens_per_minute?: number | null;
+    };
+    usage_tracking?: {
+      monthly_quota?: number | null;
+      daily_limit?: number | null;
+    };
+    fallback_providers?:
+      | {
+          provider_id?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  usage_analytics?: {
+    total_requests?: number | null;
+    total_tokens_used?: number | null;
+    monthly_usage?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+    average_response_time?: number | null;
+    error_rate?: number | null;
+  };
+  security_features?: {
+    key_encryption_level?: ('basic' | 'advanced' | 'military-grade') | null;
+    auto_rotation_enabled?: boolean | null;
+    rotation_schedule?: string | null;
+    last_rotation_date?: string | null;
+    key_expiry_date?: string | null;
+    is_active?: boolean | null;
+    last_used?: string | null;
+  };
+  provider_specific_settings?: {
+    openai_settings?: {
+      organization_id?: string | null;
+      project_id?: string | null;
+    };
+    anthropic_settings?: {
+      account_preferences?:
+        | {
+            [k: string]: unknown;
+          }
+        | unknown[]
+        | string
+        | number
+        | boolean
+        | null;
+    };
+    google_settings?: {
+      project_configuration?:
+        | {
+            [k: string]: unknown;
+          }
+        | unknown[]
+        | string
+        | number
+        | boolean
+        | null;
+    };
+    custom_settings?: {
+      configuration?:
+        | {
+            [k: string]: unknown;
+          }
+        | unknown[]
+        | string
+        | number
+        | boolean
+        | null;
+      api_endpoint?: string | null;
+    };
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -317,7 +419,34 @@ export interface Conversation {
   user: number | User;
   created_timestamp?: string | null;
   modified_timestamp?: string | null;
-  bot?: (number | Bot)[] | null;
+  conversation_type: 'single-bot' | 'multi-bot' | 'group-chat';
+  bot_participation?:
+    | {
+        bot_id: number | Bot;
+        joined_at?: string | null;
+        role: 'primary' | 'secondary' | 'moderator';
+        is_active?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  conversation_metadata?: {
+    total_messages?: number | null;
+    participant_count?: number | null;
+    last_activity?: string | null;
+    conversation_summary?: string | null;
+    tags?:
+      | {
+          tag?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  status: 'active' | 'archived' | 'muted' | 'pinned';
+  conversation_settings?: {
+    allow_file_sharing?: boolean | null;
+    message_retention_days?: number | null;
+    auto_save_conversations?: boolean | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -331,10 +460,80 @@ export interface Message {
   created_timestamp?: string | null;
   modified_timestamp?: string | null;
   conversation: number | Conversation;
+  message_type: 'text' | 'image' | 'file' | 'system' | 'voice' | 'code';
   bot?: (number | null) | Bot;
+  message_attribution?: {
+    source_bot_id?: (number | null) | Bot;
+    is_ai_generated?: boolean | null;
+    model_used?: string | null;
+    confidence_score?: number | null;
+  };
+  message_content?: {
+    text_content?: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
+    media_attachments?: (number | Media)[] | null;
+    code_snippets?:
+      | {
+          language: string;
+          code: string;
+          filename?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    reactions?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+  };
+  message_thread?: {
+    reply_to_id?: (number | null) | Message;
+    thread_depth?: number | null;
+    is_thread_parent?: boolean | null;
+  };
+  token_tracking?: {
+    input_tokens?: number | null;
+    output_tokens?: number | null;
+    total_tokens?: number | null;
+    cost_estimate?: number | null;
+  };
   byo_key?: boolean | null;
-  tokens?: number | null;
+  message_status?: {
+    delivery_status?: ('sent' | 'delivered' | 'read' | 'failed') | null;
+    edit_history?:
+      | {
+          previous_content: string;
+          edited_at: string;
+          edit_reason?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    is_edited?: boolean | null;
+    edited_at?: string | null;
+  };
   entry: string;
+  metadata?: {
+    processing_time_ms?: number | null;
+    priority_level?: ('low' | 'normal' | 'high' | 'urgent') | null;
+    sensitivity_level?: ('public' | 'private' | 'confidential') | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -2340,6 +2539,80 @@ export interface ApiKeySelect<T extends boolean = true> {
   nickname?: T;
   provider?: T;
   key?: T;
+  key_configuration?:
+    | T
+    | {
+        model_preferences?:
+          | T
+          | {
+              model?: T;
+              id?: T;
+            };
+        rate_limits?:
+          | T
+          | {
+              requests_per_hour?: T;
+              tokens_per_minute?: T;
+            };
+        usage_tracking?:
+          | T
+          | {
+              monthly_quota?: T;
+              daily_limit?: T;
+            };
+        fallback_providers?:
+          | T
+          | {
+              provider_id?: T;
+              id?: T;
+            };
+      };
+  usage_analytics?:
+    | T
+    | {
+        total_requests?: T;
+        total_tokens_used?: T;
+        monthly_usage?: T;
+        average_response_time?: T;
+        error_rate?: T;
+      };
+  security_features?:
+    | T
+    | {
+        key_encryption_level?: T;
+        auto_rotation_enabled?: T;
+        rotation_schedule?: T;
+        last_rotation_date?: T;
+        key_expiry_date?: T;
+        is_active?: T;
+        last_used?: T;
+      };
+  provider_specific_settings?:
+    | T
+    | {
+        openai_settings?:
+          | T
+          | {
+              organization_id?: T;
+              project_id?: T;
+            };
+        anthropic_settings?:
+          | T
+          | {
+              account_preferences?: T;
+            };
+        google_settings?:
+          | T
+          | {
+              project_configuration?: T;
+            };
+        custom_settings?:
+          | T
+          | {
+              configuration?: T;
+              api_endpoint?: T;
+            };
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2398,7 +2671,38 @@ export interface ConversationSelect<T extends boolean = true> {
   user?: T;
   created_timestamp?: T;
   modified_timestamp?: T;
-  bot?: T;
+  conversation_type?: T;
+  bot_participation?:
+    | T
+    | {
+        bot_id?: T;
+        joined_at?: T;
+        role?: T;
+        is_active?: T;
+        id?: T;
+      };
+  conversation_metadata?:
+    | T
+    | {
+        total_messages?: T;
+        participant_count?: T;
+        last_activity?: T;
+        conversation_summary?: T;
+        tags?:
+          | T
+          | {
+              tag?: T;
+              id?: T;
+            };
+      };
+  status?: T;
+  conversation_settings?:
+    | T
+    | {
+        allow_file_sharing?: T;
+        message_retention_days?: T;
+        auto_save_conversations?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2411,10 +2715,70 @@ export interface MessageSelect<T extends boolean = true> {
   created_timestamp?: T;
   modified_timestamp?: T;
   conversation?: T;
+  message_type?: T;
   bot?: T;
+  message_attribution?:
+    | T
+    | {
+        source_bot_id?: T;
+        is_ai_generated?: T;
+        model_used?: T;
+        confidence_score?: T;
+      };
+  message_content?:
+    | T
+    | {
+        text_content?: T;
+        media_attachments?: T;
+        code_snippets?:
+          | T
+          | {
+              language?: T;
+              code?: T;
+              filename?: T;
+              id?: T;
+            };
+        reactions?: T;
+      };
+  message_thread?:
+    | T
+    | {
+        reply_to_id?: T;
+        thread_depth?: T;
+        is_thread_parent?: T;
+      };
+  token_tracking?:
+    | T
+    | {
+        input_tokens?: T;
+        output_tokens?: T;
+        total_tokens?: T;
+        cost_estimate?: T;
+      };
   byo_key?: T;
-  tokens?: T;
+  message_status?:
+    | T
+    | {
+        delivery_status?: T;
+        edit_history?:
+          | T
+          | {
+              previous_content?: T;
+              edited_at?: T;
+              edit_reason?: T;
+              id?: T;
+            };
+        is_edited?: T;
+        edited_at?: T;
+      };
   entry?: T;
+  metadata?:
+    | T
+    | {
+        processing_time_ms?: T;
+        priority_level?: T;
+        sensitivity_level?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }

@@ -247,6 +247,57 @@ export interface KnowledgeCollection {
   created_timestamp?: string | null;
   modified_timestamp?: string | null;
   description?: string | null;
+  sharing_settings: {
+    sharing_level: 'private' | 'shared' | 'public';
+    allow_collaboration?: boolean | null;
+    allow_fork?: boolean | null;
+    sharing_expiration?: string | null;
+    share_password?: string | null;
+    collaboration_requests?: boolean | null;
+    knowledge_count?: number | null;
+    last_updated?: string | null;
+    is_public?: boolean | null;
+  };
+  collaborators?: {
+    collab_user_ids?:
+      | {
+          user_id?: number | null;
+          id?: string | null;
+        }[]
+      | null;
+    collab_perms?:
+      | {
+          perm?: ('read' | 'write' | 'admin') | null;
+          id?: string | null;
+        }[]
+      | null;
+    invited_by_user?: number | null;
+    invited_at?: string | null;
+    collab_notes?: string | null;
+  };
+  collection_metadata?: {
+    total_size_bytes?: number | null;
+    total_words?: number | null;
+    average_quality_score?: number | null;
+    collection_category?: string | null;
+    difficulty_level?: ('beginner' | 'intermediate' | 'advanced' | 'expert') | null;
+    language?: string | null;
+    tags?:
+      | {
+          tag?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  usage_analytics?: {
+    view_count?: number | null;
+    fork_count?: number | null;
+    collaboration_count?: number | null;
+    last_viewed?: string | null;
+    popularity_score?: number | null;
+    rating?: number | null;
+    review_count?: number | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -407,6 +458,48 @@ export interface Knowledge {
   tokens?: number | null;
   entry: string;
   knowledge_collection: number | KnowledgeCollection;
+  privacy_settings: {
+    privacy_level: 'private' | 'shared' | 'public';
+    allow_sharing?: boolean | null;
+    share_expiration?: string | null;
+    password_protected?: boolean | null;
+    share_password?: string | null;
+    access_count?: number | null;
+    last_accessed?: string | null;
+  };
+  shared_access?: {
+    shared_with_user_ids?:
+      | {
+          user_id?: number | null;
+          id?: string | null;
+        }[]
+      | null;
+    permissions?:
+      | {
+          permission?: ('read' | 'write' | 'admin') | null;
+          id?: string | null;
+        }[]
+      | null;
+    shared_by_user_id?: number | null;
+    shared_at?: string | null;
+    sharing_notes?: string | null;
+  };
+  content_metadata?: {
+    source_url?: string | null;
+    author?: string | null;
+    language?: string | null;
+    word_count?: number | null;
+    reading_time_minutes?: number | null;
+    content_hash?: string | null;
+    processing_status?: ('pending' | 'processing' | 'completed' | 'failed') | null;
+  };
+  usage_analytics?: {
+    view_count?: number | null;
+    search_count?: number | null;
+    引用_count?: number | null;
+    last_searched?: string | null;
+    popularity_score?: number | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -2646,6 +2739,56 @@ export interface KnowledgeSelect<T extends boolean = true> {
   tokens?: T;
   entry?: T;
   knowledge_collection?: T;
+  privacy_settings?:
+    | T
+    | {
+        privacy_level?: T;
+        allow_sharing?: T;
+        share_expiration?: T;
+        password_protected?: T;
+        share_password?: T;
+        access_count?: T;
+        last_accessed?: T;
+      };
+  shared_access?:
+    | T
+    | {
+        shared_with_user_ids?:
+          | T
+          | {
+              user_id?: T;
+              id?: T;
+            };
+        permissions?:
+          | T
+          | {
+              permission?: T;
+              id?: T;
+            };
+        shared_by_user_id?: T;
+        shared_at?: T;
+        sharing_notes?: T;
+      };
+  content_metadata?:
+    | T
+    | {
+        source_url?: T;
+        author?: T;
+        language?: T;
+        word_count?: T;
+        reading_time_minutes?: T;
+        content_hash?: T;
+        processing_status?: T;
+      };
+  usage_analytics?:
+    | T
+    | {
+        view_count?: T;
+        search_count?: T;
+        引用_count?: T;
+        last_searched?: T;
+        popularity_score?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2660,6 +2803,65 @@ export interface KnowledgeCollectionsSelect<T extends boolean = true> {
   created_timestamp?: T;
   modified_timestamp?: T;
   description?: T;
+  sharing_settings?:
+    | T
+    | {
+        sharing_level?: T;
+        allow_collaboration?: T;
+        allow_fork?: T;
+        sharing_expiration?: T;
+        share_password?: T;
+        collaboration_requests?: T;
+        knowledge_count?: T;
+        last_updated?: T;
+        is_public?: T;
+      };
+  collaborators?:
+    | T
+    | {
+        collab_user_ids?:
+          | T
+          | {
+              user_id?: T;
+              id?: T;
+            };
+        collab_perms?:
+          | T
+          | {
+              perm?: T;
+              id?: T;
+            };
+        invited_by_user?: T;
+        invited_at?: T;
+        collab_notes?: T;
+      };
+  collection_metadata?:
+    | T
+    | {
+        total_size_bytes?: T;
+        total_words?: T;
+        average_quality_score?: T;
+        collection_category?: T;
+        difficulty_level?: T;
+        language?: T;
+        tags?:
+          | T
+          | {
+              tag?: T;
+              id?: T;
+            };
+      };
+  usage_analytics?:
+    | T
+    | {
+        view_count?: T;
+        fork_count?: T;
+        collaboration_count?: T;
+        last_viewed?: T;
+        popularity_score?: T;
+        rating?: T;
+        review_count?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }

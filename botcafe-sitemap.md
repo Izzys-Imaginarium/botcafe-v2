@@ -2,7 +2,7 @@
 
 ## Overview
 BotCafé is a dark fantasy-themed AI chatbot platform with advanced RAG capabilities, memory management, persona systems, and mental health features. This sitemap outlines the complete navigation structure and user experience flow.
-
+s
 ---
 
 ## 🏰 Main Navigation Structure

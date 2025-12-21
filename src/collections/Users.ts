@@ -118,7 +118,17 @@ export const Users: CollectionConfig = {
   },
   fields: [
     // Email added by default
-    // Add more fields as needed
+    {
+      name: 'avatar',
+      type: 'upload',
+      relationTo: 'media',
+      required: false,
+    },
+    {
+      name: 'name',
+      type: 'text',
+      required: false,
+    },
   ],
   hooks: {
     afterChange: [

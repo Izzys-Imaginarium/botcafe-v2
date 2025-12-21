@@ -90,6 +90,11 @@ export interface Config {
     'usage-analytics': UsageAnalytic;
     'memory-insights': MemoryInsight;
     'persona-analytics': PersonaAnalytic;
+    'legal-documents': LegalDocument;
+    'user-agreements': UserAgreement;
+    documentation: Documentation;
+    tutorials: Tutorial;
+    'support-tickets': SupportTicket;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -119,6 +124,11 @@ export interface Config {
     'usage-analytics': UsageAnalyticsSelect<false> | UsageAnalyticsSelect<true>;
     'memory-insights': MemoryInsightsSelect<false> | MemoryInsightsSelect<true>;
     'persona-analytics': PersonaAnalyticsSelect<false> | PersonaAnalyticsSelect<true>;
+    'legal-documents': LegalDocumentsSelect<false> | LegalDocumentsSelect<true>;
+    'user-agreements': UserAgreementsSelect<false> | UserAgreementsSelect<true>;
+    documentation: DocumentationSelect<false> | DocumentationSelect<true>;
+    tutorials: TutorialsSelect<false> | TutorialsSelect<true>;
+    'support-tickets': SupportTicketsSelect<false> | SupportTicketsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -1641,6 +1651,461 @@ export interface PersonaAnalytic {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "legal-documents".
+ */
+export interface LegalDocument {
+  id: number;
+  title: string;
+  documentType:
+    | 'terms-of-service'
+    | 'privacy-policy'
+    | 'cookie-policy'
+    | 'disclaimer'
+    | 'acceptable-use-policy'
+    | 'data-processing-agreement';
+  version: string;
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  effectiveDate: string;
+  expiryDate?: string | null;
+  language: string;
+  status: 'draft' | 'active' | 'archived' | 'pending-review';
+  creator?: (number | null) | User;
+  createdBy: number | User;
+  lastModified?: string | null;
+  summary?: string | null;
+  tags?:
+    | {
+        tag?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * If checked, this document applies to all creators on the platform
+   */
+  isGlobal?: boolean | null;
+  /**
+   * If checked, users must explicitly accept this document
+   */
+  consentRequired?: boolean | null;
+  fileAttachments?: (number | Media)[] | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "user-agreements".
+ */
+export interface UserAgreement {
+  id: number;
+  user: number | User;
+  document:
+    | {
+        relationTo: 'users';
+        value: number | User;
+      }
+    | {
+        relationTo: 'legal-documents';
+        value: number | LegalDocument;
+      };
+  acceptedAt: string;
+  revokedAt?: string | null;
+  status: 'accepted' | 'revoked' | 'pending' | 'expired';
+  /**
+   * IP address where the agreement was accepted
+   */
+  ipAddress?: string | null;
+  /**
+   * Browser/user agent information
+   */
+  userAgent?: string | null;
+  creator?: (number | null) | User;
+  /**
+   * Session identifier for tracking
+   */
+  sessionId?: string | null;
+  consentMethod: 'explicit' | 'implicit' | 'auto-accept' | 'updated-version';
+  version: string;
+  /**
+   * Additional notes about the agreement
+   */
+  notes?: string | null;
+  /**
+   * Whether this agreement record is currently active
+   */
+  isActive?: boolean | null;
+  agreementType: 'general' | 'privacy' | 'cookies' | 'data-processing' | 'creator' | 'user';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "documentation".
+ */
+export interface Documentation {
+  id: number;
+  title: string;
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  category:
+    | 'getting-started'
+    | 'bot-creation'
+    | 'bot-management'
+    | 'knowledge-base'
+    | 'personas-moods'
+    | 'analytics-insights'
+    | 'api-reference'
+    | 'troubleshooting'
+    | 'best-practices'
+    | 'account-billing'
+    | 'creator-programs'
+    | 'legal-compliance'
+    | 'platform-updates'
+    | 'faq';
+  /**
+   * Optional subcategory for more specific organization
+   */
+  subcategory?: string | null;
+  slug: string;
+  language: 'en' | 'es' | 'fr' | 'de' | 'it' | 'pt' | 'zh' | 'zh-tw' | 'ja' | 'ko' | 'ar' | 'ru';
+  /**
+   * Whether this documentation is published and visible to users
+   */
+  isPublished?: boolean | null;
+  creator?: (number | null) | User;
+  lastUpdated?: string | null;
+  /**
+   * Number of times this documentation has been viewed
+   */
+  viewCount?: number | null;
+  difficultyLevel: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+  /**
+   * Estimated time to read in minutes
+   */
+  estimatedReadTime?: number | null;
+  tags?:
+    | {
+        tag?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Images, videos, or other media associated with this documentation
+   */
+  media?: (number | Media)[] | null;
+  /**
+   * Whether this documentation should be featured prominently
+   */
+  isFeatured?: boolean | null;
+  /**
+   * Order for displaying within its category (lower numbers appear first)
+   */
+  sortOrder?: number | null;
+  /**
+   * SEO title (defaults to title if not specified)
+   */
+  metaTitle?: string | null;
+  /**
+   * SEO description for search engines
+   */
+  metaDescription?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tutorials".
+ */
+export interface Tutorial {
+  id: number;
+  title: string;
+  description: string;
+  steps: {
+    stepNumber: number;
+    title: string;
+    content: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    };
+    media?: (number | Media)[] | null;
+    /**
+     * Optional code example for this step
+     */
+    codeExample?: string | null;
+    /**
+     * Estimated time in minutes for this step
+     */
+    timeEstimate?: number | null;
+    /**
+     * Whether this step is optional
+     */
+    isOptional?: boolean | null;
+    id?: string | null;
+  }[];
+  difficulty: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+  /**
+   * Total estimated time in minutes
+   */
+  estimatedTime: number;
+  /**
+   * Tutorial thumbnail, preview images, or supporting media
+   */
+  media?: (number | Media)[] | null;
+  creator?: (number | null) | User;
+  /**
+   * Whether this tutorial is published and visible to users
+   */
+  isPublished?: boolean | null;
+  /**
+   * Number of users who completed this tutorial
+   */
+  completionCount?: number | null;
+  category:
+    | 'getting-started'
+    | 'bot-creation'
+    | 'bot-customization'
+    | 'knowledge-base'
+    | 'personas-moods'
+    | 'analytics-setup'
+    | 'api-integration'
+    | 'deployment'
+    | 'advanced-features'
+    | 'troubleshooting';
+  tags?:
+    | {
+        tag?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Required knowledge or tutorials before starting this one
+   */
+  prerequisites?:
+    | {
+        prerequisite: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * What users will learn from this tutorial
+   */
+  learningObjectives?:
+    | {
+        objective: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Average user rating (1-5 stars)
+   */
+  rating?: number | null;
+  /**
+   * Number of user reviews
+   */
+  reviewCount?: number | null;
+  lastUpdated?: string | null;
+  /**
+   * Whether this tutorial should be featured prominently
+   */
+  isFeatured?: boolean | null;
+  /**
+   * Order for displaying within its category (lower numbers appear first)
+   */
+  sortOrder?: number | null;
+  language: 'en' | 'es' | 'fr' | 'de' | 'it' | 'pt' | 'zh' | 'zh-tw' | 'ja' | 'ko' | 'ar' | 'ru';
+  /**
+   * Additional resources for this tutorial
+   */
+  resources?:
+    | {
+        resourceName: string;
+        resourceUrl: string;
+        resourceType: 'documentation' | 'video' | 'article' | 'tool' | 'download' | 'external-link';
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "support-tickets".
+ */
+export interface SupportTicket {
+  id: number;
+  title: string;
+  description: string;
+  category:
+    | 'account-issues'
+    | 'bot-creation'
+    | 'bot-management'
+    | 'knowledge-base'
+    | 'payment-billing'
+    | 'technical-issues'
+    | 'feature-requests'
+    | 'bug-reports'
+    | 'api-support'
+    | 'integration-help'
+    | 'performance-issues'
+    | 'security-concerns'
+    | 'legal-compliance'
+    | 'general-inquiry';
+  priority: 'low' | 'medium' | 'high' | 'urgent' | 'critical';
+  status: 'open' | 'in-progress' | 'waiting-for-user' | 'resolved' | 'closed' | 'escalated';
+  creator?: (number | null) | User;
+  /**
+   * User who submitted the support ticket
+   */
+  user: number | User;
+  /**
+   * Support agent assigned to this ticket
+   */
+  assignedTo?: (number | null) | User;
+  createdAt: string;
+  updatedAt: string;
+  /**
+   * When the ticket was resolved
+   */
+  resolvedAt?: string | null;
+  /**
+   * Conversation messages between user and support
+   */
+  messages?:
+    | {
+        messageId: string;
+        sender: number | User;
+        content: {
+          root: {
+            type: string;
+            children: {
+              type: any;
+              version: number;
+              [k: string]: unknown;
+            }[];
+            direction: ('ltr' | 'rtl') | null;
+            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+            indent: number;
+            version: number;
+          };
+          [k: string]: unknown;
+        };
+        timestamp?: string | null;
+        /**
+         * Whether this is an internal note (not visible to user)
+         */
+        isInternal?: boolean | null;
+        attachments?: (number | Media)[] | null;
+        id?: string | null;
+      }[]
+    | null;
+  tags?:
+    | {
+        tag?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Browser information when ticket was created
+   */
+  userAgent?: string | null;
+  /**
+   * IP address when ticket was created
+   */
+  ipAddress?: string | null;
+  /**
+   * User satisfaction rating (1-5 stars)
+   */
+  satisfactionRating?: number | null;
+  /**
+   * User feedback after ticket resolution
+   */
+  feedback?: string | null;
+  /**
+   * Estimated time to resolution in hours
+   */
+  estimatedResolutionTime?: number | null;
+  /**
+   * Actual time to resolution in hours
+   */
+  actualResolutionTime?: number | null;
+  escalationLevel: '1' | '2' | '3' | '4';
+  /**
+   * Whether follow-up is required after resolution
+   */
+  followUpRequired?: boolean | null;
+  /**
+   * Date for scheduled follow-up
+   */
+  followUpDate?: string | null;
+  /**
+   * Resolution description provided to user
+   */
+  resolution?: string | null;
+  resolutionMethod?:
+    | (
+        | 'self-service'
+        | 'remote-assistance'
+        | 'email-response'
+        | 'phone-call'
+        | 'code-fix'
+        | 'configuration-change'
+        | 'feature-implementation'
+        | 'documentation-update'
+        | 'other'
+      )
+    | null;
+  /**
+   * Whether this ticket has been escalated
+   */
+  isEscalated?: boolean | null;
+  /**
+   * Reason for escalation
+   */
+  escalationReason?: string | null;
+  /**
+   * Internal notes for support team (not visible to users)
+   */
+  internalNotes?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -1737,6 +2202,26 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'persona-analytics';
         value: number | PersonaAnalytic;
+      } | null)
+    | ({
+        relationTo: 'legal-documents';
+        value: number | LegalDocument;
+      } | null)
+    | ({
+        relationTo: 'user-agreements';
+        value: number | UserAgreement;
+      } | null)
+    | ({
+        relationTo: 'documentation';
+        value: number | Documentation;
+      } | null)
+    | ({
+        relationTo: 'tutorials';
+        value: number | Tutorial;
+      } | null)
+    | ({
+        relationTo: 'support-tickets';
+        value: number | SupportTicket;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -2634,6 +3119,197 @@ export interface PersonaAnalyticsSelect<T extends boolean = true> {
   is_automated_analysis?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "legal-documents_select".
+ */
+export interface LegalDocumentsSelect<T extends boolean = true> {
+  title?: T;
+  documentType?: T;
+  version?: T;
+  content?: T;
+  effectiveDate?: T;
+  expiryDate?: T;
+  language?: T;
+  status?: T;
+  creator?: T;
+  createdBy?: T;
+  lastModified?: T;
+  summary?: T;
+  tags?:
+    | T
+    | {
+        tag?: T;
+        id?: T;
+      };
+  isGlobal?: T;
+  consentRequired?: T;
+  fileAttachments?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "user-agreements_select".
+ */
+export interface UserAgreementsSelect<T extends boolean = true> {
+  user?: T;
+  document?: T;
+  acceptedAt?: T;
+  revokedAt?: T;
+  status?: T;
+  ipAddress?: T;
+  userAgent?: T;
+  creator?: T;
+  sessionId?: T;
+  consentMethod?: T;
+  version?: T;
+  notes?: T;
+  isActive?: T;
+  agreementType?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "documentation_select".
+ */
+export interface DocumentationSelect<T extends boolean = true> {
+  title?: T;
+  content?: T;
+  category?: T;
+  subcategory?: T;
+  slug?: T;
+  language?: T;
+  isPublished?: T;
+  creator?: T;
+  lastUpdated?: T;
+  viewCount?: T;
+  difficultyLevel?: T;
+  estimatedReadTime?: T;
+  tags?:
+    | T
+    | {
+        tag?: T;
+        id?: T;
+      };
+  media?: T;
+  isFeatured?: T;
+  sortOrder?: T;
+  metaTitle?: T;
+  metaDescription?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tutorials_select".
+ */
+export interface TutorialsSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  steps?:
+    | T
+    | {
+        stepNumber?: T;
+        title?: T;
+        content?: T;
+        media?: T;
+        codeExample?: T;
+        timeEstimate?: T;
+        isOptional?: T;
+        id?: T;
+      };
+  difficulty?: T;
+  estimatedTime?: T;
+  media?: T;
+  creator?: T;
+  isPublished?: T;
+  completionCount?: T;
+  category?: T;
+  tags?:
+    | T
+    | {
+        tag?: T;
+        id?: T;
+      };
+  prerequisites?:
+    | T
+    | {
+        prerequisite?: T;
+        id?: T;
+      };
+  learningObjectives?:
+    | T
+    | {
+        objective?: T;
+        id?: T;
+      };
+  rating?: T;
+  reviewCount?: T;
+  lastUpdated?: T;
+  isFeatured?: T;
+  sortOrder?: T;
+  language?: T;
+  resources?:
+    | T
+    | {
+        resourceName?: T;
+        resourceUrl?: T;
+        resourceType?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "support-tickets_select".
+ */
+export interface SupportTicketsSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  category?: T;
+  priority?: T;
+  status?: T;
+  creator?: T;
+  user?: T;
+  assignedTo?: T;
+  createdAt?: T;
+  updatedAt?: T;
+  resolvedAt?: T;
+  messages?:
+    | T
+    | {
+        messageId?: T;
+        sender?: T;
+        content?: T;
+        timestamp?: T;
+        isInternal?: T;
+        attachments?: T;
+        id?: T;
+      };
+  tags?:
+    | T
+    | {
+        tag?: T;
+        id?: T;
+      };
+  userAgent?: T;
+  ipAddress?: T;
+  satisfactionRating?: T;
+  feedback?: T;
+  estimatedResolutionTime?: T;
+  actualResolutionTime?: T;
+  escalationLevel?: T;
+  followUpRequired?: T;
+  followUpDate?: T;
+  resolution?: T;
+  resolutionMethod?: T;
+  isEscalated?: T;
+  escalationReason?: T;
+  internalNotes?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

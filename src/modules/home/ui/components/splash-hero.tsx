@@ -59,7 +59,7 @@ export const SplashHero = ({ user }: SplashHeroProps) => {
               <>
                 Step into the liminal space between worlds. <br className="hidden md:block" />
                 <span className="text-gold-rich font-semibold">Conjure companions</span> from the
-                ether, share ancient tales, and find cozy sanctuary in the library of dreams.
+                ether, share ancient tales, and find a cozy sanctuary in the library of dreams.
               </>
             )}
           </p>
@@ -96,7 +96,6 @@ export const SplashHero = ({ user }: SplashHeroProps) => {
               100+
             </div>
             <div className="flex items-center justify-center gap-1 text-xs text-parchment-dim uppercase tracking-[0.2em] mt-2 font-bold">
-              <span className="material-symbols-outlined text-[14px]">psychology</span>
               Spirits Bound
             </div>
           </div>
@@ -108,7 +107,6 @@ export const SplashHero = ({ user }: SplashHeroProps) => {
               5k+
             </div>
             <div className="flex items-center justify-center gap-1 text-xs text-parchment-dim uppercase tracking-[0.2em] mt-2 font-bold">
-              <span className="material-symbols-outlined text-[14px]">forum</span>
               Tales Told
             </div>
           </div>
@@ -120,7 +118,6 @@ export const SplashHero = ({ user }: SplashHeroProps) => {
               Open
             </div>
             <div className="flex items-center justify-center gap-1 text-xs text-parchment-dim uppercase tracking-[0.2em] mt-2 font-bold">
-              <span className="material-symbols-outlined text-[14px]">gate</span>
               To All
             </div>
           </div>

@@ -1,21 +1,15 @@
-- [x] Examine current splash page implementation and font usage
-- [x] Research fantasy fonts with clear C vs O distinction  
-- [x] Provide font recommendations with examples
-- [x] Test Uncial Antiqua font (user feedback: "isn't great")
-- [x] Try MedievalSharp font (user feedback: "too blocky")
-- [x] Try Caesar Dressing font (user feedback: "too rune/block like")
-- [x] Try Rye font (user feedback: "closer, but the large heading looks strange")
-- [x] Try Almendra Display font (user feedback: "a lot better, but too hard to read")
-- [x] Try Cinzel font (regular version - user feedback: "I want something with more of a cursive feeling")
-- [x] Try Dancing Script font (cursive style - user feedback: "none of these are quite right")
-- [x] Create working font tester for user to choose from
-- [x] Remove font tester components (user feedback: "this isn't working, please remove the font-tester")
-- [x] Try Kaushan Script font (user request)
-- [x] Try Fleur De Leah font (user request)
-- [x] Try Pacifico font (user request)
-- [x] Try Eagle Lake font (user request)
-- [x] Try Cormorant Unicase font (user request)
-- [x] Try Metamorphous font (user feedback: "not quite")
-- [x] Try Quintessential font (user feedback: "this is good")
-- [x] Resolve font clipping issues (user feedback: "only looks like font is getting cut off")
-- [x] Make BotCafé text larger while keeping action buttons visible (user request - final size optimized)
+# Task: Fix Splash Page Spacing
+
+## Goal: Center the text elements ("100+ spirits bound", "5k+ tales told", "open to all") vertically in their boxes
+
+## Steps:
+- [ ] Examine current splash-hero component implementation
+- [ ] Identify the problematic styling causing elements to sit on top of footer
+- [ ] Fix vertical centering in the text boxes
+- [ ] Test the changes to ensure proper spacing
+- [ ] Verify the layout works across different screen sizes
+
+## Notes:
+- Elements currently sitting directly on top of footer
+- Need better vertical centering within their containers
+- Maintain responsive design

@@ -168,6 +168,8 @@
   --font-lore: var(--font-lore), serif;
   --font-body: var(--font-body), sans-serif;
   
+  /* Fantasy font families removed - cleaned up */
+  
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
   --animate-float: float 8s ease-in-out infinite;

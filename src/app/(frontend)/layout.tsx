@@ -1,5 +1,5 @@
 import React from 'react'
-import { Inter, Cinzel_Decorative, Crimson_Text } from 'next/font/google'
+import { Inter, Quintessential, Crimson_Text } from 'next/font/google'
 import { Toaster } from '@/components/ui/sonner'
 import './styles.css'
 
@@ -8,9 +8,9 @@ const inter = Inter({
   variable: '--font-body',
 })
 
-const cinzelDecorative = Cinzel_Decorative({
+const quintessential = Quintessential({
   subsets: ['latin'],
-  weight: ['400', '700', '900'],
+  weight: ['400'],
   variable: '--font-display',
 })
 
@@ -32,7 +32,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${cinzelDecorative.variable} ${crimsonText.variable} font-body antialiased`}
+        className={`${inter.variable} ${quintessential.variable} ${crimsonText.variable} font-body antialiased`}
       >
         {children}
         <Toaster />

@@ -89,35 +89,35 @@ export const SplashHero = ({ user }: SplashHeroProps) => {
           </Button>
         </div>
 
-        {/* Stats Section */}
-        <div className="mt-16 sm:mt-24 flex flex-wrap items-center justify-center gap-x-16 gap-y-10 border-t border-gold-ancient/20 pt-10 px-10 bg-gradient-to-b from-forest-deep/30 to-transparent rounded-t-3xl backdrop-blur-sm">
-          <div className="text-center group w-full sm:w-auto">
-            <div className="font-display font-bold text-4xl text-gold-rich group-hover:scale-110 transition-transform duration-300 drop-shadow-md">
+        {/* Stats Section - Compact spacing */}
+        <div className="mt-16 sm:mt-24 flex flex-wrap items-center justify-center gap-x-12 gap-y-6 border-t border-gold-ancient/20 pt-6 pb-4 px-8 bg-gradient-to-b from-forest-deep/30 to-transparent rounded-t-3xl backdrop-blur-sm">
+          <div className="flex flex-col items-center justify-center text-center group w-full sm:w-auto">
+            <div className="font-display font-bold text-4xl text-gold-rich group-hover:scale-110 transition-transform duration-300 drop-shadow-md mb-2">
               100+
             </div>
-            <div className="flex items-center justify-center gap-1 text-xs text-parchment-dim uppercase tracking-[0.2em] mt-2 font-bold">
+            <div className="text-xs text-parchment-dim uppercase tracking-[0.2em] font-bold leading-tight">
               Spirits Bound
             </div>
           </div>
 
-          <div className="hidden sm:block w-px h-12 bg-gradient-to-b from-transparent via-gold-ancient/40 to-transparent"></div>
+          <div className="hidden sm:block w-px h-16 bg-gradient-to-b from-transparent via-gold-ancient/40 to-transparent"></div>
 
-          <div className="text-center group w-full sm:w-auto">
-            <div className="font-display font-bold text-4xl text-gold-rich group-hover:scale-110 transition-transform duration-300 drop-shadow-md">
+          <div className="flex flex-col items-center justify-center text-center group w-full sm:w-auto">
+            <div className="font-display font-bold text-4xl text-gold-rich group-hover:scale-110 transition-transform duration-300 drop-shadow-md mb-2">
               5k+
             </div>
-            <div className="flex items-center justify-center gap-1 text-xs text-parchment-dim uppercase tracking-[0.2em] mt-2 font-bold">
+            <div className="text-xs text-parchment-dim uppercase tracking-[0.2em] font-bold leading-tight">
               Tales Told
             </div>
           </div>
 
-          <div className="hidden sm:block w-px h-12 bg-gradient-to-b from-transparent via-gold-ancient/40 to-transparent"></div>
+          <div className="hidden sm:block w-px h-16 bg-gradient-to-b from-transparent via-gold-ancient/40 to-transparent"></div>
 
-          <div className="text-center group w-full sm:w-auto">
-            <div className="font-display font-bold text-4xl text-magic-teal group-hover:scale-110 transition-transform duration-300 drop-shadow-[0_0_8px_rgba(45,212,191,0.5)]">
+          <div className="flex flex-col items-center justify-center text-center group w-full sm:w-auto">
+            <div className="font-display font-bold text-4xl text-magic-teal group-hover:scale-110 transition-transform duration-300 drop-shadow-[0_0_8px_rgba(45,212,191,0.5)] mb-2">
               Open
             </div>
-            <div className="flex items-center justify-center gap-1 text-xs text-parchment-dim uppercase tracking-[0.2em] mt-2 font-bold">
+            <div className="text-xs text-parchment-dim uppercase tracking-[0.2em] font-bold leading-tight">
               To All
             </div>
           </div>

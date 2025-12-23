@@ -232,6 +232,9 @@ export interface Bot {
     | null;
   slug: string;
   knowledge_collections?: (number | KnowledgeCollection)[] | null;
+  likes_count?: number | null;
+  favorites_count?: number | null;
+  creator_display_name: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -2620,6 +2623,9 @@ export interface BotSelect<T extends boolean = true> {
       };
   slug?: T;
   knowledge_collections?: T;
+  likes_count?: T;
+  favorites_count?: T;
+  creator_display_name?: T;
   updatedAt?: T;
   createdAt?: T;
 }

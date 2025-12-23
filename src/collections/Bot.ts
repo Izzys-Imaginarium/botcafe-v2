@@ -87,5 +87,20 @@ export const Bot: CollectionConfig = {
       relationTo: 'knowledgeCollections',
       hasMany: true,
     },
+    {
+      name: 'likes_count',
+      type: 'number',
+      defaultValue: 0,
+    },
+    {
+      name: 'favorites_count',
+      type: 'number',
+      defaultValue: 0,
+    },
+    {
+      name: 'creator_display_name',
+      type: 'text',
+      required: true,
+    },
   ],
 }

@@ -82,7 +82,16 @@
       "name": "botcafe-v2-dev",
       "vars": {
         "NEXT_PUBLIC_SITE_URL": "http://localhost:3000",
+        "NEXT_PUBLIC_CLERK_SIGN_IN_URL": "/sign-in",
+        "NEXT_PUBLIC_CLERK_SIGN_UP_URL": "/sign-up",
+        "NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL": "/account",
+        "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL": "/account",
+        "FROM_EMAIL": "noreply@botcafe.ai",
+        "FROM_NAME": "BotCafe Admin",
         "CLOUDFLARE_ENV": "development",
+      },
+      "images": {
+        "binding": "IMAGES",
       },
       "d1_databases": [
         {
@@ -109,7 +118,16 @@
       "name": "botcafe-v2-staging",
       "vars": {
         "NEXT_PUBLIC_SITE_URL": "https://staging.botcafe.ai",
+        "NEXT_PUBLIC_CLERK_SIGN_IN_URL": "/sign-in",
+        "NEXT_PUBLIC_CLERK_SIGN_UP_URL": "/sign-up",
+        "NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL": "/account",
+        "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL": "/account",
+        "FROM_EMAIL": "noreply@botcafe.ai",
+        "FROM_NAME": "BotCafe Admin",
         "CLOUDFLARE_ENV": "staging",
+      },
+      "images": {
+        "binding": "IMAGES",
       },
       "d1_databases": [
         {
@@ -136,7 +154,16 @@
       "name": "botcafe-v2-prod",
       "vars": {
         "NEXT_PUBLIC_SITE_URL": "https://botcafe.ai",
+        "NEXT_PUBLIC_CLERK_SIGN_IN_URL": "/sign-in",
+        "NEXT_PUBLIC_CLERK_SIGN_UP_URL": "/sign-up",
+        "NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL": "/account",
+        "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL": "/account",
+        "FROM_EMAIL": "noreply@botcafe.ai",
+        "FROM_NAME": "BotCafe Admin",
         "CLOUDFLARE_ENV": "production",
+      },
+      "images": {
+        "binding": "IMAGES",
       },
       "d1_databases": [
         {

@@ -5,8 +5,9 @@ import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
-import { Menu, Coffee, Moon, MessageCircle } from 'lucide-react'
+import { Menu, Coffee, Moon, MessageCircle, LogOut, User } from 'lucide-react'
 import { NavbarSidebar } from './navbar-sidebar'
+import { useUser, UserButton, SignInButton, SignOutButton } from '@clerk/nextjs'
 
 interface NavbarItemProps {
   href: string
@@ -43,6 +44,7 @@ interface NavbarProps {
 export const Navbar = ({ user }: NavbarProps) => {
   const pathname = usePathname()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const { isSignedIn } = useUser()
 
   return (
     <header className="fixed top-0 w-full z-50 border-b border-gold-ancient/30 bg-[#0a140a]/80 backdrop-blur-md transition-colors duration-300">
@@ -82,17 +84,28 @@ export const Navbar = ({ user }: NavbarProps) => {
               <Moon className="h-5 w-5" />
             </Button>
             <div className="h-8 w-px bg-gold-ancient/30 hidden sm:block mx-2"></div>
-            {user ? (
-              <span className="text-sm font-display font-bold text-gold-rich tracking-widest">
-                {user.email}
-              </span>
+            {isSignedIn ? (
+              <UserButton
+                appearance={{
+                  elements: {
+                    avatarBox: 'w-8 h-8',
+                    userButtonPopoverCard: 'glass-rune border-gold-ancient/30',
+                    userButtonPopoverActionButton: 'text-parchment hover:bg-gold-ancient/20',
+                    userButtonPopoverActionButtonText: 'text-parchment font-lore',
+                  },
+                }}
+                afterSignOutUrl="/"
+              />
             ) : (
-              <Link
-                href="#"
-                className="text-sm font-display font-bold text-gold-rich hover:text-parchment transition-colors hidden sm:block tracking-widest"
-              >
-                LOGIN
-              </Link>
+              <SignInButton>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="ornate-border bg-gold-ancient/20 hover:bg-gold-ancient/30 text-gold-rich border-gold-ancient/30"
+                >
+                  Sign In
+                </Button>
+              </SignInButton>
             )}
             <div className="hidden xl:flex items-center gap-3 ml-2 text-gold-ancient/70">
               <Link href="#" className="hover:text-[#5865F2] transition-colors">

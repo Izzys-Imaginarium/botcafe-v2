@@ -1,5 +1,6 @@
 import React from 'react'
 import { Inter, Quintessential, Crimson_Text } from 'next/font/google'
+import { ClerkProvider } from '@clerk/nextjs'
 import { Toaster } from '@/components/ui/sonner'
 import './styles.css'
 
@@ -30,13 +31,15 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
   const { children } = props
 
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
-      <body
-        className={`${inter.variable} ${quintessential.variable} ${crimsonText.variable} font-body antialiased`}
-      >
-        {children}
-        <Toaster />
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" className="dark" suppressHydrationWarning>
+        <body
+          className={`${inter.variable} ${quintessential.variable} ${crimsonText.variable} font-body antialiased`}
+        >
+          {children}
+          <Toaster />
+        </body>
+      </html>
+    </ClerkProvider>
   )
 }

@@ -13,6 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
 
+export const dynamic = 'force-dynamic'
+
 // Multi-step form wizard components
 const steps = [
   {

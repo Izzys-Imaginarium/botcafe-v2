@@ -1,6 +1,8 @@
 import { SignUp } from '@clerk/nextjs'
 import { MagicalBackground } from '@/modules/home/ui/components/magical-background'
 
+export const dynamic = 'force-dynamic'
+
 export default function SignUpPage() {
   return (
     <>

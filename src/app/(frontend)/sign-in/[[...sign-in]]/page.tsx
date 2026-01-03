@@ -29,10 +29,6 @@ export default function SignInPage() {
                 footerActionLink: 'text-gold-rich hover:text-glow-gold',
               },
             }}
-            routing="path"
-            path="/sign-in"
-            redirectUrl="/account"
-            signUpUrl="/sign-up"
           />
         </div>
       </div>

@@ -1,79 +1,138 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
-// Mock data for now - will be replaced with actual data fetching
 interface BotData {
-  id: string
+  id: string | number
   name: string
   description: string
   creator_display_name: string
   likes_count: number
   favorites_count: number
-  gender: string
-  picture: string | null
+  gender?: string
+  picture?: string | number | null
   is_public: boolean
 }
 
-const mockBots: BotData[] = [
-  {
-    id: '1',
-    name: 'Mystic Sage',
-    description: 'An ancient wisdom keeper with knowledge of the arcane arts and mystical realms.',
-    creator_display_name: 'Elena the Wise',
-    likes_count: 42,
-    favorites_count: 18,
-    gender: 'female',
-    picture: null,
-    is_public: true,
-  },
-  {
-    id: '2',
-    name: 'Forest Guardian',
-    description:
-      'A protective spirit of the woodland, offering guidance to those who respect nature.',
-    creator_display_name: 'Thorn Keeper',
-    likes_count: 35,
-    favorites_count: 24,
-    gender: 'non-binary',
-    picture: null,
-    is_public: true,
-  },
-  {
-    id: '3',
-    name: 'Quantum Scholar',
-    description:
-      'A brilliant mind focused on science and technology, helping users understand complex concepts.',
-    creator_display_name: 'Dr. Astra Nova',
-    likes_count: 67,
-    favorites_count: 45,
-    gender: 'prefer-not-to-say',
-    picture: null,
-    is_public: true,
-  },
-  {
-    id: '4',
-    name: 'Ember Heart',
-    description:
-      'A warm and nurturing companion perfect for emotional support and creative conversations.',
-    creator_display_name: 'Luna Dawn',
-    likes_count: 89,
-    favorites_count: 67,
-    gender: 'female',
-    picture: null,
-    is_public: true,
-  },
-]
+interface BotListResponse {
+  bots: BotData[]
+  totalPages: number
+  currentPage: number
+  totalDocs: number
+  hasNextPage: boolean
+  hasPrevPage: boolean
+}
 
 export const BotList = () => {
+  const searchParams = useSearchParams()
+  const [bots, setBots] = useState<BotData[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+
+  useEffect(() => {
+    const fetchBots = async () => {
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        const params = new URLSearchParams()
+        params.set('page', currentPage.toString())
+        params.set('limit', '12')
+
+        const sort = searchParams.get('sort')
+        const search = searchParams.get('search')
+
+        if (sort) params.set('sort', sort)
+        if (search) params.set('search', search)
+
+        const response = await fetch(`/api/bots/explore?${params.toString()}`)
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch bots')
+        }
+
+        const data: BotListResponse = await response.json()
+        setBots(data.bots)
+        setTotalPages(data.totalPages)
+      } catch (err: any) {
+        console.error('Error fetching bots:', err)
+        setError(err.message || 'Failed to load bots')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchBots()
+  }, [searchParams, currentPage])
+
+  if (isLoading) {
+    return <BotListSkeleton />
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-parchment-dim font-lore">{error}</p>
+        <Button
+          onClick={() => window.location.reload()}
+          className="mt-4 bg-forest hover:bg-forest/90 text-white"
+        >
+          Try Again
+        </Button>
+      </div>
+    )
+  }
+
+  if (bots.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-parchment-dim font-lore text-lg">No bots found</p>
+        <p className="text-parchment-dim font-lore text-sm mt-2">
+          Try adjusting your filters or create your own bot!
+        </p>
+      </div>
+    )
+  }
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {mockBots.map((bot) => (
-        <BotCard key={bot.id} bot={bot} />
-      ))}
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        {bots.map((bot) => (
+          <BotCard key={bot.id} bot={bot} />
+        ))}
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-4 mt-8">
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="glass-rune border-gold-ancient/30 hover:border-gold-rich"
+          >
+            Previous
+          </Button>
+          <span className="text-parchment font-lore">
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="glass-rune border-gold-ancient/30 hover:border-gold-rich"
+          >
+            Next
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
@@ -83,7 +142,7 @@ interface BotCardProps {
 }
 
 const BotCard = ({ bot }: BotCardProps) => {
-  const getGenderIcon = (gender: string) => {
+  const getGenderIcon = (gender?: string) => {
     switch (gender) {
       case 'male':
         return '♂'
@@ -105,50 +164,65 @@ const BotCard = ({ bot }: BotCardProps) => {
       .slice(0, 2)
   }
 
+  // Handle picture - it could be a media ID or URL
+  const getPictureUrl = (picture?: string | number | null) => {
+    if (!picture) return undefined
+    if (typeof picture === 'string') return picture
+    // If it's a number (media ID), we'd need to fetch the media URL
+    // For now, return undefined and show initials
+    return undefined
+  }
+
   return (
     <Card className="glass-rune hover:scale-105 hover:shadow-[0_10px_40px_-10px_rgba(212,175,55,0.3)] transition-all duration-300 group">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <Avatar className="h-12 w-12 border-2 border-gold-ancient/30">
-              <AvatarImage src={bot.picture || undefined} />
+              <AvatarImage src={getPictureUrl(bot.picture)} />
               <AvatarFallback className="bg-[#0a140a] text-gold-rich font-display">
                 {getInitials(bot.name)}
               </AvatarFallback>
             </Avatar>
             <div>
-              <CardTitle className="text-parchment font-display text-lg group-hover:text-glow-gold transition-all">
+              <CardTitle className="text-parchment font-display text-lg group-hover:text-gold-rich transition-all">
                 {bot.name}
               </CardTitle>
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-xs text-parchment-dim">{getGenderIcon(bot.gender)}</span>
+                {bot.gender && (
+                  <span className="text-xs text-parchment-dim">{getGenderIcon(bot.gender)}</span>
+                )}
                 <span className="text-xs text-parchment-dim font-lore">
                   by {bot.creator_display_name}
                 </span>
               </div>
             </div>
           </div>
-          <Badge
-            variant="secondary"
-            className="bg-gold-ancient/20 text-gold-rich border-gold-ancient/30"
-          >
-            Public
-          </Badge>
+          {bot.is_public && (
+            <Badge
+              variant="secondary"
+              className="bg-gold-ancient/20 text-gold-rich border-gold-ancient/30"
+            >
+              Public
+            </Badge>
+          )}
         </div>
       </CardHeader>
 
       <CardContent className="pt-0">
-        <p className="text-parchment-dim font-lore text-sm mb-4 line-clamp-3">{bot.description}</p>
+        <p className="text-parchment-dim font-lore text-sm mb-4 line-clamp-3">
+          {bot.description || 'No description provided'}
+        </p>
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
               <span className="text-magic-glow">♥</span>
-              <span className="text-parchment font-lore text-sm">{bot.likes_count}</span>
+              <span className="text-parchment font-lore text-sm">{bot.likes_count || 0}</span>
             </div>
             <div className="flex items-center gap-1">
               <span className="text-magic-teal">★</span>
-              <span className="text-parchment font-lore text-sm">{bot.favorites_count}</span>
+              <span className="text-parchment font-lore text-sm">{bot.favorites_count || 0}</span>
             </div>
           </div>
 
@@ -167,7 +241,7 @@ const BotCard = ({ bot }: BotCardProps) => {
 
 export const BotListSkeleton = () => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
       {[...Array(8)].map((_, i) => (
         <Card key={i} className="glass-rune animate-pulse">
           <CardHeader className="pb-3">

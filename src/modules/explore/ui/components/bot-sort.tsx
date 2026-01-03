@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Select,
   SelectContent,
@@ -9,10 +10,20 @@ import {
 } from '@/components/ui/select'
 
 export const BotSort = () => {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const currentSort = searchParams.get('sort') || 'recent'
+
+  const handleSortChange = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('sort', value)
+    router.push(`?${params.toString()}`)
+  }
+
   return (
     <div className="flex items-center gap-2">
       <label className="text-parchment font-lore text-sm whitespace-nowrap">Sort by</label>
-      <Select>
+      <Select value={currentSort} onValueChange={handleSortChange}>
         <SelectTrigger className="w-48 glass-rune border-gold-ancient/30 bg-[#0a140a]/50 text-parchment">
           <SelectValue placeholder="Choose sort option" />
         </SelectTrigger>
@@ -34,12 +45,6 @@ export const BotSort = () => {
             className="text-parchment hover:bg-gold-ancient/20 focus:bg-gold-ancient/20"
           >
             Creator
-          </SelectItem>
-          <SelectItem
-            value="description"
-            className="text-parchment hover:bg-gold-ancient/20 focus:bg-gold-ancient/20"
-          >
-            Description
           </SelectItem>
           <SelectItem
             value="likes"

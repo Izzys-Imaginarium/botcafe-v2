@@ -1,12 +1,30 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
 
 export const BotFilters = () => {
-  const [searchQuery, setSearchQuery] = useState('')
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
+
+  // Debounce search
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString())
+      if (searchQuery) {
+        params.set('search', searchQuery)
+      } else {
+        params.delete('search')
+      }
+      router.push(`?${params.toString()}`)
+    }, 500)
+
+    return () => clearTimeout(timeoutId)
+  }, [searchQuery, router, searchParams])
 
   return (
     <Card className="glass-rune p-6 space-y-6">

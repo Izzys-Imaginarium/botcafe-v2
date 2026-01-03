@@ -66,8 +66,9 @@ export default function CreateBotPage() {
     slug: '',
     speech_examples: [''],
     knowledge_collections: [],
-    picture: null,
+    picture: null as File | null,
   })
+  const [picturePreview, setPicturePreview] = useState<string | null>(null)
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -89,6 +90,25 @@ export default function CreateBotPage() {
 
   const handleInputChange = (field: string, value: any) => {
     setBotData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setBotData(prev => ({ ...prev, picture: file }))
+
+      // Create preview
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setPicturePreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleRemoveImage = () => {
+    setBotData(prev => ({ ...prev, picture: null }))
+    setPicturePreview(null)
   }
 
   const handleSpeechExampleChange = (index: number, value: string) => {
@@ -147,13 +167,43 @@ export default function CreateBotPage() {
     }
 
     setIsSubmitting(true)
-    
+
     try {
+      let pictureId: string | number | undefined = undefined
+
+      // Upload image first if provided
+      if (botData.picture) {
+        const formData = new FormData()
+        formData.append('file', botData.picture)
+        formData.append('alt', `${botData.name} profile picture`)
+
+        const uploadResponse = await fetch('/api/media', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (uploadResponse.ok) {
+          const uploadResult = await uploadResponse.json() as { doc: { id: string | number } }
+          pictureId = uploadResult.doc.id
+        } else {
+          toast.error('Failed to upload image. Creating bot without picture.')
+        }
+      }
+
       // Clean up empty speech examples
       const cleanedData = {
-        ...botData,
-        speech_examples: botData.speech_examples.filter(example => example.trim() !== ''),
+        name: botData.name,
+        creator_display_name: botData.creator_display_name,
+        description: botData.description,
+        system_prompt: botData.system_prompt,
+        greeting: botData.greeting,
+        gender: botData.gender,
         age: botData.age ? parseInt(botData.age.toString()) : undefined,
+        is_public: botData.is_public,
+        slug: botData.slug,
+        speech_examples: botData.speech_examples.filter(example => example.trim() !== ''),
+        knowledge_collections: botData.knowledge_collections,
+        picture: pictureId,
       }
 
       const response = await fetch('/api/bots', {
@@ -165,9 +215,10 @@ export default function CreateBotPage() {
       })
 
       if (response.ok) {
-        const newBot = await response.json() as { slug: string }
-        toast.success('Bot created successfully!')
-        router.push(`/bot/${newBot.slug}`)
+        const result = await response.json() as { slug: string; message: string }
+        toast.success(result.message || 'Bot created successfully!')
+        // Redirect to explore page (bot detail page will be implemented later)
+        router.push('/explore')
       } else {
         const error = await response.json() as { message: string }
         toast.error(error.message || 'Failed to create bot')
@@ -182,8 +233,8 @@ export default function CreateBotPage() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-[#020402] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#4d7c0f]"></div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-forest"></div>
       </div>
     )
   }
@@ -347,8 +398,8 @@ export default function CreateBotPage() {
         return (
           <div className="space-y-6">
             <div className="text-center py-8">
-              <Sparkles className="h-12 w-12 mx-auto text-[#4d7c0f] mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Knowledge Base</h3>
+              <Sparkles className="h-12 w-12 mx-auto text-forest mb-4" />
+              <h3 className="text-lg font-semibold mb-2 text-gold-rich">Knowledge Base</h3>
               <p className="text-muted-foreground mb-4">
                 Connect knowledge collections to give your bot specialized knowledge.
               </p>
@@ -362,15 +413,57 @@ export default function CreateBotPage() {
       case 3:
         return (
           <div className="space-y-6">
-            <div className="text-center py-8">
-              <Image className="h-12 w-12 mx-auto text-[#4d7c0f] mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Bot Appearance</h3>
-              <p className="text-muted-foreground mb-4">
-                Upload a profile picture for your bot.
-              </p>
+            <div className="space-y-4">
+              <Label htmlFor="picture">Bot Profile Picture</Label>
               <p className="text-sm text-muted-foreground">
-                This feature will be available after creating the bot. You can upload images later.
+                Upload an image that represents your bot (optional)
               </p>
+
+              {picturePreview ? (
+                <div className="space-y-4">
+                  <div className="relative w-48 h-48 mx-auto">
+                    <img
+                      src={picturePreview}
+                      alt="Bot preview"
+                      className="w-full h-full object-cover rounded-lg border-2 border-forest glass-rune"
+                    />
+                  </div>
+                  <div className="text-center">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleRemoveImage}
+                      className="glass-rune border-gold-ancient/30 hover:border-gold-rich hover:text-gold-rich"
+                    >
+                      Remove Image
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-gold-ancient/30 rounded-lg p-8 text-center glass-rune">
+                  <Image className="h-12 w-12 mx-auto text-gold-ancient mb-4" />
+                  <input
+                    type="file"
+                    id="picture"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    asChild
+                    variant="outline"
+                    className="glass-rune border-gold-ancient/30 hover:border-gold-rich hover:text-gold-rich"
+                  >
+                    <label htmlFor="picture" className="cursor-pointer">
+                      Choose Image
+                    </label>
+                  </Button>
+                  <p className="text-sm text-parchment-dim mt-2">
+                    PNG, JPG, GIF up to 10MB
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )
@@ -379,38 +472,51 @@ export default function CreateBotPage() {
         return (
           <div className="space-y-6">
             <div className="text-center mb-6">
-              <Wand2 className="h-12 w-12 mx-auto text-[#4d7c0f] mb-4" />
-              <h3 className="text-lg font-semibold">Review Your Bot</h3>
+              <Wand2 className="h-12 w-12 mx-auto text-forest mb-4" />
+              <h3 className="text-lg font-semibold text-gold-rich">Review Your Bot</h3>
               <p className="text-muted-foreground">Double-check everything before creating your bot.</p>
             </div>
             
             <div className="grid gap-4">
-              <div className="p-4 border rounded-lg glass-rune">
-                <h4 className="font-semibold mb-2">Basic Information</h4>
-                <div className="space-y-1 text-sm">
-                  <p><span className="font-medium">Name:</span> {botData.name}</p>
-                  <p><span className="font-medium">Display Name:</span> {botData.creator_display_name}</p>
-                  <p><span className="font-medium">Slug:</span> {botData.slug}</p>
-                  {botData.description && <p><span className="font-medium">Description:</span> {botData.description}</p>}
+              {picturePreview && (
+                <div className="p-4 border border-gold-ancient/30 rounded-lg glass-rune">
+                  <h4 className="font-semibold mb-2 text-gold-rich">Profile Picture</h4>
+                  <div className="flex justify-center">
+                    <img
+                      src={picturePreview}
+                      alt="Bot preview"
+                      className="w-32 h-32 object-cover rounded-lg border-2 border-forest"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="p-4 border border-gold-ancient/30 rounded-lg glass-rune">
+                <h4 className="font-semibold mb-2 text-gold-rich">Basic Information</h4>
+                <div className="space-y-1 text-sm text-parchment">
+                  <p><span className="font-medium text-parchment-dim">Name:</span> {botData.name}</p>
+                  <p><span className="font-medium text-parchment-dim">Display Name:</span> {botData.creator_display_name}</p>
+                  <p><span className="font-medium text-parchment-dim">Slug:</span> {botData.slug}</p>
+                  {botData.description && <p><span className="font-medium text-parchment-dim">Description:</span> {botData.description}</p>}
                 </div>
               </div>
-              
-              <div className="p-4 border rounded-lg glass-rune">
-                <h4 className="font-semibold mb-2">Personality</h4>
-                <div className="space-y-1 text-sm">
-                  <p><span className="font-medium">Gender:</span> {botData.gender || 'Not specified'}</p>
-                  <p><span className="font-medium">Age:</span> {botData.age || 'Not specified'}</p>
-                  {botData.greeting && <p><span className="font-medium">Greeting:</span> {botData.greeting}</p>}
+
+              <div className="p-4 border border-gold-ancient/30 rounded-lg glass-rune">
+                <h4 className="font-semibold mb-2 text-gold-rich">Personality</h4>
+                <div className="space-y-1 text-sm text-parchment">
+                  <p><span className="font-medium text-parchment-dim">Gender:</span> {botData.gender || 'Not specified'}</p>
+                  <p><span className="font-medium text-parchment-dim">Age:</span> {botData.age || 'Not specified'}</p>
+                  {botData.greeting && <p><span className="font-medium text-parchment-dim">Greeting:</span> {botData.greeting}</p>}
                   {botData.speech_examples.filter(e => e.trim()).length > 0 && (
-                    <p><span className="font-medium">Speech Examples:</span> {botData.speech_examples.filter(e => e.trim()).length}</p>
+                    <p><span className="font-medium text-parchment-dim">Speech Examples:</span> {botData.speech_examples.filter(e => e.trim()).length}</p>
                   )}
                 </div>
               </div>
-              
-              <div className="p-4 border rounded-lg glass-rune">
-                <h4 className="font-semibold mb-2">Settings</h4>
-                <div className="space-y-1 text-sm">
-                  <p><span className="font-medium">Public:</span> {botData.is_public ? 'Yes' : 'No'}</p>
+
+              <div className="p-4 border border-gold-ancient/30 rounded-lg glass-rune">
+                <h4 className="font-semibold mb-2 text-gold-rich">Settings</h4>
+                <div className="space-y-1 text-sm text-parchment">
+                  <p><span className="font-medium text-parchment-dim">Public:</span> {botData.is_public ? 'Yes' : 'No'}</p>
                 </div>
               </div>
             </div>
@@ -432,11 +538,11 @@ export default function CreateBotPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#020402] py-8">
+    <div className="min-h-screen bg-background py-8">
       <div className="container mx-auto px-4 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-[#d4af37] mb-2">Create Your Bot</h1>
+          <h1 className="text-3xl font-bold text-gold-rich mb-2 font-display">Create Your Bot</h1>
           <p className="text-muted-foreground">Build an AI companion with personality and purpose</p>
         </div>
 
@@ -444,43 +550,84 @@ export default function CreateBotPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             {steps.map((step, index) => (
-              <div
-                key={step.id}
-                className={`flex items-center ${
+              <React.Fragment key={step.id}>
+                <div className={`flex items-center ${
                   index < steps.length - 1 ? 'flex-1' : ''
-                }`}
-              >
-                <div
-                  className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
-                    index <= currentStep
-                      ? 'bg-[#4d7c0f] border-[#4d7c0f] text-white'
-                      : 'border-muted text-muted-foreground'
-                  }`}
-                >
-                  {index < currentStep ? (
-                    <Bot className="h-5 w-5" />
-                  ) : (
-                    <step.icon className="h-5 w-5" />
-                  )}
+                }`}>
+                  <div
+                    className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
+                      index <= currentStep
+                        ? 'bg-forest border-forest text-white'
+                        : 'border-muted text-muted-foreground'
+                    }`}
+                  >
+                    {index < currentStep ? (
+                      <Bot className="h-5 w-5" />
+                    ) : (
+                      <step.icon className="h-5 w-5" />
+                    )}
+                  </div>
+                  <span className="text-sm font-medium ml-2">{step.title}</span>
                 </div>
-                <span className="text-sm font-medium ml-2">{step.title}</span>
-              </div>
-              {index < steps.length - 1 && (
-                <div
-                  className={`flex-1 h-0.5 mx-4 ${
-                    index < currentStep ? 'bg-[#4d7c0f]' : 'bg-muted'
-                  }`}
-                />
-              )}
-            </div>
-          ))}
+                {index < steps.length - 1 && (
+                  <div
+                    className={`flex-1 h-0.5 mx-4 ${
+                      index < currentStep ? 'bg-forest' : 'bg-muted'
+                    }`}
+                  />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
         </div>
 
         {/* Form Content */}
         <Card className="glass-rune mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <steps[currentStep].icon className="h-5 w-5 text-[#4d7c0f]" />
+              {React.createElement(steps[currentStep].icon, { className: "h-5 w-5 text-forest" })}
               {steps[currentStep].title}
             </CardTitle>
-            <CardDescription>{steps[currentStep
+            <CardDescription>{steps[currentStep].description}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CurrentStepComponent />
+          </CardContent>
+        </Card>
+
+        {/* Navigation Buttons */}
+        <div className="flex justify-between">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={prevStep}
+            disabled={currentStep === 0}
+            className="glass-rune"
+          >
+            Previous
+          </Button>
+
+          {currentStep < steps.length - 1 ? (
+            <Button
+              type="button"
+              onClick={nextStep}
+              disabled={!validateCurrentStep()}
+              className="bg-forest hover:bg-forest/90 text-white"
+            >
+              Next Step
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSubmitting || !validateCurrentStep()}
+              className="bg-forest hover:bg-forest/90 text-white"
+            >
+              {isSubmitting ? 'Creating Bot...' : 'Create Bot'}
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}

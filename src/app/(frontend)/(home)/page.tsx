@@ -4,6 +4,8 @@ import config from '@/payload.config'
 import { SplashHero } from '@/modules/home/ui/components/splash-hero'
 import { MagicalBackground } from '@/modules/home/ui/components/magical-background'
 
+export const dynamic = 'force-dynamic'
+
 export default async function HomePage() {
   const headers = await getHeaders()
   const payloadConfig = await config

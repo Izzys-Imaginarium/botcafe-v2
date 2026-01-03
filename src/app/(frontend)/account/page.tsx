@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import { MagicalBackground } from '@/modules/home/ui/components/magical-background'
 import { AccountDashboard } from '@/modules/account/ui/views/account-dashboard'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AccountPage() {
   const user = await currentUser()
 

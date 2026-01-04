@@ -4,7 +4,7 @@
 
 Based on the sitemap, style guide, and database schema analysis, BotCafé v2 is a **massive enterprise-level fantasy AI platform** with:
 
-### ✅ **CURRENT COMPLETION STATUS: ~45%**
+### ✅ **CURRENT COMPLETION STATUS: ~48%**
 - **Fantasy UI/UX Foundation**: ✅ Beautiful theme system, homepage, basic navigation
 - **Authentication**: ✅ Clerk integration working with catch-all routes
 - **Database Architecture**: ✅ 30 comprehensive collections for multi-tenant SaaS (added BotInteraction, VectorRecord)
@@ -17,13 +17,14 @@ Based on the sitemap, style guide, and database schema analysis, BotCafé v2 is 
 - **Like/Favorite System**: ✅ Full interaction tracking with real-time updates
 - **RAG Infrastructure**: ✅ Vector database schema, chunking utilities, API endpoints
 - **Lore UI**: ✅ Dashboard, entries, and collections pages
+- **Lore Backend**: ✅ Full CRUD APIs for knowledge entries and collections
 
-### ❌ **MAJOR MISSING SYSTEMS (60% remaining)**
+### ❌ **MAJOR MISSING SYSTEMS (52% remaining)**
 
-**12 Major Site Sections Needed:**
+**14 Major Site Sections Needed:**
 1. **Home** ✅ - Complete splash page with magical effects
 2. **Explore** ✅ - Real bot data fetching with filters and search
-3. **Lore** 🔄 - Knowledge management system (UI complete, needs API integration)
+3. **Lore** ✅ - Knowledge management system (UI + backend CRUD complete, needs vectorization)
 4. **Create** ✅ - Bot creation/editing wizard (primary user flow)
 5. **Bot Detail** ✅ - Individual bot pages with stats, info, and interactions
 6. **Creators** ❌ - Multi-tenant creator profiles & showcase
@@ -125,15 +126,30 @@ By building foundational systems first, we avoid rework and ensure chat has all 
   - [x] Build `/lore/entries` knowledge entry creation UI ✅
   - [x] Build `/lore/collections` collection management UI ✅
   - [x] Test TypeScript compilation and Next.js build ✅
-- [ ] **Phase 4B: Lore API Integration** (Next)
-  - [ ] Connect entry creation form to Knowledge collection API
-  - [ ] Connect collection management to KnowledgeCollections API
-  - [ ] Implement file upload (R2) and text extraction
-  - [ ] Integrate real vectorization (OpenAI embeddings API)
-  - [ ] Connect to Cloudflare Vectorize for vector storage
-  - [ ] Implement real semantic search functionality
-  - [ ] Add bot linking to knowledge entries
-  - [ ] Test end-to-end: upload → chunk → vectorize → search
+- [x] **Phase 4B: Lore API Integration** ✅ **COMPLETED**
+  - [x] Connect entry creation form to Knowledge collection API ✅
+  - [x] Connect collection management to KnowledgeCollections API ✅
+  - [x] Create `/api/knowledge` endpoint (POST, GET) ✅
+  - [x] Create `/api/knowledge/[id]` endpoint (DELETE with vector cleanup) ✅
+  - [x] Create `/api/knowledge-collections` endpoint (POST, GET) ✅
+  - [x] Create `/api/knowledge-collections/[id]` endpoint (DELETE with safety checks) ✅
+  - [x] Fetch and display real collections in dropdown ✅
+  - [x] Fetch and display real knowledge entries ✅
+  - [x] Add delete functionality for entries and collections ✅
+  - [x] Fix all TypeScript compilation errors ✅
+  - [x] Verify Next.js production build passes ✅
+  - [ ] Implement file upload (R2) and text extraction (Deferred to Phase 4B.5)
+  - [ ] Integrate real vectorization (OpenAI embeddings API) (Next: Phase 4B.5)
+  - [ ] Connect to Cloudflare Vectorize for vector storage (Next: Phase 4B.5)
+  - [ ] Implement real semantic search functionality (Next: Phase 4B.5)
+- [ ] **Phase 4B.5: Real Vectorization Integration** (Next)
+  - [ ] Set up OpenAI API integration for embeddings
+  - [ ] Set up Cloudflare Vectorize binding
+  - [ ] Replace placeholder `/api/vectors/generate` with real OpenAI calls
+  - [ ] Replace placeholder `/api/vectors/search` with real Vectorize queries
+  - [ ] Test vectorization workflow: create entry → vectorize → search
+  - [ ] Add "Vectorize" button functionality in lore entries UI
+  - [ ] Display vectorization status and embedding metadata
 - [ ] **Phase 4C: Memory Vectorization**
   - [ ] Implement auto-summarization triggers
   - [ ] Build conversation context retrieval
@@ -242,8 +258,8 @@ By building foundational systems first, we avoid rework and ensure chat has all 
 ## 📊 **PROGRESS TRACKING**
 
 **Total Estimated Timeline: 21 weeks (5 months) for full completion**
-**Current ~45% complete**
-**Remaining Work: ~55% of the total project**
+**Current ~48% complete**
+**Remaining Work: ~52% of the total project**
 
 ### **Completed:**
 - ✅ **Home Page**: Complete splash page with magical effects
@@ -261,21 +277,26 @@ By building foundational systems first, we avoid rework and ensure chat has all 
 - ✅ **RAG Architecture**: Complete vector database schema and documentation
 - ✅ **Lore UI**: Dashboard, entries, and collections pages with fantasy theme
 
-### **Phase 4A Complete! 🎉**
-**Lore System Foundation** - All infrastructure implemented:
-- VectorRecord collection for tracking embeddings
-- Knowledge, Memory, and Conversation collections enhanced with RAG fields
-- Text chunking utilities with multiple strategies (paragraph, sentence, sliding)
-- Vector API endpoints (generate, search, delete) with placeholder implementations
-- Complete lore UI with dashboard, entry creation, and collection management
-- TypeScript compilation and Next.js build verified
+### **Phase 4B Complete! 🎉**
+**Lore API Integration** - Full backend CRUD operations:
+- Created `/api/knowledge` endpoint (POST for creation, GET for listing)
+- Created `/api/knowledge/[id]` endpoint (DELETE with automatic vector cleanup)
+- Created `/api/knowledge-collections` endpoint (POST, GET)
+- Created `/api/knowledge-collections/[id]` endpoint (DELETE with safety checks)
+- Connected lore UI to real backend APIs
+- Implemented real data fetching for collections and entries
+- Added delete functionality with confirmation dialogs
+- Fixed all TypeScript compilation errors with proper type assertions
+- Verified Next.js production build passes
+- Removed conflicting `/api/bots/[slug]` route
+- Development server running successfully
 
 ### **Immediate Next Steps:**
-1. Phase 4B: Connect lore UI to backend APIs (Knowledge/KnowledgeCollections)
-2. Integrate real vectorization (OpenAI + Cloudflare Vectorize)
-3. Implement file upload and text extraction
-4. Build memory management UI
-5. Continue with persona system
+1. Phase 4B.5: Integrate real vectorization (OpenAI + Cloudflare Vectorize)
+2. Implement file upload (R2) and text extraction
+3. Add semantic search functionality
+4. Build memory management UI (Phase 4C)
+5. Continue with persona system (Phase 5)
 
 ---
 
@@ -396,15 +417,20 @@ src/
 
 ### **2026-01-04 Updates:**
 - ✅ **Phase 4A Complete: Lore System Foundation**
-- ✅ Created VectorRecord collection for embedding tracking
-- ✅ Enhanced Knowledge, Memory, and Conversation collections with RAG fields
-- ✅ Implemented text chunking utilities (paragraph, sentence, sliding methods)
-- ✅ Created vector API endpoints (generate, search, delete) with placeholder implementations
-- ✅ Built complete lore UI:
-  - `/lore` - Dashboard with overview, recent entries, and search tabs
-  - `/lore/entries` - Knowledge entry creation with vectorization options
-  - `/lore/collections` - Collection management with dialog-based creation
-- ✅ Verified TypeScript compilation and Next.js production build
+- ✅ **Phase 4B Complete: Lore API Integration**
+- ✅ Created 4 new API endpoints for knowledge and collections:
+  - `/api/knowledge` (POST, GET) - Create and list knowledge entries
+  - `/api/knowledge/[id]` (DELETE) - Delete entries with vector cleanup
+  - `/api/knowledge-collections` (POST, GET) - Create and list collections
+  - `/api/knowledge-collections/[id]` (DELETE) - Delete collections with safety checks
+- ✅ Connected lore UI to real backend:
+  - Fetch real collections for dropdown in entry creation form
+  - Fetch and display real knowledge entries in browse tab
+  - Delete functionality for both entries and collections
+- ✅ Fixed all TypeScript compilation errors with type assertions
+- ✅ Removed conflicting `/api/bots/[slug]` route
+- ✅ Verified Next.js production build passes
+- ✅ Development server running successfully at http://localhost:3000
 
 ### **2026-01-03 Updates:**
 - ✅ Refactored bot creation form to be reusable for both create and edit
@@ -419,7 +445,7 @@ src/
 ---
 
 **Last Updated**: 2026-01-04
-**Version**: 2.1
-**Total Tasks**: 95
-**Completed**: 43
-**Progress**: 45%
+**Version**: 2.2
+**Total Tasks**: 102
+**Completed**: 49
+**Progress**: 48%

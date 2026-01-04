@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,15 +20,35 @@ import {
   Sparkles,
   ArrowLeft,
   Loader2,
-  Check
+  Check,
+  Trash2
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
+
+interface Collection {
+  id: string
+  name: string
+  description?: string
+}
+
+interface KnowledgeEntry {
+  id: string
+  entry: string
+  type: string
+  knowledge_collection: string | { id: string; name: string }
+  tags?: { tag: string }[]
+  tokens: number
+  is_vectorized: boolean
+  createdAt: string
+}
 
 export const LoreEntriesView = () => {
   const [activeTab, setActiveTab] = useState('create')
   const [isCreating, setIsCreating] = useState(false)
   const [isVectorizing, setIsVectorizing] = useState(false)
+  const [isLoadingCollections, setIsLoadingCollections] = useState(true)
+  const [isLoadingEntries, setIsLoadingEntries] = useState(false)
 
   // Form state
   const [entryType, setEntryType] = useState('text')
@@ -38,8 +58,70 @@ export const LoreEntriesView = () => {
   const [collection, setCollection] = useState('')
   const [applyToBots, setApplyToBots] = useState<string[]>([])
 
+  // Data state
+  const [collections, setCollections] = useState<Collection[]>([])
+  const [entries, setEntries] = useState<KnowledgeEntry[]>([])
+
+  // Fetch collections on mount
+  useEffect(() => {
+    fetchCollections()
+  }, [])
+
+  // Fetch entries when switching to browse tab
+  useEffect(() => {
+    if (activeTab === 'browse') {
+      fetchEntries()
+    }
+  }, [activeTab])
+
+  const fetchCollections = async () => {
+    setIsLoadingCollections(true)
+    try {
+      const response = await fetch('/api/knowledge-collections')
+      const data = (await response.json()) as {
+        success?: boolean
+        collections?: Collection[]
+        message?: string
+      }
+
+      if (data.success) {
+        setCollections(data.collections || [])
+      } else {
+        toast.error(data.message || 'Failed to fetch collections')
+      }
+    } catch (error) {
+      console.error('Error fetching collections:', error)
+      toast.error('Failed to fetch collections')
+    } finally {
+      setIsLoadingCollections(false)
+    }
+  }
+
+  const fetchEntries = async () => {
+    setIsLoadingEntries(true)
+    try {
+      const response = await fetch('/api/knowledge')
+      const data = (await response.json()) as {
+        success?: boolean
+        docs?: KnowledgeEntry[]
+        message?: string
+      }
+
+      if (data.success) {
+        setEntries(data.docs || [])
+      } else {
+        toast.error(data.message || 'Failed to fetch entries')
+      }
+    } catch (error) {
+      console.error('Error fetching entries:', error)
+      toast.error('Failed to fetch entries')
+    } finally {
+      setIsLoadingEntries(false)
+    }
+  }
+
   const handleCreateEntry = async () => {
-    if (!title || !content || !collection) {
+    if (!content || !collection) {
       toast.error('Please fill in all required fields')
       return
     }
@@ -47,22 +129,78 @@ export const LoreEntriesView = () => {
     setIsCreating(true)
 
     try {
-      // TODO: Implement actual API call
-      // For now, simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Parse tags
+      const tagArray = tags
+        ? tags.split(',').map((tag) => ({ tag: tag.trim() })).filter((t) => t.tag)
+        : []
 
-      toast.success('Entry created successfully!')
+      const response = await fetch('/api/knowledge', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: entryType,
+          entry: content,
+          knowledge_collection: collection,
+          tags: tagArray,
+          applies_to_bots: applyToBots,
+        }),
+      })
 
-      // Reset form
-      setTitle('')
-      setContent('')
-      setTags('')
-      setApplyToBots([])
+      const data = (await response.json()) as {
+        success?: boolean
+        knowledge?: KnowledgeEntry
+        message?: string
+      }
 
+      if (data.success) {
+        toast.success('Entry created successfully!')
+
+        // Reset form
+        setContent('')
+        setTags('')
+        setApplyToBots([])
+
+        // Refresh entries if on browse tab
+        if (activeTab === 'browse') {
+          fetchEntries()
+        }
+      } else {
+        toast.error(data.message || 'Failed to create entry')
+      }
     } catch (error: any) {
+      console.error('Error creating entry:', error)
       toast.error(error.message || 'Failed to create entry')
     } finally {
       setIsCreating(false)
+    }
+  }
+
+  const handleDeleteEntry = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this entry?')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/knowledge/${id}`, {
+        method: 'DELETE',
+      })
+
+      const data = (await response.json()) as {
+        success?: boolean
+        message?: string
+      }
+
+      if (data.success) {
+        toast.success('Entry deleted successfully!')
+        fetchEntries()
+      } else {
+        toast.error(data.message || 'Failed to delete entry')
+      }
+    } catch (error) {
+      console.error('Error deleting entry:', error)
+      toast.error('Failed to delete entry')
     }
   }
 
@@ -168,36 +306,31 @@ export const LoreEntriesView = () => {
                       <Label htmlFor="collection" className="text-parchment">
                         Collection <span className="text-red-400">*</span>
                       </Label>
-                      <Select value={collection} onValueChange={setCollection}>
+                      <Select value={collection} onValueChange={setCollection} disabled={isLoadingCollections}>
                         <SelectTrigger id="collection" className="glass-rune border-gold-ancient/30 text-parchment">
-                          <SelectValue placeholder="Select a collection" />
+                          <SelectValue placeholder={isLoadingCollections ? "Loading collections..." : "Select a collection"} />
                         </SelectTrigger>
                         <SelectContent className="glass-rune border-gold-ancient/30">
-                          <SelectItem value="create-new">
-                            <div className="flex items-center gap-2 text-gold-rich">
-                              <Plus className="w-4 h-4" />
-                              Create New Collection
+                          {collections.length === 0 && !isLoadingCollections && (
+                            <div className="px-2 py-4 text-center text-parchment/60 text-sm">
+                              No collections yet. Go to Collections page to create one.
                             </div>
-                          </SelectItem>
-                          <SelectItem value="general">General Knowledge</SelectItem>
-                          <SelectItem value="character-lore">Character Lore</SelectItem>
-                          <SelectItem value="world-building">World Building</SelectItem>
+                          )}
+                          {collections.map((coll) => (
+                            <SelectItem key={coll.id} value={coll.id}>
+                              {coll.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
-                    </div>
-
-                    {/* Title */}
-                    <div className="space-y-2">
-                      <Label htmlFor="title" className="text-parchment">
-                        Title <span className="text-red-400">*</span>
-                      </Label>
-                      <Input
-                        id="title"
-                        placeholder="Enter entry title"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        className="glass-rune border-gold-ancient/30 text-parchment placeholder:text-parchment/40"
-                      />
+                      {collections.length === 0 && !isLoadingCollections && (
+                        <p className="text-xs text-parchment/50">
+                          <Link href="/lore/collections" className="text-gold-rich hover:underline">
+                            Create your first collection
+                          </Link>{' '}
+                          to organize your knowledge entries
+                        </p>
+                      )}
                     </div>
 
                     {/* Content */}
@@ -350,12 +483,70 @@ export const LoreEntriesView = () => {
                 <CardTitle className="text-parchment">All Entries</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <BookOpen className="w-16 h-16 text-gold-ancient/50 mb-4" />
-                  <p className="text-parchment/60 font-lore italic">
-                    No entries yet. Create your first knowledge entry!
-                  </p>
-                </div>
+                {isLoadingEntries ? (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <Loader2 className="w-12 h-12 text-gold-rich animate-spin mb-4" />
+                    <p className="text-parchment/60">Loading entries...</p>
+                  </div>
+                ) : entries.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <BookOpen className="w-16 h-16 text-gold-ancient/50 mb-4" />
+                    <p className="text-parchment/60 font-lore italic">
+                      No entries yet. Create your first knowledge entry!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {entries.map((entry) => (
+                      <div
+                        key={entry.id}
+                        className="p-4 rounded-lg border border-gold-ancient/20 hover:border-gold-rich/50 transition-all bg-[#0a140a]/30"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary" className="bg-gold-ancient/20 text-gold-rich">
+                                {entry.type}
+                              </Badge>
+                              {entry.is_vectorized && (
+                                <Badge variant="secondary" className="bg-forest/20 text-forest-light">
+                                  <Sparkles className="w-3 h-3 mr-1" />
+                                  Vectorized
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-parchment font-lore line-clamp-3">{entry.entry}</p>
+                            <div className="flex items-center gap-4 text-xs text-parchment/50">
+                              <span>{entry.tokens} tokens</span>
+                              <span>•</span>
+                              <span>{new Date(entry.createdAt).toLocaleDateString()}</span>
+                              {entry.tags && entry.tags.length > 0 && (
+                                <>
+                                  <span>•</span>
+                                  <div className="flex gap-1">
+                                    {entry.tags.map((tag, idx) => (
+                                      <span key={idx} className="text-gold-rich">
+                                        #{tag.tag}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteEntry(entry.id)}
+                            className="text-parchment/60 hover:text-red-400"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

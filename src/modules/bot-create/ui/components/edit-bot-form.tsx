@@ -7,13 +7,14 @@ import { BotWizardForm, BotFormData } from './bot-wizard-form'
 import { toast } from 'sonner'
 
 interface EditBotFormProps {
-  botId: string | number
+  slug: string
 }
 
-export function EditBotForm({ botId }: EditBotFormProps) {
+export function EditBotForm({ slug }: EditBotFormProps) {
   const { user, isLoaded } = useUser()
   const router = useRouter()
   const [botData, setBotData] = useState<Partial<BotFormData> | null>(null)
+  const [botId, setBotId] = useState<string | number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -27,16 +28,19 @@ export function EditBotForm({ botId }: EditBotFormProps) {
   // Fetch existing bot data
   useEffect(() => {
     const fetchBot = async () => {
-      if (!botId) return
+      if (!slug) return
 
       try {
-        const response = await fetch(`/api/bots/${botId}`)
+        const response = await fetch(`/api/bots/${slug}`)
 
         if (!response.ok) {
           throw new Error('Failed to fetch bot data')
         }
 
         const data = await response.json() as any
+
+        // Store the bot ID for updates
+        setBotId(data.id)
 
         // Transform the API response to match BotFormData structure
         setBotData({
@@ -65,7 +69,7 @@ export function EditBotForm({ botId }: EditBotFormProps) {
     if (isLoaded && user) {
       fetchBot()
     }
-  }, [botId, isLoaded, user])
+  }, [slug, isLoaded, user])
 
   if (!isLoaded || isLoading) {
     return (
@@ -79,7 +83,7 @@ export function EditBotForm({ botId }: EditBotFormProps) {
     return null // Will redirect
   }
 
-  if (error || !botData) {
+  if (error || !botData || !botId) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">

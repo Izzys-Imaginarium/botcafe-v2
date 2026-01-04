@@ -99,15 +99,45 @@ By building foundational systems first, we avoid rework and ensure chat has all 
   - [x] Confirmation dialog
   - [x] Optimistic UI updates
 
-### **PHASE 4: Knowledge Management (Lore)** (Week 7-9)
-- [ ] Create `/lore` knowledge management system
-- [ ] Implement knowledge piece creation/upload
-- [ ] Create knowledge collections organization
-- [ ] Add knowledge search and filtering
-- [ ] Implement RAG integration foundation
-- [ ] Connect knowledge collections to bots
-- [ ] Add privacy controls (Private/Public/Shared)
-- [ ] Implement knowledge analytics
+### **PHASE 4: Knowledge Management (Lore)** (Week 7-9) **IN PROGRESS**
+- [x] **RAG Architecture Planning** ✅
+  - [x] Design unified vector database schema
+  - [x] Define metadata structure for Lore, Memories, and Legacy Memories
+  - [x] Document complete context-building strategy
+  - [x] Plan persona-aware filtering and participant tracking
+  - [x] Design memory lifecycle (conversation → summary → legacy lore)
+  - [x] Create comprehensive workflow examples
+  - [x] Document token budget management
+- [ ] **Phase 4A: Lore System Foundation**
+  - [ ] Create VectorRecord collection
+  - [ ] Update Knowledge collection with new fields
+  - [ ] Update Conversation collection with participant tracking
+  - [ ] Implement vector generation API (`/api/vectors/generate`)
+  - [ ] Implement semantic search API (`/api/vectors/search`)
+  - [ ] Build `/lore/entries` knowledge entry creation UI
+  - [ ] Build `/lore/collections` collection management UI
+  - [ ] Implement file upload (R2) and text extraction
+  - [ ] Integrate OpenAI embeddings API
+  - [ ] Implement chunking pipeline (500-750 token chunks)
+  - [ ] Connect to Cloudflare Vectorize
+  - [ ] Test end-to-end: upload → chunk → vectorize → search
+- [ ] **Phase 4B: Memory Vectorization**
+  - [ ] Update Memory collection with new fields
+  - [ ] Implement auto-summarization triggers
+  - [ ] Build conversation context retrieval
+  - [ ] Add memory vectorization pipeline
+  - [ ] Test conversation memory search
+- [ ] **Phase 4C: Legacy Memory System**
+  - [ ] Build `/memories/library` browsing UI
+  - [ ] Implement "Convert to Legacy Lore" workflow
+  - [ ] Build conversion UI with participant display
+  - [ ] Create legacy memory API endpoint
+  - [ ] Test dual-application (persona + bot contexts)
+- [ ] **Phase 4D: Integration & Polish**
+  - [ ] Add privacy controls (Private/Public/Shared)
+  - [ ] Implement knowledge analytics
+  - [ ] Performance optimization (caching, batching)
+  - [ ] Complete documentation
 
 ### **PHASE 5: Persona System** (Week 10-11)
 - [ ] Create `/personas` persona management pages

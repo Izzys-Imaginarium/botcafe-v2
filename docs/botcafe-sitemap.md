@@ -45,7 +45,12 @@ s
 │   ├── Public Bots
 │   ├── Community Favorites
 │   ├── Featured Creations
-│   └── Search & Filters
+│   ├── Search & Filters
+│   └── Bot Detail Pages (/bot/[slug]) ✅
+│       ├── Bot Information & Stats
+│       ├── Like & Favorite Buttons
+│       ├── Start Conversation
+│       └── Edit Bot (Owner Only)
 ├── 💬 Shared Conversations
 │   ├── Public Chats
 │   ├── Tutorial Examples
@@ -62,6 +67,17 @@ s
   - Filtering by category, popularity, creator, privacy level
   - Search functionality
   - Public bots only (private/shared-with-select bots hidden)
+- **Bot Detail Page** (`/bot/[slug]`) ✅ **IMPLEMENTED**
+  - Comprehensive bot information display
+  - Like and favorite functionality with real-time count updates
+  - "Start Conversation" button
+  - Edit button (visible to bot owner only)
+  - Bot statistics (likes, favorites, message count)
+  - Bot personality, category, and knowledge display
+- **Bot Edit Page** (`/bot/[slug]/edit`) ✅ **IMPLEMENTED**
+  - Full bot editing interface using wizard form
+  - Available to bot owners only
+  - Updates bot configuration, personality, knowledge, etc.
 - **Conversations Gallery** (`/explore/conversations`)
   - Public chat transcripts
   - Notable conversation examples
@@ -325,13 +341,17 @@ s
 #### Navigation Structure:
 ```
 📁 /account
-├── 🏠 Profile Dashboard
+├── 🏠 Profile Dashboard ✅
 │   ├── User Overview
 │   ├── Activity Summary
 │   ├── Quick Stats
-│   └── Recent Activity
-├── 👤 Profile Settings
-│   ├── Personal Information
+│   ├── Recent Activity
+│   └── My Bots Section ✅
+│       ├── Bot List with Stats
+│       ├── View/Edit/Delete Controls
+│       └── Create New Bot Link
+├── 👤 Profile Settings ✅
+│   ├── Personal Information (Clerk-managed)
 │   ├── Avatar & Display
 │   ├── Username & Bio
 │   └── Privacy Controls
@@ -359,14 +379,21 @@ s
 ```
 
 #### Sub-pages:
-- **Profile Dashboard** (`/account/dashboard`)
+- **Profile Dashboard** (`/account/dashboard`) ✅ **IMPLEMENTED**
   - Personal activity overview
   - Usage statistics
   - Quick access to recent content
-- **Profile Settings** (`/account/profile`)
-  - Personal information management
+  - **My Bots Section** with full management:
+    - List of user's created bots
+    - Bot statistics (likes, favorites, messages)
+    - View, Edit, and Delete actions
+    - Delete functionality with ownership verification
+    - Optimistic UI updates
+- **Profile Settings** (`/account/profile`) ✅ **IMPLEMENTED**
+  - Personal information display (managed via Clerk)
   - Avatar and display customization
   - Privacy preferences
+  - Note: Core user data managed through Clerk authentication
 - **Security Center** (`/account/security`)
   - Password and authentication
   - Login session management

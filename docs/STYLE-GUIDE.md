@@ -221,6 +221,26 @@ text-xs uppercase tracking-widest font-display
 - **Icon**: Overlapping Menu and BookOpen icons with pulse animation
 - **Text**: Copyright 2025 with fantasy-themed messaging
 
+### Bot Detail Pages
+- **Layout**: Centered content with magical background
+- **Bot Card**: Glass-rune effect with ornate borders
+- **Action Buttons**: Like/Favorite with interactive state changes
+  - **Liked State**: `bg-magic-glow/10 border-magic-glow/50 text-magic-glow` with filled heart icon
+  - **Favorited State**: `bg-gold-rich/10 border-gold-rich/50 text-gold-rich` with filled star icon
+  - **Default State**: Subtle border with hover effects
+- **Statistics Display**: Inline stats with icon indicators
+- **Edit Access**: Owner-only button with distinctive styling
+
+### Account Dashboard
+- **Profile Card**: Glass-rune container with user information
+- **My Bots Section**: Grid layout with bot cards
+- **Bot Cards**:
+  - Compact design with bot name and statistics
+  - Action buttons: View, Edit, Delete
+  - Delete confirmation dialog for safety
+  - Optimistic UI updates on deletion
+- **Responsive Layout**: Stacks vertically on mobile, grid on desktop
+
 ### Magical Background
 - **Base**: Ultra-dark `#020402` with texture overlay
 - **Effects**: Glowing orbs, fireflies, decorative SVG elements
@@ -275,6 +295,19 @@ hover:text-gold-rich           /* Color transition */
 hover:scale-110                /* Scale on hover */
 hover:-translate-y-1           /* Lift effect */
 hover:shadow-[0_10px_40px_-10px_rgba(212,175,55,0.3)] /* Gold shadow */
+
+/* Active/Selected states */
+.active-like {
+  background: hsla(142, 69%, 58%, 0.1);
+  border-color: hsla(142, 69%, 58%, 0.5);
+  color: hsl(142, 69%, 58%);
+}
+
+.active-favorite {
+  background: hsla(46, 65%, 52%, 0.1);
+  border-color: hsla(46, 65%, 52%, 0.5);
+  color: hsl(46, 65%, 52%);
+}
 ```
 
 ## 🔧 Implementation Guidelines

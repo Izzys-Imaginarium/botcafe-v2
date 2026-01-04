@@ -12,6 +12,7 @@ import { r2Storage } from '@payloadcms/storage-r2'
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { Bot } from './collections/Bot'
+import { BotInteraction } from './collections/BotInteraction'
 import { ApiKey } from './collections/ApiKey'
 import { Mood } from './collections/Mood'
 import { Knowledge } from './collections/Knowledge'
@@ -59,6 +60,7 @@ export default buildConfig({
     Users,
     Media,
     Bot,
+    BotInteraction,
     ApiKey,
     Mood,
     Knowledge,

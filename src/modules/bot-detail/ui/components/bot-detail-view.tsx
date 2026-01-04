@@ -41,6 +41,12 @@ export function BotDetailView({ slug }: BotDetailViewProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isOwner, setIsOwner] = useState(false)
+  const [liked, setLiked] = useState(false)
+  const [favorited, setFavorited] = useState(false)
+  const [likesCount, setLikesCount] = useState(0)
+  const [favoritesCount, setFavoritesCount] = useState(0)
+  const [isLiking, setIsLiking] = useState(false)
+  const [isFavoriting, setIsFavoriting] = useState(false)
 
   useEffect(() => {
     const fetchBot = async () => {
@@ -56,6 +62,21 @@ export function BotDetailView({ slug }: BotDetailViewProps) {
 
         const data = (await response.json()) as BotData
         setBot(data)
+        setLikesCount(data.likes_count || 0)
+        setFavoritesCount(data.favorites_count || 0)
+
+        // Fetch interaction status if user is logged in
+        if (clerkUser && data.id) {
+          const statusResponse = await fetch(`/api/bots/${data.id}/status`)
+          if (statusResponse.ok) {
+            const statusData = (await statusResponse.json()) as {
+              liked: boolean
+              favorited: boolean
+            }
+            setLiked(statusData.liked)
+            setFavorited(statusData.favorited)
+          }
+        }
 
         // Check if current user is the bot owner
         if (clerkUser) {
@@ -73,6 +94,68 @@ export function BotDetailView({ slug }: BotDetailViewProps) {
 
     fetchBot()
   }, [slug, clerkUser])
+
+  const handleLike = async () => {
+    if (!clerkUser) {
+      toast.error('Please sign in to like this bot')
+      return
+    }
+
+    if (!bot) return
+
+    setIsLiking(true)
+
+    try {
+      const response = await fetch(`/api/bots/${bot.id}/like`, {
+        method: 'POST',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to like bot')
+      }
+
+      const data = (await response.json()) as { liked: boolean; likes_count: number }
+      setLiked(data.liked)
+      setLikesCount(data.likes_count)
+      toast.success(data.liked ? 'Bot liked!' : 'Like removed')
+    } catch (error: any) {
+      console.error('Error liking bot:', error)
+      toast.error('Failed to like bot')
+    } finally {
+      setIsLiking(false)
+    }
+  }
+
+  const handleFavorite = async () => {
+    if (!clerkUser) {
+      toast.error('Please sign in to favorite this bot')
+      return
+    }
+
+    if (!bot) return
+
+    setIsFavoriting(true)
+
+    try {
+      const response = await fetch(`/api/bots/${bot.id}/favorite`, {
+        method: 'POST',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to favorite bot')
+      }
+
+      const data = (await response.json()) as { favorited: boolean; favorites_count: number }
+      setFavorited(data.favorited)
+      setFavoritesCount(data.favorites_count)
+      toast.success(data.favorited ? 'Added to favorites!' : 'Removed from favorites')
+    } catch (error: any) {
+      console.error('Error favoriting bot:', error)
+      toast.error('Failed to favorite bot')
+    } finally {
+      setIsFavoriting(false)
+    }
+  }
 
   const handleStartChat = () => {
     toast.info('Chat functionality coming soon!')
@@ -181,11 +264,11 @@ export function BotDetailView({ slug }: BotDetailViewProps) {
               <div className="flex items-center gap-6 mt-4">
                 <div className="flex items-center gap-2">
                   <Heart className="h-5 w-5 text-magic-glow" />
-                  <span className="text-parchment font-lore">{bot.likes_count || 0}</span>
+                  <span className="text-parchment font-lore">{likesCount}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Star className="h-5 w-5 text-magic-teal" />
-                  <span className="text-parchment font-lore">{bot.favorites_count || 0}</span>
+                  <span className="text-parchment font-lore">{favoritesCount}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-parchment-dim" />
@@ -212,6 +295,28 @@ export function BotDetailView({ slug }: BotDetailViewProps) {
                 >
                   <MessageSquare className="mr-2 h-5 w-5" />
                   Start Chat
+                </Button>
+
+                <Button
+                  onClick={handleLike}
+                  variant="outline"
+                  className={`ornate-border ${liked ? 'bg-magic-glow/10 border-magic-glow/50 text-magic-glow' : ''}`}
+                  size="lg"
+                  disabled={isLiking}
+                >
+                  <Heart className={`mr-2 h-5 w-5 ${liked ? 'fill-current' : ''}`} />
+                  {liked ? 'Liked' : 'Like'}
+                </Button>
+
+                <Button
+                  onClick={handleFavorite}
+                  variant="outline"
+                  className={`ornate-border ${favorited ? 'bg-magic-teal/10 border-magic-teal/50 text-magic-teal' : ''}`}
+                  size="lg"
+                  disabled={isFavoriting}
+                >
+                  <Star className={`mr-2 h-5 w-5 ${favorited ? 'fill-current' : ''}`} />
+                  {favorited ? 'Favorited' : 'Favorite'}
                 </Button>
 
                 {isOwner && (

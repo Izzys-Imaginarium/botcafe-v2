@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -17,6 +18,7 @@ interface BotData {
   gender?: string
   picture?: string | number | null
   is_public: boolean
+  slug: string
 }
 
 interface BotListResponse {
@@ -174,20 +176,21 @@ const BotCard = ({ bot }: BotCardProps) => {
   }
 
   return (
-    <Card className="glass-rune hover:scale-105 hover:shadow-[0_10px_40px_-10px_rgba(212,175,55,0.3)] transition-all duration-300 group">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-12 w-12 border-2 border-gold-ancient/30">
-              <AvatarImage src={getPictureUrl(bot.picture)} />
-              <AvatarFallback className="bg-[#0a140a] text-gold-rich font-display">
-                {getInitials(bot.name)}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <CardTitle className="text-parchment font-display text-lg group-hover:text-gold-rich transition-all">
-                {bot.name}
-              </CardTitle>
+    <Link href={`/bot/${bot.slug}`}>
+      <Card className="glass-rune hover:scale-105 hover:shadow-[0_10px_40px_-10px_rgba(212,175,55,0.3)] transition-all duration-300 group cursor-pointer">
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-12 w-12 border-2 border-gold-ancient/30">
+                <AvatarImage src={getPictureUrl(bot.picture)} />
+                <AvatarFallback className="bg-[#0a140a] text-gold-rich font-display">
+                  {getInitials(bot.name)}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <CardTitle className="text-parchment font-display text-lg group-hover:text-gold-rich transition-all">
+                  {bot.name}
+                </CardTitle>
               <div className="flex items-center gap-2 mt-1">
                 {bot.gender && (
                   <span className="text-xs text-parchment-dim">{getGenderIcon(bot.gender)}</span>
@@ -236,6 +239,7 @@ const BotCard = ({ bot }: BotCardProps) => {
         </div>
       </CardContent>
     </Card>
+    </Link>
   )
 }
 

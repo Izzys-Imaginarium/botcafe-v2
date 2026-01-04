@@ -4,136 +4,214 @@
 
 Based on the sitemap, style guide, and database schema analysis, BotCafé v2 is a **massive enterprise-level fantasy AI platform** with:
 
-### ✅ **CURRENT COMPLETION STATUS: ~30%**
+### ✅ **CURRENT COMPLETION STATUS: ~35%**
 - **Fantasy UI/UX Foundation**: ✅ Beautiful theme system, homepage, basic navigation
-- **Authentication**: ✅ Clerk integration working
+- **Authentication**: ✅ Clerk integration working with catch-all routes
 - **Database Architecture**: ✅ 28 comprehensive collections for multi-tenant SaaS
 - **Core Infrastructure**: ✅ Next.js, Payload CMS, Cloudflare Workers
-- **Bot Creation Wizard**: ✅ Multi-step form wizard with validation and fantasy theme
+- **Bot Creation Wizard**: ✅ Multi-step form wizard with validation, image upload, and fantasy theme
+- **Bot Editing**: ✅ Reusable form component for both create and edit workflows
+- **Explore Page**: ✅ Real bot data integration with search, sort, and pagination
 
-### ❌ **MAJOR MISSING SYSTEMS (70% remaining)**
+### ❌ **MAJOR MISSING SYSTEMS (65% remaining)**
 
 **12 Major Site Sections Needed:**
-1. **Home** ✅ - Complete splash page
-2. **Explore** ⚠️ - Placeholder content, needs real bot fetching
+1. **Home** ✅ - Complete splash page with magical effects
+2. **Explore** ✅ - Real bot data fetching with filters and search
 3. **Grimoire** ❌ - Knowledge management system (core RAG functionality)
-4. **Create** ✅ - Bot creation wizard (primary user flow) **NEW!**
-5. **Creators** ❌ - Multi-tenant creator profiles & showcase
-6. **Chat** ❌ - Real-time conversation interface (core functionality)
-7. **Account** ⚠️ - Structure exists, components are placeholders
+4. **Create** ✅ - Bot creation/editing wizard (primary user flow)
+5. **Bot Detail** ❌ - Individual bot pages with stats and info
+6. **Creators** ❌ - Multi-tenant creator profiles & showcase
+7. **Account** ⚠️ - Structure exists, needs real data integration
 8. **Wellbeing** ❌ - Mental health tracking & self-moderation
 9. **Memories** ❌ - Memory management & story progression
-10. **Analytics** ❌ - Usage insights & performance metrics
-11. **Legal** ❌ - Terms, privacy, compliance
-12. **Help** ❌ - Documentation, tutorials, support
+10. **Personas** ❌ - User persona/mask system
+11. **Analytics** ❌ - Usage insights & performance metrics
+12. **Legal** ❌ - Terms, privacy, compliance
+13. **Help** ❌ - Documentation, tutorials, support
+14. **Chat** ❌ - Real-time conversation interface (LAST - most complex)
 
 **This is essentially a full SaaS platform requiring 15-20 weeks of development time.**
 
 ---
 
+## 📋 **REVISED IMPLEMENTATION ORDER**
+
+### **RATIONALE: Build Chat Interface LAST**
+Chat is the most complex feature and depends on:
+- Bot management (CRUD operations) ✅
+- Knowledge/RAG system (Grimoire)
+- Persona system
+- Memory system
+- Account/user management
+
+By building foundational systems first, we avoid rework and ensure chat has all its dependencies ready.
+
+---
+
 ## 📋 **DETAILED TASK BREAKDOWN**
 
-### **PHASE 1: Database & Backend Completion** (Week 1-2)
+### **PHASE 1: Database & Backend Completion** ✅ (Week 1-2)
 - [x] Verify all 28 database collections are properly implemented
 - [x] Fix TypeScript compilation errors in new collections
 - [x] Run database migrations for new collections
 - [x] Test all collections in Payload admin panel
 - [x] Verify multi-tenant access controls work correctly
-- [ ] Set up proper API endpoints for all collections
+- [x] Set up API endpoints for bot creation/editing
+- [x] Set up API endpoint for bot exploration with pagination
+- [ ] Set up API endpoints for remaining collections
 
-### **PHASE 2: Core Missing Pages Implementation** (Week 3-6)
-- [x] Create /create bot creation wizard with multi-step form **NEW!**
-- [ ] Create /grimoire knowledge management system with RAG integration
-- [ ] Create /chat real-time conversation interface with multi-bot support
-- [ ] Create /creators multi-tenant creator profiles and showcase
-- [ ] Create /wellbeing mental health tracking and self-moderation tools
-- [ ] Create /memories memory management and story progression system
-- [ ] Create /analytics usage insights and performance metrics dashboard
-- [ ] Create /legal legal documents and compliance pages
-- [ ] Create /help documentation, tutorials, and support system
+### **PHASE 2: Core Bot Management** ✅ (Week 3-4)
+- [x] Create `/create` bot creation wizard with multi-step form
+- [x] Implement bot image upload with R2 storage
+- [x] Create reusable bot wizard form component
+- [x] Implement bot editing workflow
+- [x] Connect bot creation to backend API
+- [x] Implement `/explore` real bot data integration
+- [x] Add search, sorting, and pagination to explore
+- [x] Fix Clerk pre-rendering issues for all pages
 
-### **PHASE 3: UI/UX Component Implementation** (Week 7-10)
-- [ ] Replace all mock data with real database queries throughout UI
-- [ ] Implement AccountOverview component with real user statistics
-- [ ] Implement AccountProfile component for profile management
-- [ ] Implement AccountSecurity component with password/security settings
-- [ ] Implement ApiKeyManagement component for API key generation
-- [ ] Implement DataManagement component for data export/import
-- [x] Implement bot creation workflow (persona, knowledge base, personality) **NEW!**
-- [ ] Implement real-time chat functionality with WebSocket support
-- [ ] Add bot favoriting and rating system
-- [ ] Implement search and filtering functionality across all sections
-- [ ] Add file upload and media management functionality
-- [ ] Implement notification system and real-time updates
+### **PHASE 3: Bot Detail & Account Pages** 🎯 (Week 5-6) **CURRENT PRIORITY**
+- [ ] Create `/bot/[slug]` individual bot detail pages
+  - [ ] Display bot information and stats
+  - [ ] Show creator information
+  - [ ] Add "Start Chat" button (placeholder)
+  - [ ] Add "Edit Bot" button (for owners)
+  - [ ] Show bot's knowledge collections
+  - [ ] Display likes/favorites/chat count
+- [ ] Implement Account Dashboard with real data
+  - [ ] "My Bots" section with grid/list view
+  - [ ] Account statistics and overview
+  - [ ] Edit/delete bot functionality
+  - [ ] Profile management
+  - [ ] API key management interface
+- [ ] Add bot liking/favoriting system
+- [ ] Implement bot deletion workflow
 
-### **PHASE 4: Integration & Real Data Connection** (Week 11-13)
-- [ ] Integrate Clerk user data with Payload user profiles
-- [ ] Connect all UI components to actual database queries
-- [ ] Implement proper authentication state management
+### **PHASE 4: Knowledge Management (Grimoire)** (Week 7-9)
+- [ ] Create `/grimoire` knowledge management system
+- [ ] Implement knowledge piece creation/upload
+- [ ] Create knowledge collections organization
+- [ ] Add knowledge search and filtering
+- [ ] Implement RAG integration foundation
+- [ ] Connect knowledge collections to bots
+- [ ] Add privacy controls (Private/Public/Shared)
+- [ ] Implement knowledge analytics
+
+### **PHASE 5: Persona System** (Week 10-11)
+- [ ] Create `/personas` persona management pages
+- [ ] Implement persona creation workflow
+- [ ] Add persona switching interface
+- [ ] Connect personas to user sessions
+- [ ] Implement persona library
+- [ ] Add persona analytics
+
+### **PHASE 6: Creator Profiles & Showcase** (Week 12-13)
+- [ ] Create `/creators` creator directory
+- [ ] Implement creator profile pages (`/creators/[username]`)
+- [ ] Add creator dashboard with analytics
+- [ ] Create bot showcase gallery
+- [ ] Implement creator programs section
+- [ ] Add creator tools and portfolio builder
+
+### **PHASE 7: Supporting Systems** (Week 14-15)
+- [ ] Create `/memories` memory management system
+  - [ ] Memory dashboard and library
+  - [ ] Memory editing and organization
+  - [ ] Export and sharing tools
+- [ ] Create `/wellbeing` mental health tracking
+  - [ ] Mood journal interface
+  - [ ] Usage analytics and alerts
+  - [ ] Self-moderation tools
+  - [ ] Crisis support resources
+- [ ] Create `/analytics` usage insights dashboard
+  - [ ] Chat statistics
+  - [ ] Bot performance metrics
+  - [ ] Story progression analytics
+
+### **PHASE 8: Legal & Documentation** (Week 16)
+- [ ] Create `/legal` pages
+  - [ ] Terms of Service
+  - [ ] Privacy Policy
+  - [ ] Responsible AI Use guidelines
+  - [ ] Legal disclaimers
+- [ ] Create `/help` documentation system
+  - [ ] Getting started guides
+  - [ ] Feature documentation
+  - [ ] Tutorials and demos
+  - [ ] Support ticketing system
+
+### **PHASE 9: Chat Interface** 🎬 (Week 17-18) **BUILD LAST**
+- [ ] Create `/chat/[conversationId]` main chat interface
+- [ ] Implement WebSocket real-time messaging
+- [ ] Add multi-bot conversation support
+- [ ] Integrate memory system with chat
+- [ ] Connect persona system to conversations
+- [ ] Implement RAG/knowledge integration
+- [ ] Add file sharing in chat
+- [ ] Implement voice input capabilities
+- [ ] Create active bots panel
+- [ ] Add chat settings and controls
+
+### **PHASE 10: Polish & Integration** (Week 19)
+- [ ] Replace all remaining mock data with real queries
+- [ ] Implement proper error handling throughout
+- [ ] Add loading states and skeletons
+- [ ] Implement comprehensive form validation
+- [ ] Add SEO and metadata for all pages
+- [ ] Implement notification system
 - [ ] Add real-time data synchronization
-- [ ] Implement proper error handling and loading states
-- [ ] Add comprehensive form validation and user feedback
-- [ ] Implement proper SEO and metadata for all pages
-- [ ] Add analytics tracking and user behavior monitoring
+- [ ] Conduct accessibility audit
 
-### **PHASE 5: Advanced Features & Polish** (Week 14-16)
-- [ ] Implement multi-bot conversation system
-- [ ] Add voice input/output capabilities
-- [ ] Implement advanced knowledge base search and RAG
-- [ ] Add persona switching and customization
-- [ ] Implement conversation export and sharing
-- [ ] Add advanced analytics and insights
-- [ ] Implement mood tracking and mental health features
-- [ ] Add creator monetization features
-- [ ] Implement advanced access control and permissions
-
-### **PHASE 6: Testing & Quality Assurance** (Week 17-18)
-- [ ] Run comprehensive integration tests for all features
-- [ ] Test all frontend pages across different screen sizes
-- [ ] Verify Clerk authentication flow end-to-end
-- [ ] Test responsive design for all new components
-- [ ] Test email functionality (Resend integration)
-- [ ] Test file upload functionality (R2 storage)
-- [ ] Test multi-tenant access controls and data isolation
-- [ ] Perform security audit of authentication and permissions
-- [ ] Test GraphQL API endpoints and performance
+### **PHASE 11: Testing & Quality Assurance** (Week 20)
+- [ ] Run comprehensive integration tests
+- [ ] Test all pages across screen sizes
+- [ ] Verify authentication flows end-to-end
+- [ ] Test file upload functionality
+- [ ] Test multi-tenant access controls
+- [ ] Perform security audit
+- [ ] Test API performance
 - [ ] Conduct user acceptance testing
 
-### **PHASE 7: Deployment & Production** (Week 19-20)
-- [ ] Run comprehensive build test (npm run build)
-- [ ] Test Cloudflare Workers deployment process
-- [ ] Verify environment variables and secrets configuration
-- [ ] Set up monitoring and logging systems
+### **PHASE 12: Deployment & Production** (Week 21)
+- [ ] Run comprehensive build test
+- [ ] Test Cloudflare Workers deployment
+- [ ] Verify environment variables
+- [ ] Set up monitoring and logging
 - [ ] Configure backup and disaster recovery
 - [ ] Set up CI/CD pipeline
 - [ ] Perform final performance optimization
-- [ ] Update project documentation and README
-- [ ] Deploy to production environment
-- [ ] Conduct post-deployment testing and monitoring
+- [ ] Deploy to production
+- [ ] Conduct post-deployment testing
 
 ---
 
 ## 📊 **PROGRESS TRACKING**
 
-**Total Estimated Timeline: 20 weeks (5 months) for full completion**
-**Current ~30% complete**
-**Remaining Work: ~70% of the total project**
+**Total Estimated Timeline: 21 weeks (5 months) for full completion**
+**Current ~35% complete**
+**Remaining Work: ~65% of the total project**
 
-### **Current Status:**
+### **Completed:**
 - ✅ **Home Page**: Complete splash page with magical effects
-- ✅ **Authentication**: Clerk integration fully operational
+- ✅ **Authentication**: Clerk integration with catch-all routes
 - ✅ **Database Schema**: All 28 collections configured
 - ✅ **UI/UX Theme**: Fantasy theme system implemented
-- ✅ **Create Page**: Bot creation wizard with multi-step form (NEW!)
-- ⚠️ **Explore Page**: Basic structure, needs real data integration
-- ⚠️ **Account Page**: Structure exists, components are placeholders
+- ✅ **Create Page**: Bot creation wizard with multi-step form
+- ✅ **Edit Workflow**: Reusable form component for create/edit
+- ✅ **Explore Page**: Real data integration with search/sort/pagination
+- ✅ **Build System**: All pages force-dynamic, no pre-rendering errors
+
+### **In Progress:**
+- 🎯 **Bot Detail Pages**: Next priority
+- 🎯 **Account Dashboard**: Real data integration needed
 
 ### **Immediate Next Steps:**
-1. Create API endpoint for bot creation
-2. Test complete bot creation flow
-3. Implement knowledge collections connection
-4. Add image upload functionality
-5. Continue with Chat interface implementation
+1. Create bot detail page (`/bot/[slug]`)
+2. Implement account dashboard with "My Bots" section
+3. Add bot editing from account page
+4. Create knowledge management system (Grimoire)
+5. Continue systematic implementation of remaining features
 
 ---
 
@@ -179,10 +257,11 @@ Based on the sitemap, style guide, and database schema analysis, BotCafé v2 is 
 
 ## 🚀 **DEVELOPMENT STRATEGY**
 
-### **Priority Order:**
-1. **High Priority**: Core user flows (Create bot ✅, Chat, Account)
-2. **Medium Priority**: Supporting systems (Grimoire, Explore, Memories)
-3. **Low Priority**: Advanced features (Analytics, Legal, Help)
+### **Revised Priority Order (Chat LAST):**
+1. **High Priority**: Bot management (Create ✅, Edit ✅, Detail, Account)
+2. **Medium Priority**: Supporting systems (Grimoire, Personas, Memories, Creators)
+3. **Lower Priority**: Advanced features (Analytics, Legal, Help, Wellbeing)
+4. **LAST**: Chat interface (most complex, depends on all other systems)
 
 ### **Technical Requirements:**
 - **Framework**: Next.js 15 with App Router
@@ -196,7 +275,7 @@ Based on the sitemap, style guide, and database schema analysis, BotCafé v2 is 
 ### **Integration Points:**
 - **Clerk ↔ Payload**: User profile synchronization
 - **Payload ↔ Frontend**: Real-time data queries
-- **WebSocket**: Real-time chat functionality
+- **WebSocket**: Real-time chat functionality (LAST)
 - **RAG System**: Knowledge base integration
 - **Analytics**: Usage tracking and insights
 
@@ -212,6 +291,7 @@ Based on the sitemap, style guide, and database schema analysis, BotCafé v2 is 
 5. **Test authentication flow** when implementing user features
 6. **Maintain responsive design** across all screen sizes
 7. **Use existing component patterns** for consistency
+8. **Build chat LAST** - it depends on all other systems
 
 ### **Common Patterns:**
 - **Pages**: Use `/app/(frontend)/[section]/page.tsx` structure
@@ -219,6 +299,7 @@ Based on the sitemap, style guide, and database schema analysis, BotCafé v2 is 
 - **Views**: Complex views in `/modules/[section]/ui/views/`
 - **Styling**: Fantasy theme classes (`.glass-rune`, `.ornate-border`)
 - **Database**: Use Payload's generated types from `payload-types.ts`
+- **Reusable Forms**: Create shared form components for create/edit workflows
 
 ### **File Structure Reference:**
 ```
@@ -226,14 +307,16 @@ src/
 ├── app/(frontend)/          # Public pages
 │   ├── (home)/             # Landing page
 │   ├── explore/            # Bot discovery
+│   ├── bot/[slug]/         # Bot detail pages (NEXT)
 │   ├── account/            # User account
-│   ├── sign-in/            # Authentication
-│   ├── sign-up/
-│   └── create/             # Bot creation wizard (NEW!)
+│   ├── sign-in/[[...sign-in]]/  # Authentication (catch-all)
+│   ├── sign-up/[[...sign-up]]/
+│   └── create/             # Bot creation wizard
 ├── app/(payload)/          # Admin/CMS
 ├── modules/                # Feature modules
 │   ├── home/              # Home page components
 │   ├── explore/           # Explore page components
+│   ├── bot-create/        # Bot creation/editing components
 │   ├── account/           # Account page components
 │   └── [new-modules]/     # Future modules
 ├── collections/           # Payload collections
@@ -243,8 +326,22 @@ src/
 
 ---
 
-**Last Updated**: 2026-01-01
-**Version**: 1.1
-**Total Tasks**: 71
-**Completed**: 15
-**Progress**: 30%
+## 🔄 **Recent Changes**
+
+### **2026-01-03 Updates:**
+- ✅ Refactored bot creation form to be reusable for both create and edit
+- ✅ Fixed all Clerk pre-rendering errors by adding `export const dynamic = 'force-dynamic'`
+- ✅ Converted sign-in/sign-up to catch-all routes (`[[...sign-in]]`)
+- ✅ Moved create-bot-form component to proper modules structure
+- ✅ Reorganized bot-create module for better architecture
+- 📋 **Revised implementation order: Chat Interface moved to LAST**
+  - Rationale: Chat depends on all other systems (bots, knowledge, personas, memories)
+  - New priority: Bot Detail → Account Dashboard → Grimoire → Personas → Chat
+
+---
+
+**Last Updated**: 2026-01-03
+**Version**: 2.0
+**Total Tasks**: 85
+**Completed**: 30
+**Progress**: 35%

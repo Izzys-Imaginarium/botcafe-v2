@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "account_id": "b7bd4cd59c6ad9905a00f8d54e954af2",
+  "account_id": "dc8a986fb90d4539bb136b41b607788c",
   "main": ".open-next/worker.js",
   "name": "botcafe-v2",
   "compatibility_date": "2025-08-15",
@@ -73,19 +73,6 @@
       "binding": "R2",
       "bucket_name": "botcafe-v2",
       "preview_bucket_name": "botcafe-v2",
-    },
-  ],
-
-  // Cloudflare AI binding for embeddings
-  "ai": {
-    "binding": "AI",
-  },
-
-  // Vectorize binding for vector storage
-  "vectorize": [
-    {
-      "binding": "VECTORIZE",
-      "index_name": "botcafe-embeddings",
     },
   ],
 

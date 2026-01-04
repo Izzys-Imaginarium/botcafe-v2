@@ -10,8 +10,8 @@ s
 ### Primary Navigation (Header)
 ```
 🏠 Home                    (Landing page & overview)
-🔍 Explore                 (Browse bots & conversations)  
-📚 Grimoire               (Knowledge & RAG management)
+🔍 Explore                 (Browse bots & conversations)
+📚 Lore                   (Knowledge & RAG management)
 🎭 Create                 (Bot creation & persona management)
 👑 Creators               (Bot creator profiles & showcase)
 💬 Chat                  (Personal conversations)
@@ -56,7 +56,7 @@ s
 │   ├── Tutorial Examples
 │   └── Community Highlights
 └── 📚 Knowledge Libraries
-    ├── Public Grimoires
+    ├── Public Lore Collections
     ├── Tutorial Collections
     └── Featured Knowledge
 ```
@@ -85,17 +85,17 @@ s
 - **Knowledge Library** (`/explore/knowledge`)
   - Shared knowledge collections
   - Tutorial materials
-  - Public grimoires
+  - Public lore collections
 
 ---
 
-### 3. 📚 Grimoire (Knowledge Management - RAG System)
-**Path:** `/grimoire`
+### 3. 📚 Lore (Knowledge Management - RAG System)
+**Path:** `/lore`
 **Description:** Comprehensive knowledge management system with fantasy theming
 
 #### Navigation Structure:
 ```
-📁 /grimoire
+📁 /lore
 ├── 🏠 Dashboard
 │   ├── Knowledge Overview
 │   ├── Recent Activity
@@ -129,26 +129,26 @@ s
 ```
 
 #### Sub-pages:
-- **Knowledge Dashboard** (`/grimoire/dashboard`)
+- **Knowledge Dashboard** (`/lore/dashboard`)
   - Overview of all knowledge resources
   - Recent additions and updates
   - Usage analytics
-- **Knowledge Entries** (`/grimoire/entries`)
+- **Knowledge Entries** (`/lore/entries`)
   - List view of all entries
   - Create/edit individual knowledge pieces
   - Bulk import functionality
   - Privacy controls (Private/Shared/Select People)
-- **Collections** (`/grimoire/collections`)
+- **Collections** (`/lore/collections`)
   - Organize knowledge into themed collections
   - **Curated Collections** (moderator-approved, pre-configured features)
   - Collaborative sharing options
   - Collection analytics
   - **Legal Compliance Collections** (guard rails, slash commands, etc.)
-- **Metadata Management** (`/grimoire/tags`)
+- **Metadata Management** (`/lore/tags`)
   - Tag creation and management
   - Category organization
   - Bulk tagging tools
-- **Analytics** (`/grimoire/analytics`)
+- **Analytics** (`/lore/analytics`)
   - Knowledge usage statistics
   - Search effectiveness metrics
   - Performance insights
@@ -627,11 +627,11 @@ s
 ### Navigation Naming Conventions
 - **Home** → "Home" (keep simple for accessibility)
 - **Explore** → "Explore" (discovery theme)
-- **Knowledge Management** → "Grimoire" (fantasy library theme)
+- **Knowledge Management** → "Lore" (fantasy library theme)
 - **Bot Creation** → "Create" (creation theme)
 - **Personas** → "Masks" or "Avatars" within Create section
 - **Chat** → "Converse" or "Dialogue"
-- **Memories** → "Chronicles" or "Lore"
+- **Memories** → "Chronicles" (memory archives)
 - **Mood Journal** → "Reflective Waters" or "Soul Mirror"
 - **Creators** → "Artisan Guild" (master craftsperson theme)
 - **Legal** → "Council Chambers" (official documentation theme)

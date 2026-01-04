@@ -18,22 +18,22 @@ export const Footer = () => {
         </span>
         <div className="flex gap-8 mt-2">
           <Link
-            href="#"
+            href="/about"
             className="text-xs hover:text-gold-rich uppercase tracking-widest transition-colors font-display"
           >
-            Entrance
+            About
           </Link>
           <Link
-            href="#"
+            href="/legal/privacy"
             className="text-xs hover:text-gold-rich uppercase tracking-widest transition-colors font-display"
           >
-            Scrolls
+            Privacy
           </Link>
           <Link
-            href="#"
+            href="/legal/terms"
             className="text-xs hover:text-gold-rich uppercase tracking-widest transition-colors font-display"
           >
-            Oaths
+            Terms
           </Link>
         </div>
       </div>

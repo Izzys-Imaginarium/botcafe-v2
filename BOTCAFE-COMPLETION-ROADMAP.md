@@ -228,7 +228,7 @@ By building foundational systems first, we avoid rework and ensure chat has all 
 - API endpoints for all bot operations
 
 ### **Immediate Next Steps:**
-1. Create knowledge management system (Grimoire)
+1. Create knowledge management system (Lore)
 2. Implement conversation/chat interface
 3. Add persona system
 4. Continue systematic implementation of remaining features

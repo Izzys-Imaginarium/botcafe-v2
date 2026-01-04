@@ -33,7 +33,7 @@ const NavbarItem = ({ href, children, isActive }: NavbarItemProps) => {
 const navbarItems = [
   { href: '/', children: 'Home' },
   { href: '/explore', children: 'Explore' },
-  { href: '/grimoire', children: 'Grimoire' },
+  { href: '/lore', children: 'Lore' },
   { href: '/create', children: 'Create' },
 ]
 

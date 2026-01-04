@@ -3,6 +3,8 @@ import { currentUser } from '@clerk/nextjs/server'
 import { getPayloadHMR } from '@payloadcms/next/utilities'
 import config from '@payload-config'
 
+export const dynamic = 'force-dynamic'
+
 interface CollectionCreateRequest {
   name: string
   description?: string

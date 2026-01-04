@@ -188,34 +188,56 @@ if (!ai || !vectorize) {
 }
 ```
 
-## Next Steps
+## Setup Completed
 
-### Before Production Deployment:
+### ✅ Vectorize Indexes Created:
 
-1. **Create Vectorize Indexes**:
+All required Vectorize indexes have been successfully created:
+- `botcafe-embeddings` (base production)
+- `botcafe-embeddings-dev` (development)
+- `botcafe-embeddings-staging` (staging)
+- `botcafe-embeddings-prod` (production)
+
+Configuration: 1024 dimensions, cosine similarity metric
+
+### ⚠️ Local Build Limitation:
+
+**Important**: The project cannot be built locally using `pnpm run build` because:
+1. Next.js build process tries to collect page data during build time
+2. This triggers Cloudflare Wrangler to start a remote session
+3. Requires a workers.dev subdomain registration (not needed for Cloudflare Pages deployment)
+
+**Solution**: Deploy directly to Cloudflare Pages where bindings are automatically available.
+
+### Next Steps
+
+1. **Register Workers.dev Subdomain** (if running local builds):
+   - Visit: https://dash.cloudflare.com/b7bd4cd59c6ad9905a00f8d54e954af2/workers/onboarding
+   - Register a workers.dev subdomain
+   - This enables local development server and builds
+
+2. **Deploy to Cloudflare Pages** (Recommended):
    ```bash
-   wrangler vectorize create botcafe-embeddings-dev --dimensions=1024 --metric=cosine
-   wrangler vectorize create botcafe-embeddings-staging --dimensions=1024 --metric=cosine
-   wrangler vectorize create botcafe-embeddings-prod --dimensions=1024 --metric=cosine
+   git push  # Trigger automatic Pages deployment
+   ```
+   Or manual deployment:
+   ```bash
+   npx wrangler pages deploy .open-next --project-name=botcafe-v2
    ```
 
-2. **Deploy with Bindings**:
-   ```bash
-   wrangler deploy --env development
-   ```
-
-3. **Test Workflow**:
+3. **Test Workflow in Deployed Environment**:
    - Create a knowledge entry
-   - Click "Vectorize" button (UI to be added)
+   - Call `/api/vectors/generate` to vectorize content
+   - Call `/api/vectors/search` for semantic search
    - Verify embeddings in Vectorize dashboard
-   - Test semantic search
 
 ### Still TODO:
 
-- [ ] Add "Vectorize" button to lore entries UI
-- [ ] Display vectorization status badges
-- [ ] Add semantic search UI in lore dashboard
-- [ ] Test end-to-end workflow in deployed environment
+- [ ] Register workers.dev subdomain for local development (optional)
+- [ ] Deploy to Cloudflare Pages to test with real bindings
+- [ ] Add "Vectorize" button to lore entries UI (Phase 4B.6)
+- [ ] Display vectorization status badges (Phase 4B.6)
+- [ ] Add semantic search UI in lore dashboard (Phase 4B.6)
 - [ ] Monitor Workers AI usage and costs
 - [ ] Optimize batch sizes for performance
 

@@ -23,40 +23,40 @@
 │   │   └── Community Highlights
 │   │
 │   └── 📚 Knowledge Libraries (/explore/knowledge)
-│       ├── Public Grimoires
+│       ├── Public Lore Collections
 │       ├── Tutorial Collections
 │       └── Featured Knowledge
 │
-├── 📚 GRIMOIRE (/grimoire) [RAG System]
-│   ├── 🏠 Dashboard (/grimoire/dashboard)
+├── 📚 LORE (/lore) [RAG System]
+│   ├── 🏠 Dashboard (/lore/dashboard)
 │   │   ├── Knowledge Overview
 │   │   ├── Recent Activity
 │   │   └── Quick Actions
 │   │
-│   ├── 📝 Knowledge Entries (/grimoire/entries)
+│   ├── 📝 Knowledge Entries (/lore/entries)
 │   │   ├── All Entries List
 │   │   ├── Create New Entry
 │   │   ├── Import/Export Tools
 │   │   └── Search & Filter
 │   │
-│   ├── 📚 Collections (/grimoire/collections)
+│   ├── 📚 Collections (/lore/collections)
 │   │   ├── My Collections
 │   │   ├── Shared Collections
 │   │   ├── Create Collection
 │   │   └── Manage Organization
 │   │
-│   ├── 🏷️ Metadata Tags (/grimoire/tags)
+│   ├── 🏷️ Metadata Tags (/lore/tags)
 │   │   ├── Tag Management
 │   │   ├── Tag Categories
 │   │   ├── Bulk Tagging
 │   │   └── Tag Analytics
 │   │
-│   ├── 🧠 AI Insights (/grimoire/analytics)
+│   ├── 🧠 AI Insights (/lore/analytics)
 │   │   ├── Knowledge Analytics
 │   │   ├── Usage Statistics
 │   │   └── Performance Metrics
 │   │
-│   └── ⚙️ Settings (/grimoire/settings)
+│   └── ⚙️ Settings (/lore/settings)
 │       ├── RAG Configuration
 │       ├── Access Permissions
 │       └── Import/Export Tools
@@ -282,7 +282,7 @@
    ↓
 📚 MEMORIES Archive
    ↓
-📚 GRIMOIRE (Knowledge)
+📚 LORE (Knowledge)
    ↓
 🎭 PERSONAS (User identity)
    ↓
@@ -294,7 +294,7 @@
 ### 🎨 Visual Theme Mapping
 - **🏠 Home** → Magical portal entrance
 - **🔍 Explore** → Wandering through enchanted forest
-- **📚 Grimoire** → Ancient library with glowing books
+- **📚 Lore** → Ancient library with glowing books
 - **🎭 Create** → Alchemy laboratory/workshop
 - **💬 Chat** → Mystical conversation circle
 - **👤 Account** → Personal sanctum/chambers
@@ -305,7 +305,7 @@
 
 ### 🗣️ Fantasy Naming Conventions
 - **Knowledge Entries** → "Spell Scrolls" or "Enchanted Tomes"
-- **Collections** → "Themed Grimoires" or "Knowledge Chambers"
+- **Collections** → "Themed Lore Collections" or "Knowledge Chambers"
 - **Personas** → "Masks of Identity" or "Aspect Avatars"
 - **Memories** → "Story Fragments" or "Chronicle Shards"
 - **Chat** → "Mystic Dialogue" or "Enchanted Discourse"
@@ -318,7 +318,7 @@
 📱 Hamburger Menu
 ├── 🏠 Home
 ├── 🔍 Explore
-├── 📚 Grimoire
+├── 📚 Lore
 ├── 🎭 Create
 ├── 💬 Recent Chats
 ├── 📚 Memories
@@ -335,7 +335,7 @@
 ├── 🎭 Apply Persona
 ├── 📝 Add Memory
 ├── 🧠 Mood Check-in
-└── 📚 Quick Grimoire
+└── 📚 Quick Lore
 ```
 
 ## 🔄 Cross-Feature Integration
@@ -350,7 +350,7 @@
    ↓
 🧠 Memory Generation
    ↓
-📚 Grimoire Integration
+📚 Lore Integration
    ↓
 📊 Analytics Tracking
    ↓
@@ -360,7 +360,7 @@
 ### 🔗 Feature Dependencies
 - **Chat** requires **Bot** (from Create)
 - **Memories** generated from **Chat**
-- **Grimoire** knowledge used in **Chat**
+- **Lore** knowledge used in **Chat**
 - **Personas** applied in **Chat**
 - **Wellbeing** tracks **Chat** usage
 - **Analytics** aggregates all features

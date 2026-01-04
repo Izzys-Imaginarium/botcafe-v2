@@ -21,7 +21,7 @@ Based on the sitemap, style guide, and database schema analysis, BotCafé v2 is 
 **12 Major Site Sections Needed:**
 1. **Home** ✅ - Complete splash page with magical effects
 2. **Explore** ✅ - Real bot data fetching with filters and search
-3. **Grimoire** ❌ - Knowledge management system (core RAG functionality)
+3. **Lore** ❌ - Knowledge management system (core RAG functionality)
 4. **Create** ✅ - Bot creation/editing wizard (primary user flow)
 5. **Bot Detail** ✅ - Individual bot pages with stats, info, and interactions
 6. **Creators** ❌ - Multi-tenant creator profiles & showcase
@@ -43,7 +43,7 @@ Based on the sitemap, style guide, and database schema analysis, BotCafé v2 is 
 ### **RATIONALE: Build Chat Interface LAST**
 Chat is the most complex feature and depends on:
 - Bot management (CRUD operations) ✅
-- Knowledge/RAG system (Grimoire)
+- Knowledge/RAG system (Lore)
 - Persona system
 - Memory system
 - Account/user management
@@ -99,8 +99,8 @@ By building foundational systems first, we avoid rework and ensure chat has all 
   - [x] Confirmation dialog
   - [x] Optimistic UI updates
 
-### **PHASE 4: Knowledge Management (Grimoire)** (Week 7-9)
-- [ ] Create `/grimoire` knowledge management system
+### **PHASE 4: Knowledge Management (Lore)** (Week 7-9)
+- [ ] Create `/lore` knowledge management system
 - [ ] Implement knowledge piece creation/upload
 - [ ] Create knowledge collections organization
 - [ ] Add knowledge search and filtering
@@ -280,7 +280,7 @@ By building foundational systems first, we avoid rework and ensure chat has all 
 
 ### **Revised Priority Order (Chat LAST):**
 1. **High Priority**: Bot management (Create ✅, Edit ✅, Detail, Account)
-2. **Medium Priority**: Supporting systems (Grimoire, Personas, Memories, Creators)
+2. **Medium Priority**: Supporting systems (Lore, Personas, Memories, Creators)
 3. **Lower Priority**: Advanced features (Analytics, Legal, Help, Wellbeing)
 4. **LAST**: Chat interface (most complex, depends on all other systems)
 
@@ -357,7 +357,7 @@ src/
 - ✅ Reorganized bot-create module for better architecture
 - 📋 **Revised implementation order: Chat Interface moved to LAST**
   - Rationale: Chat depends on all other systems (bots, knowledge, personas, memories)
-  - New priority: Bot Detail → Account Dashboard → Grimoire → Personas → Chat
+  - New priority: Bot Detail → Account Dashboard → Lore → Personas → Chat
 
 ---
 

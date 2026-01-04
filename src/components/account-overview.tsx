@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Bot, MessageCircle, Clock, Plus, Edit, Eye } from 'lucide-react'
+import { Bot, MessageCircle, Clock, Plus, Edit, Eye, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 // Mock user stats
 const mockStats = {
@@ -61,6 +62,7 @@ export const AccountOverview = () => {
   const { user } = useUser()
   const [userBots, setUserBots] = useState<UserBot[]>([])
   const [isLoadingBots, setIsLoadingBots] = useState(true)
+  const [deletingBotId, setDeletingBotId] = useState<string | number | null>(null)
 
   useEffect(() => {
     const fetchUserBots = async () => {
@@ -81,6 +83,34 @@ export const AccountOverview = () => {
 
     fetchUserBots()
   }, [user])
+
+  const handleDeleteBot = async (botId: string | number, botName: string) => {
+    if (!confirm(`Are you sure you want to delete "${botName}"? This action cannot be undone.`)) {
+      return
+    }
+
+    setDeletingBotId(botId)
+
+    try {
+      const response = await fetch(`/api/bots/${botId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const error = (await response.json()) as { message?: string }
+        throw new Error(error.message || 'Failed to delete bot')
+      }
+
+      // Remove the bot from the local state
+      setUserBots((prev) => prev.filter((bot) => bot.id !== botId))
+      toast.success(`"${botName}" has been deleted successfully`)
+    } catch (error: any) {
+      console.error('Error deleting bot:', error)
+      toast.error(error.message || 'Failed to delete bot')
+    } finally {
+      setDeletingBotId(null)
+    }
+  }
 
   const getInitials = (name: string) => {
     return name
@@ -187,6 +217,22 @@ export const AccountOverview = () => {
                         Edit
                       </Button>
                     </Link>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                      onClick={() => handleDeleteBot(bot.id, bot.name)}
+                      disabled={deletingBotId === bot.id}
+                    >
+                      {deletingBotId === bot.id ? (
+                        <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Delete
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
               ))}

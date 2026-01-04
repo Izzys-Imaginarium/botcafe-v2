@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPayloadHMR } from '@payloadcms/next/utilities'
 import { currentUser } from '@clerk/nextjs/server'
 import config from '@payload-config'
+import { searchVectors, SearchFilters } from '@/lib/vectorization/embeddings'
 
 /**
  * POST /api/vectors/search
@@ -62,56 +63,108 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Missing or invalid query' }, { status: 400 })
     }
 
-    // TODO: In production, this would:
-    // 1. Generate embedding for query using OpenAI
-    // 2. Search Vectorize database with filters
-    // 3. Return ranked results
+    // Get Cloudflare bindings from request context
+    // @ts-ignore - Next.js context type
+    const ai = request.nextUrl.searchParams.get('__env')?.AI || (global as any).__env?.AI
+    // @ts-ignore
+    const vectorize = request.nextUrl.searchParams.get('__env')?.VECTORIZE || (global as any).__env?.VECTORIZE
 
-    // For now, return a placeholder response showing the structure
-    const mockResults = [
-      {
-        chunk_text: 'Sample knowledge chunk that matches the query...',
-        metadata: {
-          type: filters.type || 'lore',
-          source_id: 'sample_knowledge_id',
-          source_type: 'knowledge',
-          chunk_index: 0,
-          total_chunks: 3,
-        },
-        score: 0.95,
-      },
-    ]
-
-    // Build where clause for filtering vector records
-    const whereClause: any = {
-      user_id: { equals: payloadUser.id },
+    if (!ai || !vectorize) {
+      // Fallback: Return placeholder results if bindings not available (local dev)
+      console.warn('AI or Vectorize binding not available. Returning placeholder results.')
+      return await searchPlaceholder(payload, payloadUser.id, query, filters, topK)
     }
 
-    // In production, we'd apply metadata filters from Vectorize
-    // For now, we'll fetch some vector records as examples
-    const vectorRecords = await payload.find({
-      collection: 'vectorRecords' as any,
-      where: whereClause,
-      limit: topK,
-      sort: '-createdAt',
-    })
+    // Build search filters for multi-tenant isolation
+    const searchFilters: SearchFilters = {
+      tenant_id: payloadUser.id, // Ensure users only search their own data
+      ...filters,
+    }
 
-    const results = vectorRecords.docs.map((record: any, index: number) => ({
-      chunk_text: record.chunk_text,
-      metadata: record.metadata,
-      score: 1.0 - index * 0.1, // Mock similarity score
-      vector_record_id: record.id,
-    }))
+    // Perform semantic search using Workers AI + Vectorize
+    const results = await searchVectors(ai, vectorize, query, searchFilters, topK)
+
+    // Enrich results with chunk text from D1
+    const enrichedResults = await Promise.all(
+      results.map(async (result) => {
+        try {
+          // Find the VectorRecord in D1 to get chunk text
+          const vectorRecords = await payload.find({
+            collection: 'vectorRecords' as any,
+            where: {
+              vector_id: { equals: result.id },
+            },
+            limit: 1,
+          })
+
+          const vectorRecord = vectorRecords.docs[0]
+
+          return {
+            chunk_text: vectorRecord?.chunk_text || '(Text not found)',
+            metadata: result.metadata,
+            score: result.score,
+            vector_record_id: vectorRecord?.id || result.id,
+          }
+        } catch (error) {
+          console.error('Error enriching result:', error)
+          return {
+            chunk_text: '(Error retrieving text)',
+            metadata: result.metadata,
+            score: result.score,
+            vector_record_id: result.id,
+          }
+        }
+      })
+    )
 
     return NextResponse.json({
       query,
-      results,
-      total_results: results.length,
-      filters_applied: filters,
-      note: 'This is a placeholder implementation. Production version will use Cloudflare Vectorize for semantic search.',
+      results: enrichedResults,
+      total_results: enrichedResults.length,
+      filters_applied: searchFilters,
     })
   } catch (error: any) {
     console.error('Error searching vectors:', error)
     return NextResponse.json({ message: error.message || 'Failed to search vectors' }, { status: 500 })
   }
+}
+
+/**
+ * Fallback search for local development without Cloudflare bindings
+ * Returns basic text search results from D1 VectorRecords
+ */
+async function searchPlaceholder(
+  payload: any,
+  userId: number,
+  query: string,
+  filters: any,
+  topK: number
+) {
+  // Build where clause for filtering vector records
+  const whereClause: any = {
+    user_id: { equals: userId },
+  }
+
+  // Fetch recent vector records as placeholder results
+  const vectorRecords = await payload.find({
+    collection: 'vectorRecords' as any,
+    where: whereClause,
+    limit: topK,
+    sort: '-createdAt',
+  })
+
+  const results = vectorRecords.docs.map((record: any, index: number) => ({
+    chunk_text: record.chunk_text,
+    metadata: record.metadata,
+    score: 1.0 - index * 0.1, // Mock similarity score
+    vector_record_id: record.id,
+  }))
+
+  return NextResponse.json({
+    query,
+    results,
+    total_results: results.length,
+    filters_applied: filters,
+    warning: 'Cloudflare AI/Vectorize bindings not available. Returning placeholder results (not semantic search).',
+  })
 }

@@ -76,6 +76,19 @@
     },
   ],
 
+  // Cloudflare AI binding for embeddings
+  "ai": {
+    "binding": "AI",
+  },
+
+  // Vectorize binding for vector storage
+  "vectorize": [
+    {
+      "binding": "VECTORIZE",
+      "index_name": "botcafe-embeddings",
+    },
+  ],
+
   // Environment configurations
   "env": {
     "development": {
@@ -111,6 +124,15 @@
         {
           "binding": "R2",
           "bucket_name": "botcafe-v2-dev",
+        },
+      ],
+      "ai": {
+        "binding": "AI",
+      },
+      "vectorize": [
+        {
+          "binding": "VECTORIZE",
+          "index_name": "botcafe-embeddings-dev",
         },
       ],
     },
@@ -149,6 +171,15 @@
           "bucket_name": "botcafe-v2-staging",
         },
       ],
+      "ai": {
+        "binding": "AI",
+      },
+      "vectorize": [
+        {
+          "binding": "VECTORIZE",
+          "index_name": "botcafe-embeddings-staging",
+        },
+      ],
     },
     "production": {
       "name": "botcafe-v2-prod",
@@ -183,6 +214,15 @@
         {
           "binding": "R2",
           "bucket_name": "botcafe-v2-prod",
+        },
+      ],
+      "ai": {
+        "binding": "AI",
+      },
+      "vectorize": [
+        {
+          "binding": "VECTORIZE",
+          "index_name": "botcafe-embeddings-prod",
         },
       ],
     },

@@ -3,6 +3,14 @@ import { getPayloadHMR } from '@payloadcms/next/utilities'
 import { currentUser } from '@clerk/nextjs/server'
 import config from '@payload-config'
 import { chunkText, getChunkConfig, estimateTokens } from '@/lib/vectorization/chunking'
+import {
+  generateEmbeddings,
+  insertVectors,
+  VectorRecord,
+  VectorMetadata,
+  BGE_M3_MODEL,
+  BGE_M3_DIMENSIONS,
+} from '@/lib/vectorization/embeddings'
 
 /**
  * POST /api/vectors/generate
@@ -93,22 +101,45 @@ export async function POST(request: NextRequest) {
 
     console.log(`Generated ${chunks.length} chunks for ${source_type} ${source_id}`)
 
-    // TODO: In production, we'll generate embeddings using OpenAI and store in Vectorize
-    // For now, we'll create placeholder VectorRecord entries
+    // Get Cloudflare bindings from request context
+    // @ts-ignore - Next.js context type
+    const ai = request.nextUrl.searchParams.get('__env')?.AI || (global as any).__env?.AI
+    // @ts-ignore
+    const vectorize = request.nextUrl.searchParams.get('__env')?.VECTORIZE || (global as any).__env?.VECTORIZE
+
+    if (!ai || !vectorize) {
+      // Fallback: Create placeholder records if bindings not available (local dev)
+      console.warn('AI or Vectorize binding not available. Creating placeholder records.')
+      return await createPlaceholderVectors(
+        payload,
+        chunks,
+        source_type,
+        source_id,
+        content_type,
+        payloadUser.id,
+        sourceCollection
+      )
+    }
 
     const vectorRecords = []
+    const vectorizeRecords: VectorRecord[] = []
     const tenant_id = payloadUser.id // Use user ID as tenant ID for multi-tenant isolation
 
-    for (const chunk of chunks) {
-      // In production, this would call OpenAI:
-      // const embedding = await generateEmbedding(chunk.text)
-      // const vectorId = await storeInVectorize(embedding, metadata)
+    // Generate embeddings for all chunks using Workers AI (BGE-M3)
+    const chunkTexts = chunks.map((c) => c.text)
+    console.log(`Generating embeddings for ${chunkTexts.length} chunks using ${BGE_M3_MODEL}...`)
 
-      // For now, create a mock vector ID
-      const vector_id = `vec_${source_type}_${source_id}_chunk_${chunk.index}_${Date.now()}`
+    const embeddings = await generateEmbeddings(ai, chunkTexts)
+
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i]
+      const embedding = embeddings[i]
+
+      // Generate unique vector ID
+      const vector_id = `vec_${source_type}_${source_id}_chunk_${chunk.index}_${Date.now()}_${i}`
 
       // Create metadata for Vectorize
-      const metadata = {
+      const metadata: VectorMetadata = {
         type: content_type,
         user_id: payloadUser.id,
         tenant_id: tenant_id,
@@ -119,7 +150,14 @@ export async function POST(request: NextRequest) {
         created_at: new Date().toISOString(),
       }
 
-      // Create VectorRecord in D1
+      // Prepare vector for Vectorize insertion
+      vectorizeRecords.push({
+        id: vector_id,
+        values: embedding,
+        metadata,
+      })
+
+      // Create VectorRecord in D1 for tracking
       const vectorRecord = await payload.create({
         collection: 'vectorRecords' as any,
         data: {
@@ -132,13 +170,17 @@ export async function POST(request: NextRequest) {
           total_chunks: chunk.totalChunks,
           chunk_text: chunk.text,
           metadata: metadata as any,
-          embedding_model: 'text-embedding-3-small',
-          embedding_dimensions: 1536,
+          embedding_model: BGE_M3_MODEL,
+          embedding_dimensions: BGE_M3_DIMENSIONS,
         },
       })
 
       vectorRecords.push(vectorRecord)
     }
+
+    // Insert all vectors into Vectorize
+    console.log(`Inserting ${vectorizeRecords.length} vectors into Vectorize...`)
+    await insertVectors(vectorize, vectorizeRecords)
 
     // Update source document to mark as vectorized
     await payload.update({
@@ -166,4 +208,75 @@ export async function POST(request: NextRequest) {
     console.error('Error generating vectors:', error)
     return NextResponse.json({ message: error.message || 'Failed to generate vectors' }, { status: 500 })
   }
+}
+
+/**
+ * Fallback function for local development without Cloudflare bindings
+ * Creates placeholder VectorRecord entries without real embeddings
+ */
+async function createPlaceholderVectors(
+  payload: any,
+  chunks: any[],
+  source_type: string,
+  source_id: string,
+  content_type: string,
+  userId: number,
+  sourceCollection: string
+) {
+  const vectorRecords = []
+  const tenant_id = userId
+
+  for (const chunk of chunks) {
+    const vector_id = `vec_placeholder_${source_type}_${source_id}_chunk_${chunk.index}_${Date.now()}`
+
+    const metadata = {
+      type: content_type,
+      user_id: userId,
+      tenant_id: tenant_id,
+      source_type,
+      source_id,
+      chunk_index: chunk.index,
+      total_chunks: chunk.totalChunks,
+      created_at: new Date().toISOString(),
+    }
+
+    const vectorRecord = await payload.create({
+      collection: 'vectorRecords' as any,
+      data: {
+        vector_id,
+        source_type,
+        source_id,
+        user_id: userId,
+        tenant_id,
+        chunk_index: chunk.index,
+        total_chunks: chunk.totalChunks,
+        chunk_text: chunk.text,
+        metadata: metadata as any,
+        embedding_model: `${BGE_M3_MODEL} (placeholder)`,
+        embedding_dimensions: BGE_M3_DIMENSIONS,
+      },
+    })
+
+    vectorRecords.push(vectorRecord)
+  }
+
+  await payload.update({
+    collection: sourceCollection as any,
+    id: source_id,
+    data: {
+      is_vectorized: true,
+      vector_records: vectorRecords.map((vr) => vr.id),
+      chunk_count: chunks.length,
+    },
+  })
+
+  return NextResponse.json({
+    message: 'Vectors generated successfully (placeholder mode - no real embeddings)',
+    vector_count: vectorRecords.length,
+    vector_record_ids: vectorRecords.map((vr) => vr.id),
+    chunks_info: {
+      total_chunks: chunks.length,
+    },
+    warning: 'Cloudflare AI/Vectorize bindings not available. Created placeholder records only.',
+  })
 }

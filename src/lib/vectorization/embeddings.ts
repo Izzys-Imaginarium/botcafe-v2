@@ -87,7 +87,7 @@ export async function generateEmbeddings(
  * Vector metadata for Vectorize storage
  */
 export interface VectorMetadata {
-  type: 'lore' | 'memory' | 'legacy_memory'
+  type: 'lore' | 'memory' | 'legacy_memory' | 'document'
   user_id: number
   tenant_id: number
   source_type: 'knowledge' | 'memory'
@@ -140,7 +140,7 @@ export async function insertVectors(
  * Search filters for Vectorize queries
  */
 export interface SearchFilters {
-  type?: 'lore' | 'memory' | 'legacy_memory'
+  type?: 'lore' | 'memory' | 'legacy_memory' | 'document'
   user_id?: number
   tenant_id?: number
   source_type?: 'knowledge' | 'memory'

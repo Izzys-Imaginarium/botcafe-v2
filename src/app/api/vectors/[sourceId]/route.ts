@@ -3,6 +3,8 @@ import { getPayloadHMR } from '@payloadcms/next/utilities'
 import { currentUser } from '@clerk/nextjs/server'
 import config from '@payload-config'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * DELETE /api/vectors/[sourceId]
  *

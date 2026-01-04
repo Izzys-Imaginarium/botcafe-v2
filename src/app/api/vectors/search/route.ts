@@ -4,6 +4,8 @@ import { currentUser } from '@clerk/nextjs/server'
 import config from '@payload-config'
 import { searchVectors, SearchFilters } from '@/lib/vectorization/embeddings'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * POST /api/vectors/search
  *
@@ -78,7 +80,9 @@ export async function POST(request: NextRequest) {
     // Build search filters for multi-tenant isolation
     const searchFilters: SearchFilters = {
       tenant_id: payloadUser.id, // Ensure users only search their own data
-      ...filters,
+      type: filters.type,
+      applies_to_bots: filters.applies_to_bots?.map(id => typeof id === 'string' ? parseInt(id) : id),
+      applies_to_personas: filters.applies_to_personas?.map(id => typeof id === 'string' ? parseInt(id) : id),
     }
 
     // Perform semantic search using Workers AI + Vectorize

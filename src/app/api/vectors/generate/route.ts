@@ -12,6 +12,8 @@ import {
   BGE_M3_DIMENSIONS,
 } from '@/lib/vectorization/embeddings'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * POST /api/vectors/generate
  *

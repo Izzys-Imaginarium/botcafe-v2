@@ -108,10 +108,13 @@ By building foundational systems first, we avoid rework and ensure chat has all 
   - [x] Design memory lifecycle (conversation → summary → legacy lore)
   - [x] Create comprehensive workflow examples
   - [x] Document token budget management
-- [ ] **Phase 4A: Lore System Foundation**
-  - [ ] Create VectorRecord collection
-  - [ ] Update Knowledge collection with new fields
-  - [ ] Update Conversation collection with participant tracking
+- [ ] **Phase 4A: Lore System Foundation** (In Progress)
+  - [x] Create VectorRecord collection ✅
+  - [x] Update Knowledge collection with new fields ✅
+  - [x] Update Conversation collection with participant tracking ✅
+  - [x] Update Memory collection with new fields ✅
+  - [x] Update payload.config.ts with VectorRecord ✅
+  - [x] Generate Payload types and verify TypeScript compilation ✅
   - [ ] Implement vector generation API (`/api/vectors/generate`)
   - [ ] Implement semantic search API (`/api/vectors/search`)
   - [ ] Build `/lore/entries` knowledge entry creation UI
@@ -122,7 +125,7 @@ By building foundational systems first, we avoid rework and ensure chat has all 
   - [ ] Connect to Cloudflare Vectorize
   - [ ] Test end-to-end: upload → chunk → vectorize → search
 - [ ] **Phase 4B: Memory Vectorization**
-  - [ ] Update Memory collection with new fields
+  - [x] Update Memory collection with new fields ✅ (already done in 4A)
   - [ ] Implement auto-summarization triggers
   - [ ] Build conversation context retrieval
   - [ ] Add memory vectorization pipeline

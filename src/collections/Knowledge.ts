@@ -74,6 +74,7 @@ export const Knowledge: CollectionConfig = {
         { label: 'Audio', value: 'audio' },
         { label: 'Video', value: 'video' },
         { label: 'Code', value: 'code' },
+        { label: 'Legacy Memory', value: 'legacy_memory' },
       ],
     },
     {
@@ -101,6 +102,101 @@ export const Knowledge: CollectionConfig = {
       type: 'relationship',
       relationTo: 'knowledgeCollections',
       required: true,
+    },
+    // RAG System Fields
+    {
+      name: 'is_legacy_memory',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        description: 'Whether this is a converted memory from conversations',
+      },
+    },
+    {
+      name: 'source_memory_id',
+      type: 'relationship',
+      relationTo: 'memory',
+      admin: {
+        description: 'Link to original Memory record (for legacy memories)',
+        condition: (data) => data.is_legacy_memory === true,
+      },
+    },
+    {
+      name: 'source_conversation_id',
+      type: 'relationship',
+      relationTo: 'conversation',
+      admin: {
+        description: 'Link to original Conversation (for legacy memories)',
+        condition: (data) => data.is_legacy_memory === true,
+      },
+    },
+    {
+      name: 'original_participants',
+      type: 'json',
+      admin: {
+        description: 'Original participants: { personas: string[], bots: string[] }',
+        condition: (data) => data.is_legacy_memory === true,
+      },
+    },
+    {
+      name: 'memory_date_range',
+      type: 'json',
+      admin: {
+        description: 'Date range of original conversation: { start: timestamp, end: timestamp }',
+        condition: (data) => data.is_legacy_memory === true,
+      },
+    },
+    {
+      name: 'applies_to_bots',
+      type: 'relationship',
+      relationTo: 'bot',
+      hasMany: true,
+      admin: {
+        description: 'Bots this knowledge applies to',
+      },
+    },
+    {
+      name: 'applies_to_personas',
+      type: 'relationship',
+      relationTo: 'personas',
+      hasMany: true,
+      admin: {
+        description: 'Personas this knowledge applies to (for legacy memories)',
+        condition: (data) => data.is_legacy_memory === true,
+      },
+    },
+    {
+      name: 'is_vectorized',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        description: 'Whether content has been vectorized for RAG',
+      },
+    },
+    {
+      name: 'vector_records',
+      type: 'relationship',
+      relationTo: 'vectorRecords',
+      hasMany: true,
+      admin: {
+        description: 'Links to vector chunks in Vectorize',
+        condition: (data) => data.is_vectorized === true,
+      },
+    },
+    {
+      name: 'chunk_count',
+      type: 'number',
+      defaultValue: 0,
+      admin: {
+        description: 'Number of chunks created during vectorization',
+      },
+    },
+    {
+      name: 'r2_file_key',
+      type: 'text',
+      admin: {
+        description: 'R2 object storage key for uploaded files',
+      },
     },
     {
       name: 'privacy_settings',

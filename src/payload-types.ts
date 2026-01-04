@@ -70,6 +70,7 @@ export interface Config {
     users: User;
     media: Media;
     bot: Bot;
+    botInteractions: BotInteraction;
     'api-key': ApiKey;
     mood: Mood;
     knowledge: Knowledge;
@@ -77,6 +78,7 @@ export interface Config {
     conversation: Conversation;
     message: Message;
     memory: Memory;
+    vectorRecords: VectorRecord;
     tokenGifts: TokenGift;
     subscriptionPayments: SubscriptionPayment;
     subscriptionTiers: SubscriptionTier;
@@ -104,6 +106,7 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     bot: BotSelect<false> | BotSelect<true>;
+    botInteractions: BotInteractionsSelect<false> | BotInteractionsSelect<true>;
     'api-key': ApiKeySelect<false> | ApiKeySelect<true>;
     mood: MoodSelect<false> | MoodSelect<true>;
     knowledge: KnowledgeSelect<false> | KnowledgeSelect<true>;
@@ -111,6 +114,7 @@ export interface Config {
     conversation: ConversationSelect<false> | ConversationSelect<true>;
     message: MessageSelect<false> | MessageSelect<true>;
     memory: MemorySelect<false> | MemorySelect<true>;
+    vectorRecords: VectorRecordsSelect<false> | VectorRecordsSelect<true>;
     tokenGifts: TokenGiftsSelect<false> | TokenGiftsSelect<true>;
     subscriptionPayments: SubscriptionPaymentsSelect<false> | SubscriptionPaymentsSelect<true>;
     subscriptionTiers: SubscriptionTiersSelect<false> | SubscriptionTiersSelect<true>;
@@ -306,6 +310,21 @@ export interface KnowledgeCollection {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "botInteractions".
+ */
+export interface BotInteraction {
+  id: number;
+  user: number | User;
+  bot: number | Bot;
+  liked?: boolean | null;
+  favorited?: boolean | null;
+  created_date?: string | null;
+  updated_date?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "api-key".
  */
 export interface ApiKey {
@@ -451,7 +470,7 @@ export interface Knowledge {
   user: number | User;
   created_timestamp?: string | null;
   modified_timestamp?: string | null;
-  type: 'document' | 'url' | 'text' | 'image' | 'audio' | 'video' | 'code';
+  type: 'document' | 'url' | 'text' | 'image' | 'audio' | 'video' | 'code' | 'legacy_memory';
   tags?:
     | {
         tag?: string | null;
@@ -461,6 +480,66 @@ export interface Knowledge {
   tokens?: number | null;
   entry: string;
   knowledge_collection: number | KnowledgeCollection;
+  /**
+   * Whether this is a converted memory from conversations
+   */
+  is_legacy_memory?: boolean | null;
+  /**
+   * Link to original Memory record (for legacy memories)
+   */
+  source_memory_id?: (number | null) | Memory;
+  /**
+   * Link to original Conversation (for legacy memories)
+   */
+  source_conversation_id?: (number | null) | Conversation;
+  /**
+   * Original participants: { personas: string[], bots: string[] }
+   */
+  original_participants?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Date range of original conversation: { start: timestamp, end: timestamp }
+   */
+  memory_date_range?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Bots this knowledge applies to
+   */
+  applies_to_bots?: (number | Bot)[] | null;
+  /**
+   * Personas this knowledge applies to (for legacy memories)
+   */
+  applies_to_personas?: (number | Persona)[] | null;
+  /**
+   * Whether content has been vectorized for RAG
+   */
+  is_vectorized?: boolean | null;
+  /**
+   * Links to vector chunks in Vectorize
+   */
+  vector_records?: (number | VectorRecord)[] | null;
+  /**
+   * Number of chunks created during vectorization
+   */
+  chunk_count?: number | null;
+  /**
+   * R2 object storage key for uploaded files
+   */
+  r2_file_key?: string | null;
   privacy_settings: {
     privacy_level: 'private' | 'shared' | 'public';
     allow_sharing?: boolean | null;
@@ -508,6 +587,66 @@ export interface Knowledge {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "memory".
+ */
+export interface Memory {
+  id: number;
+  user: number | User;
+  created_timestamp?: string | null;
+  modified_timestamp?: string | null;
+  bot: number | Bot;
+  conversation?: (number | null) | Conversation;
+  tokens?: number | null;
+  entry: string;
+  /**
+   * Memory type based on summarization level
+   */
+  type?: ('short_term' | 'long_term' | 'consolidated') | null;
+  /**
+   * Participants in conversation: { personas: string[], bots: string[] }
+   */
+  participants?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Whether memory has been vectorized for RAG
+   */
+  is_vectorized?: boolean | null;
+  /**
+   * Links to vector chunks in Vectorize
+   */
+  vector_records?: (number | VectorRecord)[] | null;
+  /**
+   * Whether memory has been saved as legacy lore
+   */
+  converted_to_lore?: boolean | null;
+  /**
+   * Link to created lore entry (if converted)
+   */
+  lore_entry?: (number | null) | Knowledge;
+  /**
+   * When converted to lore
+   */
+  converted_at?: string | null;
+  /**
+   * Significance rating 1-10
+   */
+  importance?: number | null;
+  /**
+   * Mood/emotion tags and context
+   */
+  emotional_context?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "conversation".
  */
 export interface Conversation {
@@ -525,6 +664,34 @@ export interface Conversation {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Tracks all participants: { personas: string[], bots: string[], primary_persona?: string, persona_changes?: Array<{persona_id, switched_at, message_index}> }
+   */
+  participants?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Running token count for conversation
+   */
+  total_tokens?: number | null;
+  /**
+   * When conversation was last summarized
+   */
+  last_summarized_at?: string | null;
+  /**
+   * Last message included in summary
+   */
+  last_summarized_message_index?: number | null;
+  /**
+   * Flag when token threshold reached
+   */
+  requires_summarization?: boolean | null;
   conversation_metadata?: {
     total_messages?: number | null;
     participant_count?: number | null;
@@ -543,6 +710,149 @@ export interface Conversation {
     message_retention_days?: number | null;
     auto_save_conversations?: boolean | null;
   };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Tracks vector embeddings in Cloudflare Vectorize for D1 coordination
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "vectorRecords".
+ */
+export interface VectorRecord {
+  id: number;
+  /**
+   * Unique ID in Vectorize database
+   */
+  vector_id: string;
+  /**
+   * Type of source document
+   */
+  source_type: 'knowledge' | 'memory';
+  /**
+   * ID of source document in D1
+   */
+  source_id: string;
+  /**
+   * Owner of this vector
+   */
+  user_id: number | User;
+  /**
+   * Multi-tenant isolation ID
+   */
+  tenant_id: string;
+  /**
+   * Position in document (0-based)
+   */
+  chunk_index: number;
+  /**
+   * Total chunks in document
+   */
+  total_chunks: number;
+  /**
+   * Original text of this chunk
+   */
+  chunk_text: string;
+  /**
+   * Full metadata object for Vectorize (includes type, tags, etc.)
+   */
+  metadata:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Embedding model used
+   */
+  embedding_model: string;
+  /**
+   * Vector dimensions
+   */
+  embedding_dimensions: number;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * User personas/masks system for bot interactions
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "personas".
+ */
+export interface Persona {
+  id: number;
+  user: number | User;
+  name: string;
+  description: string;
+  personality_traits?: {
+    tone?:
+      | ('friendly' | 'professional' | 'playful' | 'mysterious' | 'wise' | 'humorous' | 'empathetic' | 'authoritative')
+      | null;
+    formality_level?: ('very-casual' | 'casual' | 'neutral' | 'formal' | 'very-formal') | null;
+    humor_style?: ('none' | 'light' | 'moderate' | 'dark' | 'sarcastic') | null;
+    communication_style?: ('direct' | 'elaborate' | 'concise' | 'storytelling' | 'questioning') | null;
+  };
+  appearance?: {
+    avatar?: (number | null) | Media;
+    visual_theme?: ('classic' | 'modern' | 'fantasy' | 'minimalist' | 'vintage' | 'futuristic') | null;
+    color_scheme?: string | null;
+  };
+  behavior_settings?: {
+    response_length?: ('very-short' | 'short' | 'medium' | 'long' | 'very-long') | null;
+    creativity_level?: ('conservative' | 'moderate' | 'creative' | 'highly-creative') | null;
+    knowledge_sharing?: ('very-limited' | 'limited' | 'balanced' | 'generous' | 'very-generous') | null;
+  };
+  interaction_preferences?: {
+    preferred_topics?:
+      | {
+          topic?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    avoid_topics?:
+      | {
+          topic?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    conversation_starter?: string | null;
+    signature_phrases?:
+      | {
+          phrase?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  /**
+   * Set as default persona for new conversations
+   */
+  is_default?: boolean | null;
+  /**
+   * Allow other users to view and use this persona
+   */
+  is_public?: boolean | null;
+  /**
+   * Number of times this persona has been used
+   */
+  usage_count?: number | null;
+  created_timestamp?: string | null;
+  modified_timestamp?: string | null;
+  /**
+   * Tags to help categorize and find this persona
+   */
+  tags?:
+    | {
+        tag?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Additional custom instructions for this persona
+   */
+  custom_instructions?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -635,22 +945,6 @@ export interface Message {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "memory".
- */
-export interface Memory {
-  id: number;
-  user: number | User;
-  created_timestamp?: string | null;
-  modified_timestamp?: string | null;
-  bot: number | Bot;
-  conversation?: (number | null) | Conversation;
-  tokens?: number | null;
-  entry: string;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "tokenGifts".
  */
 export interface TokenGift {
@@ -711,86 +1005,6 @@ export interface TokenPackage {
   description?: string | null;
   is_popular?: boolean | null;
   is_active?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * User personas/masks system for bot interactions
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "personas".
- */
-export interface Persona {
-  id: number;
-  user: number | User;
-  name: string;
-  description: string;
-  personality_traits?: {
-    tone?:
-      | ('friendly' | 'professional' | 'playful' | 'mysterious' | 'wise' | 'humorous' | 'empathetic' | 'authoritative')
-      | null;
-    formality_level?: ('very-casual' | 'casual' | 'neutral' | 'formal' | 'very-formal') | null;
-    humor_style?: ('none' | 'light' | 'moderate' | 'dark' | 'sarcastic') | null;
-    communication_style?: ('direct' | 'elaborate' | 'concise' | 'storytelling' | 'questioning') | null;
-  };
-  appearance?: {
-    avatar?: (number | null) | Media;
-    visual_theme?: ('classic' | 'modern' | 'fantasy' | 'minimalist' | 'vintage' | 'futuristic') | null;
-    color_scheme?: string | null;
-  };
-  behavior_settings?: {
-    response_length?: ('very-short' | 'short' | 'medium' | 'long' | 'very-long') | null;
-    creativity_level?: ('conservative' | 'moderate' | 'creative' | 'highly-creative') | null;
-    knowledge_sharing?: ('very-limited' | 'limited' | 'balanced' | 'generous' | 'very-generous') | null;
-  };
-  interaction_preferences?: {
-    preferred_topics?:
-      | {
-          topic?: string | null;
-          id?: string | null;
-        }[]
-      | null;
-    avoid_topics?:
-      | {
-          topic?: string | null;
-          id?: string | null;
-        }[]
-      | null;
-    conversation_starter?: string | null;
-    signature_phrases?:
-      | {
-          phrase?: string | null;
-          id?: string | null;
-        }[]
-      | null;
-  };
-  /**
-   * Set as default persona for new conversations
-   */
-  is_default?: boolean | null;
-  /**
-   * Allow other users to view and use this persona
-   */
-  is_public?: boolean | null;
-  /**
-   * Number of times this persona has been used
-   */
-  usage_count?: number | null;
-  created_timestamp?: string | null;
-  modified_timestamp?: string | null;
-  /**
-   * Tags to help categorize and find this persona
-   */
-  tags?:
-    | {
-        tag?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Additional custom instructions for this persona
-   */
-  custom_instructions?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -2419,6 +2633,10 @@ export interface PayloadLockedDocument {
         value: number | Bot;
       } | null)
     | ({
+        relationTo: 'botInteractions';
+        value: number | BotInteraction;
+      } | null)
+    | ({
         relationTo: 'api-key';
         value: number | ApiKey;
       } | null)
@@ -2445,6 +2663,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'memory';
         value: number | Memory;
+      } | null)
+    | ({
+        relationTo: 'vectorRecords';
+        value: number | VectorRecord;
       } | null)
     | ({
         relationTo: 'tokenGifts';
@@ -2631,6 +2853,20 @@ export interface BotSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "botInteractions_select".
+ */
+export interface BotInteractionsSelect<T extends boolean = true> {
+  user?: T;
+  bot?: T;
+  liked?: T;
+  favorited?: T;
+  created_date?: T;
+  updated_date?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "api-key_select".
  */
 export interface ApiKeySelect<T extends boolean = true> {
@@ -2745,6 +2981,17 @@ export interface KnowledgeSelect<T extends boolean = true> {
   tokens?: T;
   entry?: T;
   knowledge_collection?: T;
+  is_legacy_memory?: T;
+  source_memory_id?: T;
+  source_conversation_id?: T;
+  original_participants?: T;
+  memory_date_range?: T;
+  applies_to_bots?: T;
+  applies_to_personas?: T;
+  is_vectorized?: T;
+  vector_records?: T;
+  chunk_count?: T;
+  r2_file_key?: T;
   privacy_settings?:
     | T
     | {
@@ -2889,6 +3136,11 @@ export interface ConversationSelect<T extends boolean = true> {
         is_active?: T;
         id?: T;
       };
+  participants?: T;
+  total_tokens?: T;
+  last_summarized_at?: T;
+  last_summarized_message_index?: T;
+  requires_summarization?: T;
   conversation_metadata?:
     | T
     | {
@@ -3002,6 +3254,34 @@ export interface MemorySelect<T extends boolean = true> {
   conversation?: T;
   tokens?: T;
   entry?: T;
+  type?: T;
+  participants?: T;
+  is_vectorized?: T;
+  vector_records?: T;
+  converted_to_lore?: T;
+  lore_entry?: T;
+  converted_at?: T;
+  importance?: T;
+  emotional_context?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "vectorRecords_select".
+ */
+export interface VectorRecordsSelect<T extends boolean = true> {
+  vector_id?: T;
+  source_type?: T;
+  source_id?: T;
+  user_id?: T;
+  tenant_id?: T;
+  chunk_index?: T;
+  total_chunks?: T;
+  chunk_text?: T;
+  metadata?: T;
+  embedding_model?: T;
+  embedding_dimensions?: T;
   updatedAt?: T;
   createdAt?: T;
 }

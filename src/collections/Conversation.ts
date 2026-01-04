@@ -98,6 +98,44 @@ export const Conversation: CollectionConfig = {
         },
       ],
     },
+    // RAG System - Participant Tracking
+    {
+      name: 'participants',
+      type: 'json',
+      admin: {
+        description: 'Tracks all participants: { personas: string[], bots: string[], primary_persona?: string, persona_changes?: Array<{persona_id, switched_at, message_index}> }',
+      },
+    },
+    {
+      name: 'total_tokens',
+      type: 'number',
+      defaultValue: 0,
+      admin: {
+        description: 'Running token count for conversation',
+      },
+    },
+    {
+      name: 'last_summarized_at',
+      type: 'date',
+      admin: {
+        description: 'When conversation was last summarized',
+      },
+    },
+    {
+      name: 'last_summarized_message_index',
+      type: 'number',
+      admin: {
+        description: 'Last message included in summary',
+      },
+    },
+    {
+      name: 'requires_summarization',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        description: 'Flag when token threshold reached',
+      },
+    },
     {
       name: 'conversation_metadata',
       type: 'group',

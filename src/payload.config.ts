@@ -20,6 +20,7 @@ import { KnowledgeCollections } from './collections/KnowledgeCollections'
 import { Conversation } from './collections/Conversation'
 import { Message } from './collections/Message'
 import { Memory } from './collections/Memory'
+import { VectorRecord } from './collections/VectorRecord'
 import { TokenGifts } from './collections/TokenGifts'
 import { SubscriptionPayments } from './collections/SubscriptionPayments'
 import { SubscriptionTiers } from './collections/SubscriptionTiers'
@@ -68,6 +69,7 @@ export default buildConfig({
     Conversation,
     Message,
     Memory,
+    VectorRecord,
     TokenGifts,
     SubscriptionPayments,
     SubscriptionTiers,

@@ -108,14 +108,14 @@ export const Navbar = ({ user }: NavbarProps) => {
             {isSignedIn ? (
               <div className="flex items-center gap-3">
                 {/* User Menu Dropdown */}
-                <DropdownMenu>
+                <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
                       size="sm"
                       className="hidden md:flex items-center gap-1 text-parchment hover:text-gold-rich hover:bg-gold-rich/10"
                     >
-                      <span className="font-lore italic">My Studio</span>
+                      <span className="font-lore italic text-base">My Studio</span>
                       <ChevronDown className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>

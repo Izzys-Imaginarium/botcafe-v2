@@ -49,6 +49,7 @@ export const LoreEntriesView = () => {
   const [isVectorizing, setIsVectorizing] = useState(false)
   const [isLoadingCollections, setIsLoadingCollections] = useState(true)
   const [isLoadingEntries, setIsLoadingEntries] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
 
   // Form state
   const [entryType, setEntryType] = useState('text')
@@ -57,6 +58,8 @@ export const LoreEntriesView = () => {
   const [tags, setTags] = useState('')
   const [collection, setCollection] = useState('')
   const [applyToBots, setApplyToBots] = useState<string[]>([])
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [r2FileKey, setR2FileKey] = useState<string>('')
 
   // Data state
   const [collections, setCollections] = useState<Collection[]>([])
@@ -145,6 +148,7 @@ export const LoreEntriesView = () => {
           knowledge_collection: collection,
           tags: tagArray,
           applies_to_bots: applyToBots,
+          r2_file_key: r2FileKey || undefined, // Include R2 file key if uploaded
         }),
       })
 
@@ -161,6 +165,9 @@ export const LoreEntriesView = () => {
         setContent('')
         setTags('')
         setApplyToBots([])
+        setUploadedFile(null)
+        setR2FileKey('')
+        setEntryType('text') // Reset to text type
 
         // Refresh entries if on browse tab
         if (activeTab === 'browse') {
@@ -174,6 +181,53 @@ export const LoreEntriesView = () => {
       toast.error(error.message || 'Failed to create entry')
     } finally {
       setIsCreating(false)
+    }
+  }
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsUploading(true)
+    setUploadedFile(file)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = (await response.json()) as {
+        success?: boolean
+        data?: {
+          text: string
+          fileName: string
+          fileSize: number
+          tokenEstimate: number
+          r2FileKey: string
+          mediaId: string
+          wordCount: number
+        }
+        message?: string
+      }
+
+      if (data.success && data.data) {
+        toast.success(`File uploaded! Extracted ${data.data.wordCount} words.`)
+        setContent(data.data.text)
+        setR2FileKey(data.data.mediaId)
+      } else {
+        toast.error(data.message || 'Failed to upload file')
+        setUploadedFile(null)
+      }
+    } catch (error: any) {
+      console.error('Upload error:', error)
+      toast.error(error.message || 'Failed to upload file')
+      setUploadedFile(null)
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -333,23 +387,88 @@ export const LoreEntriesView = () => {
                       )}
                     </div>
 
-                    {/* Content */}
-                    <div className="space-y-2">
-                      <Label htmlFor="content" className="text-parchment">
-                        Content <span className="text-red-400">*</span>
-                      </Label>
-                      <Textarea
-                        id="content"
-                        placeholder="Enter your knowledge content here. This will be chunked and vectorized for semantic search."
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        rows={12}
-                        className="glass-rune border-gold-ancient/30 text-parchment placeholder:text-parchment/40 font-lore"
-                      />
-                      <p className="text-xs text-parchment/50">
-                        {content.length} characters • Estimated {Math.ceil(content.length / 4)} tokens
-                      </p>
-                    </div>
+                    {/* File Upload (for document type) */}
+                    {entryType === 'document' && (
+                      <div className="space-y-2">
+                        <Label htmlFor="file-upload" className="text-parchment">
+                          Upload Document <span className="text-red-400">*</span>
+                        </Label>
+                        <div className="flex flex-col gap-2">
+                          <label
+                            htmlFor="file-upload"
+                            className="flex items-center justify-center w-full px-4 py-8 border-2 border-dashed border-gold-ancient/30 rounded-lg cursor-pointer hover:border-gold-rich/50 transition-colors glass-rune"
+                          >
+                            {isUploading ? (
+                              <div className="flex flex-col items-center gap-2">
+                                <Loader2 className="w-8 h-8 text-gold-rich animate-spin" />
+                                <p className="text-sm text-parchment/60">Uploading and extracting text...</p>
+                              </div>
+                            ) : uploadedFile ? (
+                              <div className="flex flex-col items-center gap-2">
+                                <FileText className="w-8 h-8 text-gold-rich" />
+                                <p className="text-sm text-parchment">{uploadedFile.name}</p>
+                                <p className="text-xs text-parchment/50">
+                                  {(uploadedFile.size / 1024).toFixed(2)} KB
+                                </p>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    setUploadedFile(null)
+                                    setContent('')
+                                    setR2FileKey('')
+                                  }}
+                                  className="text-red-400 hover:text-red-300"
+                                >
+                                  Remove
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center gap-2">
+                                <Upload className="w-8 h-8 text-gold-ancient" />
+                                <p className="text-sm text-parchment">
+                                  Click to upload or drag and drop
+                                </p>
+                                <p className="text-xs text-parchment/50">
+                                  PDF, TXT, or MD (Max 10MB)
+                                </p>
+                              </div>
+                            )}
+                          </label>
+                          <input
+                            id="file-upload"
+                            type="file"
+                            accept=".pdf,.txt,.md"
+                            onChange={handleFileUpload}
+                            disabled={isUploading}
+                            className="hidden"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Content (for text type or after file upload) */}
+                    {(entryType !== 'document' || content) && (
+                      <div className="space-y-2">
+                        <Label htmlFor="content" className="text-parchment">
+                          Content <span className="text-red-400">*</span>
+                        </Label>
+                        <Textarea
+                          id="content"
+                          placeholder="Enter your knowledge content here. This will be chunked and vectorized for semantic search."
+                          value={content}
+                          onChange={(e) => setContent(e.target.value)}
+                          rows={12}
+                          className="glass-rune border-gold-ancient/30 text-parchment placeholder:text-parchment/40 font-lore"
+                          disabled={entryType === 'document' && isUploading}
+                        />
+                        <p className="text-xs text-parchment/50">
+                          {content.length} characters • Estimated {Math.ceil(content.length / 4)} tokens
+                        </p>
+                      </div>
+                    )}
 
                     {/* Tags */}
                     <div className="space-y-2">
@@ -367,7 +486,7 @@ export const LoreEntriesView = () => {
                     <div className="flex gap-3 pt-4">
                       <Button
                         onClick={handleCreateEntry}
-                        disabled={isCreating || !title || !content || !collection}
+                        disabled={isCreating || !content || !collection || isUploading}
                         className="bg-gold-rich hover:bg-gold-rich/90 text-[#0a140a] flex-1"
                       >
                         {isCreating ? (
@@ -438,26 +557,30 @@ export const LoreEntriesView = () => {
 
                 <Card className="glass-rune border-gold-ancient/30">
                   <CardHeader>
-                    <CardTitle className="text-sm text-parchment">Chunking Strategy</CardTitle>
+                    <CardTitle className="text-sm text-parchment">Vectorization Details</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 text-sm text-parchment/70">
                     <div className="flex justify-between">
-                      <span>Method:</span>
+                      <span>Model:</span>
                       <Badge variant="secondary" className="bg-gold-ancient/20 text-gold-rich">
-                        Paragraph
+                        BGE-M3
                       </Badge>
                     </div>
                     <div className="flex justify-between">
-                      <span>Chunk Size:</span>
-                      <span className="text-parchment">750 tokens</span>
+                      <span>Dimensions:</span>
+                      <span className="text-parchment">1024</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Overlap:</span>
-                      <span className="text-parchment">50 tokens</span>
+                      <span>Max Context:</span>
+                      <span className="text-parchment">8192 tokens</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Model:</span>
-                      <span className="text-parchment">text-embedding-3-small</span>
+                      <span>Languages:</span>
+                      <span className="text-parchment">100+</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Platform:</span>
+                      <span className="text-parchment">Cloudflare AI</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -467,10 +590,11 @@ export const LoreEntriesView = () => {
                     <CardTitle className="text-sm text-parchment">Tips</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 text-sm text-parchment/70">
+                    <p>• Upload PDFs for automatic text extraction</p>
                     <p>• Write clear, descriptive content</p>
-                    <p>• Use proper paragraphs</p>
-                    <p>• Add relevant tags</p>
-                    <p>• Link to specific bots</p>
+                    <p>• Use proper paragraphs for better chunking</p>
+                    <p>• Add relevant tags for organization</p>
+                    <p>• Link knowledge to specific bots</p>
                   </CardContent>
                 </Card>
               </div>

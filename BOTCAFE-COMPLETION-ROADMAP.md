@@ -139,10 +139,10 @@ By building foundational systems first, we avoid rework and ensure chat has all 
   - [x] Add delete functionality for entries and collections ✅
   - [x] Fix all TypeScript compilation errors ✅
   - [x] Verify Next.js production build passes ✅
-  - [ ] Implement file upload (R2) and text extraction (Deferred to Phase 4B.5)
-  - [ ] Integrate real vectorization (OpenAI embeddings API) (Next: Phase 4B.5)
-  - [ ] Connect to Cloudflare Vectorize for vector storage (Next: Phase 4B.5)
-  - [ ] Implement real semantic search functionality (Next: Phase 4B.5)
+  - [x] Implement file upload (R2) and text extraction ✅ **COMPLETED**
+  - [x] Integrate real vectorization (BGE-M3 via Workers AI) ✅ **COMPLETED**
+  - [x] Connect to Cloudflare Vectorize for vector storage ✅ **COMPLETED**
+  - [x] Implement real semantic search functionality ✅ **COMPLETED**
 - [x] **Phase 4B.5: Real Vectorization Integration** ✅ **COMPLETED**
   - [x] Selected BGE-M3 model (1024 dims, 8192 tokens, multilingual) ✅
   - [x] Set up Cloudflare Workers AI binding for embeddings ✅

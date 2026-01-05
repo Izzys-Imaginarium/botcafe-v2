@@ -16,8 +16,6 @@ import { useState } from 'react'
 import {
   Menu,
   Coffee,
-  Moon,
-  MessageCircle,
   User,
   BookOpen,
   Brain,
@@ -107,13 +105,6 @@ export const Navbar = ({ user }: NavbarProps) => {
 
           {/* Right Side Actions */}
           <div className="flex items-center gap-4">
-            <Button
-              aria-label="Theme Toggle"
-              className="p-2 rounded-full hover:bg-gold-rich/10 text-gold-ancient hover:text-gold-rich transition-all"
-            >
-              <Moon className="h-5 w-5" />
-            </Button>
-            <div className="h-8 w-px bg-gold-ancient/30 hidden sm:block mx-2"></div>
             {isSignedIn ? (
               <div className="flex items-center gap-3">
                 {/* User Menu Dropdown */}
@@ -183,14 +174,6 @@ export const Navbar = ({ user }: NavbarProps) => {
                 </Button>
               </SignInButton>
             )}
-            <div className="hidden xl:flex items-center gap-3 ml-2 text-gold-ancient/70">
-              <Link href="#" className="hover:text-[#5865F2] transition-colors">
-                <MessageCircle className="h-5 w-5" />
-              </Link>
-              <Link href="#" className="hover:text-[#13C3FF] transition-colors">
-                <Coffee className="h-5 w-5" />
-              </Link>
-            </div>
           </div>
 
           {/* Mobile Menu Button */}

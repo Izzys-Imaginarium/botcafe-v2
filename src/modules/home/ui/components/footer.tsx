@@ -111,14 +111,6 @@ export const Footer = () => {
             >
               Discord
             </Link>
-            <Link
-              href="https://twitter.com/botcafe"
-              className="hover:text-gold-rich transition-colors"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Twitter
-            </Link>
           </div>
         </div>
       </div>

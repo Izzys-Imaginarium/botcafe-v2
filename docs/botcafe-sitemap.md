@@ -129,21 +129,31 @@ s
 ```
 
 #### Sub-pages:
-- **Knowledge Dashboard** (`/lore/dashboard`)
+- **Knowledge Dashboard** (`/lore/dashboard`) ✅ **IMPLEMENTED**
   - Overview of all knowledge resources
   - Recent additions and updates
   - Usage analytics
-- **Knowledge Entries** (`/lore/entries`)
-  - List view of all entries
+  - Real-time data fetching with backend API integration
+- **Knowledge Entries** (`/lore/entries`) ✅ **IMPLEMENTED**
+  - List view of all entries with pagination
   - Create/edit individual knowledge pieces
-  - Bulk import functionality
+  - Delete functionality with ownership verification
   - Privacy controls (Private/Shared/Select People)
-- **Collections** (`/lore/collections`)
+  - **Vectorization System** (Phase 4B.5 Complete):
+    - Real AI-powered vectorization using Cloudflare Workers AI (BGE-M3)
+    - Semantic search capabilities across knowledge base
+    - 1024-dimension embeddings with 8192 token context
+    - Multilingual support (100+ languages)
+    - Vector storage in Cloudflare Vectorize
+    - Vectorization status tracking
+- **Collections** (`/lore/collections`) ✅ **IMPLEMENTED**
   - Organize knowledge into themed collections
   - **Curated Collections** (moderator-approved, pre-configured features)
   - Collaborative sharing options
   - Collection analytics
   - **Legal Compliance Collections** (guard rails, slash commands, etc.)
+  - Create, list, and delete collections via backend API
+  - Safety checks prevent deletion if entries exist
 - **Metadata Management** (`/lore/tags`)
   - Tag creation and management
   - Category organization
@@ -152,6 +162,7 @@ s
   - Knowledge usage statistics
   - Search effectiveness metrics
   - Performance insights
+  - Vector search analytics
 
 ---
 

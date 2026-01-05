@@ -4,7 +4,7 @@
 
 Based on the sitemap, style guide, and database schema analysis, BotCafé v2 is a **massive enterprise-level fantasy AI platform** with:
 
-### ✅ **CURRENT COMPLETION STATUS: ~48%**
+### ✅ **CURRENT COMPLETION STATUS: ~50%**
 - **Fantasy UI/UX Foundation**: ✅ Beautiful theme system, homepage, basic navigation
 - **Authentication**: ✅ Clerk integration working with catch-all routes
 - **Database Architecture**: ✅ 30 comprehensive collections for multi-tenant SaaS (added BotInteraction, VectorRecord)
@@ -18,13 +18,14 @@ Based on the sitemap, style guide, and database schema analysis, BotCafé v2 is 
 - **RAG Infrastructure**: ✅ Vector database schema, chunking utilities, API endpoints
 - **Lore UI**: ✅ Dashboard, entries, and collections pages
 - **Lore Backend**: ✅ Full CRUD APIs for knowledge entries and collections
+- **Vectorization System**: ✅ BGE-M3 embeddings with Workers AI, Cloudflare Vectorize integration, semantic search
 
-### ❌ **MAJOR MISSING SYSTEMS (52% remaining)**
+### ❌ **MAJOR MISSING SYSTEMS (50% remaining)**
 
 **14 Major Site Sections Needed:**
 1. **Home** ✅ - Complete splash page with magical effects
 2. **Explore** ✅ - Real bot data fetching with filters and search
-3. **Lore** ✅ - Knowledge management system (UI + backend CRUD complete, needs vectorization)
+3. **Lore** ✅ - Knowledge management system (UI + backend CRUD + real vectorization complete)
 4. **Create** ✅ - Bot creation/editing wizard (primary user flow)
 5. **Bot Detail** ✅ - Individual bot pages with stats, info, and interactions
 6. **Creators** ❌ - Multi-tenant creator profiles & showcase
@@ -151,10 +152,12 @@ By building foundational systems first, we avoid rework and ensure chat has all 
   - [x] Replace placeholder `/api/vectors/search` with real semantic search ✅
   - [x] Added fallback placeholder mode for local development ✅
   - [x] Created Vectorize setup documentation ✅
-  - [ ] Create Vectorize indexes via wrangler CLI (deployment step)
-  - [ ] Add "Vectorize" button functionality in lore entries UI (Next)
-  - [ ] Display vectorization status and embedding metadata (Next)
-  - [ ] Test vectorization workflow in deployed environment (Next)
+  - [x] Create Vectorize indexes via wrangler CLI on Izzys Imaginarium account ✅
+  - [x] Updated account_id in wrangler.jsonc to correct account ✅
+  - [x] Verified build works with correct Cloudflare account ✅
+  - [ ] Add "Vectorize" button functionality in lore entries UI (Phase 4B.6)
+  - [ ] Display vectorization status and embedding metadata (Phase 4B.6)
+  - [ ] Test vectorization workflow in deployed environment (After deployment)
 - [ ] **Phase 4C: Memory Vectorization**
   - [ ] Implement auto-summarization triggers
   - [ ] Build conversation context retrieval

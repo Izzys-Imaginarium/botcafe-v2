@@ -11,8 +11,10 @@ BotCafé uses a unified vector database architecture to power three interconnect
 
 ### Vector Database
 - **Platform**: Cloudflare Vectorize
-- **Embedding Model**: OpenAI text-embedding-3-small
-- **Dimensions**: 1536
+- **Embedding Model**: BGE-M3 (`@cf/baai/bge-m3`) via Cloudflare Workers AI
+- **Dimensions**: 1024
+- **Context Window**: 8192 tokens
+- **Language Support**: 100+ languages (multilingual)
 - **Distance Metric**: Cosine similarity
 - **Architecture**: Single unified index with metadata filtering
 
@@ -192,10 +194,10 @@ User selects memory from archive
 Different content types require different chunking approaches:
 
 ### Lore (Knowledge Entries)
-- **Chunk Size**: 500-750 tokens
-- **Overlap**: 50 tokens
-- **Method**: Semantic splitting (paragraph boundaries)
-- **Rationale**: User-curated content is typically well-structured
+- **Chunk Size**: Up to 8192 tokens (BGE-M3 max context)
+- **Overlap**: Variable based on chunking strategy
+- **Method**: Paragraph-based splitting with 8192 token limit
+- **Rationale**: BGE-M3's large context window allows for bigger chunks with more context preservation
 
 ### Memories (Conversation Summaries)
 - **Chunk Size**: 250-400 tokens
@@ -950,10 +952,13 @@ As their companion, let me tell you what really happened that day..."
 ## Performance Considerations
 
 ### Embedding Generation
-- **Rate Limits**: OpenAI API limits (tier-dependent)
-- **Cost**: $0.00002 per 1K tokens
+- **Platform**: Cloudflare Workers AI (native integration)
+- **Model**: BGE-M3 (1024 dimensions, 8192 token context)
+- **Rate Limits**: Cloudflare Workers AI limits (account-dependent)
+- **Cost**: ~$0.001 per 1000 tokens (estimated, Workers AI pricing)
 - **Batch Processing**: Queue large documents, process chunks in parallel
 - **Caching**: Cache embeddings for unchanged content
+- **Advantages**: No external API keys needed, fully integrated with Cloudflare ecosystem
 
 ### Vector Search
 - **Latency**: Cloudflare Vectorize ~10-50ms per query
@@ -1046,6 +1051,8 @@ const results = await vectorSearch(query, {
 ## References
 
 - [Cloudflare Vectorize Documentation](https://developers.cloudflare.com/vectorize/)
-- [OpenAI Embeddings Guide](https://platform.openai.com/docs/guides/embeddings)
+- [Cloudflare Workers AI Documentation](https://developers.cloudflare.com/workers-ai/)
+- [BGE-M3 Model Documentation](https://developers.cloudflare.com/workers-ai/models/bge-m3/)
+- [BGE-M3 on Hugging Face](https://huggingface.co/BAAI/bge-m3)
 - [RAG Best Practices](https://www.pinecone.io/learn/retrieval-augmented-generation/)
 - [Chunking Strategies for LLMs](https://www.llamaindex.ai/blog/evaluating-the-ideal-chunk-size-for-a-rag-system-using-llamaindex)

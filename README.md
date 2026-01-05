@@ -1,101 +1,303 @@
-# Payload Cloudflare Template
+# BotCafe v2
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/payloadcms/payload/tree/main/templates/with-cloudflare-d1)
+A fantasy-themed AI companion platform built with Next.js 15, Payload CMS, and Cloudflare Workers.
 
-**This can only be deployed on Paid Workers right now due to size limits.** This template comes configured with the bare minimum to get started on anything you need.
+**Status**: ~80% Complete | **Version**: 2.6 | **Last Updated**: 2026-01-05
 
-## Quick start
+---
 
-This template can be deployed directly to Cloudflare Workers by clicking the button to take you to the setup screen.
+## Overview
 
-From there you can connect your code to a git provider such Github or Gitlab, name your Workers, D1 Database and R2 Bucket as well as attach any additional environment variables or services you need.
+BotCafe v2 is an enterprise-level SaaS platform for creating, sharing, and chatting with AI companions. It features a rich fantasy dark-forest theme, comprehensive bot management, knowledge (lore) systems with RAG capabilities, and multi-tenant creator profiles.
 
-## Quick Start - local setup
+### Key Features
 
-To spin up this template locally, follow these steps:
+- **Bot Creation Wizard**: Multi-step form with personality customization
+- **Explore & Discovery**: Browse public bots with search, filters, and pagination
+- **Knowledge (Lore) System**: Upload documents, create world-building entries, semantic search via BGE-M3 embeddings
+- **Memory Management**: Import conversations, auto-summarization, convert to permanent lore
+- **Persona System**: Create user personas with personality traits for roleplay
+- **Creator Profiles**: Multi-tenant creator pages with bot showcases
+- **Wellbeing Tools**: Mood tracking, self-moderation, crisis resources
+- **Analytics Dashboard**: Usage statistics, bot performance metrics
 
-### Clone
+---
 
-After you click the `Deploy` button above, you'll want to have standalone copy of this repo on your machine. Cloudflare will connect your app to a git provider such as Github and you can access your code from there.
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Framework | Next.js 15 (App Router) |
+| CMS | Payload CMS 3.59 |
+| Database | Cloudflare D1 (SQLite) |
+| Storage | Cloudflare R2 |
+| Embeddings | Workers AI (BGE-M3) |
+| Vector DB | Cloudflare Vectorize |
+| Auth | Clerk |
+| Styling | Tailwind CSS 4 + shadcn/ui |
+| Deployment | Cloudflare Workers |
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js 18+
+- pnpm
+- Cloudflare account (Paid Workers plan required)
+- Clerk account
 
 ### Local Development
 
-## How it works
+1. **Clone and install**
+   ```bash
+   git clone <repo-url>
+   cd botcafe-v2
+   pnpm install
+   ```
 
-Out of the box, using [`Wrangler`](https://developers.cloudflare.com/workers/wrangler/) will automatically create local bindings for you to connect to the remote services and it can even create a local mock of the services you're using with Cloudflare.
+2. **Configure environment**
+   ```bash
+   cp .env.example .env.local
+   # Add your Clerk keys and other configuration
+   ```
 
-We've pre-configured Payload for you with the following:
+3. **Login to Cloudflare**
+   ```bash
+   pnpm wrangler login
+   ```
 
-### Collections
+4. **Run development server**
+   ```bash
+   pnpm dev
+   ```
 
-See the [Collections](https://payloadcms.com/docs/configuration/collections) docs for details on how to extend this functionality.
+5. **Open browser**
+   - Frontend: http://localhost:3000
+   - Admin: http://localhost:3000/admin
 
-- #### Users (Authentication)
+### Deployment
 
-  Users are auth-enabled collections that have access to the admin panel.
+1. **Create migrations**
+   ```bash
+   pnpm payload migrate:create
+   ```
 
-  For additional help, see the official [Auth Example](https://github.com/payloadcms/payload/tree/main/examples/auth) or the [Authentication](https://payloadcms.com/docs/authentication/overview#authentication-overview) docs.
+2. **Deploy**
+   ```bash
+   pnpm run deploy
+   ```
 
-- #### Media
+---
 
-  This is the uploads enabled collection.
+## Project Structure
 
-### Image Storage (R2)
-
-Images will be served from an R2 bucket which you can then further configure to use a CDN to serve for your frontend directly.
-
-### D1 Database
-
-The Worker will have direct access to a D1 SQLite database which Wrangler can connect locally to, just note that you won't have a connection string as you would typically with other providers.
-
-You can enable read replicas by adding `readReplicas: 'first-primary'` in the DB adapter and then enabling it on your D1 Cloudflare dashboard. Read more about this feature on [our docs](https://payloadcms.com/docs/database/sqlite#d1-read-replicas).
-
-## Working with Cloudflare
-
-Firstly, after installing dependencies locally you need to authenticate with Wrangler by running:
-
-```bash
-pnpm wrangler login
+```
+src/
+├── app/
+│   ├── (frontend)/          # Public pages
+│   │   ├── (home)/          # Landing page
+│   │   ├── explore/         # Bot discovery
+│   │   ├── bot/[slug]/      # Bot details
+│   │   ├── create/          # Bot creation
+│   │   ├── account/         # User dashboard
+│   │   ├── lore/            # Knowledge management
+│   │   ├── memories/        # Memory import/library
+│   │   ├── personas/        # Persona management
+│   │   ├── creators/        # Creator profiles
+│   │   ├── wellbeing/       # Health tools
+│   │   ├── analytics/       # Usage stats
+│   │   ├── legal/           # Legal pages
+│   │   └── help/            # Documentation
+│   ├── (payload)/           # Admin panel
+│   └── api/                 # API routes
+├── collections/             # Payload collections (30)
+├── components/ui/           # shadcn/ui components
+├── modules/                 # Feature modules
+│   ├── home/
+│   ├── explore/
+│   ├── bot-create/
+│   ├── account/
+│   ├── lore/
+│   ├── memories/
+│   ├── personas/
+│   ├── creators/
+│   ├── wellbeing/
+│   ├── analytics/
+│   ├── legal/
+│   └── help/
+└── lib/                     # Utilities
+    └── vectorization/       # Embedding utilities
 ```
 
-This will take you to Cloudflare to login and then you can use the Wrangler CLI locally for anything, use `pnpm wrangler help` to see all available options.
+---
 
-Wrangler is pretty smart so it will automatically bind your services for local development just by running `pnpm dev`.
+## Documentation
 
-## Deployments
+| Document | Description |
+|----------|-------------|
+| [BOTCAFE-COMPLETION-ROADMAP.md](./BOTCAFE-COMPLETION-ROADMAP.md) | Development roadmap and progress |
+| [BOTCAFE-SITEMAP.md](./BOTCAFE-SITEMAP.md) | Complete route documentation |
+| [BOTCAFE-STYLE-GUIDE.md](./BOTCAFE-STYLE-GUIDE.md) | Design system and components |
+| [BOTCAFE-DATABASE-SCHEMA.md](./BOTCAFE-DATABASE-SCHEMA.md) | Database collections reference |
 
-When you're ready to deploy, first make sure you have created your migrations:
+---
 
-```bash
-pnpm payload migrate:create
+## Database Collections (30)
+
+### Core
+- **Users** - Authentication & profiles (Clerk integration)
+- **Media** - File uploads (R2 storage)
+
+### Bot System
+- **Bot** - AI companion definitions
+- **BotInteraction** - Likes, favorites, shares
+
+### Knowledge/RAG
+- **Knowledge** - Individual knowledge entries
+- **KnowledgeCollections** - Grouped knowledge
+- **VectorRecord** - Embedding tracking
+
+### Conversations
+- **Conversation** - Chat sessions
+- **Message** - Chat messages
+- **Memory** - Conversation memories
+
+### User Features
+- **Personas** - User personas/masks
+- **ApiKey** - API key management
+
+### Creators
+- **CreatorProfiles** - Creator pages
+- **CreatorPrograms** - Featured programs
+
+### Monetization
+- **TokenGifts** - Token transfers
+- **SubscriptionPayments** - Payments
+- **SubscriptionTiers** - Plans
+- **TokenPackages** - Token purchases
+- **AccessControl** - Permissions
+
+### Wellbeing
+- **Mood** - Mental health tracking
+- **SelfModeration** - Usage limits
+- **CrisisSupport** - Resources
+
+### Analytics
+- **UsageAnalytics** - Usage stats
+- **MemoryInsights** - Story analytics
+- **PersonaAnalytics** - Persona metrics
+
+### Legal/Help
+- **LegalDocuments** - Terms, privacy
+- **UserAgreements** - Acceptance tracking
+- **Documentation** - Help articles
+- **Tutorials** - Guided tutorials
+- **SupportTickets** - Help desk
+
+---
+
+## API Endpoints
+
+### Bot Management
+- `GET/POST /api/bots` - List/create bots
+- `GET/PUT/DELETE /api/bots/[id]` - Bot operations
+- `GET /api/bots/explore` - Public discovery
+- `POST /api/bots/[id]/like` - Toggle like
+- `POST /api/bots/[id]/favorite` - Toggle favorite
+
+### Knowledge
+- `GET/POST /api/knowledge` - Entries
+- `GET/POST /api/knowledge-collections` - Collections
+- `POST /api/vectors/generate` - Vectorize content
+- `POST /api/vectors/search` - Semantic search
+
+### Memories
+- `GET /api/memories` - List memories
+- `POST /api/memories/import` - Import conversations
+- `POST /api/memories/summarize` - AI summarization
+- `POST /api/memories/convert-to-lore` - Promote to knowledge
+
+### Personas
+- `GET/POST /api/personas` - List/create
+- `GET/PUT/DELETE /api/personas/[id]` - Operations
+
+### Creators
+- `GET/POST /api/creators` - Directory
+- `GET /api/creators/me` - Current user
+- `GET/PUT/DELETE /api/creators/[username]` - Profile
+
+### Analytics
+- `GET /api/analytics` - Dashboard
+- `GET /api/analytics/bots` - Bot metrics
+- `GET /api/analytics/usage` - Usage stats
+
+### Wellbeing
+- `GET /api/wellbeing` - Overview
+- `GET/POST /api/wellbeing/mood` - Mood entries
+- `GET/POST /api/wellbeing/settings` - Moderation settings
+
+---
+
+## Remaining Work (~20%)
+
+### Chat Interface (Phase 9)
+The main remaining feature is the real-time chat interface:
+- WebSocket messaging
+- Multi-bot conversations
+- Memory integration
+- Persona switching
+- RAG context injection
+- File sharing
+- Voice input
+
+---
+
+## Environment Variables
+
+```env
+# Clerk
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+
+# Payload
+PAYLOAD_SECRET=
+
+# Cloudflare
+CLOUDFLARE_ACCOUNT_ID=
+CLOUDFLARE_API_TOKEN=
+
+# Optional
+RESEND_API_KEY=
 ```
 
-Then run the following command:
+---
 
-```bash
-pnpm run deploy
-```
+## Known Limitations
 
-This will spin up Wrangler in `production` mode, run any created migrations, build the app and then deploy the bundle up to Cloudflare.
+- **Worker Size**: Requires Paid Workers plan (3MB bundle limit)
+- **GraphQL**: Limited support pending Cloudflare fixes
+- **Local Dev**: Some Cloudflare bindings require remote connection
 
-That's it! You can if you wish move these steps into your CI pipeline as well.
+---
 
-## Enabling logs
+## Contributing
 
-By default logs are not enabled for your API, we've made this decision because it does run against your quota so we've left it opt-in. But you can easily enable logs in one click in the Cloudflare panel, [see docs](https://developers.cloudflare.com/workers/observability/logs/workers-logs/#enable-workers-logs).
+1. Check [BOTCAFE-COMPLETION-ROADMAP.md](./BOTCAFE-COMPLETION-ROADMAP.md) for current progress
+2. Follow [BOTCAFE-STYLE-GUIDE.md](./BOTCAFE-STYLE-GUIDE.md) for design patterns
+3. Reference [BOTCAFE-DATABASE-SCHEMA.md](./BOTCAFE-DATABASE-SCHEMA.md) for data models
 
-## Known issues
+---
 
-### GraphQL
+## License
 
-We are currently waiting on some issues with GraphQL to be [fixed upstream in Workers](https://github.com/cloudflare/workerd/issues/5175) so full support for GraphQL is not currently guaranteed when deployed.
+Proprietary - All Rights Reserved
 
-### Worker size limits
+---
 
-We currently recommend deploying this template to the Paid Workers plan due to bundle [size limits](https://developers.cloudflare.com/workers/platform/limits/#worker-size) of 3mb. We're actively trying to reduce our bundle footprint over time to better meet this metric.
+## Support
 
-This also applies to your own code, in the case of importing a lot of libraries you may find yourself limited by the bundle.
-
-## Questions
-
-If you have any issues or questions, reach out to us on [Discord](https://discord.com/invite/payload) or start a [GitHub discussion](https://github.com/payloadcms/payload/discussions).
+For issues and questions:
+- [GitHub Issues](https://github.com/your-repo/issues)
+- [Discord Community](https://discord.gg/your-server)

@@ -1,13 +1,34 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
-import { Menu, Coffee, Moon, MessageCircle, LogOut, User } from 'lucide-react'
+import {
+  Menu,
+  Coffee,
+  Moon,
+  MessageCircle,
+  User,
+  BookOpen,
+  Brain,
+  Users,
+  BarChart3,
+  Heart,
+  HelpCircle,
+  ChevronDown,
+} from 'lucide-react'
 import { NavbarSidebar } from './navbar-sidebar'
-import { useUser, UserButton, SignInButton, SignOutButton } from '@clerk/nextjs'
+import { useUser, UserButton, SignInButton } from '@clerk/nextjs'
 
 interface NavbarItemProps {
   href: string
@@ -33,8 +54,17 @@ const NavbarItem = ({ href, children, isActive }: NavbarItemProps) => {
 const navbarItems = [
   { href: '/', children: 'Home' },
   { href: '/explore', children: 'Explore' },
-  { href: '/lore', children: 'Lore' },
+  { href: '/creators', children: 'Creators' },
   { href: '/create', children: 'Create' },
+]
+
+const userMenuItems = [
+  { href: '/account', children: 'My Bots', icon: User },
+  { href: '/lore', children: 'Lore', icon: BookOpen },
+  { href: '/memories/library', children: 'Memories', icon: Brain },
+  { href: '/personas', children: 'Personas', icon: Users },
+  { href: '/analytics', children: 'Analytics', icon: BarChart3 },
+  { href: '/wellbeing', children: 'Wellbeing', icon: Heart },
 ]
 
 interface NavbarProps {
@@ -85,17 +115,63 @@ export const Navbar = ({ user }: NavbarProps) => {
             </Button>
             <div className="h-8 w-px bg-gold-ancient/30 hidden sm:block mx-2"></div>
             {isSignedIn ? (
-              <UserButton
-                appearance={{
-                  elements: {
-                    avatarBox: 'w-8 h-8',
-                    userButtonPopoverCard: 'glass-rune border-gold-ancient/30',
-                    userButtonPopoverActionButton: 'text-parchment hover:bg-gold-ancient/20',
-                    userButtonPopoverActionButtonText: 'text-parchment font-lore',
-                  },
-                }}
-                afterSignOutUrl="/"
-              />
+              <div className="flex items-center gap-3">
+                {/* User Menu Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="hidden md:flex items-center gap-1 text-parchment hover:text-gold-rich hover:bg-gold-rich/10"
+                    >
+                      <span className="font-lore italic">My Studio</span>
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-48 glass-rune border-gold-ancient/30"
+                  >
+                    <DropdownMenuLabel className="text-parchment-dim font-lore">
+                      Dashboard
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator className="bg-gold-ancient/20" />
+                    {userMenuItems.map((item) => (
+                      <DropdownMenuItem key={item.href} asChild>
+                        <Link
+                          href={item.href}
+                          className="flex items-center gap-2 text-parchment hover:text-gold-rich cursor-pointer"
+                        >
+                          <item.icon className="h-4 w-4" />
+                          <span className="font-lore">{item.children}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator className="bg-gold-ancient/20" />
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/help"
+                        className="flex items-center gap-2 text-parchment hover:text-gold-rich cursor-pointer"
+                      >
+                        <HelpCircle className="h-4 w-4" />
+                        <span className="font-lore">Help</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                {/* Clerk User Button */}
+                <UserButton
+                  appearance={{
+                    elements: {
+                      avatarBox: 'w-8 h-8',
+                      userButtonPopoverCard: 'glass-rune border-gold-ancient/30',
+                      userButtonPopoverActionButton: 'text-parchment hover:bg-gold-ancient/20',
+                      userButtonPopoverActionButtonText: 'text-parchment font-lore',
+                    },
+                  }}
+                  afterSignOutUrl="/"
+                />
+              </div>
             ) : (
               <SignInButton>
                 <Button

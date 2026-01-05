@@ -17,9 +17,11 @@ export const dynamic = 'force-dynamic'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
+
     // Authenticate user
     const clerkUser = await currentUser()
     if (!clerkUser) {
@@ -51,7 +53,6 @@ export async function GET(
     }
 
     const payloadUser = users.docs[0]
-    const { id } = params
 
     // Fetch persona
     const persona = await payload.findByID({
@@ -99,9 +100,11 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
+
     // Authenticate user
     const clerkUser = await currentUser()
     if (!clerkUser) {
@@ -133,7 +136,6 @@ export async function PUT(
     }
 
     const payloadUser = users.docs[0]
-    const { id } = params
 
     // Fetch existing persona to verify ownership
     const existingPersona = await payload.findByID({
@@ -227,9 +229,11 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
+
     // Authenticate user
     const clerkUser = await currentUser()
     if (!clerkUser) {
@@ -261,7 +265,6 @@ export async function DELETE(
     }
 
     const payloadUser = users.docs[0]
-    const { id } = params
 
     // Fetch persona to verify ownership
     const persona = await payload.findByID({

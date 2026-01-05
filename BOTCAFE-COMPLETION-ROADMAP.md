@@ -170,12 +170,17 @@ By building foundational systems first, we avoid rework and ensure chat has all 
   - [x] Built conversation context retrieval with participant filtering ✅
   - [x] Added memory vectorization pipeline using BGE-M3 ✅
   - [x] Implemented semantic search with relevance scoring ✅
-- [ ] **Phase 4D: Legacy Memory System**
-  - [ ] Build `/memories/library` browsing UI
-  - [ ] Implement "Convert to Legacy Lore" workflow
-  - [ ] Build conversion UI with participant display
-  - [ ] Create legacy memory API endpoint
-  - [ ] Test dual-application (persona + bot contexts)
+- [ ] **Phase 4D: Legacy Memory Import System**
+  - [ ] Create `/memories/import` page for uploading legacy conversations
+  - [ ] Build file parser for multiple formats (text, JSON, Character.AI exports)
+  - [ ] Implement conversation-to-memory conversion (auto-summarization)
+  - [ ] Create Memory Collection system (group related imported memories)
+  - [ ] Build participant assignment UI (select bots & personas for imported memories)
+  - [ ] Implement "Convert to Lore" workflow (promote memories to Knowledge entries)
+  - [ ] Create `/memories/library` browsing UI for all memories
+  - [ ] Display conversion status, participants, and metadata in library view
+  - [ ] Create `/api/memories/import` endpoint for processing uploads
+  - [ ] Test import flow with various file formats
 - [ ] **Phase 4E: Integration & Polish**
   - [ ] Add privacy controls (Private/Public/Shared)
   - [ ] Implement knowledge analytics

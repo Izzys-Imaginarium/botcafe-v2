@@ -205,11 +205,13 @@ Different content types require different chunking approaches:
 - **Method**: Summary segments (temporal or thematic)
 - **Rationale**: Summaries are condensed, need smaller chunks for precision
 
-### Legacy Memories (Converted Lore)
+### Legacy Memories (Imported from External Platforms)
 - **Chunk Size**: 400-600 tokens
 - **Overlap**: 40 tokens
 - **Method**: Hybrid (preserve narrative structure)
 - **Rationale**: Balance between detailed recall and context breadth
+- **Source**: Imported conversations from old BotCafe, Character.AI, or other platforms
+- **Conversion**: Users can convert important legacy memories to permanent Knowledge entries
 
 ### Large Documents (PDFs, Text Files)
 - **Chunk Size**: 750-1000 tokens

@@ -155,8 +155,11 @@ By building foundational systems first, we avoid rework and ensure chat has all 
   - [x] Create Vectorize indexes via wrangler CLI on Izzys Imaginarium account ✅
   - [x] Updated account_id in wrangler.jsonc to correct account ✅
   - [x] Verified build works with correct Cloudflare account ✅
-  - [ ] Add "Vectorize" button functionality in lore entries UI (Phase 4B.6)
-  - [ ] Display vectorization status and embedding metadata (Phase 4B.6)
+- [x] **Phase 4B.6: Lore UI Polish** ✅ **COMPLETED**
+  - [x] Add "Vectorize" button functionality in lore entries UI ✅
+  - [x] Display vectorization status badges (Pending/Vectorized) ✅
+  - [x] Display embedding metadata (chunks, model, dimensions) ✅
+  - [x] Add progress indicators for vectorization operations ✅
   - [ ] Test vectorization workflow in deployed environment (After deployment)
 - [ ] **Phase 4C: Memory Vectorization**
   - [ ] Implement auto-summarization triggers

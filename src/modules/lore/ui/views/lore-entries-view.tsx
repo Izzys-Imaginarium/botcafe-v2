@@ -40,6 +40,9 @@ interface KnowledgeEntry {
   tags?: { tag: string }[]
   tokens: number
   is_vectorized: boolean
+  chunk_count?: number
+  embedding_model?: string
+  vector_dimensions?: number
   createdAt: string
 }
 
@@ -50,6 +53,7 @@ export const LoreEntriesView = () => {
   const [isLoadingCollections, setIsLoadingCollections] = useState(true)
   const [isLoadingEntries, setIsLoadingEntries] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const [vectorizingEntries, setVectorizingEntries] = useState<Set<string>>(new Set())
 
   // Form state
   const [entryType, setEntryType] = useState('text')
@@ -271,6 +275,47 @@ export const LoreEntriesView = () => {
       toast.error(error.message || 'Failed to vectorize entry')
     } finally {
       setIsVectorizing(false)
+    }
+  }
+
+  const handleVectorizeEntry = async (entryId: string) => {
+    // Add to vectorizing set
+    setVectorizingEntries(prev => new Set(prev).add(entryId))
+
+    try {
+      const response = await fetch(`/api/vectors/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          knowledgeId: entryId,
+        }),
+      })
+
+      const data = (await response.json()) as {
+        success?: boolean
+        message?: string
+        chunkCount?: number
+      }
+
+      if (data.success) {
+        toast.success(`Entry vectorized! Created ${data.chunkCount || 0} chunks.`)
+        // Refresh entries to show updated vectorization status
+        fetchEntries()
+      } else {
+        toast.error(data.message || 'Failed to vectorize entry')
+      }
+    } catch (error: any) {
+      console.error('Vectorization error:', error)
+      toast.error(error.message || 'Failed to vectorize entry')
+    } finally {
+      // Remove from vectorizing set
+      setVectorizingEntries(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(entryId)
+        return newSet
+      })
     }
   }
 
@@ -621,54 +666,102 @@ export const LoreEntriesView = () => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {entries.map((entry) => (
-                      <div
-                        key={entry.id}
-                        className="p-4 rounded-lg border border-gold-ancient/20 hover:border-gold-rich/50 transition-all bg-[#0a140a]/30"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1 space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="bg-gold-ancient/20 text-gold-rich">
-                                {entry.type}
-                              </Badge>
-                              {entry.is_vectorized && (
-                                <Badge variant="secondary" className="bg-forest/20 text-forest-light">
-                                  <Sparkles className="w-3 h-3 mr-1" />
-                                  Vectorized
+                    {entries.map((entry) => {
+                      const isVectorizing = vectorizingEntries.has(entry.id)
+                      return (
+                        <div
+                          key={entry.id}
+                          className="p-4 rounded-lg border border-gold-ancient/20 hover:border-gold-rich/50 transition-all bg-[#0a140a]/30"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="secondary" className="bg-gold-ancient/20 text-gold-rich">
+                                  {entry.type}
                                 </Badge>
-                              )}
+                                {entry.is_vectorized ? (
+                                  <Badge variant="secondary" className="bg-forest/20 text-forest-light">
+                                    <Sparkles className="w-3 h-3 mr-1" />
+                                    Vectorized
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="secondary" className="bg-amber-900/20 text-amber-400">
+                                    Pending
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-parchment font-lore line-clamp-3">{entry.entry}</p>
+                              <div className="flex flex-wrap items-center gap-4 text-xs text-parchment/50">
+                                <span>{entry.tokens} tokens</span>
+                                {entry.is_vectorized && entry.chunk_count && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="text-forest-light">{entry.chunk_count} chunks</span>
+                                  </>
+                                )}
+                                {entry.is_vectorized && entry.embedding_model && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="text-forest-light">{entry.embedding_model}</span>
+                                  </>
+                                )}
+                                {entry.is_vectorized && entry.vector_dimensions && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="text-forest-light">{entry.vector_dimensions}d</span>
+                                  </>
+                                )}
+                                <span>•</span>
+                                <span>{new Date(entry.createdAt).toLocaleDateString()}</span>
+                                {entry.tags && entry.tags.length > 0 && (
+                                  <>
+                                    <span>•</span>
+                                    <div className="flex gap-1">
+                                      {entry.tags.map((tag, idx) => (
+                                        <span key={idx} className="text-gold-rich">
+                                          #{tag.tag}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
                             </div>
-                            <p className="text-parchment font-lore line-clamp-3">{entry.entry}</p>
-                            <div className="flex items-center gap-4 text-xs text-parchment/50">
-                              <span>{entry.tokens} tokens</span>
-                              <span>•</span>
-                              <span>{new Date(entry.createdAt).toLocaleDateString()}</span>
-                              {entry.tags && entry.tags.length > 0 && (
-                                <>
-                                  <span>•</span>
-                                  <div className="flex gap-1">
-                                    {entry.tags.map((tag, idx) => (
-                                      <span key={idx} className="text-gold-rich">
-                                        #{tag.tag}
-                                      </span>
-                                    ))}
-                                  </div>
-                                </>
+                            <div className="flex items-center gap-2">
+                              {!entry.is_vectorized && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleVectorizeEntry(entry.id)}
+                                  disabled={isVectorizing}
+                                  className="border-gold-ancient/30 text-gold-rich hover:bg-gold-ancient/10"
+                                >
+                                  {isVectorizing ? (
+                                    <>
+                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                      Vectorizing...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Sparkles className="w-4 h-4 mr-2" />
+                                      Vectorize
+                                    </>
+                                  )}
+                                </Button>
                               )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteEntry(entry.id)}
+                                className="text-parchment/60 hover:text-red-400"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
                             </div>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteEntry(entry.id)}
-                            className="text-parchment/60 hover:text-red-400"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </CardContent>

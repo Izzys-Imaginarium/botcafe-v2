@@ -34,8 +34,25 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
 
     // Get Payload instance
-    const payloadConfig = await config
-    const payload = await getPayload({ config: payloadConfig })
+    let payload
+    try {
+      const payloadConfig = await config
+      payload = await getPayload({ config: payloadConfig })
+    } catch (dbError) {
+      console.error('Database connection error:', dbError)
+      // Return empty results if database is not available
+      return NextResponse.json({
+        success: true,
+        articles: [],
+        categories: [],
+        pagination: {
+          page: 1,
+          limit,
+          totalPages: 0,
+          totalDocs: 0,
+        },
+      })
+    }
 
     // Build where clause
     const whereConditions: any[] = [

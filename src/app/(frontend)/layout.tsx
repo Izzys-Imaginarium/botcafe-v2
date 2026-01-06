@@ -27,6 +27,9 @@ const crimsonText = Crimson_Text({
 export const metadata = {
   description: 'BotCafé - The Enchanted Sanctuary for AI Companions',
   title: 'BotCafé',
+  icons: {
+    icon: '/favicon.svg',
+  },
 }
 
 export default async function RootLayout(props: { children: React.ReactNode }) {

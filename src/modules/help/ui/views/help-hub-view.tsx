@@ -135,12 +135,12 @@ export const HelpHubView = () => {
     }
   }
 
-  // Quick links for common help topics
+  // Quick links for common help topics (using flat slugs that match the [slug] route)
   const quickLinks = [
-    { title: 'Create Your First Bot', href: '/help/getting-started/create-bot', icon: <Bot className="h-5 w-5" /> },
-    { title: 'Add Knowledge to Bots', href: '/help/knowledge-base/add-lore', icon: <Database className="h-5 w-5" /> },
-    { title: 'Set Up Personas', href: '/help/personas-moods/setup', icon: <User className="h-5 w-5" /> },
-    { title: 'API Documentation', href: '/help/api-reference', icon: <Code className="h-5 w-5" /> },
+    { title: 'Create Your First Bot', href: '/help/create-bot', icon: <Bot className="h-5 w-5" /> },
+    { title: 'Add Knowledge to Bots', href: '/help/add-lore', icon: <Database className="h-5 w-5" /> },
+    { title: 'Set Up Personas', href: '/help/setup-personas', icon: <User className="h-5 w-5" /> },
+    { title: 'API Documentation', href: '/help/category/api-reference', icon: <Code className="h-5 w-5" /> },
   ]
 
   return (

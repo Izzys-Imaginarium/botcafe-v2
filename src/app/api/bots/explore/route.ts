@@ -10,8 +10,21 @@ export async function GET(request: NextRequest) {
     const sort = searchParams.get('sort') || 'recent'
     const search = searchParams.get('search') || ''
 
-    // Get Payload instance
-    const payload = await getPayloadHMR({ config })
+    // Get Payload instance with error handling
+    let payload
+    try {
+      payload = await getPayloadHMR({ config })
+    } catch (dbError) {
+      console.error('Database connection error:', dbError)
+      return NextResponse.json({
+        bots: [],
+        totalPages: 0,
+        currentPage: 1,
+        totalDocs: 0,
+        hasNextPage: false,
+        hasPrevPage: false,
+      })
+    }
 
     // Build query
     const where: any = {
@@ -83,9 +96,13 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Error fetching bots:', error)
-    return NextResponse.json(
-      { message: error.message || 'Failed to fetch bots' },
-      { status: 500 }
-    )
+    return NextResponse.json({
+      bots: [],
+      totalPages: 0,
+      currentPage: 1,
+      totalDocs: 0,
+      hasNextPage: false,
+      hasPrevPage: false,
+    })
   }
 }

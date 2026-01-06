@@ -12,7 +12,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await getPayloadHMR({ config })
+    // Get Payload instance with error handling
+    let payload
+    try {
+      payload = await getPayloadHMR({ config })
+    } catch (dbError) {
+      console.error('Database connection error:', dbError)
+      // Return empty results if database is not available
+      return NextResponse.json({
+        bots: [],
+        total: 0,
+      })
+    }
 
     // Find the Payload user by Clerk ID
     const payloadUsers = await payload.find({
@@ -24,7 +35,11 @@ export async function GET(request: NextRequest) {
     })
 
     if (payloadUsers.docs.length === 0) {
-      return NextResponse.json({ message: 'User not found in database' }, { status: 404 })
+      // User not synced to Payload yet - return empty bots instead of error
+      return NextResponse.json({
+        bots: [],
+        total: 0,
+      })
     }
 
     const payloadUser = payloadUsers.docs[0]
@@ -45,9 +60,10 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Error fetching user bots:', error)
-    return NextResponse.json(
-      { message: error.message || 'Failed to fetch user bots' },
-      { status: 500 }
-    )
+    // Return empty results instead of 500 error for better UX
+    return NextResponse.json({
+      bots: [],
+      total: 0,
+    })
   }
 }

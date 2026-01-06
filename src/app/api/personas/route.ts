@@ -47,10 +47,15 @@ export async function GET(request: NextRequest) {
     })
 
     if (users.docs.length === 0) {
-      return NextResponse.json(
-        { success: false, message: 'User not found in database' },
-        { status: 404 }
-      )
+      // User not synced to Payload yet - return empty personas
+      return NextResponse.json({
+        success: true,
+        personas: [],
+        total: 0,
+        hasMore: false,
+        page: 1,
+        totalPages: 0,
+      })
     }
 
     const payloadUser = users.docs[0]
@@ -103,10 +108,15 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Fetch personas error:', error)
-    return NextResponse.json(
-      { success: false, message: error.message || 'Failed to fetch personas' },
-      { status: 500 }
-    )
+    // Return empty data instead of error for better UX
+    return NextResponse.json({
+      success: true,
+      personas: [],
+      total: 0,
+      hasMore: false,
+      page: 1,
+      totalPages: 0,
+    })
   }
 }
 

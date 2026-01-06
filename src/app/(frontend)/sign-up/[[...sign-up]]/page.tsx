@@ -15,18 +15,30 @@ export default function SignUpPage() {
           <SignUp
             appearance={{
               elements: {
-                formButtonPrimary:
-                  'bg-gold-ancient/20 hover:bg-gold-ancient/30 text-gold-rich border border-gold-ancient/30 font-lore',
-                card: 'glass-rune border-none shadow-none',
+                rootBox: 'w-full',
+                cardBox: 'shadow-none',
+                card: 'bg-transparent border-none shadow-none',
                 headerTitle: 'text-gold-rich font-display text-2xl',
                 headerSubtitle: 'text-parchment-dim font-lore',
                 socialButtonsBlockButton:
-                  'border border-gold-ancient/30 text-parchment hover:bg-gold-ancient/20',
+                  'border border-gold-ancient/30 text-parchment hover:bg-gold-ancient/20 bg-[#0a140a]/50',
                 socialButtonsBlockButtonText: 'text-parchment font-lore',
-                formFieldInput:
-                  'bg-[#0a140a]/50 border-gold-ancient/30 text-parchment focus:border-gold-rich',
+                dividerLine: 'bg-gold-ancient/30',
+                dividerText: 'text-parchment-dim font-lore',
                 formFieldLabel: 'text-parchment font-lore',
-                footerActionLink: 'text-gold-rich hover:text-glow-gold',
+                formFieldInput:
+                  'bg-[#0a140a]/80 border-gold-ancient/30 text-parchment focus:border-gold-rich placeholder:text-parchment-dim/50',
+                formFieldInputShowPasswordButton: 'text-parchment hover:text-gold-rich',
+                formButtonPrimary:
+                  'bg-gold-rich/80 hover:bg-gold-rich text-[#0a140a] font-lore font-semibold',
+                footerActionText: 'text-parchment-dim font-lore',
+                footerActionLink: 'text-gold-rich hover:text-gold-rich/80 font-lore',
+                identityPreviewText: 'text-parchment',
+                identityPreviewEditButton: 'text-gold-rich hover:text-gold-rich/80',
+                formFieldAction: 'text-gold-rich hover:text-gold-rich/80 font-lore',
+                formFieldErrorText: 'text-red-400',
+                alert: 'bg-red-900/20 border-red-400/30 text-red-300',
+                alertText: 'text-red-300',
               },
             }}
           />

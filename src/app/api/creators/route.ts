@@ -113,10 +113,17 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Fetch creators error:', error)
-    return NextResponse.json(
-      { success: false, message: error.message || 'Failed to fetch creators' },
-      { status: 500 }
-    )
+    // Return empty results instead of error for better UX
+    return NextResponse.json({
+      success: true,
+      creators: [],
+      pagination: {
+        page: 1,
+        limit: 20,
+        totalPages: 0,
+        totalDocs: 0,
+      },
+    })
   }
 }
 

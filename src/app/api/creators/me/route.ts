@@ -42,10 +42,12 @@ export async function GET(request: NextRequest) {
     })
 
     if (users.docs.length === 0) {
-      return NextResponse.json(
-        { success: false, message: 'User not found in database' },
-        { status: 404 }
-      )
+      // User not synced to Payload yet - return no profile
+      return NextResponse.json({
+        success: true,
+        creator: null,
+        hasProfile: false,
+      })
     }
 
     const payloadUser = users.docs[0]
@@ -87,9 +89,11 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Fetch my creator profile error:', error)
-    return NextResponse.json(
-      { success: false, message: error.message || 'Failed to fetch creator profile' },
-      { status: 500 }
-    )
+    // Return no profile instead of error for better UX
+    return NextResponse.json({
+      success: true,
+      creator: null,
+      hasProfile: false,
+    })
   }
 }

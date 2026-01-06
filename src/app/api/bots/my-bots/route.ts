@@ -25,11 +25,11 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Find the Payload user by Clerk ID
+    // Find the Payload user by email
     const payloadUsers = await payload.find({
       collection: 'users',
       where: {
-        clerkId: { equals: clerkUser.id },
+        email: { equals: clerkUser.emailAddresses[0]?.emailAddress },
       },
       limit: 1,
     })

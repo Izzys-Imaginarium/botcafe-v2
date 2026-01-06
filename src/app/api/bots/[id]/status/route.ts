@@ -26,11 +26,11 @@ export async function GET(
 
     const payload = await getPayloadHMR({ config })
 
-    // Find the Payload user by Clerk ID
+    // Find the Payload user by email
     const payloadUsers = await payload.find({
       collection: 'users',
       where: {
-        clerkId: { equals: clerkUser.id },
+        email: { equals: clerkUser.emailAddresses[0]?.emailAddress },
       },
       limit: 1,
     })

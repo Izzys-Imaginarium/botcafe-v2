@@ -36,18 +36,18 @@ export async function POST(request: NextRequest) {
     // Get Payload instance
     const payload = await getPayloadHMR({ config })
 
-    // Find Payload user by Clerk ID
+    // Find Payload user by email
     const payloadUsers = await payload.find({
       collection: 'users',
       where: {
-        clerkId: { equals: clerkUser.id },
+        email: { equals: clerkUser.emailAddresses[0]?.emailAddress },
       },
       limit: 1,
     })
 
     if (payloadUsers.docs.length === 0) {
       return NextResponse.json(
-        { message: 'User not found in database. Please contact support.' },
+        { message: 'User not synced yet. Please try again.' },
         { status: 404 }
       )
     }

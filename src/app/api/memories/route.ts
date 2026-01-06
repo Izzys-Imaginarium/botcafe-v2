@@ -39,21 +39,26 @@ export async function GET(request: NextRequest) {
     const payloadConfig = await config
     const payload = await getPayload({ config: payloadConfig })
 
-    // Find user in Payload
+    // Find user in Payload by email
     const users = await payload.find({
       collection: 'users',
       where: {
-        clerkUserId: {
-          equals: clerkUser.id,
+        email: {
+          equals: clerkUser.emailAddresses[0]?.emailAddress,
         },
       },
     })
 
     if (users.docs.length === 0) {
-      return NextResponse.json(
-        { success: false, message: 'User not found in database' },
-        { status: 404 }
-      )
+      // User not synced yet - return empty results
+      return NextResponse.json({
+        success: true,
+        memories: [],
+        total: 0,
+        hasMore: false,
+        page: 1,
+        totalPages: 0,
+      })
     }
 
     const payloadUser = users.docs[0]
@@ -112,9 +117,14 @@ export async function GET(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Fetch memories error:', error)
-    return NextResponse.json(
-      { success: false, message: error.message || 'Failed to fetch memories' },
-      { status: 500 }
-    )
+    // Return empty results instead of error for better UX
+    return NextResponse.json({
+      success: true,
+      memories: [],
+      total: 0,
+      hasMore: false,
+      page: 1,
+      totalPages: 0,
+    })
   }
 }

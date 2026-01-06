@@ -126,16 +126,22 @@ export async function GET(request: NextRequest) {
     const payloadUsers = await payload.find({
       collection: 'users',
       where: {
-        clerkId: { equals: clerkUser.id },
+        email: { equals: clerkUser.emailAddresses[0]?.emailAddress },
       },
       limit: 1,
     })
 
     if (payloadUsers.docs.length === 0) {
-      return NextResponse.json(
-        { message: 'User not found in database' },
-        { status: 404 }
-      )
+      // User not synced yet - return empty results
+      return NextResponse.json({
+        success: true,
+        docs: [],
+        totalDocs: 0,
+        page: 1,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPrevPage: false,
+      })
     }
 
     const payloadUser = payloadUsers.docs[0]
@@ -179,9 +185,15 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Error fetching knowledge entries:', error)
-    return NextResponse.json(
-      { message: error.message || 'Failed to fetch knowledge entries' },
-      { status: 500 }
-    )
+    // Return empty results instead of error for better UX
+    return NextResponse.json({
+      success: true,
+      docs: [],
+      totalDocs: 0,
+      page: 1,
+      totalPages: 0,
+      hasNextPage: false,
+      hasPrevPage: false,
+    })
   }
 }

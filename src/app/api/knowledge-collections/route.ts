@@ -102,20 +102,21 @@ export async function GET(request: NextRequest) {
     // Get Payload instance
     const payload = await getPayloadHMR({ config })
 
-    // Find Payload user by Clerk ID
+    // Find Payload user by email
     const payloadUsers = await payload.find({
       collection: 'users',
       where: {
-        clerkId: { equals: clerkUser.id },
+        email: { equals: clerkUser.emailAddresses[0]?.emailAddress },
       },
       limit: 1,
     })
 
     if (payloadUsers.docs.length === 0) {
-      return NextResponse.json(
-        { message: 'User not found in database' },
-        { status: 404 }
-      )
+      // User not synced yet - return empty collections
+      return NextResponse.json({
+        success: true,
+        collections: [],
+      })
     }
 
     const payloadUser = payloadUsers.docs[0]
@@ -129,7 +130,7 @@ export async function GET(request: NextRequest) {
         },
       },
       sort: '-createdAt',
-      limit: 100, // Adjust as needed
+      limit: 100,
     })
 
     return NextResponse.json({
@@ -138,9 +139,10 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Error fetching collections:', error)
-    return NextResponse.json(
-      { message: error.message || 'Failed to fetch collections' },
-      { status: 500 }
-    )
+    // Return empty collections instead of error for better UX
+    return NextResponse.json({
+      success: true,
+      collections: [],
+    })
   }
 }

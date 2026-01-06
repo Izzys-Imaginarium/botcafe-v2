@@ -475,6 +475,57 @@ src/
 
 ---
 
+## 🚀 **Deployment Guide**
+
+### **Scripts**
+
+| Command | Description |
+|---------|-------------|
+| `pnpm dev` | Start local development server |
+| `pnpm deploy` | Build and deploy app to Cloudflare (no database changes) |
+| `pnpm deploy:database` | Sync local database to remote D1 (destructive - use carefully) |
+
+### **Normal Deployment Workflow**
+
+For code-only changes (no new collections or schema changes):
+```bash
+pnpm deploy
+```
+
+### **Database Schema Changes**
+
+When you add new Payload collections or modify existing ones:
+
+1. **Run dev mode** to auto-push schema changes locally:
+   ```bash
+   pnpm dev
+   ```
+
+2. **Create a migration** (optional but recommended):
+   ```bash
+   pnpm payload migrate:create
+   ```
+
+3. **Sync to remote** (only when needed):
+   ```bash
+   pnpm deploy:database
+   ```
+   ⚠️ This exports your local DB and imports to remote. Only use when schema changes are needed.
+
+4. **Deploy the app**:
+   ```bash
+   pnpm deploy
+   ```
+
+### **Important Notes**
+
+- The `deploy` command does NOT touch the database - it only deploys code
+- Database schema changes happen automatically in dev mode via Payload's `push: true` setting
+- Use `deploy:database` sparingly - it's a full sync from local to remote
+- Migrations are tracked in `payload_migrations` table - both local and remote should match
+
+---
+
 ## 🔄 **Recent Changes**
 
 ### **2026-01-06 Updates:**

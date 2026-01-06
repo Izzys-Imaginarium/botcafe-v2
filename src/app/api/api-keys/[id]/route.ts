@@ -76,7 +76,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     const { id } = await params
-    const body = await request.json()
+    const body = (await request.json()) as { nickname?: string; is_active?: boolean }
 
     let payload
     try {

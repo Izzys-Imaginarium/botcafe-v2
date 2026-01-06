@@ -1432,11 +1432,11 @@ export async function POST() {
     const payloadConfig = await config
     const payload = await getPayload({ config: payloadConfig })
 
-    // Find or create the user in Payload
+    // Find or create the user in Payload by email
     const users = await payload.find({
       collection: 'users',
       where: {
-        clerkUserId: { equals: clerkUser.id },
+        email: { equals: clerkUser.emailAddresses[0]?.emailAddress },
       },
     })
 

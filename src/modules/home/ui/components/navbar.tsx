@@ -160,7 +160,7 @@ export const Navbar = ({ user }: NavbarProps) => {
                       userButtonPopoverActionButtonText: 'text-parchment font-lore',
                     },
                   }}
-                  afterSignOutUrl="/"
+                  signInUrl="/sign-in"
                 />
               </div>
             ) : (

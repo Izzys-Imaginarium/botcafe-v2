@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
+import { MagicalBackground } from '@/modules/home/ui/components/magical-background'
 
 export interface BotFormData {
   name: string
@@ -555,8 +556,10 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
   }
 
   return (
-    <div className="min-h-screen bg-background py-8">
-      <div className="container mx-auto px-4 max-w-4xl">
+    <>
+      <MagicalBackground />
+      <div className="relative z-10 min-h-screen bg-background/50 py-8 pt-32">
+        <div className="container mx-auto px-4 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gold-rich mb-2 font-display">
@@ -654,5 +657,6 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
         </div>
       </div>
     </div>
+    </>
   )
 }

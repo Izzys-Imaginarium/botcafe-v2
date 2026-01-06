@@ -16,11 +16,11 @@ export async function GET() {
     const payloadConfig = await config
     const payload = await getPayload({ config: payloadConfig })
 
-    // Find the Payload user
+    // Find the Payload user by email
     const users = await payload.find({
       collection: 'users',
       where: {
-        clerkUserId: { equals: user.id },
+        email: { equals: user.emailAddresses[0]?.emailAddress },
       },
     })
 

@@ -21,11 +21,11 @@ export async function GET(request: NextRequest) {
     const payloadConfig = await config
     const payload = await getPayload({ config: payloadConfig })
 
-    // Find the Payload user
+    // Find the Payload user by email
     const users = await payload.find({
       collection: 'users',
       where: {
-        clerkUserId: { equals: user.id },
+        email: { equals: user.emailAddresses[0]?.emailAddress },
       },
     })
 
@@ -142,11 +142,11 @@ export async function POST(request: NextRequest) {
     const payloadConfig = await config
     const payload = await getPayload({ config: payloadConfig })
 
-    // Find or create the Payload user
+    // Find or create the Payload user by email
     let users = await payload.find({
       collection: 'users',
       where: {
-        clerkUserId: { equals: user.id },
+        email: { equals: user.emailAddresses[0]?.emailAddress },
       },
     })
 
@@ -155,7 +155,6 @@ export async function POST(request: NextRequest) {
       payloadUser = await payload.create({
         collection: 'users',
         data: {
-          clerkUserId: user.id,
           email: user.emailAddresses[0]?.emailAddress || '',
           name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
         } as any,

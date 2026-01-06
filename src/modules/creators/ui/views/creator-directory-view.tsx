@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -29,7 +29,6 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { useRouter } from 'next/navigation'
 
 interface CreatorProfile {
   id: string
@@ -94,7 +93,6 @@ const verificationIcons: Record<string, { icon: React.ReactNode; label: string; 
 }
 
 export const CreatorDirectoryView = () => {
-  const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
   const [creators, setCreators] = useState<CreatorProfile[]>([])
   const [hasProfile, setHasProfile] = useState(false)
@@ -102,6 +100,7 @@ export const CreatorDirectoryView = () => {
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [specialtyFilter, setSpecialtyFilter] = useState<string>('all')
   const [sortBy, setSortBy] = useState<string>('-community_stats.follower_count')
 
@@ -110,17 +109,25 @@ export const CreatorDirectoryView = () => {
   const [totalPages, setTotalPages] = useState(1)
   const [totalCreators, setTotalCreators] = useState(0)
 
+  // Debounce search query to prevent flickering
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
   // Fetch creators and user profile status on mount
   useEffect(() => {
     checkMyProfile()
     fetchCreators()
   }, [])
 
-  // Refetch when filters change
+  // Refetch when filters change (using debounced search)
   useEffect(() => {
     setPage(1)
     fetchCreators()
-  }, [searchQuery, specialtyFilter, sortBy])
+  }, [debouncedSearch, specialtyFilter, sortBy])
 
   // Refetch when page changes
   useEffect(() => {
@@ -150,8 +157,8 @@ export const CreatorDirectoryView = () => {
         sort: sortBy,
       })
 
-      if (searchQuery) {
-        params.set('search', searchQuery)
+      if (debouncedSearch) {
+        params.set('search', debouncedSearch)
       }
 
       if (specialtyFilter !== 'all') {

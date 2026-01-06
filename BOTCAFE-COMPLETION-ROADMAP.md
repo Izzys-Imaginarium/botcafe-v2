@@ -477,6 +477,38 @@ src/
 
 ## 🔄 **Recent Changes**
 
+### **2026-01-06 Updates:**
+- ✅ **Major API Bug Fix: clerkId → email Query Migration**
+  - Fixed 12 API endpoints that were incorrectly querying Users by `clerkId` (field doesn't exist)
+  - All endpoints now query by `email` field for user lookup
+  - Added graceful empty response handling instead of 500 errors
+  - Fixed files:
+    - `/api/vectors/generate/route.ts`
+    - `/api/vectors/search/route.ts`
+    - `/api/vectors/[sourceId]/route.ts`
+    - `/api/knowledge-collections/route.ts` (POST)
+    - `/api/knowledge-collections/[id]/route.ts`
+    - `/api/knowledge/route.ts` (POST)
+    - `/api/knowledge/[id]/route.ts`
+    - `/api/bots/my-bots/route.ts`
+    - `/api/bots/[id]/route.ts`
+    - `/api/bots/[id]/favorite/route.ts`
+    - `/api/bots/[id]/like/route.ts`
+    - `/api/bots/[id]/status/route.ts`
+    - `/api/memories/route.ts`
+    - `/api/admin/seed-legal/route.ts`
+- ✅ **Account Page Improvements**
+  - Added data export functionality (`/api/account/export`)
+  - Added Clerk profile settings integration
+- ✅ **Creator Directory Fix**
+  - Fixed search flickering with debounced input (300ms delay)
+- ✅ **Bot Creation Form Fix**
+  - Fixed input losing focus after one character (replaced useEffect with handleNameChange)
+- ⚠️ **Known Issue: Legal Documents Table**
+  - `legal-documents` collection table not yet migrated to production database
+  - Need to run `pnpm payload migrate:create` and deploy migration
+  - Seed legal endpoint (`/api/admin/seed-legal`) ready once table exists
+
 ### **2026-01-05 Updates:**
 - ✅ **Analytics Dashboard Complete (Phase 7 final)**
 - ✅ Created analytics dashboard system with three views:
@@ -604,8 +636,8 @@ src/
 
 ---
 
-**Last Updated**: 2026-01-05
-**Version**: 2.6
+**Last Updated**: 2026-01-06
+**Version**: 2.7
 **Total Tasks**: 130
-**Completed**: 104
-**Progress**: ~80%
+**Completed**: 108
+**Progress**: ~83%

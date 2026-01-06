@@ -1,8 +1,8 @@
 # BotCafe v2 - Complete Sitemap
 
-**Last Updated**: 2026-01-05
-**Version**: 2.6
-**Status**: ~80% Complete
+**Last Updated**: 2026-01-06
+**Version**: 2.7
+**Status**: ~83% Complete
 
 ---
 
@@ -185,6 +185,18 @@
 | `/api/help/[slug]` | GET | Get article (increments views) |
 | `/api/help/tutorials` | GET | List tutorials |
 
+### Account
+
+| Endpoint | Methods | Description |
+|----------|---------|-------------|
+| `/api/account/export` | GET | Export all user data (GDPR-compliant) |
+
+### Admin
+
+| Endpoint | Methods | Description |
+|----------|---------|-------------|
+| `/api/admin/seed-legal` | POST | Seed legal documents (Terms, Privacy, AI Use) |
+
 ### File Upload
 
 | Endpoint | Methods | Description |
@@ -218,8 +230,8 @@
 | Help | 3 | 0 | 3 |
 | Chat | 0 | 2 | 2 |
 | **Frontend Total** | **33** | **2** | **35** |
-| API Endpoints | 39 | 0 | 39 |
-| **Grand Total** | **72** | **2** | **74** |
+| API Endpoints | 41 | 0 | 41 |
+| **Grand Total** | **74** | **2** | **76** |
 
 ---
 

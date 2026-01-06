@@ -1,7 +1,7 @@
 # BotCafe v2 - Style Guide
 
-**Last Updated**: 2026-01-05
-**Version**: 2.6
+**Last Updated**: 2026-01-06
+**Version**: 2.7
 
 ---
 

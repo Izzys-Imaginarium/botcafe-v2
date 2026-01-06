@@ -1,7 +1,7 @@
 # BotCafe v2 - Database Schema
 
-**Last Updated**: 2026-01-05
-**Version**: 2.6
+**Last Updated**: 2026-01-06
+**Version**: 2.7
 **Database**: Cloudflare D1 (SQLite) via Payload CMS
 
 ---
@@ -31,11 +31,12 @@ BotCafe v2 uses Payload CMS with 30 collections organized into functional groups
 
 Primary user authentication collection (integrated with Clerk).
 
+> **Important**: API endpoints look up users by `email` field, not `clerkUserId`. The Clerk user's primary email address is used for all user lookups via `clerkUser.emailAddresses[0]?.emailAddress`.
+
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | string | Primary key |
-| `clerkUserId` | text | Clerk authentication ID |
-| `email` | email | User email (required, unique) |
+| `email` | email | User email (required, unique) - **Primary lookup field** |
 | `displayName` | text | Display name |
 | `bio` | textarea | User biography |
 | `avatar` | relationship (Media) | Profile image |
@@ -632,7 +633,7 @@ Personas
 
 | Collection | Fields |
 |------------|--------|
-| Users | `clerkUserId`, `email` |
+| Users | `email` |
 | Bot | `slug` |
 | BotInteraction | `user` + `bot` + `interaction_type` |
 | CreatorProfiles | `username` |
@@ -641,6 +642,17 @@ Personas
 ### Common Query Patterns
 
 ```typescript
+// Find Payload user by Clerk email (standard pattern for all API endpoints)
+const clerkUser = await currentUser()
+const payloadUsers = await payload.find({
+  collection: 'users',
+  where: {
+    email: { equals: clerkUser.emailAddresses[0]?.emailAddress },
+  },
+  limit: 1,
+})
+const payloadUser = payloadUsers.docs[0]
+
 // Find user's bots
 payload.find({
   collection: 'bot',

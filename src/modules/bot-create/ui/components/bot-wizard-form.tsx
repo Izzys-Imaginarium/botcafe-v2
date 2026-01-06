@@ -97,16 +97,18 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
     }
   }, [mode, initialData?.picture])
 
-  // Auto-generate slug from name (only in create mode or if slug is empty)
-  useEffect(() => {
-    if (botData.name && (!botData.slug || mode === 'create')) {
-      const slug = botData.name
+  // Auto-generate slug from name only in create mode
+  const handleNameChange = (value: string) => {
+    if (mode === 'create') {
+      const slug = value
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '')
-      setBotData(prev => ({ ...prev, slug }))
+      setBotData(prev => ({ ...prev, name: value, slug }))
+    } else {
+      setBotData(prev => ({ ...prev, name: value }))
     }
-  }, [botData.name, botData.slug, mode])
+  }
 
   const handleInputChange = (field: keyof BotFormData, value: any) => {
     setBotData(prev => ({ ...prev, [field]: value }))
@@ -270,7 +272,7 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
                 id="name"
                 placeholder="Enter your bot's name"
                 value={botData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
+                onChange={(e) => handleNameChange(e.target.value)}
                 className="glass-rune"
               />
             </div>

@@ -63,8 +63,6 @@
       "binding": "D1",
       "database_id": "7908e1d3-6b00-4a21-bed3-9ca9aebfe8e3",
       "database_name": "botcafe-v2",
-      // Set to false for local dev, production deployments always use remote
-      "remote": false,
     },
   ],
 
@@ -72,151 +70,22 @@
     {
       "binding": "R2",
       "bucket_name": "botcafe-v2",
-      "preview_bucket_name": "botcafe-v2",
     },
   ],
 
-  // Environment configurations
-  "env": {
-    "development": {
-      "name": "botcafe-v2-dev",
-      "vars": {
-        "NEXT_PUBLIC_SITE_URL": "http://localhost:3000",
-        "NEXT_PUBLIC_CLERK_SIGN_IN_URL": "/sign-in",
-        "NEXT_PUBLIC_CLERK_SIGN_UP_URL": "/sign-up",
-        "NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL": "/account",
-        "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL": "/account",
-        "FROM_EMAIL": "noreply@botcafe.ai",
-        "FROM_NAME": "BotCafe Admin",
-        "CLOUDFLARE_ENV": "development",
-      },
-      "images": {
-        "binding": "IMAGES",
-      },
-      "d1_databases": [
-        {
-          "binding": "D1",
-          "database_id": "7908e1d3-6b00-4a21-bed3-9ca9aebfe8e3",
-          "database_name": "botcafe-v2-dev",
-          "remote": false,
-        },
-      ],
-      "services": [
-        {
-          "binding": "WORKER_SELF_REFERENCE",
-          "service": "botcafe-v2-dev",
-        },
-      ],
-      "r2_buckets": [
-        {
-          "binding": "R2",
-          "bucket_name": "botcafe-v2-dev",
-        },
-      ],
-      "ai": {
-        "binding": "AI",
-      },
-      "vectorize": [
-        {
-          "binding": "VECTORIZE",
-          "index_name": "botcafe-embeddings-dev",
-        },
-      ],
-    },
-    "staging": {
-      "name": "botcafe-v2-staging",
-      "vars": {
-        "NEXT_PUBLIC_SITE_URL": "https://staging.botcafe.ai",
-        "NEXT_PUBLIC_CLERK_SIGN_IN_URL": "/sign-in",
-        "NEXT_PUBLIC_CLERK_SIGN_UP_URL": "/sign-up",
-        "NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL": "/account",
-        "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL": "/account",
-        "FROM_EMAIL": "noreply@botcafe.ai",
-        "FROM_NAME": "BotCafe Admin",
-        "CLOUDFLARE_ENV": "staging",
-      },
-      "images": {
-        "binding": "IMAGES",
-      },
-      "d1_databases": [
-        {
-          "binding": "D1",
-          "database_id": "7908e1d3-6b00-4a21-bed3-9ca9aebfe8e3",
-          "database_name": "botcafe-v2-staging",
-          "remote": true,
-        },
-      ],
-      "services": [
-        {
-          "binding": "WORKER_SELF_REFERENCE",
-          "service": "botcafe-v2-staging",
-        },
-      ],
-      "r2_buckets": [
-        {
-          "binding": "R2",
-          "bucket_name": "botcafe-v2-staging",
-        },
-      ],
-      "ai": {
-        "binding": "AI",
-      },
-      "vectorize": [
-        {
-          "binding": "VECTORIZE",
-          "index_name": "botcafe-embeddings-staging",
-        },
-      ],
-    },
-    "production": {
-      "name": "botcafe-v2-prod",
-      "vars": {
-        "NEXT_PUBLIC_SITE_URL": "https://botcafe.ai",
-        "NEXT_PUBLIC_CLERK_SIGN_IN_URL": "/sign-in",
-        "NEXT_PUBLIC_CLERK_SIGN_UP_URL": "/sign-up",
-        "NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL": "/account",
-        "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL": "/account",
-        "FROM_EMAIL": "noreply@botcafe.ai",
-        "FROM_NAME": "BotCafe Admin",
-        "CLOUDFLARE_ENV": "production",
-      },
-      "images": {
-        "binding": "IMAGES",
-      },
-      "d1_databases": [
-        {
-          "binding": "D1",
-          "database_id": "YOUR_PRODUCTION_DATABASE_ID",
-          "database_name": "botcafe-v2-prod",
-          "remote": true,
-        },
-      ],
-      "services": [
-        {
-          "binding": "WORKER_SELF_REFERENCE",
-          "service": "botcafe-v2-prod",
-        },
-      ],
-      "r2_buckets": [
-        {
-          "binding": "R2",
-          "bucket_name": "botcafe-v2-prod",
-        },
-      ],
-      "ai": {
-        "binding": "AI",
-      },
-      "vectorize": [
-        {
-          "binding": "VECTORIZE",
-          "index_name": "botcafe-embeddings-prod",
-        },
-      ],
-    },
+  "ai": {
+    "binding": "AI",
   },
+
+  "vectorize": [
+    {
+      "binding": "VECTORIZE",
+      "index_name": "botcafe-embeddings",
+    },
+  ],
 }
 
-/* 
+/*
 =============================================================================
 SECRET VARIABLES SETUP INSTRUCTIONS
 =============================================================================
@@ -227,15 +96,15 @@ The following variables MUST be set as secrets using wrangler:
    - PAYLOAD_SECRET
      Command: wrangler secret put PAYLOAD_SECRET
      Generate: openssl rand -hex 32
-     
+
    - CLERK_SECRET_KEY
      Command: wrangler secret put CLERK_SECRET_KEY
      Get from: https://dashboard.clerk.com/last-active?path=api-keys
-     
+
    - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
      Command: wrangler secret put NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
      Get from: https://dashboard.clerk.com/last-active?path=api-keys
-     
+
    - RESEND_API_KEY
      Command: wrangler secret put RESEND_API_KEY
      Get from: https://resend.com
@@ -243,41 +112,18 @@ The following variables MUST be set as secrets using wrangler:
 2. OPTIONAL SECRETS (Based on features):
    - OPENAI_API_KEY
      Command: wrangler secret put OPENAI_API_KEY
-     
+
    - ANTHROPIC_API_KEY
      Command: wrangler secret put ANTHROPIC_API_KEY
-     
+
    - DEEPSEEK_API_KEY
      Command: wrangler secret put DEEPSEEK_API_KEY
-     
+
    - DISCORD_BOT_TOKEN
      Command: wrangler secret put DISCORD_BOT_TOKEN
-     
+
    - SENTRY_DSN
      Command: wrangler secret put SENTRY_DSN
-
-3. ENVIRONMENT-SPECIFIC SECRETS:
-   
-   For development environment:
-   wrangler secret put PAYLOAD_SECRET --env development
-   wrangler secret put CLERK_SECRET_KEY --env development
-   (use your development Clerk instance keys)
-   
-   For staging environment:
-   wrangler secret put PAYLOAD_SECRET --env staging
-   wrangler secret put CLERK_SECRET_KEY --env staging
-   (use your staging Clerk instance keys)
-   
-   For production environment:
-   wrangler secret put PAYLOAD_SECRET --env production
-   wrangler secret put CLERK_SECRET_KEY --env production
-   (use your production Clerk instance keys)
-
-4. DEPLOYMENT COMMANDS:
-   
-   Development: wrangler deploy --env development
-   Staging:     CLOUDFLARE_ENV=staging wrangler deploy
-   Production:  CLOUDFLARE_ENV=production wrangler deploy
 
 =============================================================================
 PUBLIC VS SECRET VARIABLES

@@ -504,10 +504,12 @@ src/
   - Fixed search flickering with debounced input (300ms delay)
 - ✅ **Bot Creation Form Fix**
   - Fixed input losing focus after one character (replaced useEffect with handleNameChange)
-- ⚠️ **Known Issue: Legal Documents Table**
-  - `legal-documents` collection table not yet migrated to production database
-  - Need to run `pnpm payload migrate:create` and deploy migration
-  - Seed legal endpoint (`/api/admin/seed-legal`) ready once table exists
+- ✅ **Database Migration Fix**
+  - Fixed issue where Payload migrations only ran locally, not on remote D1
+  - Updated `deploy:database` script to export local DB and import to remote
+  - Added `deploy:database:sync` script for syncing without re-running migrations
+  - All 92 tables now properly deployed to production D1 database
+  - Legal documents table and all Phase 3-6 collections now available
 
 ### **2026-01-05 Updates:**
 - ✅ **Analytics Dashboard Complete (Phase 7 final)**

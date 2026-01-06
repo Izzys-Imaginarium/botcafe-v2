@@ -1451,7 +1451,6 @@ export async function POST() {
           name: clerkUser.firstName
             ? `${clerkUser.firstName} ${clerkUser.lastName || ''}`
             : clerkUser.username || 'Admin',
-          clerkUserId: clerkUser.id,
         },
       })
       payloadUserId = newUser.id
@@ -1473,7 +1472,7 @@ export async function POST() {
           title: 'Terms of Service',
           documentType: 'terms-of-service',
           version: '1.0',
-          content: termsOfServiceContent,
+          content: termsOfServiceContent as any,
           effectiveDate,
           language: 'en',
           status: 'active',
@@ -1503,7 +1502,7 @@ export async function POST() {
           title: 'Privacy Policy',
           documentType: 'privacy-policy',
           version: '1.0',
-          content: privacyPolicyContent,
+          content: privacyPolicyContent as any,
           effectiveDate,
           language: 'en',
           status: 'active',
@@ -1533,7 +1532,7 @@ export async function POST() {
           title: 'Responsible AI Use Policy',
           documentType: 'acceptable-use-policy',
           version: '1.0',
-          content: responsibleAIContent,
+          content: responsibleAIContent as any,
           effectiveDate,
           language: 'en',
           status: 'active',

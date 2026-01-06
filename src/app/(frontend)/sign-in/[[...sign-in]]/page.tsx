@@ -13,6 +13,7 @@ export default function SignInPage() {
       <div className="relative z-10 flex items-center justify-center min-h-screen pt-24">
         <div className="glass-rune p-8 rounded-xl border border-gold-ancient/30 bg-[#0a140a]/50 backdrop-blur-sm">
           <SignIn
+            fallbackRedirectUrl="/account"
             appearance={{
               elements: {
                 rootBox: 'w-full',

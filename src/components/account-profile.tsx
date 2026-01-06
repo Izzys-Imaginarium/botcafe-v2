@@ -1,15 +1,15 @@
 'use client'
 
-import { useUser } from '@clerk/nextjs'
+import { useUser, useClerk } from '@clerk/nextjs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Edit3 } from 'lucide-react'
-import { toast } from 'sonner'
+import { Edit3, ExternalLink } from 'lucide-react'
 
 export const AccountProfile = () => {
   const { user, isLoaded } = useUser()
+  const { openUserProfile } = useClerk()
 
   if (!isLoaded) {
     return (
@@ -25,12 +25,8 @@ export const AccountProfile = () => {
     return null
   }
 
-  const handleSaveChanges = () => {
-    // Profile management is handled by Clerk
-    // Users can update their profile via Clerk's user button or dedicated profile page
-    toast.info(
-      'Profile updates are managed through your account settings. Click your profile icon in the navigation.'
-    )
+  const handleOpenProfileSettings = () => {
+    openUserProfile()
   }
 
   return (
@@ -77,10 +73,18 @@ export const AccountProfile = () => {
           />
         </div>
         <div className="p-4 bg-[#0a140a]/30 rounded-lg border border-gold-ancient/20">
-          <p className="text-sm text-parchment-dim font-lore">
+          <p className="text-sm text-parchment-dim font-lore mb-4">
             Profile information is managed by your Clerk account. To update your name, username, or
-            email, click your profile icon in the top navigation and select "Manage account".
+            email, click the button below.
           </p>
+          <Button
+            onClick={handleOpenProfileSettings}
+            variant="outline"
+            className="ornate-border"
+          >
+            <ExternalLink className="w-4 h-4 mr-2" />
+            Edit Profile Settings
+          </Button>
         </div>
       </CardContent>
     </Card>

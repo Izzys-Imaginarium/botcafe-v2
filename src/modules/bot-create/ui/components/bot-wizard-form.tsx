@@ -261,7 +261,8 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
     }
   }
 
-  const CurrentStepComponent = () => {
+  // Render step content based on current step
+  const renderStepContent = () => {
     switch (currentStep) {
       case 0:
         return (
@@ -351,7 +352,7 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
                 Add example phrases your bot might say to help define its voice.
               </p>
               {botData.speech_examples.map((example, index) => (
-                <div key={index} className="flex gap-2">
+                <div key={`speech-${index}`} className="flex gap-2">
                   <Input
                     placeholder={`Example ${index + 1}`}
                     value={example}
@@ -619,7 +620,7 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
             <CardDescription>{steps[currentStep].description}</CardDescription>
           </CardHeader>
           <CardContent>
-            <CurrentStepComponent />
+            {renderStepContent()}
           </CardContent>
         </Card>
 

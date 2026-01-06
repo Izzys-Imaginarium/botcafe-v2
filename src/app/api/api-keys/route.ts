@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPayloadHMR } from '@payloadcms/next/utilities'
 import { currentUser } from '@clerk/nextjs/server'
 import config from '@payload-config'
+import type { ApiKey } from '@/payload-types'
 
 // GET - List all API keys for the current user
 export async function GET(request: NextRequest) {
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
+    const body = (await request.json()) as { nickname?: string; provider?: ApiKey['provider']; key?: string }
     const { nickname, provider, key } = body
 
     if (!nickname || !provider || !key) {

@@ -198,7 +198,7 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
         formData.append('file', botData.picture)
         formData.append('alt', `${botData.name} profile picture`)
 
-        const uploadResponse = await fetch('/api/media', {
+        const uploadResponse = await fetch('/api/upload/image', {
           method: 'POST',
           body: formData,
         })
@@ -207,7 +207,8 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
           const uploadResult = await uploadResponse.json() as { doc: { id: string | number } }
           pictureId = uploadResult.doc.id
         } else {
-          toast.error(`Failed to upload image. ${mode === 'create' ? 'Creating' : 'Updating'} bot without picture change.`)
+          const errorData = await uploadResponse.json() as { error?: string }
+          toast.error(errorData.error || `Failed to upload image. ${mode === 'create' ? 'Creating' : 'Updating'} bot without picture change.`)
         }
       } else if (typeof botData.picture === 'number' || typeof botData.picture === 'string') {
         // Existing picture ID

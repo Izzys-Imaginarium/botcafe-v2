@@ -156,6 +156,7 @@ export async function POST(request: NextRequest) {
         importance: 7, // Higher importance for manually imported memories
         emotional_context: extractEmotionalContext(parsedMessages),
       },
+      overrideAccess: true,
     })
 
     return NextResponse.json({

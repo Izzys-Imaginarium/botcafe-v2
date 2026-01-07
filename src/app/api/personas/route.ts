@@ -233,6 +233,7 @@ export async function POST(request: NextRequest) {
           data: {
             is_default: false,
           },
+          overrideAccess: true,
         })
       }
     }
@@ -254,6 +255,7 @@ export async function POST(request: NextRequest) {
         custom_instructions: body.custom_instructions || '',
         usage_count: 0,
       },
+      overrideAccess: true,
     })
 
     return NextResponse.json({

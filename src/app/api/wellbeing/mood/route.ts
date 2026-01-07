@@ -158,6 +158,7 @@ export async function POST(request: NextRequest) {
           email: user.emailAddresses[0]?.emailAddress || '',
           name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
         } as any,
+        overrideAccess: true,
       })
     } else {
       payloadUser = users.docs[0]
@@ -172,6 +173,7 @@ export async function POST(request: NextRequest) {
         note: note || '',
         timestamp: new Date().toISOString(),
       },
+      overrideAccess: true,
     })
 
     // Update self-moderation tracking if enabled
@@ -194,6 +196,7 @@ export async function POST(request: NextRequest) {
               mood_entries_count_week: currentCount + 1,
             },
           },
+          overrideAccess: true,
         })
       }
     } catch (e) {

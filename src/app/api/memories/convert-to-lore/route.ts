@@ -137,6 +137,7 @@ export async function POST(request: NextRequest) {
           access_count: 0,
         },
       },
+      overrideAccess: true,
     })
 
     // Update memory to mark it as converted
@@ -148,6 +149,7 @@ export async function POST(request: NextRequest) {
         lore_entry: knowledge.id,
         converted_at: new Date().toISOString(),
       },
+      overrideAccess: true,
     })
 
     return NextResponse.json({

@@ -132,6 +132,7 @@ export async function POST(request: NextRequest) {
           key_encryption_level: 'basic',
         },
       },
+      overrideAccess: true,
     })
 
     return NextResponse.json({

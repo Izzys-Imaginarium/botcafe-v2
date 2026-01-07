@@ -57,6 +57,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     await payload.delete({
       collection: 'api-key',
       id,
+      overrideAccess: true,
     })
 
     return NextResponse.json({ message: 'API key deleted successfully' })
@@ -136,6 +137,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       collection: 'api-key',
       id,
       data: updateData,
+      overrideAccess: true,
     })
 
     return NextResponse.json({

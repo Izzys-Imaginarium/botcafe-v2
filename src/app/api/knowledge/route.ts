@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
           popularity_score: 0,
         },
       },
+      overrideAccess: true,
     })
 
     return NextResponse.json({

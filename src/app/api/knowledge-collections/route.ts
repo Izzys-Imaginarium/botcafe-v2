@@ -71,6 +71,7 @@ export async function POST(request: NextRequest) {
           is_public: false,
         },
       },
+      overrideAccess: true,
     })
 
     return NextResponse.json({

@@ -193,6 +193,7 @@ export async function PUT(
           data: {
             is_default: false,
           },
+          overrideAccess: true,
         })
       }
     }
@@ -202,6 +203,7 @@ export async function PUT(
       collection: 'personas',
       id,
       data: body,
+      overrideAccess: true,
     })
 
     return NextResponse.json({
@@ -284,6 +286,7 @@ export async function DELETE(
     await payload.delete({
       collection: 'personas',
       id,
+      overrideAccess: true,
     })
 
     return NextResponse.json({

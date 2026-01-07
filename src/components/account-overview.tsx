@@ -27,6 +27,7 @@ interface UserBot {
   is_public: boolean
   likes_count: number
   created_date: string
+  creator_username: string
 }
 
 // Helper components
@@ -205,13 +206,13 @@ export const AccountOverview = () => {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Link href={`/bot/${bot.slug}`}>
+                    <Link href={`/${bot.creator_username}/${bot.slug}`}>
                       <Button variant="outline" size="sm" className="ornate-border">
                         <Eye className="w-4 h-4 mr-1" />
                         View
                       </Button>
                     </Link>
-                    <Link href={`/bot/${bot.slug}/edit`}>
+                    <Link href={`/${bot.creator_username}/${bot.slug}/edit`}>
                       <Button variant="outline" size="sm" className="ornate-border">
                         <Edit className="w-4 h-4 mr-1" />
                         Edit

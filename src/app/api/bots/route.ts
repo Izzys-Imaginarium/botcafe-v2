@@ -20,6 +20,52 @@ interface BotCreateRequest {
   picture?: string | number
 }
 
+// Helper function to generate a URL-safe username from display name or email
+function generateUsername(displayName: string, email: string): string {
+  // Try to use the display name first, fall back to email prefix
+  const base = displayName || email.split('@')[0] || 'user'
+  return base
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 50) || 'user'
+}
+
+// Helper function to ensure username is unique by appending numbers if needed
+async function ensureUniqueUsername(
+  payload: any,
+  baseUsername: string
+): Promise<string> {
+  let username = baseUsername
+  let counter = 1
+
+  while (true) {
+    const existing = await payload.find({
+      collection: 'creatorProfiles',
+      where: {
+        username: { equals: username },
+      },
+      limit: 1,
+    })
+
+    if (existing.docs.length === 0) {
+      return username
+    }
+
+    username = `${baseUsername}-${counter}`
+    counter++
+
+    // Safety limit
+    if (counter > 1000) {
+      username = `${baseUsername}-${Date.now()}`
+      break
+    }
+  }
+
+  return username
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Get authenticated Clerk user
@@ -78,6 +124,50 @@ export async function POST(request: NextRequest) {
       payloadUserId = newUser.id
     }
 
+    // Find or create creator profile for this user
+    const existingProfiles = await payload.find({
+      collection: 'creatorProfiles',
+      where: {
+        user: { equals: payloadUserId },
+      },
+      limit: 1,
+    })
+
+    let creatorProfileId: string | number
+    let creatorUsername: string
+
+    if (existingProfiles.docs.length > 0) {
+      // Use existing creator profile
+      creatorProfileId = existingProfiles.docs[0].id
+      creatorUsername = existingProfiles.docs[0].username
+    } else {
+      // Auto-create a creator profile for first-time bot creators
+      const email = clerkUser.emailAddresses[0]?.emailAddress || ''
+      const baseUsername = generateUsername(body.creator_display_name, email)
+      const uniqueUsername = await ensureUniqueUsername(payload, baseUsername)
+
+      const newProfile = await payload.create({
+        collection: 'creatorProfiles',
+        data: {
+          user: payloadUserId,
+          username: uniqueUsername,
+          display_name: body.creator_display_name,
+          bio: `Creator of AI companions on BotCafe`,
+          creator_info: {
+            creator_type: 'individual',
+          },
+          profile_settings: {
+            profile_visibility: 'public',
+            allow_collaborations: true,
+            accept_commissions: false,
+          },
+        },
+      })
+
+      creatorProfileId = newProfile.id
+      creatorUsername = newProfile.username
+    }
+
     // Transform speech_examples array format
     // Frontend sends: ['example1', 'example2']
     // Payload expects: [{ example: 'example1' }, { example: 'example2' }]
@@ -92,6 +182,7 @@ export async function POST(request: NextRequest) {
       collection: 'bot',
       data: {
         user: payloadUserId,
+        creator_profile: creatorProfileId,
         name: body.name,
         slug: body.slug,
         system_prompt: body.system_prompt,
@@ -114,6 +205,9 @@ export async function POST(request: NextRequest) {
         message: 'Bot created successfully',
         slug: newBot.slug,
         id: newBot.id,
+        username: creatorUsername,
+        // New URL format: /<username>/<slug>
+        url: `/${creatorUsername}/${newBot.slug}`,
       },
       { status: 201 }
     )

@@ -19,6 +19,7 @@ interface BotData {
   picture?: string | number | null
   is_public: boolean
   slug: string
+  creator_username: string
 }
 
 interface BotListResponse {
@@ -182,8 +183,10 @@ const BotCard = ({ bot }: BotCardProps) => {
     return undefined
   }
 
+  const botUrl = `/${bot.creator_username}/${bot.slug}`
+
   return (
-    <Link href={`/bot/${bot.slug}`}>
+    <Link href={botUrl}>
       <Card className="glass-rune hover:scale-105 hover:shadow-[0_10px_40px_-10px_rgba(212,175,55,0.3)] transition-all duration-300 group cursor-pointer">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">

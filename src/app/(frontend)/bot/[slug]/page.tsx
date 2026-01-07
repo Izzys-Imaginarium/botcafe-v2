@@ -1,24 +1,9 @@
-import { MagicalBackground } from '@/modules/home/ui/components/magical-background'
-import { BotDetailView } from '@/modules/bot-detail/ui/components/bot-detail-view'
+import { notFound } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
 
-export default async function BotDetailPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>
-}) {
-  const { slug } = await params
-
-  return (
-    <>
-      {/* Magical background effects */}
-      <MagicalBackground />
-
-      {/* Bot detail content */}
-      <div className="relative z-10">
-        <BotDetailView slug={slug} />
-      </div>
-    </>
-  )
+// Legacy bot URL format is no longer supported
+// All bots now use the /<username>/<botSlug> format
+export default async function LegacyBotDetailPage() {
+  notFound()
 }

@@ -219,6 +219,10 @@ export interface Media {
 export interface Bot {
   id: number;
   user: number | User;
+  /**
+   * The creator profile this bot belongs to (determines URL: /<username>/<slug>)
+   */
+  creator_profile: number | CreatorProfile;
   created_date?: string | null;
   name: string;
   picture?: (number | null) | Media;
@@ -234,11 +238,196 @@ export interface Bot {
         id?: string | null;
       }[]
     | null;
+  /**
+   * URL slug for this bot (must be unique within creator profile)
+   */
   slug: string;
   knowledge_collections?: (number | KnowledgeCollection)[] | null;
   likes_count?: number | null;
   favorites_count?: number | null;
   creator_display_name: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Multi-tenant creator showcase and profile management
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "creatorProfiles".
+ */
+export interface CreatorProfile {
+  id: number;
+  /**
+   * The user who owns this creator profile
+   */
+  user: number | User;
+  /**
+   * Unique username for creator profile (used in URLs)
+   */
+  username: string;
+  /**
+   * Public display name for the creator
+   */
+  display_name: string;
+  /**
+   * Creator biography and description
+   */
+  bio: string;
+  profile_media?: {
+    /**
+     * Creator profile picture
+     */
+    avatar?: (number | null) | Media;
+    /**
+     * Profile banner/header image
+     */
+    banner_image?: (number | null) | Media;
+  };
+  social_links?: {
+    /**
+     * Personal or professional website URL
+     */
+    website?: string | null;
+    /**
+     * GitHub profile URL
+     */
+    github?: string | null;
+    /**
+     * Twitter/X profile URL
+     */
+    twitter?: string | null;
+    /**
+     * LinkedIn profile URL
+     */
+    linkedin?: string | null;
+    /**
+     * Discord username or server invite
+     */
+    discord?: string | null;
+    /**
+     * YouTube channel URL
+     */
+    youtube?: string | null;
+    /**
+     * Additional social media or professional links
+     */
+    other_links?:
+      | {
+          platform: string;
+          url: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  creator_info: {
+    creator_type: 'individual' | 'studio' | 'organization' | 'educational' | 'open-source';
+    /**
+     * Areas of expertise and bot creation specialties
+     */
+    specialties?:
+      | {
+          specialty?:
+            | (
+                | 'conversational-ai'
+                | 'fantasy-rpg'
+                | 'educational'
+                | 'creative-writing'
+                | 'technical-support'
+                | 'entertainment'
+                | 'productivity'
+                | 'mental-health'
+                | 'gaming'
+                | 'business'
+              )
+            | null;
+          id?: string | null;
+        }[]
+      | null;
+    experience_level?: ('beginner' | 'intermediate' | 'advanced' | 'expert' | 'professional') | null;
+    /**
+     * Geographic location (optional)
+     */
+    location?: string | null;
+    /**
+     * Languages supported in created bots
+     */
+    languages?:
+      | {
+          language?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  portfolio?: {
+    /**
+     * Bots to feature prominently on creator profile
+     */
+    featured_bots?: (number | Bot)[] | null;
+    /**
+     * Total number of bots created by this creator
+     */
+    bot_count?: number | null;
+    /**
+     * Total conversations across all created bots
+     */
+    total_conversations?: number | null;
+    /**
+     * Average rating of creator's bots
+     */
+    average_rating?: number | null;
+  };
+  community_stats?: {
+    /**
+     * Number of followers
+     */
+    follower_count?: number | null;
+    /**
+     * Number of creators being followed
+     */
+    following_count?: number | null;
+    /**
+     * Total likes received across all content
+     */
+    total_likes?: number | null;
+  };
+  /**
+   * Creator verification and trust status
+   */
+  verification_status?: ('unverified' | 'pending' | 'verified' | 'premium') | null;
+  /**
+   * Feature this creator prominently on the platform
+   */
+  featured_creator?: boolean | null;
+  profile_settings?: {
+    profile_visibility?: ('public' | 'unlisted' | 'private') | null;
+    /**
+     * Allow other creators to collaborate on bots
+     */
+    allow_collaborations?: boolean | null;
+    /**
+     * Available for custom bot commissions
+     */
+    accept_commissions?: boolean | null;
+    /**
+     * Commission rates and availability information
+     */
+    commission_info?: string | null;
+  };
+  created_timestamp?: string | null;
+  modified_timestamp?: string | null;
+  /**
+   * Last time the creator was active on the platform
+   */
+  last_active?: string | null;
+  /**
+   * Tags to help categorize and discover this creator
+   */
+  tags?:
+    | {
+        tag?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1005,188 +1194,6 @@ export interface TokenPackage {
   description?: string | null;
   is_popular?: boolean | null;
   is_active?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * Multi-tenant creator showcase and profile management
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "creatorProfiles".
- */
-export interface CreatorProfile {
-  id: number;
-  /**
-   * The user who owns this creator profile
-   */
-  user: number | User;
-  /**
-   * Unique username for creator profile (used in URLs)
-   */
-  username: string;
-  /**
-   * Public display name for the creator
-   */
-  display_name: string;
-  /**
-   * Creator biography and description
-   */
-  bio: string;
-  profile_media?: {
-    /**
-     * Creator profile picture
-     */
-    avatar?: (number | null) | Media;
-    /**
-     * Profile banner/header image
-     */
-    banner_image?: (number | null) | Media;
-  };
-  social_links?: {
-    /**
-     * Personal or professional website URL
-     */
-    website?: string | null;
-    /**
-     * GitHub profile URL
-     */
-    github?: string | null;
-    /**
-     * Twitter/X profile URL
-     */
-    twitter?: string | null;
-    /**
-     * LinkedIn profile URL
-     */
-    linkedin?: string | null;
-    /**
-     * Discord username or server invite
-     */
-    discord?: string | null;
-    /**
-     * YouTube channel URL
-     */
-    youtube?: string | null;
-    /**
-     * Additional social media or professional links
-     */
-    other_links?:
-      | {
-          platform: string;
-          url: string;
-          id?: string | null;
-        }[]
-      | null;
-  };
-  creator_info: {
-    creator_type: 'individual' | 'studio' | 'organization' | 'educational' | 'open-source';
-    /**
-     * Areas of expertise and bot creation specialties
-     */
-    specialties?:
-      | {
-          specialty?:
-            | (
-                | 'conversational-ai'
-                | 'fantasy-rpg'
-                | 'educational'
-                | 'creative-writing'
-                | 'technical-support'
-                | 'entertainment'
-                | 'productivity'
-                | 'mental-health'
-                | 'gaming'
-                | 'business'
-              )
-            | null;
-          id?: string | null;
-        }[]
-      | null;
-    experience_level?: ('beginner' | 'intermediate' | 'advanced' | 'expert' | 'professional') | null;
-    /**
-     * Geographic location (optional)
-     */
-    location?: string | null;
-    /**
-     * Languages supported in created bots
-     */
-    languages?:
-      | {
-          language?: string | null;
-          id?: string | null;
-        }[]
-      | null;
-  };
-  portfolio?: {
-    /**
-     * Bots to feature prominently on creator profile
-     */
-    featured_bots?: (number | Bot)[] | null;
-    /**
-     * Total number of bots created by this creator
-     */
-    bot_count?: number | null;
-    /**
-     * Total conversations across all created bots
-     */
-    total_conversations?: number | null;
-    /**
-     * Average rating of creator's bots
-     */
-    average_rating?: number | null;
-  };
-  community_stats?: {
-    /**
-     * Number of followers
-     */
-    follower_count?: number | null;
-    /**
-     * Number of creators being followed
-     */
-    following_count?: number | null;
-    /**
-     * Total likes received across all content
-     */
-    total_likes?: number | null;
-  };
-  /**
-   * Creator verification and trust status
-   */
-  verification_status?: ('unverified' | 'pending' | 'verified' | 'premium') | null;
-  /**
-   * Feature this creator prominently on the platform
-   */
-  featured_creator?: boolean | null;
-  profile_settings?: {
-    profile_visibility?: ('public' | 'unlisted' | 'private') | null;
-    /**
-     * Allow other creators to collaborate on bots
-     */
-    allow_collaborations?: boolean | null;
-    /**
-     * Available for custom bot commissions
-     */
-    accept_commissions?: boolean | null;
-    /**
-     * Commission rates and availability information
-     */
-    commission_info?: string | null;
-  };
-  created_timestamp?: string | null;
-  modified_timestamp?: string | null;
-  /**
-   * Last time the creator was active on the platform
-   */
-  last_active?: string | null;
-  /**
-   * Tags to help categorize and discover this creator
-   */
-  tags?:
-    | {
-        tag?: string | null;
-        id?: string | null;
-      }[]
-    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -2828,6 +2835,7 @@ export interface MediaSelect<T extends boolean = true> {
  */
 export interface BotSelect<T extends boolean = true> {
   user?: T;
+  creator_profile?: T;
   created_date?: T;
   name?: T;
   picture?: T;

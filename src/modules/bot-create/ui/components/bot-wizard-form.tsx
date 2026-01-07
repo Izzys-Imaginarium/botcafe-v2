@@ -241,13 +241,20 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
       })
 
       if (response.ok) {
-        const result = await response.json() as { slug: string; message: string; bot?: any }
+        const result = await response.json() as { slug: string; message: string; bot?: any; url?: string; username?: string }
         toast.success(result.message || `Bot ${mode === 'create' ? 'created' : 'updated'} successfully!`)
 
         if (onSuccess) {
           onSuccess(result.bot || result)
         } else {
-          router.push('/explore')
+          // Use new URL format if available, otherwise fall back to explore
+          if (result.url) {
+            router.push(result.url)
+          } else if (result.username && result.slug) {
+            router.push(`/${result.username}/${result.slug}`)
+          } else {
+            router.push('/explore')
+          }
         }
       } else {
         const error = await response.json() as { message: string }

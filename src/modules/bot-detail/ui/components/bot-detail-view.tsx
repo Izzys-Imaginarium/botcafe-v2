@@ -11,7 +11,8 @@ import { MessageSquare, Heart, Star, Edit, User, Calendar, Sparkles } from 'luci
 import { toast } from 'sonner'
 
 interface BotDetailViewProps {
-  slug: string
+  username: string
+  botSlug: string
 }
 
 interface BotData {
@@ -32,9 +33,17 @@ interface BotData {
   slug: string
   speech_examples?: Array<{ example: string }>
   knowledge_collections?: Array<string | number>
+  // New fields for creator profile
+  creator_username?: string
+  creator_profile_data?: {
+    id: string | number
+    username: string
+    display_name: string
+    avatar?: string | number | null
+  }
 }
 
-export function BotDetailView({ slug }: BotDetailViewProps) {
+export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
   const router = useRouter()
   const { user: clerkUser } = useUser()
   const [bot, setBot] = useState<BotData | null>(null)
@@ -51,7 +60,7 @@ export function BotDetailView({ slug }: BotDetailViewProps) {
   useEffect(() => {
     const fetchBot = async () => {
       try {
-        const response = await fetch(`/api/bots/${slug}`)
+        const response = await fetch(`/api/bots/by-path/${username}/${botSlug}`)
 
         if (!response.ok) {
           if (response.status === 404) {
@@ -93,7 +102,7 @@ export function BotDetailView({ slug }: BotDetailViewProps) {
     }
 
     fetchBot()
-  }, [slug, clerkUser])
+  }, [username, botSlug, clerkUser])
 
   const handleLike = async () => {
     if (!clerkUser) {
@@ -163,7 +172,7 @@ export function BotDetailView({ slug }: BotDetailViewProps) {
   }
 
   const handleEdit = () => {
-    router.push(`/bot/${slug}/edit`)
+    router.push(`/${username}/${botSlug}/edit`)
   }
 
   const getGenderIcon = (gender?: string) => {

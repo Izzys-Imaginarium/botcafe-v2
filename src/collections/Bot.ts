@@ -16,6 +16,15 @@ export const Bot: CollectionConfig = {
       required: true,
     },
     {
+      name: 'creator_profile',
+      type: 'relationship',
+      relationTo: 'creatorProfiles',
+      required: true,
+      admin: {
+        description: 'The creator profile this bot belongs to (determines URL: /<username>/<slug>)',
+      },
+    },
+    {
       name: 'created_date',
       type: 'date',
       defaultValue: () => new Date(),
@@ -78,8 +87,10 @@ export const Bot: CollectionConfig = {
     {
       name: 'slug',
       type: 'text',
-      unique: true,
       required: true,
+      admin: {
+        description: 'URL slug for this bot (must be unique within creator profile)',
+      },
     },
     {
       name: 'knowledge_collections',
@@ -103,4 +114,56 @@ export const Bot: CollectionConfig = {
       required: true,
     },
   ],
+  hooks: {
+    beforeChange: [
+      async ({ data, operation, req, originalDoc }) => {
+        // Validate slug uniqueness within the creator's bots
+        if (data.slug && data.creator_profile) {
+          const creatorProfileId =
+            typeof data.creator_profile === 'object' ? data.creator_profile.id : data.creator_profile
+
+          // Query for existing bots with the same slug under this creator
+          const existingBots = await req.payload.find({
+            collection: 'bot',
+            where: {
+              and: [
+                {
+                  creator_profile: {
+                    equals: creatorProfileId,
+                  },
+                },
+                {
+                  slug: {
+                    equals: data.slug,
+                  },
+                },
+              ],
+            },
+            limit: 1,
+          })
+
+          // If updating, exclude current document from check
+          if (operation === 'update' && originalDoc) {
+            const foundBot = existingBots.docs[0]
+            if (foundBot && foundBot.id !== originalDoc.id) {
+              throw new Error(
+                'A bot with this slug already exists in your profile. Please choose a different slug.'
+              )
+            }
+          } else if (operation === 'create' && existingBots.docs.length > 0) {
+            throw new Error(
+              'A bot with this slug already exists in your profile. Please choose a different slug.'
+            )
+          }
+        }
+
+        // Ensure slug is URL-safe
+        if (data.slug) {
+          data.slug = data.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-')
+        }
+
+        return data
+      },
+    ],
+  },
 }

@@ -20,11 +20,11 @@ export async function GET(request: NextRequest) {
     const payloadConfig = await config
     const payload = await getPayload({ config: payloadConfig })
 
-    // Find the Payload user
+    // Find the Payload user by email
     const users = await payload.find({
       collection: 'users',
       where: {
-        clerkUserId: { equals: user.id },
+        email: { equals: user.emailAddresses[0]?.emailAddress },
       },
     })
 
@@ -107,9 +107,10 @@ export async function GET(request: NextRequest) {
     const bots = await payload.find({
       collection: 'bot',
       where: {
-        createdBy: { equals: payloadUser.id },
+        user: { equals: payloadUser.id },
       },
       limit: 100,
+      depth: 1, // Include creator profile
     })
 
     const botAnalytics = await Promise.all(
@@ -121,9 +122,15 @@ export async function GET(request: NextRequest) {
           },
         })
 
+        // Get creator username from creator_profile
+        const creatorProfile = (bot as any).creator_profile
+        const creatorUsername =
+          typeof creatorProfile === 'object' ? creatorProfile.username : null
+
         return {
           id: bot.id,
           name: bot.name,
+          slug: bot.slug,
           avatar: ((bot as any).avatar as any)?.url || null,
           is_public: bot.is_public,
           conversationCount: (bot as any).conversation_count || 0,
@@ -131,6 +138,7 @@ export async function GET(request: NextRequest) {
           favorites: interactions.docs.filter((i) => (i as any).interaction_type === 'favorite').length,
           rating: (bot as any).rating || 0,
           createdAt: bot.createdAt,
+          creator_username: creatorUsername,
         }
       })
     )

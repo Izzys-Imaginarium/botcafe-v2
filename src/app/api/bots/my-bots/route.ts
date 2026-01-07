@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
 
     const payloadUser = payloadUsers.docs[0]
 
-    // Fetch all bots created by this user
+    // Fetch all bots created by this user, including creator profile
     const result = await payload.find({
       collection: 'bot',
       where: {
@@ -52,10 +52,21 @@ export async function GET(request: NextRequest) {
       },
       sort: '-created_date',
       limit: 100, // Limit to 100 bots for now
+      depth: 1, // Include related data like creator profile
+    })
+
+    // Transform docs to include creator username from the creator profile
+    const botsWithCreatorUsername = result.docs.map((bot: any) => {
+      const creatorProfile = bot.creator_profile
+      return {
+        ...bot,
+        creator_username:
+          typeof creatorProfile === 'object' ? creatorProfile.username : null,
+      }
     })
 
     return NextResponse.json({
-      bots: result.docs,
+      bots: botsWithCreatorUsername,
       total: result.totalDocs,
     })
   } catch (error: any) {

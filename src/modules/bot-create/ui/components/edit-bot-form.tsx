@@ -7,10 +7,11 @@ import { BotWizardForm, BotFormData } from './bot-wizard-form'
 import { toast } from 'sonner'
 
 interface EditBotFormProps {
-  slug: string
+  username: string
+  botSlug: string
 }
 
-export function EditBotForm({ slug }: EditBotFormProps) {
+export function EditBotForm({ username, botSlug }: EditBotFormProps) {
   const { user, isLoaded } = useUser()
   const router = useRouter()
   const [botData, setBotData] = useState<Partial<BotFormData> | null>(null)
@@ -28,10 +29,8 @@ export function EditBotForm({ slug }: EditBotFormProps) {
   // Fetch existing bot data
   useEffect(() => {
     const fetchBot = async () => {
-      if (!slug) return
-
       try {
-        const response = await fetch(`/api/bots/${slug}`)
+        const response = await fetch(`/api/bots/by-path/${username}/${botSlug}`)
 
         if (!response.ok) {
           throw new Error('Failed to fetch bot data')
@@ -69,7 +68,7 @@ export function EditBotForm({ slug }: EditBotFormProps) {
     if (isLoaded && user) {
       fetchBot()
     }
-  }, [slug, isLoaded, user])
+  }, [username, botSlug, isLoaded, user])
 
   if (!isLoaded || isLoading) {
     return (
@@ -106,7 +105,10 @@ export function EditBotForm({ slug }: EditBotFormProps) {
       mode="edit"
       botId={botId}
       initialData={botData}
-      onSuccess={(bot) => router.push(`/bot/${bot.slug || botData.slug}`)}
+      onSuccess={(bot) => {
+        const targetSlug = bot.slug || botData.slug
+        router.push(`/${username}/${targetSlug}`)
+      }}
     />
   )
 }

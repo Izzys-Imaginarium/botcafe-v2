@@ -28,6 +28,7 @@ import {
 interface BotAnalytic {
   id: string
   name: string
+  slug: string
   avatar: string | null
   is_public: boolean
   conversationCount: number
@@ -35,6 +36,7 @@ interface BotAnalytic {
   favorites: number
   rating: number
   createdAt: string
+  creator_username: string
 }
 
 interface BotSummary {
@@ -277,7 +279,7 @@ export const BotAnalyticsView = () => {
                       <p className="text-xs text-muted-foreground">Rating</p>
                     </div>
                   </div>
-                  <Link href={`/bot/${bot.id}`}>
+                  <Link href={`/${bot.creator_username}/${bot.slug}`}>
                     <Button variant="outline" size="sm">
                       View
                     </Button>

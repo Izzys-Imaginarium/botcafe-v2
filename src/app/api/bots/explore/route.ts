@@ -77,17 +77,28 @@ export async function GET(request: NextRequest) {
         break
     }
 
-    // Fetch bots from Payload
+    // Fetch bots from Payload with creator profile populated
     const result = await payload.find({
       collection: 'bot',
       where,
       sort: sortField,
       limit,
       page,
+      depth: 1, // Include related data
+    })
+
+    // Transform docs to include creator username from the creator profile
+    const botsWithCreatorUsername = result.docs.map((bot: any) => {
+      const creatorProfile = bot.creator_profile
+      return {
+        ...bot,
+        creator_username:
+          typeof creatorProfile === 'object' ? creatorProfile.username : null,
+      }
     })
 
     return NextResponse.json({
-      bots: result.docs,
+      bots: botsWithCreatorUsername,
       totalPages: result.totalPages,
       currentPage: result.page,
       totalDocs: result.totalDocs,

@@ -91,6 +91,7 @@ export async function POST(
       data: {
         favorites_count: newFavoritesCount,
       },
+      overrideAccess: true,
     })
 
     return NextResponse.json({

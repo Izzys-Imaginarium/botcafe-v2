@@ -91,6 +91,7 @@ export async function POST(
       data: {
         likes_count: newLikesCount,
       },
+      overrideAccess: true,
     })
 
     return NextResponse.json({

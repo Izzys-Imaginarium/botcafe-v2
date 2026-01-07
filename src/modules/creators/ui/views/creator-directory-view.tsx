@@ -93,7 +93,8 @@ const verificationIcons: Record<string, { icon: React.ReactNode; label: string; 
 }
 
 export const CreatorDirectoryView = () => {
-  const [isLoading, setIsLoading] = useState(true)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [creators, setCreators] = useState<CreatorProfile[]>([])
   const [hasProfile, setHasProfile] = useState(false)
   const [myProfile, setMyProfile] = useState<CreatorProfile | null>(null)
@@ -149,7 +150,12 @@ export const CreatorDirectoryView = () => {
   }
 
   const fetchCreators = async () => {
-    setIsLoading(true)
+    // Only show full loading state on initial load, not during search/filter
+    if (creators.length === 0) {
+      setIsInitialLoad(true)
+    } else {
+      setIsRefreshing(true)
+    }
     try {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -184,7 +190,8 @@ export const CreatorDirectoryView = () => {
       console.error('Error fetching creators:', error)
       toast.error('Failed to fetch creators')
     } finally {
-      setIsLoading(false)
+      setIsInitialLoad(false)
+      setIsRefreshing(false)
     }
   }
 
@@ -348,7 +355,7 @@ export const CreatorDirectoryView = () => {
       </div>
 
       {/* Creator List */}
-      {isLoading ? (
+      {isInitialLoad && creators.length === 0 ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
@@ -376,7 +383,7 @@ export const CreatorDirectoryView = () => {
         </Card>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-200 ${isRefreshing ? 'opacity-60' : 'opacity-100'}`}>
             {creators.map((creator) => (
               <Link key={creator.id} href={`/creators/${creator.username}`}>
                 <Card className="relative overflow-hidden hover:border-purple-500/50 transition-colors cursor-pointer h-full">

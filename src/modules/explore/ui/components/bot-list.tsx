@@ -33,14 +33,20 @@ interface BotListResponse {
 export const BotList = () => {
   const searchParams = useSearchParams()
   const [bots, setBots] = useState<BotData[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
 
   useEffect(() => {
     const fetchBots = async () => {
-      setIsLoading(true)
+      // Only show full loading state on initial load, not during search/filter
+      if (bots.length === 0) {
+        setIsInitialLoad(true)
+      } else {
+        setIsRefreshing(true)
+      }
       setError(null)
 
       try {
@@ -67,14 +73,15 @@ export const BotList = () => {
         console.error('Error fetching bots:', err)
         setError(err.message || 'Failed to load bots')
       } finally {
-        setIsLoading(false)
+        setIsInitialLoad(false)
+        setIsRefreshing(false)
       }
     }
 
     fetchBots()
   }, [searchParams, currentPage])
 
-  if (isLoading) {
+  if (isInitialLoad && bots.length === 0) {
     return <BotListSkeleton />
   }
 
@@ -105,7 +112,7 @@ export const BotList = () => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 transition-opacity duration-200 ${isRefreshing ? 'opacity-60' : 'opacity-100'}`}>
         {bots.map((bot) => (
           <BotCard key={bot.id} bot={bot} />
         ))}

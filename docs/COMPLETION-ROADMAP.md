@@ -528,6 +528,38 @@ When you add new Payload collections or modify existing ones:
 
 ## 🔄 **Recent Changes**
 
+### **2026-01-07 Updates:**
+- ✅ **Bot URL Structure Changed to Per-Creator Format**
+  - Bot URLs now use `/<username>/<bot-slug>` format (like GitHub repos)
+  - Legacy `/bot/[slug]` routes now return 404
+  - Bot slugs are unique per creator, not globally unique
+  - `creator_profile` field is now **required** on Bot collection
+  - `creator_username` is now required (not optional) on bot interfaces
+- ✅ **Image Upload Authentication Fix**
+  - Created `/api/upload/image` endpoint for bot wizard image uploads
+  - Uses Clerk authentication instead of Payload's auth (which requires Payload login)
+  - Fixes 403 Forbidden error when uploading images during bot creation
+- ✅ **Payload Permission Audit & Fixes**
+  - Added `overrideAccess: true` to 11+ API routes that use Clerk auth
+  - Fixed 500 errors on like/favorite operations
+  - Architecture pattern: Clerk handles auth, Payload handles data with `overrideAccess: true`
+  - Fixed files:
+    - `/api/bots/[id]/like/route.ts`
+    - `/api/bots/[id]/favorite/route.ts`
+    - `/api/memories/import/route.ts`
+    - `/api/memories/convert-to-lore/route.ts`
+    - `/api/knowledge/route.ts`
+    - `/api/knowledge-collections/route.ts`
+    - `/api/personas/route.ts`
+    - `/api/personas/[id]/route.ts`
+    - `/api/api-keys/route.ts`
+    - `/api/api-keys/[id]/route.ts`
+    - `/api/wellbeing/mood/route.ts`
+- ✅ **Legacy Bot Code Cleanup**
+  - Removed conditional URL fallbacks from components
+  - Removed legacy bot redirect logic
+  - Added access controls to Bot.ts and Media.ts collections
+
 ### **2026-01-06 Updates:**
 - ✅ **Major API Bug Fix: clerkId → email Query Migration**
   - Fixed 12 API endpoints that were incorrectly querying Users by `clerkId` (field doesn't exist)
@@ -689,8 +721,8 @@ When you add new Payload collections or modify existing ones:
 
 ---
 
-**Last Updated**: 2026-01-06
-**Version**: 2.7
+**Last Updated**: 2026-01-07
+**Version**: 2.8
 **Total Tasks**: 130
 **Completed**: 108
 **Progress**: ~83%

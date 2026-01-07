@@ -1,7 +1,7 @@
 # BotCafe v2 - Database Schema
 
-**Last Updated**: 2026-01-06
-**Version**: 2.7
+**Last Updated**: 2026-01-07
+**Version**: 2.8
 **Database**: Cloudflare D1 (SQLite) via Payload CMS
 
 ---
@@ -71,11 +71,13 @@ File uploads and media management.
 
 AI companion definitions.
 
+> **URL Format**: Bot URLs use the pattern `/<username>/<bot-slug>` (similar to GitHub repos). The `slug` field is unique per creator, not globally unique.
+
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | string | Primary key |
 | `name` | text | Bot name (required) |
-| `slug` | text | URL-friendly identifier (unique) |
+| `slug` | text | URL-friendly identifier (unique per creator) |
 | `description` | textarea | Bot description |
 | `avatar` | relationship (Media) | Bot avatar image |
 | `personality` | textarea | Personality prompt |
@@ -90,6 +92,7 @@ AI companion definitions.
 | `favorites_count` | number | Total favorites |
 | `rating` | number | Average rating |
 | `createdBy` | relationship (Users) | Creator reference |
+| `creator_profile` | relationship (CreatorProfiles) | Creator profile (**required**) |
 | `createdAt` | date | Auto-generated |
 | `updatedAt` | date | Auto-generated |
 

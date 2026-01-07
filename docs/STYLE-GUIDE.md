@@ -1,124 +1,153 @@
-# BotCafé Fantasy Theme Style Guide
+# BotCafe v2 - Style Guide
 
-## Overview
-BotCafé features a **dark fantasy aesthetic** with magical elements, designed to create an immersive and enchanting user experience. This style guide documents the complete design system for maintaining consistency across all components and pages.
+**Last Updated**: 2026-01-06
+**Version**: 2.7
 
-## 🎨 Color Palette
+---
 
-### Primary Colors
+## Theme Overview
+
+BotCafe v2 uses a **fantasy dark forest theme** inspired by magical RPG aesthetics. The design features:
+- Ultra-dark backgrounds with subtle green undertones
+- Gold and amber accent colors
+- Parchment-toned text for readability
+- Glass morphism effects with magical glows
+- Ornate decorative borders
+
+---
+
+## Color Palette
+
+### Primary Colors (Dark Mode - Default)
+
+| Name | HSL Value | Hex Approx | Usage |
+|------|-----------|------------|-------|
+| Fantasy Background | `hsl(2, 4%, 1%)` | `#020402` | Main page background |
+| Forest Deep | `hsl(120, 29%, 14%)` | `#1a2e1a` | Card backgrounds |
+| Forest | `hsl(84, 80%, 27%)` | `#4d7c0f` | Primary accent |
+| Gold Rich | `hsl(46, 65%, 52%)` | `#d4af37` | Primary buttons, highlights |
+| Gold Ancient | `hsl(42, 43%, 39%)` | `#8b7355` | Secondary accents, borders |
+| Parchment | `hsl(38, 47%, 81%)` | `#e8dcc8` | Main text |
+| Parchment Dim | `hsl(31, 30%, 66%)` | `#b8a88a` | Muted text |
+| Magic Glow | `hsl(142, 69%, 58%)` | `#4ade80` | Success, magic effects |
+| Magic Teal | `hsl(174, 72%, 50%)` | `#2dd4bf` | Highlights, links |
+
+### CSS Variables
+
 ```css
-/* Ultra-dark background - Main site background */
---color-fantasy-bg: hsl(2, 4%, 1%) /* #020402 */
-
-/* Forest Green - Primary brand color */
---color-forest: hsl(84, 80%, 27%) /* #4d7c0f */
-
-/* Deep Forest - Header/footer backgrounds */
---color-forest-deep: hsl(120, 29%, 14%) /* #1a2f1a */
-
-/* Header/footer specific backgrounds */
---navbar-bg: #0a140a
---footer-bg: #050a05
+:root {
+  /* Dark mode (default) */
+  --background: 2 4% 1%;
+  --foreground: 38 47% 81%;
+  --card: 120 29% 10%;
+  --card-foreground: 38 47% 81%;
+  --primary: 46 65% 52%;
+  --primary-foreground: 120 29% 10%;
+  --secondary: 120 29% 14%;
+  --accent: 84 80% 27%;
+  --muted: 120 20% 15%;
+  --muted-foreground: 31 30% 66%;
+  --border: 42 43% 25%;
+  --ring: 46 65% 52%;
+}
 ```
 
-### Accent Colors
+### Light Mode (Optional - Parchment Theme)
+
 ```css
-/* Gold Rich - Primary accent color */
---color-gold-rich: hsl(46, 65%, 52%) /* #d4af37 */
-
-/* Gold Ancient - Secondary accent */
---color-gold-ancient: hsl(42, 43%, 39%) /* #8f7636 */
-
-/* Magic Glow - Interactive elements */
---color-magic-glow: hsl(142, 69%, 58%) /* #4ade80 */
-
-/* Magic Teal - Special highlights */
---color-magic-teal: hsl(174, 72%, 50%) /* #2dd4bf */
+:root {
+  --background: 38 47% 95%;
+  --foreground: 21 42% 12%;
+  --card: 38 40% 92%;
+  --primary: 84 80% 27%;
+  --secondary: 42 43% 39%;
+  --accent: 46 65% 52%;
+}
 ```
 
-### Text Colors
-```css
-/* Parchment - Primary text */
---color-parchment: hsl(38, 47%, 81%) /* #e6d5b8 */
+---
 
-/* Parchment Dim - Secondary text */
---color-parchment-dim: hsl(31, 30%, 66%) /* #bfa88f */
-
-/* Wood Dark - Dark text on light backgrounds */
---color-wood-dark: hsl(21, 42%, 12%) /* #2c1b12 */
-```
-
-## 🔤 Typography
+## Typography
 
 ### Font Families
-```css
-/* Display Font - Headers and titles */
-font-display: ["Cinzel Decorative", "cursive"]
 
-/* Lore Font - Body text and descriptions */
-font-lore: ["Crimson Text", "serif"]
+| Font | CSS Variable | Usage |
+|------|--------------|-------|
+| Cinzel Decorative | `--font-display` | Headlines, titles, magical text |
+| Crimson Text | `--font-lore` | Body text, descriptions, narratives |
+| Inter | `--font-body` | UI elements, forms, labels |
 
-/* Body Font - Interface elements */
-font-body: ["Inter", "sans-serif"]
+### Font Loading (Next.js)
+
+```typescript
+import { Cinzel_Decorative, Crimson_Text, Inter } from 'next/font/google'
+
+const cinzelDecorative = Cinzel_Decorative({
+  subsets: ['latin'],
+  weight: ['400', '700', '900'],
+  variable: '--font-display',
+})
+
+const crimsonText = Crimson_Text({
+  subsets: ['latin'],
+  weight: ['400', '600', '700'],
+  variable: '--font-lore',
+})
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-body',
+})
 ```
 
-### Font Weights & Sizes
-```css
-/* Main title - Hero section */
-font-display font-bold text-5xl sm:text-7xl md:text-8xl lg:text-9xl
+### Typography Scale
 
-/* Subtitle */
-font-display font-bold text-2xl
+| Element | Class | Font |
+|---------|-------|------|
+| Page Title | `text-4xl md:text-5xl font-display` | Cinzel Decorative |
+| Section Heading | `text-2xl md:text-3xl font-display` | Cinzel Decorative |
+| Card Title | `text-xl font-semibold` | Inter |
+| Body Text | `text-base font-lore` | Crimson Text |
+| Small Text | `text-sm text-muted-foreground` | Inter |
+| Labels | `text-xs uppercase tracking-wider` | Inter |
 
-/* Navigation */
-text-base font-lore italic
+---
 
-/* Body text */
-text-lg sm:text-xl md:text-2xl font-lore italic
-
-/* Footer text */
-text-sm font-lore italic
-
-/* Small labels */
-text-xs uppercase tracking-widest font-display
-```
-
-### Text Effects
-```css
-/* Gold glow effect */
-.text-glow-gold {
-  text-shadow: 0 0 15px hsla(46, 65%, 52%, 0.4), 
-               0 0 30px hsla(46, 65%, 52%, 0.2);
-}
-
-/* Magic glow effect */
-.text-glow-magic {
-  text-shadow: 0 0 10px hsla(142, 69%, 58%, 0.3);
-}
-```
-
-## 🧩 Component Styles
+## Component Patterns
 
 ### Glass Rune Effect
+
+Used for cards and containers with a magical glass appearance:
+
 ```css
 .glass-rune {
-  background: linear-gradient(135deg, 
-    hsla(120, 29%, 14%, 0.8), 
+  background: linear-gradient(135deg,
+    hsla(120, 29%, 14%, 0.8),
     hsla(120, 40%, 6%, 0.9)
   );
   backdrop-filter: blur(8px);
   border: 1px solid hsla(42, 43%, 39%, 0.3);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), 
-              inset 0 0 0 1px hsla(46, 65%, 52%, 0.1);
+  box-shadow:
+    0 8px 32px 0 rgba(0, 0, 0, 0.5),
+    inset 0 0 0 1px hsla(46, 65%, 52%, 0.1);
 }
 ```
 
-### Ornate Border Effect
+**Usage:**
+```tsx
+<div className="glass-rune rounded-lg p-6">
+  Content here
+</div>
+```
+
+### Ornate Border
+
+Decorative corner borders that expand on hover:
+
 ```css
 .ornate-border {
   position: relative;
 }
-
 .ornate-border::before,
 .ornate-border::after {
   content: "";
@@ -128,21 +157,18 @@ text-xs uppercase tracking-widest font-display
   border: 2px solid hsl(42, 43%, 39%);
   transition: all 0.3s ease;
 }
-
 .ornate-border::before {
   top: -2px;
   left: -2px;
   border-right: 0;
   border-bottom: 0;
 }
-
 .ornate-border::after {
   bottom: -2px;
   right: -2px;
   border-left: 0;
   border-top: 0;
 }
-
 .ornate-border:hover::before,
 .ornate-border:hover::after {
   width: 100%;
@@ -151,224 +177,393 @@ text-xs uppercase tracking-widest font-display
 }
 ```
 
-## 🎭 Animations
+### Text Glow Effects
 
-### Keyframe Animations
 ```css
-/* Floating animation for icons */
+.text-glow-gold {
+  text-shadow:
+    0 0 15px hsla(46, 65%, 52%, 0.4),
+    0 0 30px hsla(46, 65%, 52%, 0.2);
+}
+
+.text-glow-magic {
+  text-shadow: 0 0 10px hsla(142, 69%, 58%, 0.3);
+}
+```
+
+---
+
+## Animation Patterns
+
+### Float Animation
+
+```css
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-15px); }
 }
 
-/* Twinkling effect for decorative elements */
+.animate-float {
+  animation: float 8s ease-in-out infinite;
+}
+```
+
+### Twinkle Animation
+
+```css
 @keyframes twinkle {
   0%, 100% { opacity: 0.3; transform: scale(1); }
   50% { opacity: 1; transform: scale(1.2); }
 }
 
-/* Firefly movement animation */
-@keyframes fly {
-  0% { transform: translate(0, 0); opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { transform: translate(100px, -100px); opacity: 0; }
-}
-
-/* Slow pulse for background orbs */
-@keyframes pulse-slow {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
-```
-
-### Animation Classes
-```css
-.animate-float {
-  animation: float 8s ease-in-out infinite;
-}
-
 .animate-twinkle {
   animation: twinkle 4s ease-in-out infinite;
 }
+```
 
+### Pulse Slow
+
+```css
 .animate-pulse-slow {
   animation: pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 ```
 
-## 🧱 Component Specifications
+---
 
-### Navbar
-- **Background**: `bg-[#0a140a]/80` with `backdrop-blur-md`
-- **Height**: `h-24` (96px)
-- **Border**: `border-b border-gold-ancient/30`
-- **Logo**: Animated rotating coffee icon with gold glow
-- **Navigation**: Subtle underline hover effects, no background squares
-- **Container**: Rounded background with `border border-gold-ancient/20`
+## Component Library
 
-### Hero Section
-- **Background**: Ultra-dark `#020402`
-- **Icon**: Glass-rune container with floating animation
-- **Title**: Large gradient text (gold-rich → parchment → gold-ancient)
-- **Description**: Centered with decorative quote marks
-- **Buttons**: Ornate-border styling with hover effects
-- **Stats**: Three-column layout with hover scale effects
+BotCafe uses **shadcn/ui** components with custom styling. All components are located in `/src/components/ui/`.
 
-### Footer
-- **Background**: `bg-[#050a05]`
-- **Border**: `border-t border-gold-ancient/20`
-- **Icon**: Overlapping Menu and BookOpen icons with pulse animation
-- **Text**: Copyright 2025 with fantasy-themed messaging
+### Available Components
 
-### Bot Detail Pages
-- **Layout**: Centered content with magical background
-- **Bot Card**: Glass-rune effect with ornate borders
-- **Action Buttons**: Like/Favorite with interactive state changes
-  - **Liked State**: `bg-magic-glow/10 border-magic-glow/50 text-magic-glow` with filled heart icon
-  - **Favorited State**: `bg-gold-rich/10 border-gold-rich/50 text-gold-rich` with filled star icon
-  - **Default State**: Subtle border with hover effects
-- **Statistics Display**: Inline stats with icon indicators
-- **Edit Access**: Owner-only button with distinctive styling
+| Component | Path | Description |
+|-----------|------|-------------|
+| Button | `/components/ui/button` | Primary action buttons |
+| Card | `/components/ui/card` | Content containers |
+| Input | `/components/ui/input` | Form text inputs |
+| Textarea | `/components/ui/textarea` | Multi-line text input |
+| Select | `/components/ui/select` | Dropdown selections |
+| Badge | `/components/ui/badge` | Status indicators |
+| Dialog | `/components/ui/dialog` | Modal dialogs |
+| Tabs | `/components/ui/tabs` | Tab navigation |
+| Progress | `/components/ui/progress` | Progress bars |
+| Avatar | `/components/ui/avatar` | User/bot avatars |
+| Tooltip | `/components/ui/tooltip` | Hover tooltips |
 
-### Account Dashboard
-- **Profile Card**: Glass-rune container with user information
-- **My Bots Section**: Grid layout with bot cards
-- **Bot Cards**:
-  - Compact design with bot name and statistics
-  - Action buttons: View, Edit, Delete
-  - Delete confirmation dialog for safety
-  - Optimistic UI updates on deletion
-- **Responsive Layout**: Stacks vertically on mobile, grid on desktop
+### Button Variants
+
+```tsx
+<Button variant="default">Primary Action</Button>
+<Button variant="secondary">Secondary</Button>
+<Button variant="outline">Outline</Button>
+<Button variant="ghost">Ghost</Button>
+<Button variant="destructive">Delete</Button>
+```
+
+### Card Usage
+
+```tsx
+<Card className="glass-rune">
+  <CardHeader>
+    <CardTitle className="font-display">Title</CardTitle>
+    <CardDescription>Description text</CardDescription>
+  </CardHeader>
+  <CardContent>
+    Content here
+  </CardContent>
+</Card>
+```
+
+---
+
+## Icon System
+
+BotCafe uses **Lucide React** for icons:
+
+```tsx
+import { Bot, Heart, Star, BookOpen, Brain, Users } from 'lucide-react'
+
+// Usage
+<Bot className="h-5 w-5 text-purple-400" />
+<Heart className="h-5 w-5 text-pink-500" />
+```
+
+### Common Icon Colors
+
+| Icon Type | Color Class |
+|-----------|-------------|
+| Bot/AI | `text-purple-400` |
+| Like/Heart | `text-pink-500` |
+| Favorite/Star | `text-yellow-500` |
+| Knowledge/Book | `text-green-400` |
+| Memory/Brain | `text-orange-400` |
+| Persona/Users | `text-pink-400` |
+| Settings/Gear | `text-gray-400` |
+| Success | `text-green-500` |
+| Warning | `text-yellow-500` |
+| Error | `text-red-500` |
+
+---
+
+## Layout Patterns
+
+### Page Container
+
+```tsx
+<div className="container mx-auto px-4 py-8">
+  <div className="max-w-4xl mx-auto">
+    {/* Page content */}
+  </div>
+</div>
+```
 
 ### Magical Background
-- **Base**: Ultra-dark `#020402` with texture overlay
-- **Effects**: Glowing orbs, fireflies, decorative SVG elements
-- **Fireflies**: Multiple animated elements with staggered timing
-- **Vignette**: Radial gradient for depth effect
 
-## 📱 Responsive Design
+```tsx
+import { MagicalBackground } from '@/modules/home/ui/components/magical-background'
 
-### Breakpoints
-```css
-/* Mobile First Approach */
-sm: 640px   /* Small devices */
-md: 768px   /* Medium devices */
-lg: 1024px  /* Large devices */
-xl: 1280px  /* Extra large devices */
-```
-
-### Key Responsive Classes
-```css
-/* Text sizing */
-text-xs sm:text-lg font-lore /* Mobile to desktop scaling */
-text-5xl sm:text-7xl md:text-8xl lg:text-9xl /* Title scaling */
-
-/* Layout */
-flex-col sm:flex-row /* Stack on mobile, row on desktop */
-px-4 sm:px-6 lg:px-8 /* Responsive padding */
-hidden lg:flex /* Hide on mobile, show on desktop */
-
-/* Spacing */
-gap-6 w-full max-w-xs sm:max-w-none /* Responsive gaps */
-```
-
-## 🎨 Utility Classes
-
-### Background Effects
-```css
-/* Background texture pattern */
-.bg-texture {
-  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234d7c0f' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-}
-
-/* Vignette effect */
-.bg-vignette {
-  background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.8) 100%);
+export default function Page() {
+  return (
+    <>
+      <MagicalBackground />
+      <div className="relative z-10 pt-24">
+        {/* Page content */}
+      </div>
+    </>
+  )
 }
 ```
 
-### Interactive States
-```css
-/* Hover effects */
-hover:text-gold-rich           /* Color transition */
-hover:scale-110                /* Scale on hover */
-hover:-translate-y-1           /* Lift effect */
-hover:shadow-[0_10px_40px_-10px_rgba(212,175,55,0.3)] /* Gold shadow */
+### Grid Layouts
 
-/* Active/Selected states */
-.active-like {
-  background: hsla(142, 69%, 58%, 0.1);
-  border-color: hsla(142, 69%, 58%, 0.5);
-  color: hsl(142, 69%, 58%);
-}
+```tsx
+// Stats Grid
+<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+  {/* Stat cards */}
+</div>
 
-.active-favorite {
-  background: hsla(46, 65%, 52%, 0.1);
-  border-color: hsla(46, 65%, 52%, 0.5);
-  color: hsl(46, 65%, 52%);
-}
+// Card Grid
+<div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+  {/* Content cards */}
+</div>
+
+// Two-Column Layout
+<div className="grid lg:grid-cols-3 gap-6">
+  <div className="lg:col-span-2">Main content</div>
+  <div>Sidebar</div>
+</div>
 ```
 
-## 🔧 Implementation Guidelines
+---
 
-### 1. Color Usage
-- Use `--color-fantasy-bg` for main backgrounds
-- Use `--color-forest-deep` for header/footer backgrounds
-- Use `--color-gold-rich` for primary interactive elements
-- Use `--color-parchment` for primary text
-- Use `--color-parchment-dim` for secondary text
+## Gradient Patterns
 
-### 2. Typography Hierarchy
-- **H1**: Display font, largest size, gradient text
-- **H2**: Display font, medium size, solid color
-- **Body**: Lore font, italic, appropriate size
-- **UI**: Body font, clear and readable
+### Text Gradients
 
-### 3. Animation Guidelines
-- Use `animate-float` for decorative icons
-- Use `animate-twinkle` for small decorative elements
-- Use `animate-pulse-slow` for background elements
-- Use firefly animations sparingly for magical feel
+```tsx
+// Gold Gradient
+<h1 className="bg-gradient-to-r from-yellow-200 via-amber-400 to-yellow-200 bg-clip-text text-transparent">
+  Title
+</h1>
 
-### 4. Component Structure
-- Always use semantic HTML
-- Maintain proper z-index layering
-- Use backdrop-blur for depth
-- Ensure proper contrast ratios
-- Test on mobile devices
+// Purple to Pink
+<h2 className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+  Subtitle
+</h2>
 
-### 5. Accessibility
-- Maintain sufficient color contrast
-- Provide focus states for interactive elements
-- Use appropriate ARIA labels
-- Test with screen readers
-- Ensure keyboard navigation works
+// Blue to Green
+<h2 className="bg-gradient-to-r from-blue-400 to-green-400 bg-clip-text text-transparent">
+  Analytics
+</h2>
+```
 
-## 📋 Component Checklist
+### Background Gradients
 
-Before adding new components, ensure they include:
+```tsx
+// Card Overlay
+<div className="bg-gradient-to-t from-black/80 to-transparent">
 
-- [ ] Fantasy theme colors
-- [ ] Appropriate typography
-- [ ] Hover effects (subtle, not overwhelming)
-- [ ] Mobile responsiveness
-- [ ] Accessibility features
-- [ ] Consistent with existing components
-- [ ] Performance optimized
+// Hover Effect
+<div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10">
+```
 
-## 🚀 Future Enhancements
+---
 
-### Planned Features
-- Dark/light mode toggle
-- Additional magical animations
-- More component variants
-- Enhanced mobile experience
-- Performance optimizations
+## Responsive Design
 
-### Color Variations
-- Seasonal color themes
-- User preference themes
-- Accessibility-optimized variants
+### Breakpoints (Tailwind CSS)
 
-This style guide ensures consistency across all BotCafé components while maintaining the magical, fantasy aesthetic that defines the brand.
+| Breakpoint | Min Width | Usage |
+|------------|-----------|-------|
+| `sm` | 640px | Mobile landscape |
+| `md` | 768px | Tablets |
+| `lg` | 1024px | Desktop |
+| `xl` | 1280px | Large desktop |
+| `2xl` | 1536px | Extra large |
+
+### Mobile-First Examples
+
+```tsx
+// Typography
+<h1 className="text-2xl md:text-3xl lg:text-4xl">
+
+// Grid
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+
+// Spacing
+<div className="p-4 md:p-6 lg:p-8">
+
+// Visibility
+<div className="hidden md:block">Desktop only</div>
+<div className="md:hidden">Mobile only</div>
+```
+
+---
+
+## Dark Mode
+
+BotCafe defaults to dark mode. The theme is controlled via:
+
+```tsx
+// In layout.tsx
+<html className="dark">
+```
+
+### Conditional Styling
+
+```tsx
+<div className="bg-white dark:bg-card">
+  <p className="text-gray-900 dark:text-foreground">
+    Text content
+  </p>
+</div>
+```
+
+---
+
+## Form Patterns
+
+### Input with Label
+
+```tsx
+<div className="space-y-2">
+  <Label htmlFor="name">Bot Name</Label>
+  <Input
+    id="name"
+    placeholder="Enter a name..."
+    className="bg-muted/50"
+  />
+</div>
+```
+
+### Select with Label
+
+```tsx
+<div className="space-y-2">
+  <Label>Category</Label>
+  <Select>
+    <SelectTrigger>
+      <SelectValue placeholder="Select category" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="fantasy">Fantasy</SelectItem>
+      <SelectItem value="scifi">Sci-Fi</SelectItem>
+    </SelectContent>
+  </Select>
+</div>
+```
+
+---
+
+## Loading States
+
+### Spinner
+
+```tsx
+import { RefreshCw } from 'lucide-react'
+
+<RefreshCw className="h-8 w-8 animate-spin text-purple-500" />
+```
+
+### Loading Container
+
+```tsx
+<div className="flex items-center justify-center py-20">
+  <RefreshCw className="h-8 w-8 animate-spin text-purple-500" />
+</div>
+```
+
+---
+
+## Error States
+
+```tsx
+import { AlertCircle } from 'lucide-react'
+
+<Card className="border-red-500/20">
+  <CardContent className="pt-6">
+    <div className="text-center text-red-400">
+      <AlertCircle className="h-12 w-12 mx-auto mb-4" />
+      <p>Error message here</p>
+      <Button onClick={retry} variant="outline" className="mt-4">
+        Try Again
+      </Button>
+    </div>
+  </CardContent>
+</Card>
+```
+
+---
+
+## Empty States
+
+```tsx
+<div className="text-center py-12">
+  <Bot className="h-12 w-12 mx-auto mb-4 opacity-50 text-purple-400" />
+  <h3 className="text-lg font-semibold mb-2">No bots yet</h3>
+  <p className="text-muted-foreground mb-4">
+    Create your first bot to get started
+  </p>
+  <Button>Create Bot</Button>
+</div>
+```
+
+---
+
+## File Organization
+
+### Module Structure
+
+```
+src/modules/[feature]/
+├── ui/
+│   ├── components/     # Reusable components
+│   └── views/          # Page-level views
+├── hooks/              # Custom hooks
+├── utils/              # Utility functions
+└── types/              # TypeScript types
+```
+
+### View Component Pattern
+
+```tsx
+// src/modules/[feature]/ui/views/[feature]-view.tsx
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+
+interface FeatureData {
+  // Type definition
+}
+
+export const FeatureView = () => {
+  const [data, setData] = useState<FeatureData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch data
+  // Render UI
+}
+```

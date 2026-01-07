@@ -1,7 +1,7 @@
 # BotCafe v2 - Complete Sitemap
 
-**Last Updated**: 2026-01-06
-**Version**: 2.7
+**Last Updated**: 2026-01-07
+**Version**: 2.8
 **Status**: ~83% Complete
 
 ---
@@ -14,8 +14,10 @@
 |-------|--------|-------------|
 | `/` | ✅ Complete | Homepage with magical splash, feature cards, and CTA |
 | `/explore` | ✅ Complete | Browse all public bots with search, sort, and pagination |
-| `/bot/[slug]` | ✅ Complete | Individual bot detail page with stats and interactions |
-| `/bot/[slug]/edit` | ✅ Complete | Edit bot (owner only) |
+| `/[username]/[botSlug]` | ✅ Complete | Individual bot detail page (per-creator URL format) |
+| `/[username]/[botSlug]/edit` | ✅ Complete | Edit bot (owner only) |
+| `/bot/[slug]` | ⚠️ Legacy | Returns 404 - use `/<username>/<bot-slug>` instead |
+| `/bot/[slug]/edit` | ⚠️ Legacy | Returns 404 - legacy route removed |
 | `/create` | ✅ Complete | Multi-step bot creation wizard |
 | `/creators` | ✅ Complete | Creator directory with filtering and search |
 | `/creators/[username]` | ✅ Complete | Individual creator profile page |
@@ -202,6 +204,14 @@
 | Endpoint | Methods | Description |
 |----------|---------|-------------|
 | `/api/upload` | POST | File upload with text extraction |
+| `/api/upload/image` | POST | Image upload with Clerk auth (for bot wizard) |
+
+### API Keys
+
+| Endpoint | Methods | Description |
+|----------|---------|-------------|
+| `/api/api-keys` | GET, POST | List and create API keys |
+| `/api/api-keys/[id]` | PATCH, DELETE | Update or delete API key |
 
 ---
 
@@ -241,8 +251,8 @@
 BotCafe
 ├── Home (/)
 ├── Explore (/explore)
-│   └── Bot Detail (/bot/[slug])
-│       └── Edit (/bot/[slug]/edit)
+│   └── Bot Detail (/<username>/<bot-slug>)
+│       └── Edit (/<username>/<bot-slug>/edit)
 ├── Create (/create)
 ├── Creators (/creators)
 │   ├── Profile (/creators/[username])

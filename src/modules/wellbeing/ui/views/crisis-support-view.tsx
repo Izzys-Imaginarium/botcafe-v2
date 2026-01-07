@@ -94,18 +94,18 @@ export const CrisisSupportView = () => {
   const [resources, setResources] = useState<CrisisResource[]>([])
   const [filters, setFilters] = useState<Filters | null>(null)
   const [loading, setLoading] = useState(true)
-  const [selectedCategory, setSelectedCategory] = useState<string>('')
-  const [selectedType, setSelectedType] = useState<string>('')
-  const [selectedRegion, setSelectedRegion] = useState<string>('')
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [selectedType, setSelectedType] = useState<string>('all')
+  const [selectedRegion, setSelectedRegion] = useState<string>('all')
   const [showEmergencyOnly, setShowEmergencyOnly] = useState(false)
 
   const fetchResources = async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
-      if (selectedCategory) params.append('category', selectedCategory)
-      if (selectedType) params.append('type', selectedType)
-      if (selectedRegion) params.append('region', selectedRegion)
+      if (selectedCategory && selectedCategory !== 'all') params.append('category', selectedCategory)
+      if (selectedType && selectedType !== 'all') params.append('type', selectedType)
+      if (selectedRegion && selectedRegion !== 'all') params.append('region', selectedRegion)
       if (showEmergencyOnly) params.append('emergency', 'true')
 
       const response = await fetch(`/api/wellbeing/crisis-support?${params}`)
@@ -127,9 +127,9 @@ export const CrisisSupportView = () => {
   }, [selectedCategory, selectedType, selectedRegion, showEmergencyOnly])
 
   const clearFilters = () => {
-    setSelectedCategory('')
-    setSelectedType('')
-    setSelectedRegion('')
+    setSelectedCategory('all')
+    setSelectedType('all')
+    setSelectedRegion('all')
     setShowEmergencyOnly(false)
   }
 
@@ -191,7 +191,7 @@ export const CrisisSupportView = () => {
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value="all">All Categories</SelectItem>
                   {filters?.categories.map((cat) => (
                     <SelectItem key={cat.value} value={cat.value}>
                       {cat.label}
@@ -207,7 +207,7 @@ export const CrisisSupportView = () => {
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Types</SelectItem>
+                  <SelectItem value="all">All Types</SelectItem>
                   {filters?.types.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
                       {type.label}
@@ -223,7 +223,7 @@ export const CrisisSupportView = () => {
                   <SelectValue placeholder="All Regions" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Regions</SelectItem>
+                  <SelectItem value="all">All Regions</SelectItem>
                   {filters?.regions.map((region) => (
                     <SelectItem key={region.value} value={region.value}>
                       {region.label}
@@ -241,7 +241,7 @@ export const CrisisSupportView = () => {
               Emergency Only
             </Button>
 
-            {(selectedCategory || selectedType || selectedRegion || showEmergencyOnly) && (
+            {(selectedCategory !== 'all' || selectedType !== 'all' || selectedRegion !== 'all' || showEmergencyOnly) && (
               <Button variant="ghost" onClick={clearFilters}>
                 Clear Filters
               </Button>

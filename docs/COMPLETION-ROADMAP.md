@@ -544,8 +544,10 @@ When you add new Payload collections or modify existing ones:
   - Updated bot creation wizard with new personality and behavior steps
 - ✅ **API Route Fixes**
   - Fixed `/api/knowledge/route.ts` - removed invalid 'code' type from Knowledge type enum
-  - Fixed `/api/personas/route.ts` - updated to use new simplified schema
-  - Fixed `/api/personas/[id]/route.ts` - removed is_public logic, updated request body types
+  - Fixed `/api/personas/route.ts` - updated to use new simplified schema, added `interaction_preferences` support
+  - Fixed `/api/personas/[id]/route.ts` - removed is_public logic, updated request body types, added `interaction_preferences` support
+  - Fixed `/api/bots/route.ts` - added `personality_traits`, `behavior_settings`, `signature_phrases`, `tags` to create endpoint
+  - Fixed `/api/bots/[id]/route.ts` - added `personality_traits`, `behavior_settings`, `signature_phrases`, `tags` to update endpoint
 - ✅ **Persona Library UI Update**
   - Removed visibility filter (personas are always private now)
   - Updated stats cards: Total Personas, Default Persona name, Total Uses

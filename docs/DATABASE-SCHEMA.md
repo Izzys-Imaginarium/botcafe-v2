@@ -265,11 +265,19 @@ User personas/masks for conversations. Personas are always private to the user.
 | `pronouns` | select | Pronouns: he-him, she-her, they-them, he-they, she-they, any, other |
 | `custom_pronouns` | text | Custom pronouns if "other" is selected |
 | `appearance` | group | Appearance settings (contains avatar) |
+| `interaction_preferences` | group | Topics preferences (see below) |
 | `is_default` | checkbox | Default persona flag |
 | `usage_count` | number | Number of times this persona has been used |
 | `custom_instructions` | textarea | Custom instructions for how bots should interact |
 | `createdAt` | date | Auto-generated |
 | `updatedAt` | date | Auto-generated |
+
+#### Persona Interaction Preferences (group)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `preferred_topics` | array | Topics the user enjoys discussing (each item has `topic` text field) |
+| `avoid_topics` | array | Topics the user prefers to avoid (each item has `topic` text field) |
 
 > **Note**: The `is_public` field was removed - personas are always private. Personality traits, behavior settings, tags, and signature phrases were moved to the Bot collection instead.
 

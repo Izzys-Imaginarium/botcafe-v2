@@ -57,8 +57,8 @@ export async function GET(
       const users = await payload.find({
         collection: 'users',
         where: {
-          clerkUserId: {
-            equals: clerkUser.id,
+          email: {
+            equals: clerkUser.emailAddresses[0]?.emailAddress,
           },
         },
         overrideAccess: true,
@@ -145,8 +145,8 @@ export async function PUT(
     const users = await payload.find({
       collection: 'users',
       where: {
-        clerkUserId: {
-          equals: clerkUser.id,
+        email: {
+          equals: clerkUser.emailAddresses[0]?.emailAddress,
         },
       },
       overrideAccess: true,
@@ -286,8 +286,8 @@ export async function DELETE(
     const users = await payload.find({
       collection: 'users',
       where: {
-        clerkUserId: {
-          equals: clerkUser.id,
+        email: {
+          equals: clerkUser.emailAddresses[0]?.emailAddress,
         },
       },
       overrideAccess: true,

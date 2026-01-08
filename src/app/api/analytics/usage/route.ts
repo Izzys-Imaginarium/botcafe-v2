@@ -23,8 +23,9 @@ export async function GET(request: NextRequest) {
     const users = await payload.find({
       collection: 'users',
       where: {
-        clerkUserId: { equals: user.id },
+        email: { equals: user.emailAddresses[0]?.emailAddress },
       },
+      overrideAccess: true,
     })
 
     if (users.docs.length === 0) {

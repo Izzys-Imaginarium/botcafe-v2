@@ -20,7 +20,7 @@ export async function GET() {
     const users = await payload.find({
       collection: 'users',
       where: {
-        clerkUserId: { equals: user.id },
+        email: { equals: user.emailAddresses[0]?.emailAddress },
       },
       overrideAccess: true,
     })

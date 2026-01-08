@@ -40,8 +40,8 @@ export async function GET(request: NextRequest) {
     const users = await payload.find({
       collection: 'users',
       where: {
-        clerkUserId: {
-          equals: clerkUser.id,
+        email: {
+          equals: clerkUser.emailAddresses[0]?.emailAddress,
         },
       },
       overrideAccess: true,
@@ -163,8 +163,8 @@ export async function POST(request: NextRequest) {
     const users = await payload.find({
       collection: 'users',
       where: {
-        clerkUserId: {
-          equals: clerkUser.id,
+        email: {
+          equals: clerkUser.emailAddresses[0]?.emailAddress,
         },
       },
       overrideAccess: true,

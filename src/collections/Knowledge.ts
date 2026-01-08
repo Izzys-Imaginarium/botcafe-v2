@@ -73,7 +73,6 @@ export const Knowledge: CollectionConfig = {
         { label: 'Image', value: 'image' },
         { label: 'Audio', value: 'audio' },
         { label: 'Video', value: 'video' },
-        { label: 'Code', value: 'code' },
         { label: 'Legacy Memory', value: 'legacy_memory' },
       ],
     },

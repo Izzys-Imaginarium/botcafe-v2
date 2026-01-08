@@ -16,7 +16,6 @@ import {
   FileText,
   Link as LinkIcon,
   Image,
-  Code,
   Sparkles,
   ArrowLeft,
   Loader2,
@@ -388,12 +387,6 @@ export const LoreEntriesView = () => {
                             <div className="flex items-center gap-2">
                               <LinkIcon className="w-4 h-4" />
                               URL/Link
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="code">
-                            <div className="flex items-center gap-2">
-                              <Code className="w-4 h-4" />
-                              Code Snippet
                             </div>
                           </SelectItem>
                         </SelectContent>

@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
           equals: clerkUser.id,
         },
       },
+      overrideAccess: true,
     })
 
     if (users.docs.length === 0) {
@@ -96,6 +97,7 @@ export async function GET(request: NextRequest) {
       page: Math.floor(offset / limit) + 1,
       sort: '-created_timestamp',
       depth: 2, // Include avatar relationship
+      overrideAccess: true,
     })
 
     return NextResponse.json({
@@ -165,6 +167,7 @@ export async function POST(request: NextRequest) {
           equals: clerkUser.id,
         },
       },
+      overrideAccess: true,
     })
 
     if (users.docs.length === 0) {
@@ -223,6 +226,7 @@ export async function POST(request: NextRequest) {
             },
           ],
         },
+        overrideAccess: true,
       })
 
       // Update existing defaults to not be default

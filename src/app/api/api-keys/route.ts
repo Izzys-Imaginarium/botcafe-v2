@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
         email: { equals: clerkUser.emailAddresses[0]?.emailAddress },
       },
       limit: 1,
+      overrideAccess: true,
     })
 
     if (payloadUsers.docs.length === 0) {
@@ -50,6 +51,7 @@ export async function GET(request: NextRequest) {
       },
       sort: '-createdAt',
       limit: 100,
+      overrideAccess: true,
     })
 
     // Don't return the actual key values, just metadata
@@ -111,6 +113,7 @@ export async function POST(request: NextRequest) {
         email: { equals: clerkUser.emailAddresses[0]?.emailAddress },
       },
       limit: 1,
+      overrideAccess: true,
     })
 
     if (payloadUsers.docs.length === 0) {

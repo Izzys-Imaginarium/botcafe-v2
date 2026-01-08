@@ -43,6 +43,7 @@ export async function GET(
           equals: clerkUser.id,
         },
       },
+      overrideAccess: true,
     })
 
     if (users.docs.length === 0) {
@@ -59,6 +60,7 @@ export async function GET(
       collection: 'personas',
       id,
       depth: 2,
+      overrideAccess: true,
     })
 
     // Check access (owner or public)
@@ -126,6 +128,7 @@ export async function PUT(
           equals: clerkUser.id,
         },
       },
+      overrideAccess: true,
     })
 
     if (users.docs.length === 0) {
@@ -141,6 +144,7 @@ export async function PUT(
     const existingPersona = await payload.findByID({
       collection: 'personas',
       id,
+      overrideAccess: true,
     })
 
     // Verify ownership
@@ -183,6 +187,7 @@ export async function PUT(
             },
           ],
         },
+        overrideAccess: true,
       })
 
       // Update existing defaults to not be default
@@ -257,6 +262,7 @@ export async function DELETE(
           equals: clerkUser.id,
         },
       },
+      overrideAccess: true,
     })
 
     if (users.docs.length === 0) {
@@ -272,6 +278,7 @@ export async function DELETE(
     const persona = await payload.findByID({
       collection: 'personas',
       id,
+      overrideAccess: true,
     })
 
     // Verify ownership

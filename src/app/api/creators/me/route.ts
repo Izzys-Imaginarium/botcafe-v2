@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
           equals: clerkUser.id,
         },
       },
+      overrideAccess: true,
     })
 
     if (users.docs.length === 0) {
@@ -61,6 +62,7 @@ export async function GET(request: NextRequest) {
         },
       },
       depth: 2,
+      overrideAccess: true,
     })
 
     if (creators.docs.length === 0) {
@@ -80,6 +82,7 @@ export async function GET(request: NextRequest) {
       data: {
         last_active: new Date().toISOString(),
       },
+      overrideAccess: true,
     })
 
     return NextResponse.json({

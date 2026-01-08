@@ -30,6 +30,7 @@ export async function GET() {
       where: {
         clerkUserId: { equals: clerkUser.id },
       },
+      overrideAccess: true,
     })
 
     if (users.docs.length === 0) {
@@ -69,36 +70,42 @@ export async function GET() {
           where: { createdBy: { equals: payloadUser.id } },
           limit: 1000,
           depth: 1,
+          overrideAccess: true,
         }),
         payload.find({
           collection: 'conversation',
           where: { user: { equals: payloadUser.id } },
           limit: 1000,
           depth: 1,
+          overrideAccess: true,
         }),
         payload.find({
           collection: 'personas',
           where: { user: { equals: payloadUser.id } },
           limit: 1000,
           depth: 1,
+          overrideAccess: true,
         }),
         payload.find({
           collection: 'memory',
           where: { user: { equals: payloadUser.id } },
           limit: 1000,
           depth: 1,
+          overrideAccess: true,
         }),
         payload.find({
           collection: 'knowledge',
           where: { createdBy: { equals: payloadUser.id } },
           limit: 1000,
           depth: 1,
+          overrideAccess: true,
         }),
         payload.find({
           collection: 'creatorProfiles',
           where: { user: { equals: payloadUser.id } },
           limit: 1,
           depth: 1,
+          overrideAccess: true,
         }),
       ]
     )

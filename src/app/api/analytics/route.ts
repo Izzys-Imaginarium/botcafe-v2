@@ -22,6 +22,7 @@ export async function GET() {
       where: {
         clerkUserId: { equals: user.id },
       },
+      overrideAccess: true,
     })
 
     if (users.docs.length === 0) {
@@ -42,6 +43,7 @@ export async function GET() {
         createdBy: { equals: payloadUser.id },
       },
       limit: 100,
+      overrideAccess: true,
     })
 
     // Fetch bot interactions (likes/favorites)
@@ -51,6 +53,7 @@ export async function GET() {
         user: { equals: payloadUser.id },
       },
       limit: 500,
+      overrideAccess: true,
     })
 
     // Fetch conversations
@@ -61,6 +64,7 @@ export async function GET() {
       },
       sort: '-createdAt',
       limit: 100,
+      overrideAccess: true,
     })
 
     // Fetch personas
@@ -69,6 +73,7 @@ export async function GET() {
       where: {
         user: { equals: payloadUser.id },
       },
+      overrideAccess: true,
     })
 
     // Fetch knowledge entries
@@ -77,6 +82,7 @@ export async function GET() {
       where: {
         createdBy: { equals: payloadUser.id },
       },
+      overrideAccess: true,
     })
 
     // Fetch memories
@@ -85,6 +91,7 @@ export async function GET() {
       where: {
         user: { equals: payloadUser.id },
       },
+      overrideAccess: true,
     })
 
     // Calculate overview statistics

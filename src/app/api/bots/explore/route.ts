@@ -85,6 +85,7 @@ export async function GET(request: NextRequest) {
       limit,
       page,
       depth: 1, // Include related data
+      overrideAccess: true,
     })
 
     // Transform docs to include creator username from the creator profile

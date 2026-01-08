@@ -47,6 +47,7 @@ async function ensureUniqueUsername(
         username: { equals: username },
       },
       limit: 1,
+      overrideAccess: true,
     })
 
     if (existing.docs.length === 0) {
@@ -102,6 +103,7 @@ export async function POST(request: NextRequest) {
         },
       },
       limit: 1,
+      overrideAccess: true,
     })
 
     let payloadUserId: string | number
@@ -120,6 +122,7 @@ export async function POST(request: NextRequest) {
             : clerkUser.username || clerkUser.emailAddresses[0]?.emailAddress || 'User',
           // Add any other user fields as needed
         },
+        overrideAccess: true,
       })
       payloadUserId = newUser.id
     }
@@ -131,6 +134,7 @@ export async function POST(request: NextRequest) {
         user: { equals: payloadUserId },
       },
       limit: 1,
+      overrideAccess: true,
     })
 
     let creatorProfileId: string | number
@@ -162,6 +166,7 @@ export async function POST(request: NextRequest) {
             accept_commissions: false,
           },
         },
+        overrideAccess: true,
       })
 
       creatorProfileId = newProfile.id
@@ -198,6 +203,7 @@ export async function POST(request: NextRequest) {
         likes_count: 0,
         favorites_count: 0,
       },
+      overrideAccess: true,
     })
 
     return NextResponse.json(

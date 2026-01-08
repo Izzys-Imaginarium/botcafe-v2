@@ -99,6 +99,7 @@ export async function GET(request: NextRequest) {
       limit,
       sort,
       depth: 2,
+      overrideAccess: true,
     })
 
     return NextResponse.json({
@@ -169,6 +170,7 @@ export async function POST(request: NextRequest) {
           equals: clerkUser.id,
         },
       },
+      overrideAccess: true,
     })
 
     if (users.docs.length === 0) {
@@ -188,6 +190,7 @@ export async function POST(request: NextRequest) {
           equals: payloadUser.id,
         },
       },
+      overrideAccess: true,
     })
 
     if (existingProfile.docs.length > 0) {
@@ -243,6 +246,7 @@ export async function POST(request: NextRequest) {
           equals: body.username.toLowerCase().replace(/[^a-z0-9-_]/g, '-'),
         },
       },
+      overrideAccess: true,
     })
 
     if (existingUsername.docs.length > 0) {
@@ -290,6 +294,7 @@ export async function POST(request: NextRequest) {
         modified_timestamp: new Date().toISOString(),
         last_active: new Date().toISOString(),
       },
+      overrideAccess: true,
     })
 
     return NextResponse.json({

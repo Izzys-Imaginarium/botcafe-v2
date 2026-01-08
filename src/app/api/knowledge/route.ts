@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
         email: { equals: clerkUser.emailAddresses[0]?.emailAddress },
       },
       limit: 1,
+      overrideAccess: true,
     })
 
     if (payloadUsers.docs.length === 0) {
@@ -173,6 +174,7 @@ export async function GET(request: NextRequest) {
       page,
       limit,
       sort: '-createdAt',
+      overrideAccess: true,
     })
 
     return NextResponse.json({

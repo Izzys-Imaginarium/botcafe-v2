@@ -22,6 +22,7 @@ export async function GET() {
       where: {
         email: { equals: user.emailAddresses[0]?.emailAddress },
       },
+      overrideAccess: true,
     })
 
     if (users.docs.length === 0) {
@@ -42,6 +43,7 @@ export async function GET() {
       where: {
         user: { equals: payloadUser.id },
       },
+      overrideAccess: true,
     })
 
     const settings = settingsResult.docs[0] || null
@@ -58,6 +60,7 @@ export async function GET() {
       },
       sort: '-timestamp',
       limit: 50,
+      overrideAccess: true,
     })
 
     // Calculate mood summary

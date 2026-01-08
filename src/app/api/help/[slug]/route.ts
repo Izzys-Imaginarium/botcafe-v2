@@ -55,6 +55,7 @@ export async function GET(
       },
       limit: 1,
       depth: 2,
+      overrideAccess: true,
     })
 
     if (articles.docs.length === 0) {
@@ -73,6 +74,7 @@ export async function GET(
       data: {
         viewCount: (article.viewCount || 0) + 1,
       },
+      overrideAccess: true,
     })
 
     // Fetch related articles in the same category
@@ -105,6 +107,7 @@ export async function GET(
       sort: 'sortOrder',
       limit: 5,
       depth: 1,
+      overrideAccess: true,
     })
 
     return NextResponse.json({

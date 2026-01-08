@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
         email: { equals: clerkUser.emailAddresses[0]?.emailAddress },
       },
       limit: 1,
+      overrideAccess: true,
     })
 
     if (payloadUsers.docs.length === 0) {
@@ -53,6 +54,7 @@ export async function GET(request: NextRequest) {
       sort: '-created_date',
       limit: 100, // Limit to 100 bots for now
       depth: 1, // Include related data like creator profile
+      overrideAccess: true,
     })
 
     // Transform docs to include creator username from the creator profile

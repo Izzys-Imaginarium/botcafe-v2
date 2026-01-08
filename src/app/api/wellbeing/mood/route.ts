@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
       where: {
         email: { equals: user.emailAddresses[0]?.emailAddress },
       },
+      overrideAccess: true,
     })
 
     if (users.docs.length === 0) {
@@ -49,6 +50,7 @@ export async function GET(request: NextRequest) {
       sort: '-timestamp',
       limit,
       page,
+      overrideAccess: true,
     })
 
     // Calculate mood statistics
@@ -148,6 +150,7 @@ export async function POST(request: NextRequest) {
       where: {
         email: { equals: user.emailAddresses[0]?.emailAddress },
       },
+      overrideAccess: true,
     })
 
     let payloadUser
@@ -183,6 +186,7 @@ export async function POST(request: NextRequest) {
         where: {
           user: { equals: payloadUser.id },
         },
+        overrideAccess: true,
       })
 
       if (selfMod.docs.length > 0) {

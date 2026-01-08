@@ -29,6 +29,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         email: { equals: clerkUser.emailAddresses[0]?.emailAddress },
       },
       limit: 1,
+      overrideAccess: true,
     })
 
     if (payloadUsers.docs.length === 0) {
@@ -41,6 +42,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     const existingKey = await payload.findByID({
       collection: 'api-key',
       id,
+      overrideAccess: true,
     })
 
     if (!existingKey) {
@@ -94,6 +96,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         email: { equals: clerkUser.emailAddresses[0]?.emailAddress },
       },
       limit: 1,
+      overrideAccess: true,
     })
 
     if (payloadUsers.docs.length === 0) {
@@ -106,6 +109,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const existingKey = await payload.findByID({
       collection: 'api-key',
       id,
+      overrideAccess: true,
     })
 
     if (!existingKey) {

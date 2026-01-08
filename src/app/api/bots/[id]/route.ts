@@ -48,6 +48,7 @@ export async function PATCH(
         email: { equals: clerkUser.emailAddresses[0]?.emailAddress },
       },
       limit: 1,
+      overrideAccess: true,
     })
 
     if (payloadUsers.docs.length === 0) {
@@ -60,6 +61,7 @@ export async function PATCH(
     const bot = await payload.findByID({
       collection: 'bot',
       id,
+      overrideAccess: true,
     })
 
     if (!bot) {
@@ -121,6 +123,7 @@ export async function PATCH(
       const profile = await payload.findByID({
         collection: 'creatorProfiles',
         id: profileId,
+        overrideAccess: true,
       })
       if (profile) {
         creatorUsername = profile.username
@@ -177,6 +180,7 @@ export async function DELETE(
         email: { equals: clerkUser.emailAddresses[0]?.emailAddress },
       },
       limit: 1,
+      overrideAccess: true,
     })
 
     if (payloadUsers.docs.length === 0) {
@@ -189,6 +193,7 @@ export async function DELETE(
     const bot = await payload.findByID({
       collection: 'bot',
       id,
+      overrideAccess: true,
     })
 
     if (!bot) {
@@ -210,6 +215,7 @@ export async function DELETE(
     await payload.delete({
       collection: 'bot',
       id,
+      overrideAccess: true,
     })
 
     return NextResponse.json({

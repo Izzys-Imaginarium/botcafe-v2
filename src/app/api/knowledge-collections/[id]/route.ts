@@ -32,6 +32,7 @@ export async function DELETE(
         email: { equals: clerkUser.emailAddresses[0]?.emailAddress },
       },
       limit: 1,
+      overrideAccess: true,
     })
 
     if (payloadUsers.docs.length === 0) {
@@ -47,6 +48,7 @@ export async function DELETE(
     const collection = await payload.findByID({
       collection: 'knowledgeCollections',
       id,
+      overrideAccess: true,
     })
 
     if (!collection) {
@@ -74,6 +76,7 @@ export async function DELETE(
         },
       },
       limit: 1,
+      overrideAccess: true,
     })
 
     if (entriesInCollection.totalDocs > 0) {
@@ -87,6 +90,7 @@ export async function DELETE(
     await payload.delete({
       collection: 'knowledgeCollections',
       id,
+      overrideAccess: true,
     })
 
     return NextResponse.json({

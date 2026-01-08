@@ -25,6 +25,7 @@ export async function GET(
         username: { equals: username.toLowerCase() },
       },
       limit: 1,
+      overrideAccess: true,
     })
 
     if (creatorProfiles.docs.length === 0) {
@@ -51,6 +52,7 @@ export async function GET(
       },
       limit: 1,
       depth: 1, // Include related data like picture
+      overrideAccess: true,
     })
 
     if (bots.docs.length === 0) {

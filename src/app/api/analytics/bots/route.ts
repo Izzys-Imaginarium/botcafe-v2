@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
       where: {
         email: { equals: user.emailAddresses[0]?.emailAddress },
       },
+      overrideAccess: true,
     })
 
     if (users.docs.length === 0) {
@@ -39,6 +40,7 @@ export async function GET(request: NextRequest) {
       const bot = await payload.findByID({
         collection: 'bot',
         id: botId,
+        overrideAccess: true,
       })
 
       if (!bot || ((bot as any).createdBy as any)?.id !== payloadUser.id) {
@@ -51,6 +53,7 @@ export async function GET(request: NextRequest) {
         where: {
           bot: { equals: botId },
         },
+        overrideAccess: true,
       })
 
       // Get conversations for this bot
@@ -61,6 +64,7 @@ export async function GET(request: NextRequest) {
         },
         sort: '-createdAt',
         limit: 100,
+        overrideAccess: true,
       })
 
       // Get knowledge collections linked to this bot
@@ -69,6 +73,7 @@ export async function GET(request: NextRequest) {
         where: {
           bot: { equals: botId },
         },
+        overrideAccess: true,
       })
 
       // Calculate daily stats for the period
@@ -111,6 +116,7 @@ export async function GET(request: NextRequest) {
       },
       limit: 100,
       depth: 1, // Include creator profile
+      overrideAccess: true,
     })
 
     const botAnalytics = await Promise.all(
@@ -120,6 +126,7 @@ export async function GET(request: NextRequest) {
           where: {
             bot: { equals: bot.id },
           },
+          overrideAccess: true,
         })
 
         // Get creator username from creator_profile

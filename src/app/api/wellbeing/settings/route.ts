@@ -22,6 +22,7 @@ export async function GET() {
       where: {
         email: { equals: user.emailAddresses[0]?.emailAddress },
       },
+      overrideAccess: true,
     })
 
     if (users.docs.length === 0) {
@@ -40,6 +41,7 @@ export async function GET() {
       where: {
         user: { equals: payloadUser.id },
       },
+      overrideAccess: true,
     })
 
     if (settings.docs.length === 0) {
@@ -81,6 +83,7 @@ export async function POST(request: NextRequest) {
       where: {
         email: { equals: user.emailAddresses[0]?.emailAddress },
       },
+      overrideAccess: true,
     })
 
     let payloadUser
@@ -91,6 +94,7 @@ export async function POST(request: NextRequest) {
           email: user.emailAddresses[0]?.emailAddress || '',
           name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
         } as any,
+        overrideAccess: true,
       })
     } else {
       payloadUser = users.docs[0]
@@ -102,6 +106,7 @@ export async function POST(request: NextRequest) {
       where: {
         user: { equals: payloadUser.id },
       },
+      overrideAccess: true,
     })
 
     const settingsData = {
@@ -136,6 +141,7 @@ export async function POST(request: NextRequest) {
         collection: 'self-moderation',
         id: existingSettings.docs[0].id,
         data: settingsData,
+        overrideAccess: true,
       })
     } else {
       // Create new settings
@@ -151,6 +157,7 @@ export async function POST(request: NextRequest) {
             mood_entries_count_week: 0,
           },
         },
+        overrideAccess: true,
       })
     }
 
@@ -184,6 +191,7 @@ export async function PUT(request: NextRequest) {
       where: {
         email: { equals: user.emailAddresses[0]?.emailAddress },
       },
+      overrideAccess: true,
     })
 
     if (users.docs.length === 0) {
@@ -198,6 +206,7 @@ export async function PUT(request: NextRequest) {
       where: {
         user: { equals: payloadUser.id },
       },
+      overrideAccess: true,
     })
 
     if (settings.docs.length === 0) {
@@ -246,6 +255,7 @@ export async function PUT(request: NextRequest) {
         progress_tracking: updatedProgress,
         last_checkin: new Date().toISOString(),
       },
+      overrideAccess: true,
     })
 
     // Check for intervention triggers

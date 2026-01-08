@@ -32,6 +32,7 @@ export async function DELETE(
         email: { equals: clerkUser.emailAddresses[0]?.emailAddress },
       },
       limit: 1,
+      overrideAccess: true,
     })
 
     if (payloadUsers.docs.length === 0) {
@@ -47,6 +48,7 @@ export async function DELETE(
     const knowledge = await payload.findByID({
       collection: 'knowledge',
       id,
+      overrideAccess: true,
     })
 
     if (!knowledge) {
@@ -79,12 +81,14 @@ export async function DELETE(
               { user_id: { equals: payloadUser.id } },
             ],
           },
+          overrideAccess: true,
         })
 
         for (const record of vectorRecords.docs) {
           await payload.delete({
             collection: 'vectorRecords',
             id: record.id,
+            overrideAccess: true,
           })
         }
 
@@ -99,6 +103,7 @@ export async function DELETE(
     await payload.delete({
       collection: 'knowledge',
       id,
+      overrideAccess: true,
     })
 
     return NextResponse.json({

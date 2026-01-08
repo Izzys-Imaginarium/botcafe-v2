@@ -9,13 +9,6 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
   User,
   Plus,
   Search,
@@ -23,10 +16,7 @@ import {
   Edit,
   Trash2,
   Star,
-  StarOff,
-  Globe,
-  Lock,
-  Sparkles
+  Lock
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -36,29 +26,17 @@ interface Persona {
   id: string
   name: string
   description: string
-  personality_traits?: {
-    tone?: string
-    formality_level?: string
-    humor_style?: string
-    communication_style?: string
-  }
+  gender?: string | null
+  age?: number | null
+  pronouns?: string | null
+  custom_pronouns?: string | null
   appearance?: {
     avatar?: any
-    visual_theme?: string
-    color_scheme?: string
-  }
-  behavior_settings?: {
-    response_length?: string
-    creativity_level?: string
   }
   is_default: boolean
-  is_public: boolean
   usage_count: number
-  tags?: Array<{ tag: string }>
+  custom_instructions?: string | null
   created_timestamp: string
-  user?: {
-    id: string
-  }
 }
 
 export const PersonaLibraryView = () => {
@@ -69,7 +47,6 @@ export const PersonaLibraryView = () => {
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('')
-  const [visibilityFilter, setVisibilityFilter] = useState<string>('all')
 
   // Delete dialog state
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -84,7 +61,7 @@ export const PersonaLibraryView = () => {
   // Apply filters when personas or filter state changes
   useEffect(() => {
     applyFilters()
-  }, [personas, searchQuery, visibilityFilter])
+  }, [personas, searchQuery])
 
   const fetchPersonas = async () => {
     setIsLoading(true)
@@ -108,22 +85,12 @@ export const PersonaLibraryView = () => {
   const applyFilters = () => {
     let filtered = [...personas]
 
-    // Visibility filter
-    if (visibilityFilter === 'my-personas') {
-      filtered = filtered.filter(p => p.user)
-    } else if (visibilityFilter === 'public') {
-      filtered = filtered.filter(p => p.is_public && !p.user)
-    } else if (visibilityFilter === 'private') {
-      filtered = filtered.filter(p => !p.is_public && p.user)
-    }
-
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
       filtered = filtered.filter(p =>
         p.name.toLowerCase().includes(query) ||
-        p.description.toLowerCase().includes(query) ||
-        p.tags?.some(t => t.tag.toLowerCase().includes(query))
+        p.description.toLowerCase().includes(query)
       )
     }
 
@@ -189,18 +156,28 @@ export const PersonaLibraryView = () => {
     setIsDeleteDialogOpen(true)
   }
 
-  const getToneLabel = (tone?: string) => {
+  const getGenderLabel = (gender?: string | null) => {
     const labels: Record<string, string> = {
-      friendly: 'Friendly',
-      professional: 'Professional',
-      playful: 'Playful',
-      mysterious: 'Mysterious',
-      wise: 'Wise',
-      humorous: 'Humorous',
-      empathetic: 'Empathetic',
-      authoritative: 'Authoritative',
+      male: 'Male',
+      female: 'Female',
+      'non-binary': 'Non-binary',
+      unspecified: 'Unspecified',
+      other: 'Other',
     }
-    return tone ? labels[tone] || tone : 'Neutral'
+    return gender ? labels[gender] || gender : null
+  }
+
+  const getPronounsLabel = (pronouns?: string | null) => {
+    const labels: Record<string, string> = {
+      'he-him': 'He/Him',
+      'she-her': 'She/Her',
+      'they-them': 'They/Them',
+      'he-they': 'He/They',
+      'she-they': 'She/They',
+      'any': 'Any',
+      'other': 'Other',
+    }
+    return pronouns ? labels[pronouns] || pronouns : null
   }
 
   return (
@@ -225,7 +202,7 @@ export const PersonaLibraryView = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -242,50 +219,36 @@ export const PersonaLibraryView = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">My Personas</p>
+                  <p className="text-sm text-muted-foreground">Default Persona</p>
                   <p className="text-2xl font-bold">
-                    {personas.filter(p => p.user).length}
-                  </p>
-                </div>
-                <Lock className="h-8 w-8 text-blue-400" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Public</p>
-                  <p className="text-2xl font-bold">
-                    {personas.filter(p => p.is_public).length}
-                  </p>
-                </div>
-                <Globe className="h-8 w-8 text-green-400" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Default Set</p>
-                  <p className="text-2xl font-bold">
-                    {personas.filter(p => p.is_default).length}
+                    {personas.find(p => p.is_default)?.name || 'None set'}
                   </p>
                 </div>
                 <Star className="h-8 w-8 text-yellow-400" />
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Uses</p>
+                  <p className="text-2xl font-bold">
+                    {personas.reduce((sum, p) => sum + (p.usage_count || 0), 0)}
+                  </p>
+                </div>
+                <Lock className="h-8 w-8 text-blue-400" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Filters */}
+        {/* Search */}
         <Card>
           <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
+            <div className="flex gap-4">
+              <div className="flex-1 space-y-2">
                 <Label>Search</Label>
                 <div className="relative">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -298,33 +261,16 @@ export const PersonaLibraryView = () => {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Visibility</Label>
-                <Select value={visibilityFilter} onValueChange={setVisibilityFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Personas</SelectItem>
-                    <SelectItem value="my-personas">My Personas</SelectItem>
-                    <SelectItem value="public">Public Personas</SelectItem>
-                    <SelectItem value="private">Private Only</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-end">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSearchQuery('')
-                    setVisibilityFilter('all')
-                  }}
-                  className="w-full"
-                >
-                  Clear Filters
-                </Button>
-              </div>
+              {searchQuery && (
+                <div className="flex items-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => setSearchQuery('')}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -342,8 +288,8 @@ export const PersonaLibraryView = () => {
               <User className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <h3 className="text-lg font-semibold mb-2">No personas found</h3>
               <p className="text-muted-foreground mb-4">
-                {searchQuery || visibilityFilter !== 'all'
-                  ? 'Try adjusting your filters'
+                {searchQuery
+                  ? 'Try adjusting your search'
                   : 'Create your first persona to get started'}
               </p>
               <Link href="/personas/create">
@@ -379,13 +325,19 @@ export const PersonaLibraryView = () => {
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-lg truncate">{persona.name}</CardTitle>
                     <div className="flex gap-1 mt-1 flex-wrap">
-                      <Badge variant="outline" className="text-xs">
-                        {getToneLabel(persona.personality_traits?.tone)}
-                      </Badge>
-                      {persona.is_public && (
-                        <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-500">
-                          <Globe className="mr-1 h-2 w-2" />
-                          Public
+                      {getGenderLabel(persona.gender) && (
+                        <Badge variant="outline" className="text-xs">
+                          {getGenderLabel(persona.gender)}
+                        </Badge>
+                      )}
+                      {getPronounsLabel(persona.pronouns) && (
+                        <Badge variant="outline" className="text-xs">
+                          {getPronounsLabel(persona.pronouns)}
+                        </Badge>
+                      )}
+                      {persona.age && (
+                        <Badge variant="outline" className="text-xs">
+                          {persona.age} years
                         </Badge>
                       )}
                     </div>
@@ -398,60 +350,35 @@ export const PersonaLibraryView = () => {
                   {persona.description}
                 </p>
 
-                {persona.tags && persona.tags.length > 0 && (
-                  <div className="flex gap-1 flex-wrap mb-3">
-                    {persona.tags.slice(0, 3).map((tagObj, idx) => (
-                      <Badge key={idx} variant="outline" className="text-xs">
-                        {tagObj.tag}
-                      </Badge>
-                    ))}
-                    {persona.tags.length > 3 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{persona.tags.length - 3}
-                      </Badge>
-                    )}
-                  </div>
-                )}
-
                 <div className="text-xs text-muted-foreground">
                   Used {persona.usage_count} times
                 </div>
               </CardContent>
 
               <CardFooter className="flex gap-2 pt-3">
-                {persona.user && (
-                  <>
-                    {!persona.is_default && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleSetDefault(persona.id)}
-                      >
-                        <Star className="mr-1 h-3 w-3" />
-                        Set Default
-                      </Button>
-                    )}
-                    <Link href={`/personas/edit/${persona.id}`} className="flex-1">
-                      <Button variant="outline" size="sm" className="w-full">
-                        <Edit className="mr-1 h-3 w-3" />
-                        Edit
-                      </Button>
-                    </Link>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openDeleteDialog(persona)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </>
-                )}
-                {!persona.user && (
-                  <Button variant="outline" size="sm" className="w-full">
-                    <Sparkles className="mr-1 h-3 w-3" />
-                    Use This Persona
+                {!persona.is_default && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSetDefault(persona.id)}
+                  >
+                    <Star className="mr-1 h-3 w-3" />
+                    Set Default
                   </Button>
                 )}
+                <Link href={`/personas/edit/${persona.id}`} className="flex-1">
+                  <Button variant="outline" size="sm" className="w-full">
+                    <Edit className="mr-1 h-3 w-3" />
+                    Edit
+                  </Button>
+                </Link>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openDeleteDialog(persona)}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
               </CardFooter>
             </Card>
           ))}

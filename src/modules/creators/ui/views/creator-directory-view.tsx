@@ -66,19 +66,6 @@ interface CreatorProfile {
   tags?: Array<{ tag: string }>
 }
 
-const specialtyLabels: Record<string, string> = {
-  'conversational-ai': 'Conversational AI',
-  'fantasy-rpg': 'Fantasy/RPG',
-  'educational': 'Educational',
-  'creative-writing': 'Creative Writing',
-  'technical-support': 'Technical Support',
-  'entertainment': 'Entertainment',
-  'productivity': 'Productivity',
-  'mental-health': 'Mental Health',
-  'gaming': 'Gaming',
-  'business': 'Business',
-}
-
 const verificationIcons: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
   verified: {
     icon: <CheckCircle2 className="h-4 w-4" />,
@@ -102,7 +89,6 @@ export const CreatorDirectoryView = () => {
   // Filter state
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [specialtyFilter, setSpecialtyFilter] = useState<string>('all')
   const [sortBy, setSortBy] = useState<string>('-community_stats.follower_count')
 
   // Pagination
@@ -128,7 +114,7 @@ export const CreatorDirectoryView = () => {
   useEffect(() => {
     setPage(1)
     fetchCreators()
-  }, [debouncedSearch, specialtyFilter, sortBy])
+  }, [debouncedSearch, sortBy])
 
   // Refetch when page changes
   useEffect(() => {
@@ -167,10 +153,6 @@ export const CreatorDirectoryView = () => {
         params.set('search', debouncedSearch)
       }
 
-      if (specialtyFilter !== 'all') {
-        params.set('specialty', specialtyFilter)
-      }
-
       const response = await fetch(`/api/creators?${params}`)
       const data = (await response.json()) as {
         success?: boolean
@@ -193,10 +175,6 @@ export const CreatorDirectoryView = () => {
       setIsInitialLoad(false)
       setIsRefreshing(false)
     }
-  }
-
-  const getSpecialtyLabel = (specialty: string) => {
-    return specialtyLabels[specialty] || specialty
   }
 
   return (
@@ -289,7 +267,7 @@ export const CreatorDirectoryView = () => {
         {/* Filters */}
         <Card>
           <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Search</Label>
                 <div className="relative">
@@ -301,23 +279,6 @@ export const CreatorDirectoryView = () => {
                     className="pl-8"
                   />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Specialty</Label>
-                <Select value={specialtyFilter} onValueChange={setSpecialtyFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Specialties</SelectItem>
-                    {Object.entries(specialtyLabels).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
 
               <div className="space-y-2">
@@ -341,7 +302,6 @@ export const CreatorDirectoryView = () => {
                   variant="outline"
                   onClick={() => {
                     setSearchQuery('')
-                    setSpecialtyFilter('all')
                     setSortBy('-community_stats.follower_count')
                   }}
                   className="w-full"
@@ -366,8 +326,8 @@ export const CreatorDirectoryView = () => {
               <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <h3 className="text-lg font-semibold mb-2">No creators found</h3>
               <p className="text-muted-foreground mb-4">
-                {searchQuery || specialtyFilter !== 'all'
-                  ? 'Try adjusting your filters'
+                {searchQuery
+                  ? 'Try adjusting your search'
                   : 'Be the first to create a profile!'}
               </p>
               {!hasProfile && (
@@ -436,22 +396,6 @@ export const CreatorDirectoryView = () => {
                       <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
                         <MapPin className="h-3 w-3" />
                         {creator.creator_info.location}
-                      </div>
-                    )}
-
-                    {/* Specialties */}
-                    {creator.creator_info?.specialties && creator.creator_info.specialties.length > 0 && (
-                      <div className="flex gap-1 flex-wrap mb-3">
-                        {creator.creator_info.specialties.slice(0, 2).map((s, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
-                            {getSpecialtyLabel(s.specialty)}
-                          </Badge>
-                        ))}
-                        {creator.creator_info.specialties.length > 2 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{creator.creator_info.specialties.length - 2}
-                          </Badge>
-                        )}
                       </div>
                     )}
 

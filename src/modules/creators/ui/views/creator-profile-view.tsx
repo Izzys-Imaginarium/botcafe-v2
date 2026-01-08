@@ -16,7 +16,6 @@ import {
   CheckCircle2,
   Crown,
   MapPin,
-  Edit,
   ExternalLink,
   Github,
   Twitter,
@@ -247,20 +246,12 @@ export const CreatorProfileView = ({ username }: CreatorProfileViewProps) => {
             {/* Actions */}
             <div className="flex gap-2 md:mt-4">
               {isOwner ? (
-                <>
-                  <Link href="/creators/settings">
-                    <Button variant="outline">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Settings
-                    </Button>
-                  </Link>
-                  <Link href="/creators/edit">
-                    <Button>
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit Profile
-                    </Button>
-                  </Link>
-                </>
+                <Link href="/account">
+                  <Button>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Manage Profile
+                  </Button>
+                </Link>
               ) : (
                 <>
                   <Button variant="outline" onClick={handleFollow}>

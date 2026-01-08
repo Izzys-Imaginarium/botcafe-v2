@@ -22,10 +22,11 @@ export default async function CreatorSetupPage() {
   const users = await payload.find({
     collection: 'users',
     where: {
-      clerkUserId: {
-        equals: user.id,
+      email: {
+        equals: user.emailAddresses[0]?.emailAddress,
       },
     },
+    overrideAccess: true,
   })
 
   if (users.docs.length > 0) {
@@ -39,6 +40,7 @@ export default async function CreatorSetupPage() {
           equals: payloadUser.id,
         },
       },
+      overrideAccess: true,
     })
 
     if (existingProfile.docs.length > 0) {

@@ -27,10 +27,11 @@ export default async function EditPersonaPage({ params }: EditPersonaPageProps) 
   const users = await payload.find({
     collection: 'users',
     where: {
-      clerkUserId: {
-        equals: user.id,
+      email: {
+        equals: user.emailAddresses[0]?.emailAddress,
       },
     },
+    overrideAccess: true,
   })
 
   if (users.docs.length === 0) {
@@ -46,6 +47,7 @@ export default async function EditPersonaPage({ params }: EditPersonaPageProps) 
       collection: 'personas',
       id,
       depth: 2,
+      overrideAccess: true,
     })
   } catch (error) {
     redirect('/personas')

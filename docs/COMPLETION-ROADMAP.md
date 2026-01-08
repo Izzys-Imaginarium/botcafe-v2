@@ -198,19 +198,21 @@ By building foundational systems first, we avoid rework and ensure chat has all 
   - [ ] Performance optimization (caching, batching)
   - [ ] Complete documentation
 
-### **PHASE 5: Persona System** (Week 10-11) **IN PROGRESS**
+### **PHASE 5: Persona System** (Week 10-11) ✅ **COMPLETED**
 - [x] Create `/personas` persona management pages ✅
   - [x] `/personas` library page with stats, filtering, and management ✅
   - [x] `/personas/create` creation page with comprehensive form ✅
   - [x] `/personas/edit/[id]` edit page with data loading ✅
 - [x] Implement persona creation workflow ✅
-  - [x] Full form with personality traits, behavior settings, interaction preferences ✅
-  - [x] Tags, topics, signature phrases management ✅
-  - [x] Default persona and public/private toggles ✅
+  - [x] Simplified form with gender, age, pronouns (personality traits moved to Bot) ✅
+  - [x] Custom pronouns support ✅
+  - [x] Default persona toggle ✅
+  - [x] Personas are now always private (removed is_public) ✅
 - [x] Create `/api/personas` endpoints (GET, POST) ✅
 - [x] Create `/api/personas/[id]` endpoints (GET, PUT, DELETE) ✅
 - [x] Implement persona library with search and filtering ✅
 - [x] Add default persona management (auto-unset others when setting new default) ✅
+- [x] **Schema Simplification (2026-01-08)**: Removed personality_traits, behavior_settings, tags, signature_phrases (moved to Bot collection)
 - [ ] Add persona switching interface (Pending - requires Chat UI, Phase 9)
 - [ ] Connect personas to user sessions (Pending - requires Chat system)
 - [ ] Add persona analytics (Pending - Phase 7 Analytics)
@@ -528,6 +530,26 @@ When you add new Payload collections or modify existing ones:
 
 ## 🔄 **Recent Changes**
 
+### **2026-01-08 Updates:**
+- ✅ **Persona Schema Simplification**
+  - Removed from Personas: `personality_traits`, `behavior_settings`, `tags`, `signature_phrases`, `is_public`
+  - Added to Personas: `gender`, `age`, `pronouns`, `custom_pronouns`
+  - Personas are now always private (no public sharing)
+  - Created database migration: `migrations/personas-schema-update.sql`
+- ✅ **Bot Schema Enhancement**
+  - Added to Bots: `personality_traits` group (tone, formality_level, humor_style, communication_style)
+  - Added to Bots: `behavior_settings` group (response_length, creativity_level, knowledge_sharing)
+  - Added to Bots: `signature_phrases` array, `tags` array
+  - Created database migration: `migrations/bot-personality-behavior-update.sql`
+  - Updated bot creation wizard with new personality and behavior steps
+- ✅ **API Route Fixes**
+  - Fixed `/api/knowledge/route.ts` - removed invalid 'code' type from Knowledge type enum
+  - Fixed `/api/personas/route.ts` - updated to use new simplified schema
+  - Fixed `/api/personas/[id]/route.ts` - removed is_public logic, updated request body types
+- ✅ **Documentation Updates**
+  - Updated DATABASE-SCHEMA.md with new Bot and Persona fields
+  - Updated COMPLETION-ROADMAP.md with Phase 5 completion status
+
 ### **2026-01-07 Updates:**
 - ✅ **Bot URL Structure Changed to Per-Creator Format**
   - Bot URLs now use `/<username>/<bot-slug>` format (like GitHub repos)
@@ -743,8 +765,8 @@ When you add new Payload collections or modify existing ones:
 
 ---
 
-**Last Updated**: 2026-01-07
-**Version**: 2.8
+**Last Updated**: 2026-01-08
+**Version**: 2.9
 **Total Tasks**: 130
-**Completed**: 108
-**Progress**: ~83%
+**Completed**: 110
+**Progress**: ~85%

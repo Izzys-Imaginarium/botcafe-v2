@@ -1,7 +1,7 @@
 # BotCafe v2 - Database Schema
 
-**Last Updated**: 2026-01-07
-**Version**: 2.8
+**Last Updated**: 2026-01-08
+**Version**: 2.9
 **Database**: Cloudflare D1 (SQLite) via Payload CMS
 
 ---
@@ -79,22 +79,42 @@ AI companion definitions.
 | `name` | text | Bot name (required) |
 | `slug` | text | URL-friendly identifier (unique per creator) |
 | `description` | textarea | Bot description |
-| `avatar` | relationship (Media) | Bot avatar image |
-| `personality` | textarea | Personality prompt |
-| `system_prompt` | textarea | System instructions |
+| `picture` | relationship (Media) | Bot profile image |
+| `gender` | select | Bot gender (male, female, non-binary, other) |
+| `age` | number | Bot age (1-200) |
+| `system_prompt` | textarea | System instructions (required) |
 | `greeting` | textarea | Initial greeting message |
-| `example_dialogues` | textarea | Example conversations |
-| `tags` | array | Category tags |
+| `speech_examples` | array | Example speech patterns |
+| `personality_traits` | group | Communication style settings (see below) |
+| `behavior_settings` | group | Response behavior settings (see below) |
+| `signature_phrases` | array | Catchphrases or expressions |
+| `tags` | array | Category tags for discovery |
 | `is_public` | checkbox | Public visibility |
-| `is_nsfw` | checkbox | NSFW flag |
-| `conversation_count` | number | Total conversations |
 | `likes_count` | number | Total likes |
 | `favorites_count` | number | Total favorites |
-| `rating` | number | Average rating |
-| `createdBy` | relationship (Users) | Creator reference |
+| `user` | relationship (Users) | Owner reference (required) |
 | `creator_profile` | relationship (CreatorProfiles) | Creator profile (**required**) |
+| `creator_display_name` | text | Display name for creator (required) |
+| `knowledge_collections` | relationship[] | Associated knowledge collections |
 | `createdAt` | date | Auto-generated |
 | `updatedAt` | date | Auto-generated |
+
+#### Bot Personality Traits (group)
+
+| Field | Type | Options |
+|-------|------|---------|
+| `tone` | select | friendly, professional, playful, mysterious, wise, humorous, empathetic, authoritative |
+| `formality_level` | select | very-casual, casual, neutral, formal, very-formal |
+| `humor_style` | select | none, light, moderate, dark, sarcastic |
+| `communication_style` | select | direct, elaborate, concise, storytelling, questioning |
+
+#### Bot Behavior Settings (group)
+
+| Field | Type | Options |
+|-------|------|---------|
+| `response_length` | select | very-short, short, medium, long, very-long |
+| `creativity_level` | select | conservative, moderate, creative, highly-creative |
+| `knowledge_sharing` | select | very-limited, limited, balanced, generous, very-generous |
 
 ### BotInteraction
 
@@ -232,27 +252,26 @@ Conversation memory storage.
 
 ### Personas
 
-User personas/masks for conversations.
+User personas/masks for conversations. Personas are always private to the user.
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | string | Primary key |
-| `name` | text | Persona name (required) |
-| `description` | textarea | Persona description |
+| `name` | text | Persona name (required) - what bots call you |
+| `description` | textarea | Persona description (required) |
 | `user` | relationship (Users) | Owner |
-| `personality_traits` | json | Trait scores |
-| `communication_style` | select | Style: formal, casual, playful, etc. |
-| `topics_of_interest` | array | Interest tags |
-| `signature_phrases` | array | Catchphrases |
-| `response_length` | select | Preference: concise, moderate, detailed |
-| `humor_level` | select | Level: none, subtle, moderate, high |
-| `formality_level` | select | Level: casual, balanced, formal |
-| `emotional_expressiveness` | select | Level: reserved, moderate, expressive |
+| `gender` | select | Gender: male, female, non-binary, unspecified, other |
+| `age` | number | Age of the persona (optional) |
+| `pronouns` | select | Pronouns: he-him, she-her, they-them, he-they, she-they, any, other |
+| `custom_pronouns` | text | Custom pronouns if "other" is selected |
+| `appearance` | group | Appearance settings (contains avatar) |
 | `is_default` | checkbox | Default persona flag |
-| `is_public` | checkbox | Public visibility |
-| `avatar` | relationship (Media) | Persona avatar |
+| `usage_count` | number | Number of times this persona has been used |
+| `custom_instructions` | textarea | Custom instructions for how bots should interact |
 | `createdAt` | date | Auto-generated |
 | `updatedAt` | date | Auto-generated |
+
+> **Note**: The `is_public` field was removed - personas are always private. Personality traits, behavior settings, tags, and signature phrases were moved to the Bot collection instead.
 
 ### ApiKey
 

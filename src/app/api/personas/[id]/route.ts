@@ -63,11 +63,10 @@ export async function GET(
       overrideAccess: true,
     })
 
-    // Check access (owner or public)
+    // Check access (personas are always private - owner only)
     if (
       typeof persona.user === 'object' &&
-      persona.user.id !== payloadUser.id &&
-      !persona.is_public
+      persona.user.id !== payloadUser.id
     ) {
       return NextResponse.json(
         { success: false, message: 'Access denied: This persona is private' },
@@ -159,14 +158,15 @@ export async function PUT(
     const body = (await request.json()) as {
       name?: string
       description?: string
-      personality_traits?: any
-      appearance?: any
-      behavior_settings?: any
-      interaction_preferences?: any
+      gender?: ('male' | 'female' | 'non-binary' | 'unspecified' | 'other') | null
+      age?: number | null
+      pronouns?: ('he-him' | 'she-her' | 'they-them' | 'he-they' | 'she-they' | 'any' | 'other') | null
+      custom_pronouns?: string | null
+      appearance?: {
+        avatar?: number | null
+      }
       is_default?: boolean
-      is_public?: boolean
-      tags?: Array<{ tag: string }>
-      custom_instructions?: string
+      custom_instructions?: string | null
     }
 
     // If setting as default, unset other default personas

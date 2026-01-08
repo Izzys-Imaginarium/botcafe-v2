@@ -63,31 +63,15 @@ export async function GET(request: NextRequest) {
 
     // Parse query parameters
     const { searchParams } = new URL(request.url)
-    const includePublic = searchParams.get('includePublic') !== 'false'
     const limit = parseInt(searchParams.get('limit') || '50', 10)
     const offset = parseInt(searchParams.get('offset') || '0', 10)
 
-    // Build where clause
-    const where: any = includePublic
-      ? {
-          or: [
-            {
-              user: {
-                equals: payloadUser.id,
-              },
-            },
-            {
-              is_public: {
-                equals: true,
-              },
-            },
-          ],
-        }
-      : {
-          user: {
-            equals: payloadUser.id,
-          },
-        }
+    // Personas are always private - only fetch user's own personas
+    const where = {
+      user: {
+        equals: payloadUser.id,
+      },
+    }
 
     // Fetch personas
     const personasResult = await payload.find({
@@ -130,13 +114,12 @@ export async function GET(request: NextRequest) {
  * Request body:
  * - name: string (required)
  * - description: string (required)
- * - personality_traits?: object
- * - appearance?: object
- * - behavior_settings?: object
- * - interaction_preferences?: object
+ * - gender?: 'male' | 'female' | 'non-binary' | 'unspecified' | 'other'
+ * - age?: number
+ * - pronouns?: 'he-him' | 'she-her' | 'they-them' | 'he-they' | 'she-they' | 'any' | 'other'
+ * - custom_pronouns?: string
+ * - appearance?: object (with avatar field)
  * - is_default?: boolean
- * - is_public?: boolean
- * - tags?: array
  * - custom_instructions?: string
  *
  * Response:
@@ -183,14 +166,15 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as {
       name?: string
       description?: string
-      personality_traits?: any
-      appearance?: any
-      behavior_settings?: any
-      interaction_preferences?: any
+      gender?: ('male' | 'female' | 'non-binary' | 'unspecified' | 'other') | null
+      age?: number | null
+      pronouns?: ('he-him' | 'she-her' | 'they-them' | 'he-they' | 'she-they' | 'any' | 'other') | null
+      custom_pronouns?: string | null
+      appearance?: {
+        avatar?: number | null
+      }
       is_default?: boolean
-      is_public?: boolean
-      tags?: Array<{ tag: string }>
-      custom_instructions?: string
+      custom_instructions?: string | null
     }
 
     // Validate required fields
@@ -249,13 +233,12 @@ export async function POST(request: NextRequest) {
         user: payloadUser.id,
         name: body.name,
         description: body.description,
-        personality_traits: body.personality_traits || {},
+        gender: body.gender,
+        age: body.age,
+        pronouns: body.pronouns,
+        custom_pronouns: body.custom_pronouns,
         appearance: body.appearance || {},
-        behavior_settings: body.behavior_settings || {},
-        interaction_preferences: body.interaction_preferences || {},
         is_default: body.is_default || false,
-        is_public: body.is_public || false,
-        tags: body.tags || [],
         custom_instructions: body.custom_instructions || '',
         usage_count: 0,
       },

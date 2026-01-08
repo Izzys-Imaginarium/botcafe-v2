@@ -4,6 +4,13 @@ import { getPayloadHMR } from '@payloadcms/next/utilities'
 import config from '@payload-config'
 
 type GenderOption = 'male' | 'female' | 'non-binary' | 'other'
+type ToneOption = 'friendly' | 'professional' | 'playful' | 'mysterious' | 'wise' | 'humorous' | 'empathetic' | 'authoritative'
+type FormalityOption = 'very-casual' | 'casual' | 'neutral' | 'formal' | 'very-formal'
+type HumorOption = 'none' | 'light' | 'moderate' | 'dark' | 'sarcastic'
+type CommunicationOption = 'direct' | 'elaborate' | 'concise' | 'storytelling' | 'questioning'
+type ResponseLengthOption = 'very-short' | 'short' | 'medium' | 'long' | 'very-long'
+type CreativityOption = 'conservative' | 'moderate' | 'creative' | 'highly-creative'
+type KnowledgeSharingOption = 'very-limited' | 'limited' | 'balanced' | 'generous' | 'very-generous'
 
 interface BotCreateRequest {
   name: string
@@ -18,6 +25,19 @@ interface BotCreateRequest {
   speech_examples?: string[]
   knowledge_collections?: (string | number)[]
   picture?: string | number
+  personality_traits?: {
+    tone?: ToneOption
+    formality_level?: FormalityOption
+    humor_style?: HumorOption
+    communication_style?: CommunicationOption
+  }
+  behavior_settings?: {
+    response_length?: ResponseLengthOption
+    creativity_level?: CreativityOption
+    knowledge_sharing?: KnowledgeSharingOption
+  }
+  signature_phrases?: string[]
+  tags?: string[]
 }
 
 // Helper function to generate a URL-safe username from display name or email

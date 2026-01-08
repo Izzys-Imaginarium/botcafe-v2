@@ -539,22 +539,44 @@ When you add new Payload collections or modify existing ones:
   - Created `/api/upload/image` endpoint for bot wizard image uploads
   - Uses Clerk authentication instead of Payload's auth (which requires Payload login)
   - Fixes 403 Forbidden error when uploading images during bot creation
-- ✅ **Payload Permission Audit & Fixes**
-  - Added `overrideAccess: true` to 11+ API routes that use Clerk auth
-  - Fixed 500 errors on like/favorite operations
+- ✅ **Payload Permission Audit & Fixes (Comprehensive)**
+  - Added `overrideAccess: true` to ALL API routes that use Clerk auth (~22 files)
+  - Fixed 500 errors on like/favorite operations and all other Payload operations
   - Architecture pattern: Clerk handles auth, Payload handles data with `overrideAccess: true`
-  - Fixed files:
+  - **Bot routes:**
+    - `/api/bots/explore/route.ts`
+    - `/api/bots/my-bots/route.ts`
+    - `/api/bots/route.ts`
+    - `/api/bots/[id]/route.ts`
     - `/api/bots/[id]/like/route.ts`
     - `/api/bots/[id]/favorite/route.ts`
-    - `/api/memories/import/route.ts`
-    - `/api/memories/convert-to-lore/route.ts`
-    - `/api/knowledge/route.ts`
-    - `/api/knowledge-collections/route.ts`
+    - `/api/bots/by-path/[username]/[botSlug]/route.ts`
+  - **Creator routes:**
+    - `/api/creators/route.ts`
+    - `/api/creators/me/route.ts`
+    - `/api/creators/[username]/route.ts`
+  - **Persona routes:**
     - `/api/personas/route.ts`
     - `/api/personas/[id]/route.ts`
+  - **Wellbeing routes:**
+    - `/api/wellbeing/route.ts`
+    - `/api/wellbeing/settings/route.ts`
+    - `/api/wellbeing/mood/route.ts`
+  - **Knowledge routes:**
+    - `/api/knowledge/route.ts`
+    - `/api/knowledge/[id]/route.ts`
+    - `/api/knowledge-collections/route.ts`
+    - `/api/knowledge-collections/[id]/route.ts`
+  - **Analytics routes:**
+    - `/api/analytics/route.ts`
+    - `/api/analytics/bots/route.ts`
+  - **Other routes:**
     - `/api/api-keys/route.ts`
     - `/api/api-keys/[id]/route.ts`
-    - `/api/wellbeing/mood/route.ts`
+    - `/api/account/export/route.ts`
+    - `/api/help/[slug]/route.ts`
+    - `/api/memories/import/route.ts`
+    - `/api/memories/convert-to-lore/route.ts`
 - ✅ **Legacy Bot Code Cleanup**
   - Removed conditional URL fallbacks from components
   - Removed legacy bot redirect logic

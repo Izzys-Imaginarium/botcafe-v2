@@ -226,7 +226,7 @@ export interface Bot {
   created_date?: string | null;
   name: string;
   picture?: (number | null) | Media;
-  gender?: ('male' | 'female' | 'non-binary' | 'other' | 'prefer-not-to-say') | null;
+  gender?: ('male' | 'female' | 'non-binary' | 'other') | null;
   age?: number | null;
   description?: string | null;
   system_prompt: string;
@@ -235,6 +235,64 @@ export interface Bot {
   speech_examples?:
     | {
         example?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Define the bot's communication style and personality
+   */
+  personality_traits?: {
+    /**
+     * The overall tone of the bot's responses
+     */
+    tone?:
+      | ('friendly' | 'professional' | 'playful' | 'mysterious' | 'wise' | 'humorous' | 'empathetic' | 'authoritative')
+      | null;
+    /**
+     * How formal or casual the bot should be
+     */
+    formality_level?: ('very-casual' | 'casual' | 'neutral' | 'formal' | 'very-formal') | null;
+    /**
+     * The type of humor the bot uses
+     */
+    humor_style?: ('none' | 'light' | 'moderate' | 'dark' | 'sarcastic') | null;
+    /**
+     * How the bot structures its responses
+     */
+    communication_style?: ('direct' | 'elaborate' | 'concise' | 'storytelling' | 'questioning') | null;
+  };
+  /**
+   * Control how the bot responds
+   */
+  behavior_settings?: {
+    /**
+     * Preferred length of responses
+     */
+    response_length?: ('very-short' | 'short' | 'medium' | 'long' | 'very-long') | null;
+    /**
+     * How creative or unpredictable the bot should be
+     */
+    creativity_level?: ('conservative' | 'moderate' | 'creative' | 'highly-creative') | null;
+    /**
+     * How freely the bot shares information
+     */
+    knowledge_sharing?: ('very-limited' | 'limited' | 'balanced' | 'generous' | 'very-generous') | null;
+  };
+  /**
+   * Catchphrases or signature expressions the bot uses
+   */
+  signature_phrases?:
+    | {
+        phrase?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Tags to help categorize and discover this bot
+   */
+  tags?:
+    | {
+        tag?: string | null;
         id?: string | null;
       }[]
     | null;
@@ -520,23 +578,7 @@ export interface ApiKey {
   id: number;
   user: number | User;
   nickname: string;
-  provider:
-    | 'openai'
-    | 'openai-gpt3.5'
-    | 'openai-gpt4'
-    | 'openai-gpt4-turbo'
-    | 'anthropic'
-    | 'anthropic-claude3-sonnet'
-    | 'anthropic-claude3-opus'
-    | 'google'
-    | 'google-gemini-pro'
-    | 'google-gemini-ultra'
-    | 'cohere'
-    | 'ai21'
-    | 'together'
-    | 'replicate'
-    | 'huggingface'
-    | 'custom';
+  provider: 'openai' | 'anthropic' | 'google' | 'deepseek' | 'groq' | 'openrouter' | 'electronhub';
   key: string;
   key_configuration?: {
     model_preferences?:
@@ -659,7 +701,7 @@ export interface Knowledge {
   user: number | User;
   created_timestamp?: string | null;
   modified_timestamp?: string | null;
-  type: 'document' | 'url' | 'text' | 'image' | 'audio' | 'video' | 'code' | 'legacy_memory';
+  type: 'document' | 'url' | 'text' | 'image' | 'audio' | 'video' | 'legacy_memory';
   tags?:
     | {
         tag?: string | null;
@@ -966,7 +1008,7 @@ export interface VectorRecord {
   createdAt: string;
 }
 /**
- * User personas/masks system for bot interactions
+ * User personas for bot interactions - represents how the user wants to be seen by bots
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "personas".
@@ -974,7 +1016,13 @@ export interface VectorRecord {
 export interface Persona {
   id: number;
   user: number | User;
+  /**
+   * The name you want bots to call you
+   */
   name: string;
+  /**
+   * A brief description of this persona for your reference
+   */
   description: string;
   /**
    * Your gender identity for this persona
@@ -996,12 +1044,18 @@ export interface Persona {
     avatar?: (number | null) | Media;
   };
   interaction_preferences?: {
+    /**
+     * Topics you enjoy discussing
+     */
     preferred_topics?:
       | {
           topic?: string | null;
           id?: string | null;
         }[]
       | null;
+    /**
+     * Topics you prefer to avoid
+     */
     avoid_topics?:
       | {
           topic?: string | null;
@@ -2830,6 +2884,33 @@ export interface BotSelect<T extends boolean = true> {
     | T
     | {
         example?: T;
+        id?: T;
+      };
+  personality_traits?:
+    | T
+    | {
+        tone?: T;
+        formality_level?: T;
+        humor_style?: T;
+        communication_style?: T;
+      };
+  behavior_settings?:
+    | T
+    | {
+        response_length?: T;
+        creativity_level?: T;
+        knowledge_sharing?: T;
+      };
+  signature_phrases?:
+    | T
+    | {
+        phrase?: T;
+        id?: T;
+      };
+  tags?:
+    | T
+    | {
+        tag?: T;
         id?: T;
       };
   slug?: T;

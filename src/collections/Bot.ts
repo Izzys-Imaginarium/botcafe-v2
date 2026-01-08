@@ -87,6 +87,150 @@ export const Bot: CollectionConfig = {
       ],
     },
     {
+      name: 'personality_traits',
+      type: 'group',
+      admin: {
+        description: 'Define the bot\'s communication style and personality',
+      },
+      fields: [
+        {
+          name: 'tone',
+          type: 'select',
+          options: [
+            { label: 'Friendly', value: 'friendly' },
+            { label: 'Professional', value: 'professional' },
+            { label: 'Playful', value: 'playful' },
+            { label: 'Mysterious', value: 'mysterious' },
+            { label: 'Wise', value: 'wise' },
+            { label: 'Humorous', value: 'humorous' },
+            { label: 'Empathetic', value: 'empathetic' },
+            { label: 'Authoritative', value: 'authoritative' },
+          ],
+          admin: {
+            description: 'The overall tone of the bot\'s responses',
+          },
+        },
+        {
+          name: 'formality_level',
+          type: 'select',
+          options: [
+            { label: 'Very Casual', value: 'very-casual' },
+            { label: 'Casual', value: 'casual' },
+            { label: 'Neutral', value: 'neutral' },
+            { label: 'Formal', value: 'formal' },
+            { label: 'Very Formal', value: 'very-formal' },
+          ],
+          admin: {
+            description: 'How formal or casual the bot should be',
+          },
+        },
+        {
+          name: 'humor_style',
+          type: 'select',
+          options: [
+            { label: 'None', value: 'none' },
+            { label: 'Light', value: 'light' },
+            { label: 'Moderate', value: 'moderate' },
+            { label: 'Dark', value: 'dark' },
+            { label: 'Sarcastic', value: 'sarcastic' },
+          ],
+          admin: {
+            description: 'The type of humor the bot uses',
+          },
+        },
+        {
+          name: 'communication_style',
+          type: 'select',
+          options: [
+            { label: 'Direct', value: 'direct' },
+            { label: 'Elaborate', value: 'elaborate' },
+            { label: 'Concise', value: 'concise' },
+            { label: 'Storytelling', value: 'storytelling' },
+            { label: 'Questioning', value: 'questioning' },
+          ],
+          admin: {
+            description: 'How the bot structures its responses',
+          },
+        },
+      ],
+    },
+    {
+      name: 'behavior_settings',
+      type: 'group',
+      admin: {
+        description: 'Control how the bot responds',
+      },
+      fields: [
+        {
+          name: 'response_length',
+          type: 'select',
+          options: [
+            { label: 'Very Short', value: 'very-short' },
+            { label: 'Short', value: 'short' },
+            { label: 'Medium', value: 'medium' },
+            { label: 'Long', value: 'long' },
+            { label: 'Very Long', value: 'very-long' },
+          ],
+          admin: {
+            description: 'Preferred length of responses',
+          },
+        },
+        {
+          name: 'creativity_level',
+          type: 'select',
+          options: [
+            { label: 'Conservative', value: 'conservative' },
+            { label: 'Moderate', value: 'moderate' },
+            { label: 'Creative', value: 'creative' },
+            { label: 'Highly Creative', value: 'highly-creative' },
+          ],
+          admin: {
+            description: 'How creative or unpredictable the bot should be',
+          },
+        },
+        {
+          name: 'knowledge_sharing',
+          type: 'select',
+          options: [
+            { label: 'Very Limited', value: 'very-limited' },
+            { label: 'Limited', value: 'limited' },
+            { label: 'Balanced', value: 'balanced' },
+            { label: 'Generous', value: 'generous' },
+            { label: 'Very Generous', value: 'very-generous' },
+          ],
+          admin: {
+            description: 'How freely the bot shares information',
+          },
+        },
+      ],
+    },
+    {
+      name: 'signature_phrases',
+      type: 'array',
+      admin: {
+        description: 'Catchphrases or signature expressions the bot uses',
+      },
+      fields: [
+        {
+          name: 'phrase',
+          type: 'text',
+        },
+      ],
+    },
+    {
+      name: 'tags',
+      type: 'array',
+      admin: {
+        description: 'Tags to help categorize and discover this bot',
+      },
+      fields: [
+        {
+          name: 'tag',
+          type: 'text',
+        },
+      ],
+    },
+    {
       name: 'slug',
       type: 'text',
       required: true,

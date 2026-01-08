@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Bot, Wand2, Image, MessageSquare, Settings, Sparkles } from 'lucide-react'
+import { Bot, Wand2, Image, MessageSquare, Settings, Sparkles, Sliders, Tag, Plus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { MagicalBackground } from '@/modules/home/ui/components/magical-background'
 
@@ -26,6 +27,19 @@ export interface BotFormData {
   speech_examples: string[]
   knowledge_collections: (string | number)[]
   picture: File | string | number | null
+  personality_traits: {
+    tone: string
+    formality_level: string
+    humor_style: string
+    communication_style: string
+  }
+  behavior_settings: {
+    response_length: string
+    creativity_level: string
+    knowledge_sharing: string
+  }
+  signature_phrases: string[]
+  tags: string[]
 }
 
 interface BotWizardFormProps {
@@ -47,6 +61,18 @@ const steps = [
     title: 'Personality & Voice',
     description: 'Define how your bot talks and behaves',
     icon: MessageSquare,
+  },
+  {
+    id: 'behavior',
+    title: 'Behavior Settings',
+    description: 'Fine-tune response style and creativity',
+    icon: Sliders,
+  },
+  {
+    id: 'tags',
+    title: 'Tags & Phrases',
+    description: 'Add tags and signature expressions',
+    icon: Tag,
   },
   {
     id: 'knowledge',
@@ -87,6 +113,19 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
     speech_examples: initialData?.speech_examples || [''],
     knowledge_collections: initialData?.knowledge_collections || [],
     picture: initialData?.picture || null,
+    personality_traits: {
+      tone: initialData?.personality_traits?.tone || '',
+      formality_level: initialData?.personality_traits?.formality_level || '',
+      humor_style: initialData?.personality_traits?.humor_style || '',
+      communication_style: initialData?.personality_traits?.communication_style || '',
+    },
+    behavior_settings: {
+      response_length: initialData?.behavior_settings?.response_length || 'medium',
+      creativity_level: initialData?.behavior_settings?.creativity_level || 'moderate',
+      knowledge_sharing: initialData?.behavior_settings?.knowledge_sharing || 'balanced',
+    },
+    signature_phrases: initialData?.signature_phrases || [''],
+    tags: initialData?.tags || [],
   })
   const [picturePreview, setPicturePreview] = useState<string | null>(null)
 
@@ -152,6 +191,63 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
     }))
   }
 
+  // Signature phrase handlers
+  const handleSignaturePhraseChange = (index: number, value: string) => {
+    const newPhrases = [...botData.signature_phrases]
+    newPhrases[index] = value
+    setBotData(prev => ({ ...prev, signature_phrases: newPhrases }))
+  }
+
+  const addSignaturePhrase = () => {
+    setBotData(prev => ({
+      ...prev,
+      signature_phrases: [...prev.signature_phrases, '']
+    }))
+  }
+
+  const removeSignaturePhrase = (index: number) => {
+    setBotData(prev => ({
+      ...prev,
+      signature_phrases: prev.signature_phrases.filter((_, i) => i !== index)
+    }))
+  }
+
+  // Tag handlers
+  const [newTag, setNewTag] = useState('')
+
+  const addTag = () => {
+    if (newTag.trim() && !botData.tags.includes(newTag.trim())) {
+      setBotData(prev => ({
+        ...prev,
+        tags: [...prev.tags, newTag.trim()]
+      }))
+      setNewTag('')
+    }
+  }
+
+  const removeTag = (tagToRemove: string) => {
+    setBotData(prev => ({
+      ...prev,
+      tags: prev.tags.filter(t => t !== tagToRemove)
+    }))
+  }
+
+  // Personality traits handler
+  const handlePersonalityChange = (field: keyof BotFormData['personality_traits'], value: string) => {
+    setBotData(prev => ({
+      ...prev,
+      personality_traits: { ...prev.personality_traits, [field]: value }
+    }))
+  }
+
+  // Behavior settings handler
+  const handleBehaviorChange = (field: keyof BotFormData['behavior_settings'], value: string) => {
+    setBotData(prev => ({
+      ...prev,
+      behavior_settings: { ...prev.behavior_settings, [field]: value }
+    }))
+  }
+
   const nextStep = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1)
@@ -170,11 +266,15 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
         return botData.name && botData.creator_display_name && botData.slug
       case 1: // Personality & Voice
         return botData.system_prompt
-      case 2: // Knowledge Base
+      case 2: // Behavior Settings
         return true // Optional step
-      case 3: // Appearance
+      case 3: // Tags & Phrases
         return true // Optional step
-      case 4: // Review
+      case 4: // Knowledge Base
+        return true // Optional step
+      case 5: // Appearance
+        return true // Optional step
+      case 6: // Review
         return true
       default:
         return false
@@ -228,6 +328,10 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
         speech_examples: botData.speech_examples.filter(example => example.trim() !== ''),
         knowledge_collections: botData.knowledge_collections,
         picture: pictureId,
+        personality_traits: botData.personality_traits,
+        behavior_settings: botData.behavior_settings,
+        signature_phrases: botData.signature_phrases.filter(phrase => phrase.trim() !== ''),
+        tags: botData.tags,
       }
 
       const url = mode === 'create' ? '/api/bots' : `/api/bots/${botId}`
@@ -419,10 +523,225 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
                 />
               </div>
             </div>
+
+            {/* Personality Traits */}
+            <div className="border-t border-gold-ancient/20 pt-6">
+              <h4 className="text-sm font-semibold text-gold-rich mb-4">Personality Traits</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Tone</Label>
+                  <Select value={botData.personality_traits.tone} onValueChange={(value) => handlePersonalityChange('tone', value)}>
+                    <SelectTrigger className="glass-rune">
+                      <SelectValue placeholder="Select tone" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="friendly">Friendly</SelectItem>
+                      <SelectItem value="professional">Professional</SelectItem>
+                      <SelectItem value="playful">Playful</SelectItem>
+                      <SelectItem value="mysterious">Mysterious</SelectItem>
+                      <SelectItem value="wise">Wise</SelectItem>
+                      <SelectItem value="humorous">Humorous</SelectItem>
+                      <SelectItem value="empathetic">Empathetic</SelectItem>
+                      <SelectItem value="authoritative">Authoritative</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Formality Level</Label>
+                  <Select value={botData.personality_traits.formality_level} onValueChange={(value) => handlePersonalityChange('formality_level', value)}>
+                    <SelectTrigger className="glass-rune">
+                      <SelectValue placeholder="Select formality" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="very-casual">Very Casual</SelectItem>
+                      <SelectItem value="casual">Casual</SelectItem>
+                      <SelectItem value="neutral">Neutral</SelectItem>
+                      <SelectItem value="formal">Formal</SelectItem>
+                      <SelectItem value="very-formal">Very Formal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Humor Style</Label>
+                  <Select value={botData.personality_traits.humor_style} onValueChange={(value) => handlePersonalityChange('humor_style', value)}>
+                    <SelectTrigger className="glass-rune">
+                      <SelectValue placeholder="Select humor style" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="light">Light</SelectItem>
+                      <SelectItem value="moderate">Moderate</SelectItem>
+                      <SelectItem value="dark">Dark</SelectItem>
+                      <SelectItem value="sarcastic">Sarcastic</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Communication Style</Label>
+                  <Select value={botData.personality_traits.communication_style} onValueChange={(value) => handlePersonalityChange('communication_style', value)}>
+                    <SelectTrigger className="glass-rune">
+                      <SelectValue placeholder="Select style" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="direct">Direct</SelectItem>
+                      <SelectItem value="elaborate">Elaborate</SelectItem>
+                      <SelectItem value="concise">Concise</SelectItem>
+                      <SelectItem value="storytelling">Storytelling</SelectItem>
+                      <SelectItem value="questioning">Questioning</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
           </div>
         )
 
-      case 2:
+      case 2: // Behavior Settings
+        return (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Response Length</Label>
+                <Select value={botData.behavior_settings.response_length} onValueChange={(value) => handleBehaviorChange('response_length', value)}>
+                  <SelectTrigger className="glass-rune">
+                    <SelectValue placeholder="Select length" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="very-short">Very Short</SelectItem>
+                    <SelectItem value="short">Short</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="long">Long</SelectItem>
+                    <SelectItem value="very-long">Very Long</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">How long responses should be</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Creativity Level</Label>
+                <Select value={botData.behavior_settings.creativity_level} onValueChange={(value) => handleBehaviorChange('creativity_level', value)}>
+                  <SelectTrigger className="glass-rune">
+                    <SelectValue placeholder="Select creativity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="conservative">Conservative</SelectItem>
+                    <SelectItem value="moderate">Moderate</SelectItem>
+                    <SelectItem value="creative">Creative</SelectItem>
+                    <SelectItem value="highly-creative">Highly Creative</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">How creative or unpredictable</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Knowledge Sharing</Label>
+                <Select value={botData.behavior_settings.knowledge_sharing} onValueChange={(value) => handleBehaviorChange('knowledge_sharing', value)}>
+                  <SelectTrigger className="glass-rune">
+                    <SelectValue placeholder="Select sharing" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="very-limited">Very Limited</SelectItem>
+                    <SelectItem value="limited">Limited</SelectItem>
+                    <SelectItem value="balanced">Balanced</SelectItem>
+                    <SelectItem value="generous">Generous</SelectItem>
+                    <SelectItem value="very-generous">Very Generous</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">How freely it shares information</p>
+              </div>
+            </div>
+          </div>
+        )
+
+      case 3: // Tags & Phrases
+        return (
+          <div className="space-y-6">
+            {/* Tags */}
+            <div className="space-y-4">
+              <div>
+                <Label>Tags</Label>
+                <p className="text-sm text-muted-foreground">Add tags to help users discover your bot</p>
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  value={newTag}
+                  onChange={(e) => setNewTag(e.target.value)}
+                  placeholder="Add a tag (e.g., fantasy, helper, roleplay)"
+                  className="glass-rune"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      addTag()
+                    }
+                  }}
+                />
+                <Button type="button" variant="outline" onClick={addTag} className="glass-rune">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {botData.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {botData.tags.map((tag, idx) => (
+                    <Badge key={idx} variant="secondary" className="pr-1">
+                      {tag}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-4 w-4 p-0 ml-1"
+                        onClick={() => removeTag(tag)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Signature Phrases */}
+            <div className="space-y-4 border-t border-gold-ancient/20 pt-6">
+              <div>
+                <Label>Signature Phrases</Label>
+                <p className="text-sm text-muted-foreground">Catchphrases or expressions your bot commonly uses</p>
+              </div>
+              {botData.signature_phrases.map((phrase, index) => (
+                <div key={`phrase-${index}`} className="flex gap-2">
+                  <Input
+                    placeholder={`Phrase ${index + 1} (e.g., "By the stars!", "Let me think...")`}
+                    value={phrase}
+                    onChange={(e) => handleSignaturePhraseChange(index, e.target.value)}
+                    className="glass-rune"
+                  />
+                  {botData.signature_phrases.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeSignaturePhrase(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addSignaturePhrase}
+                className="w-full glass-rune"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Another Phrase
+              </Button>
+            </div>
+          </div>
+        )
+
+      case 4: // Knowledge Base
         return (
           <div className="space-y-6">
             <div className="text-center py-8">
@@ -438,7 +757,7 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
           </div>
         )
 
-      case 3:
+      case 5: // Appearance
         return (
           <div className="space-y-6">
             <div className="space-y-4">
@@ -496,7 +815,7 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
           </div>
         )
 
-      case 4:
+      case 6: // Review
         return (
           <div className="space-y-6">
             <div className="text-center mb-6">
@@ -534,12 +853,34 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
                 <div className="space-y-1 text-sm text-parchment">
                   <p><span className="font-medium text-parchment-dim">Gender:</span> {botData.gender || 'Not specified'}</p>
                   <p><span className="font-medium text-parchment-dim">Age:</span> {botData.age || 'Not specified'}</p>
+                  <p><span className="font-medium text-parchment-dim">Tone:</span> {botData.personality_traits.tone || 'Not specified'}</p>
+                  <p><span className="font-medium text-parchment-dim">Formality:</span> {botData.personality_traits.formality_level || 'Not specified'}</p>
                   {botData.greeting && <p><span className="font-medium text-parchment-dim">Greeting:</span> {botData.greeting}</p>}
                   {botData.speech_examples.filter(e => e.trim()).length > 0 && (
                     <p><span className="font-medium text-parchment-dim">Speech Examples:</span> {botData.speech_examples.filter(e => e.trim()).length}</p>
                   )}
                 </div>
               </div>
+
+              <div className="p-4 border border-gold-ancient/30 rounded-lg glass-rune">
+                <h4 className="font-semibold mb-2 text-gold-rich">Behavior</h4>
+                <div className="space-y-1 text-sm text-parchment">
+                  <p><span className="font-medium text-parchment-dim">Response Length:</span> {botData.behavior_settings.response_length}</p>
+                  <p><span className="font-medium text-parchment-dim">Creativity:</span> {botData.behavior_settings.creativity_level}</p>
+                  <p><span className="font-medium text-parchment-dim">Knowledge Sharing:</span> {botData.behavior_settings.knowledge_sharing}</p>
+                </div>
+              </div>
+
+              {botData.tags.length > 0 && (
+                <div className="p-4 border border-gold-ancient/30 rounded-lg glass-rune">
+                  <h4 className="font-semibold mb-2 text-gold-rich">Tags</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {botData.tags.map((tag, idx) => (
+                      <Badge key={idx} variant="secondary">{tag}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="p-4 border border-gold-ancient/30 rounded-lg glass-rune">
                 <h4 className="font-semibold mb-2 text-gold-rich">Settings</h4>

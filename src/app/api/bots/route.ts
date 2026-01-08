@@ -3,7 +3,7 @@ import { currentUser } from '@clerk/nextjs/server'
 import { getPayloadHMR } from '@payloadcms/next/utilities'
 import config from '@payload-config'
 
-type GenderOption = 'male' | 'female' | 'non-binary' | 'other' | 'prefer-not-to-say'
+type GenderOption = 'male' | 'female' | 'non-binary' | 'other'
 
 interface BotCreateRequest {
   name: string

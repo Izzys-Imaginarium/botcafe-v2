@@ -50,7 +50,6 @@ export const Bot: CollectionConfig = {
         { label: 'Female', value: 'female' },
         { label: 'Non-binary', value: 'non-binary' },
         { label: 'Other', value: 'other' },
-        { label: 'Prefer not to say', value: 'prefer-not-to-say' },
       ],
     },
     {

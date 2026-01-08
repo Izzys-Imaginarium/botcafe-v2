@@ -73,7 +73,7 @@ export async function POST(
         collection: 'botInteractions' as any,
         data: {
           user: payloadUser.id,
-          bot: botId,
+          bot: parseInt(botId, 10),
           liked: false,
           favorited: true,
         },

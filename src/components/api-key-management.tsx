@@ -50,12 +50,10 @@ const providerOptions = [
   { label: 'OpenAI', value: 'openai' },
   { label: 'Anthropic', value: 'anthropic' },
   { label: 'Google AI', value: 'google' },
-  { label: 'Cohere', value: 'cohere' },
-  { label: 'Mistral AI', value: 'mistral' },
-  { label: 'Together AI', value: 'together' },
+  { label: 'DeepSeek', value: 'deepseek' },
   { label: 'Groq', value: 'groq' },
   { label: 'OpenRouter', value: 'openrouter' },
-  { label: 'Custom/OpenAI-Compatible', value: 'custom' },
+  { label: 'Electron Hub', value: 'electronhub' },
 ]
 
 export const ApiKeyManagement = () => {

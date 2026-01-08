@@ -18,7 +18,6 @@ import {
   Users,
   Search,
   Loader2,
-  Globe,
   Star,
   Bot,
   MessageSquare,
@@ -200,7 +199,7 @@ export const CreatorDirectoryView = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -217,12 +216,12 @@ export const CreatorDirectoryView = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Featured</p>
+                  <p className="text-sm text-muted-foreground">Total Bots</p>
                   <p className="text-2xl font-bold">
-                    {creators.filter(c => c.featured_creator).length}
+                    {creators.reduce((sum, c) => sum + (c.portfolio?.bot_count || 0), 0)}
                   </p>
                 </div>
-                <Star className="h-8 w-8 text-yellow-400" />
+                <Bot className="h-8 w-8 text-blue-400" />
               </div>
             </CardContent>
           </Card>
@@ -231,26 +230,12 @@ export const CreatorDirectoryView = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Verified</p>
+                  <p className="text-sm text-muted-foreground">Total Conversations</p>
                   <p className="text-2xl font-bold">
-                    {creators.filter(c => c.verification_status === 'verified' || c.verification_status === 'premium').length}
+                    {((creators.reduce((sum, c) => sum + (c.portfolio?.total_conversations || 0), 0)) / 1000).toFixed(1)}K
                   </p>
                 </div>
-                <CheckCircle2 className="h-8 w-8 text-blue-400" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Your Status</p>
-                  <p className="text-2xl font-bold">
-                    {hasProfile ? 'Active' : 'Not Setup'}
-                  </p>
-                </div>
-                <Globe className="h-8 w-8 text-green-400" />
+                <MessageSquare className="h-8 w-8 text-green-400" />
               </div>
             </CardContent>
           </Card>

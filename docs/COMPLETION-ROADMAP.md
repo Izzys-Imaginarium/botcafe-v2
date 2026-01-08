@@ -546,6 +546,11 @@ When you add new Payload collections or modify existing ones:
   - Fixed `/api/knowledge/route.ts` - removed invalid 'code' type from Knowledge type enum
   - Fixed `/api/personas/route.ts` - updated to use new simplified schema
   - Fixed `/api/personas/[id]/route.ts` - removed is_public logic, updated request body types
+- ✅ **Persona Library UI Update**
+  - Removed visibility filter (personas are always private now)
+  - Updated stats cards: Total Personas, Default Persona name, Total Uses
+  - Updated persona cards to show gender, pronouns, age instead of tone/public badge
+  - Simplified footer actions (all personas owned by user)
 - ✅ **Documentation Updates**
   - Updated DATABASE-SCHEMA.md with new Bot and Persona fields
   - Updated COMPLETION-ROADMAP.md with Phase 5 completion status

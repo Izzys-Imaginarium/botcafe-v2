@@ -165,6 +165,10 @@ export async function PUT(
       appearance?: {
         avatar?: number | null
       }
+      interaction_preferences?: {
+        preferred_topics?: Array<{ topic?: string }>
+        avoid_topics?: Array<{ topic?: string }>
+      }
       is_default?: boolean
       custom_instructions?: string | null
     }

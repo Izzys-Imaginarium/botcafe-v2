@@ -173,6 +173,10 @@ export async function POST(request: NextRequest) {
       appearance?: {
         avatar?: number | null
       }
+      interaction_preferences?: {
+        preferred_topics?: Array<{ topic?: string }>
+        avoid_topics?: Array<{ topic?: string }>
+      }
       is_default?: boolean
       custom_instructions?: string | null
     }
@@ -238,6 +242,10 @@ export async function POST(request: NextRequest) {
         pronouns: body.pronouns,
         custom_pronouns: body.custom_pronouns,
         appearance: body.appearance || {},
+        interaction_preferences: body.interaction_preferences || {
+          preferred_topics: [],
+          avoid_topics: [],
+        },
         is_default: body.is_default || false,
         custom_instructions: body.custom_instructions || '',
         usage_count: 0,

@@ -48,21 +48,14 @@ interface ApiKey {
 
 const providerOptions = [
   { label: 'OpenAI', value: 'openai' },
-  { label: 'OpenAI GPT-3.5', value: 'openai-gpt3.5' },
-  { label: 'OpenAI GPT-4', value: 'openai-gpt4' },
-  { label: 'OpenAI GPT-4-Turbo', value: 'openai-gpt4-turbo' },
   { label: 'Anthropic', value: 'anthropic' },
-  { label: 'Anthropic Claude-3-Sonnet', value: 'anthropic-claude3-sonnet' },
-  { label: 'Anthropic Claude-3-Opus', value: 'anthropic-claude3-opus' },
   { label: 'Google AI', value: 'google' },
-  { label: 'Google Gemini-Pro', value: 'google-gemini-pro' },
-  { label: 'Google Gemini-Ultra', value: 'google-gemini-ultra' },
   { label: 'Cohere', value: 'cohere' },
-  { label: 'AI21', value: 'ai21' },
+  { label: 'Mistral AI', value: 'mistral' },
   { label: 'Together AI', value: 'together' },
-  { label: 'Replicate', value: 'replicate' },
-  { label: 'Hugging Face', value: 'huggingface' },
-  { label: 'Custom', value: 'custom' },
+  { label: 'Groq', value: 'groq' },
+  { label: 'OpenRouter', value: 'openrouter' },
+  { label: 'Custom/OpenAI-Compatible', value: 'custom' },
 ]
 
 export const ApiKeyManagement = () => {

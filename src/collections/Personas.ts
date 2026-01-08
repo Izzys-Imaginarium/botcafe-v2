@@ -4,24 +4,15 @@ export const Personas: CollectionConfig = {
   slug: 'personas',
   admin: {
     useAsTitle: 'name',
-    description: 'User personas/masks system for bot interactions',
+    description: 'User personas for bot interactions - represents how the user wants to be seen by bots',
   },
   access: {
     read: ({ req: { user } }) => {
-      // Users can read their own personas and public ones
+      // Users can only read their own personas
       return {
-        or: [
-          {
-            user: {
-              equals: user?.id,
-            },
-          },
-          {
-            is_public: {
-              equals: true,
-            },
-          },
-        ],
+        user: {
+          equals: user?.id,
+        },
       }
     },
     create: ({ req: { user } }) => {
@@ -58,65 +49,66 @@ export const Personas: CollectionConfig = {
       type: 'text',
       required: true,
       maxLength: 100,
+      admin: {
+        description: 'The name you want bots to call you',
+      },
     },
     {
       name: 'description',
       type: 'textarea',
       required: true,
       maxLength: 500,
+      admin: {
+        description: 'A brief description of this persona for your reference',
+      },
     },
     {
-      name: 'personality_traits',
-      type: 'group',
-      fields: [
-        {
-          name: 'tone',
-          type: 'select',
-          options: [
-            { label: 'Friendly', value: 'friendly' },
-            { label: 'Professional', value: 'professional' },
-            { label: 'Playful', value: 'playful' },
-            { label: 'Mysterious', value: 'mysterious' },
-            { label: 'Wise', value: 'wise' },
-            { label: 'Humorous', value: 'humorous' },
-            { label: 'Empathetic', value: 'empathetic' },
-            { label: 'Authoritative', value: 'authoritative' },
-          ],
-        },
-        {
-          name: 'formality_level',
-          type: 'select',
-          options: [
-            { label: 'Very Casual', value: 'very-casual' },
-            { label: 'Casual', value: 'casual' },
-            { label: 'Neutral', value: 'neutral' },
-            { label: 'Formal', value: 'formal' },
-            { label: 'Very Formal', value: 'very-formal' },
-          ],
-        },
-        {
-          name: 'humor_style',
-          type: 'select',
-          options: [
-            { label: 'None', value: 'none' },
-            { label: 'Light', value: 'light' },
-            { label: 'Moderate', value: 'moderate' },
-            { label: 'Dark', value: 'dark' },
-            { label: 'Sarcastic', value: 'sarcastic' },
-          ],
-        },
-        {
-          name: 'communication_style',
-          type: 'select',
-          options: [
-            { label: 'Direct', value: 'direct' },
-            { label: 'Elaborate', value: 'elaborate' },
-            { label: 'Concise', value: 'concise' },
-            { label: 'Storytelling', value: 'storytelling' },
-            { label: 'Questioning', value: 'questioning' },
-          ],
-        },
+      name: 'gender',
+      type: 'select',
+      options: [
+        { label: 'Male', value: 'male' },
+        { label: 'Female', value: 'female' },
+        { label: 'Non-binary', value: 'non-binary' },
+        { label: 'Prefer not to say', value: 'unspecified' },
+        { label: 'Other', value: 'other' },
       ],
+      admin: {
+        description: 'Your gender identity for this persona',
+      },
+    },
+    {
+      name: 'age',
+      type: 'number',
+      min: 1,
+      max: 150,
+      admin: {
+        description: 'Age of this persona (optional)',
+      },
+    },
+    {
+      name: 'pronouns',
+      type: 'select',
+      options: [
+        { label: 'He/Him', value: 'he-him' },
+        { label: 'She/Her', value: 'she-her' },
+        { label: 'They/Them', value: 'they-them' },
+        { label: 'He/They', value: 'he-they' },
+        { label: 'She/They', value: 'she-they' },
+        { label: 'Any pronouns', value: 'any' },
+        { label: 'Other', value: 'other' },
+      ],
+      admin: {
+        description: 'Preferred pronouns for this persona',
+      },
+    },
+    {
+      name: 'custom_pronouns',
+      type: 'text',
+      maxLength: 50,
+      admin: {
+        description: 'Custom pronouns if "Other" is selected',
+        condition: (data) => data?.pronouns === 'other',
+      },
     },
     {
       name: 'appearance',
@@ -126,61 +118,6 @@ export const Personas: CollectionConfig = {
           name: 'avatar',
           type: 'upload',
           relationTo: 'media',
-        },
-        {
-          name: 'visual_theme',
-          type: 'select',
-          options: [
-            { label: 'Classic', value: 'classic' },
-            { label: 'Modern', value: 'modern' },
-            { label: 'Fantasy', value: 'fantasy' },
-            { label: 'Minimalist', value: 'minimalist' },
-            { label: 'Vintage', value: 'vintage' },
-            { label: 'Futuristic', value: 'futuristic' },
-          ],
-        },
-        {
-          name: 'color_scheme',
-          type: 'text',
-          maxLength: 50,
-        },
-      ],
-    },
-    {
-      name: 'behavior_settings',
-      type: 'group',
-      fields: [
-        {
-          name: 'response_length',
-          type: 'select',
-          options: [
-            { label: 'Very Short', value: 'very-short' },
-            { label: 'Short', value: 'short' },
-            { label: 'Medium', value: 'medium' },
-            { label: 'Long', value: 'long' },
-            { label: 'Very Long', value: 'very-long' },
-          ],
-        },
-        {
-          name: 'creativity_level',
-          type: 'select',
-          options: [
-            { label: 'Conservative', value: 'conservative' },
-            { label: 'Moderate', value: 'moderate' },
-            { label: 'Creative', value: 'creative' },
-            { label: 'Highly Creative', value: 'highly-creative' },
-          ],
-        },
-        {
-          name: 'knowledge_sharing',
-          type: 'select',
-          options: [
-            { label: 'Very Limited', value: 'very-limited' },
-            { label: 'Limited', value: 'limited' },
-            { label: 'Balanced', value: 'balanced' },
-            { label: 'Generous', value: 'generous' },
-            { label: 'Very Generous', value: 'very-generous' },
-          ],
         },
       ],
     },
@@ -197,6 +134,9 @@ export const Personas: CollectionConfig = {
               type: 'text',
             },
           ],
+          admin: {
+            description: 'Topics you enjoy discussing',
+          },
         },
         {
           name: 'avoid_topics',
@@ -207,22 +147,9 @@ export const Personas: CollectionConfig = {
               type: 'text',
             },
           ],
-        },
-        {
-          name: 'conversation_starter',
-          type: 'textarea',
-          maxLength: 200,
-        },
-        {
-          name: 'signature_phrases',
-          type: 'array',
-          fields: [
-            {
-              name: 'phrase',
-              type: 'text',
-              maxLength: 100,
-            },
-          ],
+          admin: {
+            description: 'Topics you prefer to avoid',
+          },
         },
       ],
     },
@@ -232,14 +159,6 @@ export const Personas: CollectionConfig = {
       defaultValue: false,
       admin: {
         description: 'Set as default persona for new conversations',
-      },
-    },
-    {
-      name: 'is_public',
-      type: 'checkbox',
-      defaultValue: false,
-      admin: {
-        description: 'Allow other users to view and use this persona',
       },
     },
     {
@@ -262,37 +181,18 @@ export const Personas: CollectionConfig = {
       defaultValue: () => new Date(),
     },
     {
-      name: 'tags',
-      type: 'array',
-      fields: [
-        {
-          name: 'tag',
-          type: 'text',
-        },
-      ],
-      admin: {
-        description: 'Tags to help categorize and find this persona',
-      },
-    },
-    {
       name: 'custom_instructions',
       type: 'textarea',
       admin: {
-        description: 'Additional custom instructions for this persona',
+        description: 'Additional context or instructions for bots when using this persona',
       },
     },
   ],
   hooks: {
     afterChange: [
-      async ({ doc, operation, req }) => {
-        // Update usage statistics when persona is created
+      async ({ doc, operation }) => {
         if (operation === 'create') {
           console.log(`New persona created: ${doc.name} by user ${doc.user}`)
-        }
-
-        // Auto-update modified timestamp
-        if (operation === 'update') {
-          // This would be handled by the defaultValue, but we can add custom logic here
         }
       },
     ],

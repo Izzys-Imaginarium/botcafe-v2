@@ -20,8 +20,6 @@ import {
   ArrowLeft,
   Loader2,
   Save,
-  Sparkles,
-  Palette,
   MessageSquare,
   Settings,
   Plus,
@@ -34,30 +32,15 @@ import { useRouter } from 'next/navigation'
 interface PersonaFormData {
   name: string
   description: string
-  personality_traits: {
-    tone?: string | null
-    formality_level?: string | null
-    humor_style?: string | null
-    communication_style?: string | null
-  }
-  appearance: {
-    visual_theme?: string | null
-    color_scheme?: string | null
-  }
-  behavior_settings: {
-    response_length?: string | null
-    creativity_level?: string | null
-    knowledge_sharing?: string | null
-  }
+  gender?: string | null
+  age?: number | null
+  pronouns?: string | null
+  custom_pronouns?: string | null
   interaction_preferences: {
     preferred_topics?: Array<{ topic?: string; id?: string }>
     avoid_topics?: Array<{ topic?: string; id?: string }>
-    conversation_starter?: string | null
-    signature_phrases?: Array<{ phrase?: string; id?: string }>
   }
   is_default: boolean
-  is_public: boolean
-  tags: Array<{ tag?: string; id?: string }>
   custom_instructions: string
 }
 
@@ -70,32 +53,35 @@ interface PersonaFormProps {
 const defaultFormData: PersonaFormData = {
   name: '',
   description: '',
-  personality_traits: {
-    tone: 'friendly',
-    formality_level: 'neutral',
-    humor_style: 'moderate',
-    communication_style: 'direct',
-  },
-  appearance: {
-    visual_theme: 'modern',
-    color_scheme: '',
-  },
-  behavior_settings: {
-    response_length: 'medium',
-    creativity_level: 'moderate',
-    knowledge_sharing: 'balanced',
-  },
+  gender: null,
+  age: null,
+  pronouns: null,
+  custom_pronouns: null,
   interaction_preferences: {
     preferred_topics: [],
     avoid_topics: [],
-    conversation_starter: '',
-    signature_phrases: [],
   },
   is_default: false,
-  is_public: false,
-  tags: [],
   custom_instructions: '',
 }
+
+const genderOptions = [
+  { label: 'Male', value: 'male' },
+  { label: 'Female', value: 'female' },
+  { label: 'Non-binary', value: 'non-binary' },
+  { label: 'Prefer not to say', value: 'unspecified' },
+  { label: 'Other', value: 'other' },
+]
+
+const pronounOptions = [
+  { label: 'He/Him', value: 'he-him' },
+  { label: 'She/Her', value: 'she-her' },
+  { label: 'They/Them', value: 'they-them' },
+  { label: 'He/They', value: 'he-they' },
+  { label: 'She/They', value: 'she-they' },
+  { label: 'Any pronouns', value: 'any' },
+  { label: 'Other', value: 'other' },
+]
 
 export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) => {
   const router = useRouter()
@@ -103,29 +89,15 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
   const [formData, setFormData] = useState<PersonaFormData>({
     ...defaultFormData,
     ...initialData,
-    personality_traits: {
-      ...defaultFormData.personality_traits,
-      ...initialData?.personality_traits,
-    },
-    appearance: {
-      ...defaultFormData.appearance,
-      ...initialData?.appearance,
-    },
-    behavior_settings: {
-      ...defaultFormData.behavior_settings,
-      ...initialData?.behavior_settings,
-    },
     interaction_preferences: {
       ...defaultFormData.interaction_preferences,
       ...initialData?.interaction_preferences,
     },
   })
 
-  // Tag input state
-  const [newTag, setNewTag] = useState('')
+  // Topic input state
   const [newPreferredTopic, setNewPreferredTopic] = useState('')
   const [newAvoidTopic, setNewAvoidTopic] = useState('')
-  const [newSignaturePhrase, setNewSignaturePhrase] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -168,23 +140,6 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  const addTag = () => {
-    if (newTag.trim() && !formData.tags.some(t => t.tag === newTag.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...prev.tags, { tag: newTag.trim() }],
-      }))
-      setNewTag('')
-    }
-  }
-
-  const removeTag = (tagToRemove: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter(t => t.tag !== tagToRemove),
-    }))
   }
 
   const addPreferredTopic = () => {
@@ -233,29 +188,6 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
     }))
   }
 
-  const addSignaturePhrase = () => {
-    if (newSignaturePhrase.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        interaction_preferences: {
-          ...prev.interaction_preferences,
-          signature_phrases: [...(prev.interaction_preferences.signature_phrases || []), { phrase: newSignaturePhrase.trim() }],
-        },
-      }))
-      setNewSignaturePhrase('')
-    }
-  }
-
-  const removeSignaturePhrase = (phraseToRemove: string) => {
-    setFormData(prev => ({
-      ...prev,
-      interaction_preferences: {
-        ...prev.interaction_preferences,
-        signature_phrases: (prev.interaction_preferences.signature_phrases || []).filter(p => p.phrase !== phraseToRemove),
-      },
-    }))
-  }
-
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       {/* Header */}
@@ -271,7 +203,7 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
         </h1>
         <p className="text-muted-foreground">
           {mode === 'create'
-            ? 'Design a unique persona for your conversations'
+            ? 'Create a persona that bots will use to address you'
             : 'Update your persona settings'}
         </p>
       </div>
@@ -285,7 +217,7 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
               Basic Information
             </CardTitle>
             <CardDescription>
-              Give your persona a name and description
+              Tell bots how you want to be addressed
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -295,7 +227,7 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Enter persona name"
+                placeholder="The name you want bots to call you"
                 maxLength={100}
               />
             </div>
@@ -306,8 +238,8 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Describe your persona's character and purpose"
-                rows={4}
+                placeholder="A brief description of this persona for your reference"
+                rows={3}
                 maxLength={500}
               />
               <p className="text-xs text-muted-foreground">
@@ -315,227 +247,74 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
               </p>
             </div>
 
-            <div className="space-y-2">
-              <Label>Tags</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
-                  placeholder="Add a tag"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      addTag()
-                    }
-                  }}
-                />
-                <Button type="button" variant="outline" onClick={addTag}>
-                  <Plus className="h-4 w-4" />
-                </Button>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Gender</Label>
+                <Select
+                  value={formData.gender || ''}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, gender: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {genderOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              {formData.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {formData.tags.map((tag, idx) => (
-                    <Badge key={idx} variant="secondary" className="pr-1">
-                      {tag.tag}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-4 w-4 p-0 ml-1"
-                        onClick={() => removeTag(tag.tag)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Personality Traits */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5" />
-              Personality Traits
-            </CardTitle>
-            <CardDescription>
-              Define your persona's communication style
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Tone</Label>
-              <Select
-                value={formData.personality_traits.tone}
-                onValueChange={(value) => setFormData(prev => ({
-                  ...prev,
-                  personality_traits: { ...prev.personality_traits, tone: value },
-                }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="friendly">Friendly</SelectItem>
-                  <SelectItem value="professional">Professional</SelectItem>
-                  <SelectItem value="playful">Playful</SelectItem>
-                  <SelectItem value="mysterious">Mysterious</SelectItem>
-                  <SelectItem value="wise">Wise</SelectItem>
-                  <SelectItem value="humorous">Humorous</SelectItem>
-                  <SelectItem value="empathetic">Empathetic</SelectItem>
-                  <SelectItem value="authoritative">Authoritative</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                <Label htmlFor="age">Age</Label>
+                <Input
+                  id="age"
+                  type="number"
+                  min={1}
+                  max={150}
+                  value={formData.age || ''}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    age: e.target.value ? parseInt(e.target.value) : null
+                  }))}
+                  placeholder="Optional"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Pronouns</Label>
+                <Select
+                  value={formData.pronouns || ''}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, pronouns: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select pronouns" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pronounOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Formality Level</Label>
-              <Select
-                value={formData.personality_traits.formality_level}
-                onValueChange={(value) => setFormData(prev => ({
-                  ...prev,
-                  personality_traits: { ...prev.personality_traits, formality_level: value },
-                }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="very-casual">Very Casual</SelectItem>
-                  <SelectItem value="casual">Casual</SelectItem>
-                  <SelectItem value="neutral">Neutral</SelectItem>
-                  <SelectItem value="formal">Formal</SelectItem>
-                  <SelectItem value="very-formal">Very Formal</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Humor Style</Label>
-              <Select
-                value={formData.personality_traits.humor_style}
-                onValueChange={(value) => setFormData(prev => ({
-                  ...prev,
-                  personality_traits: { ...prev.personality_traits, humor_style: value },
-                }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  <SelectItem value="light">Light</SelectItem>
-                  <SelectItem value="moderate">Moderate</SelectItem>
-                  <SelectItem value="dark">Dark</SelectItem>
-                  <SelectItem value="sarcastic">Sarcastic</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Communication Style</Label>
-              <Select
-                value={formData.personality_traits.communication_style}
-                onValueChange={(value) => setFormData(prev => ({
-                  ...prev,
-                  personality_traits: { ...prev.personality_traits, communication_style: value },
-                }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="direct">Direct</SelectItem>
-                  <SelectItem value="elaborate">Elaborate</SelectItem>
-                  <SelectItem value="concise">Concise</SelectItem>
-                  <SelectItem value="storytelling">Storytelling</SelectItem>
-                  <SelectItem value="questioning">Questioning</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Behavior Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Behavior Settings
-            </CardTitle>
-            <CardDescription>
-              Control how your persona responds
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>Response Length</Label>
-              <Select
-                value={formData.behavior_settings.response_length}
-                onValueChange={(value) => setFormData(prev => ({
-                  ...prev,
-                  behavior_settings: { ...prev.behavior_settings, response_length: value },
-                }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="very-short">Very Short</SelectItem>
-                  <SelectItem value="short">Short</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="long">Long</SelectItem>
-                  <SelectItem value="very-long">Very Long</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Creativity Level</Label>
-              <Select
-                value={formData.behavior_settings.creativity_level}
-                onValueChange={(value) => setFormData(prev => ({
-                  ...prev,
-                  behavior_settings: { ...prev.behavior_settings, creativity_level: value },
-                }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="conservative">Conservative</SelectItem>
-                  <SelectItem value="moderate">Moderate</SelectItem>
-                  <SelectItem value="creative">Creative</SelectItem>
-                  <SelectItem value="highly-creative">Highly Creative</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Knowledge Sharing</Label>
-              <Select
-                value={formData.behavior_settings.knowledge_sharing}
-                onValueChange={(value) => setFormData(prev => ({
-                  ...prev,
-                  behavior_settings: { ...prev.behavior_settings, knowledge_sharing: value },
-                }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="very-limited">Very Limited</SelectItem>
-                  <SelectItem value="limited">Limited</SelectItem>
-                  <SelectItem value="balanced">Balanced</SelectItem>
-                  <SelectItem value="generous">Generous</SelectItem>
-                  <SelectItem value="very-generous">Very Generous</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {formData.pronouns === 'other' && (
+              <div className="space-y-2">
+                <Label htmlFor="custom_pronouns">Custom Pronouns</Label>
+                <Input
+                  id="custom_pronouns"
+                  value={formData.custom_pronouns || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, custom_pronouns: e.target.value }))}
+                  placeholder="Enter your pronouns"
+                  maxLength={50}
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -547,29 +326,13 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
               Interaction Preferences
             </CardTitle>
             <CardDescription>
-              Define topics and conversation starters
+              Help bots understand your interests
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Conversation Starter</Label>
-              <Textarea
-                value={formData.interaction_preferences.conversation_starter}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  interaction_preferences: {
-                    ...prev.interaction_preferences,
-                    conversation_starter: e.target.value,
-                  },
-                }))}
-                placeholder="Default greeting message (e.g., 'Hello! I'm excited to chat with you today.')"
-                rows={2}
-                maxLength={200}
-              />
-            </div>
-
-            <div className="space-y-2">
               <Label>Preferred Topics</Label>
+              <p className="text-sm text-muted-foreground">Topics you enjoy discussing</p>
               <div className="flex gap-2">
                 <Input
                   value={newPreferredTopic}
@@ -608,6 +371,7 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
 
             <div className="space-y-2">
               <Label>Topics to Avoid</Label>
+              <p className="text-sm text-muted-foreground">Topics you prefer not to discuss</p>
               <div className="flex gap-2">
                 <Input
                   value={newAvoidTopic}
@@ -643,56 +407,18 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
                 </div>
               )}
             </div>
-
-            <div className="space-y-2">
-              <Label>Signature Phrases</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={newSignaturePhrase}
-                  onChange={(e) => setNewSignaturePhrase(e.target.value)}
-                  placeholder="Add a catchphrase"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      addSignaturePhrase()
-                    }
-                  }}
-                />
-                <Button type="button" variant="outline" onClick={addSignaturePhrase}>
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              {(formData.interaction_preferences.signature_phrases?.length ?? 0) > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {formData.interaction_preferences.signature_phrases?.map((p, idx) => (
-                    <Badge key={idx} variant="secondary" className="pr-1">
-                      "{p.phrase}"
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-4 w-4 p-0 ml-1"
-                        onClick={() => p.phrase && removeSignaturePhrase(p.phrase)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
           </CardContent>
         </Card>
 
-        {/* Advanced Settings */}
+        {/* Additional Settings */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Palette className="h-5 w-5" />
-              Advanced Settings
+              <Settings className="h-5 w-5" />
+              Additional Settings
             </CardTitle>
             <CardDescription>
-              Additional customization options
+              Extra customization options
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -701,7 +427,7 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
               <Textarea
                 value={formData.custom_instructions}
                 onChange={(e) => setFormData(prev => ({ ...prev, custom_instructions: e.target.value }))}
-                placeholder="Add any additional instructions for this persona..."
+                placeholder="Additional context or instructions for bots when using this persona..."
                 rows={4}
               />
             </div>
@@ -716,19 +442,6 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
               <Switch
                 checked={formData.is_default}
                 onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_default: checked }))}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Make Public</Label>
-                <p className="text-sm text-muted-foreground">
-                  Allow other users to use this persona
-                </p>
-              </div>
-              <Switch
-                checked={formData.is_public}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_public: checked }))}
               />
             </div>
           </CardContent>

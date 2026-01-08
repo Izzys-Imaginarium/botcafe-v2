@@ -62,13 +62,12 @@ export default async function EditPersonaPage({ params }: EditPersonaPageProps) 
   const initialData = {
     name: persona.name,
     description: persona.description,
-    personality_traits: persona.personality_traits || {},
-    appearance: persona.appearance || {},
-    behavior_settings: persona.behavior_settings || {},
+    gender: persona.gender || null,
+    age: persona.age || null,
+    pronouns: persona.pronouns || null,
+    custom_pronouns: persona.custom_pronouns || null,
     interaction_preferences: persona.interaction_preferences || {},
     is_default: persona.is_default || false,
-    is_public: persona.is_public || false,
-    tags: persona.tags || [],
     custom_instructions: persona.custom_instructions || '',
   }
 

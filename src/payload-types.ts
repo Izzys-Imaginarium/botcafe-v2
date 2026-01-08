@@ -976,23 +976,24 @@ export interface Persona {
   user: number | User;
   name: string;
   description: string;
-  personality_traits?: {
-    tone?:
-      | ('friendly' | 'professional' | 'playful' | 'mysterious' | 'wise' | 'humorous' | 'empathetic' | 'authoritative')
-      | null;
-    formality_level?: ('very-casual' | 'casual' | 'neutral' | 'formal' | 'very-formal') | null;
-    humor_style?: ('none' | 'light' | 'moderate' | 'dark' | 'sarcastic') | null;
-    communication_style?: ('direct' | 'elaborate' | 'concise' | 'storytelling' | 'questioning') | null;
-  };
+  /**
+   * Your gender identity for this persona
+   */
+  gender?: ('male' | 'female' | 'non-binary' | 'unspecified' | 'other') | null;
+  /**
+   * Age of this persona (optional)
+   */
+  age?: number | null;
+  /**
+   * Preferred pronouns for this persona
+   */
+  pronouns?: ('he-him' | 'she-her' | 'they-them' | 'he-they' | 'she-they' | 'any' | 'other') | null;
+  /**
+   * Custom pronouns if "Other" is selected
+   */
+  custom_pronouns?: string | null;
   appearance?: {
     avatar?: (number | null) | Media;
-    visual_theme?: ('classic' | 'modern' | 'fantasy' | 'minimalist' | 'vintage' | 'futuristic') | null;
-    color_scheme?: string | null;
-  };
-  behavior_settings?: {
-    response_length?: ('very-short' | 'short' | 'medium' | 'long' | 'very-long') | null;
-    creativity_level?: ('conservative' | 'moderate' | 'creative' | 'highly-creative') | null;
-    knowledge_sharing?: ('very-limited' | 'limited' | 'balanced' | 'generous' | 'very-generous') | null;
   };
   interaction_preferences?: {
     preferred_topics?:
@@ -1007,22 +1008,11 @@ export interface Persona {
           id?: string | null;
         }[]
       | null;
-    conversation_starter?: string | null;
-    signature_phrases?:
-      | {
-          phrase?: string | null;
-          id?: string | null;
-        }[]
-      | null;
   };
   /**
    * Set as default persona for new conversations
    */
   is_default?: boolean | null;
-  /**
-   * Allow other users to view and use this persona
-   */
-  is_public?: boolean | null;
   /**
    * Number of times this persona has been used
    */
@@ -1030,16 +1020,7 @@ export interface Persona {
   created_timestamp?: string | null;
   modified_timestamp?: string | null;
   /**
-   * Tags to help categorize and find this persona
-   */
-  tags?:
-    | {
-        tag?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Additional custom instructions for this persona
+   * Additional context or instructions for bots when using this persona
    */
   custom_instructions?: string | null;
   updatedAt: string;
@@ -3362,27 +3343,14 @@ export interface PersonasSelect<T extends boolean = true> {
   user?: T;
   name?: T;
   description?: T;
-  personality_traits?:
-    | T
-    | {
-        tone?: T;
-        formality_level?: T;
-        humor_style?: T;
-        communication_style?: T;
-      };
+  gender?: T;
+  age?: T;
+  pronouns?: T;
+  custom_pronouns?: T;
   appearance?:
     | T
     | {
         avatar?: T;
-        visual_theme?: T;
-        color_scheme?: T;
-      };
-  behavior_settings?:
-    | T
-    | {
-        response_length?: T;
-        creativity_level?: T;
-        knowledge_sharing?: T;
       };
   interaction_preferences?:
     | T
@@ -3399,25 +3367,11 @@ export interface PersonasSelect<T extends boolean = true> {
               topic?: T;
               id?: T;
             };
-        conversation_starter?: T;
-        signature_phrases?:
-          | T
-          | {
-              phrase?: T;
-              id?: T;
-            };
       };
   is_default?: T;
-  is_public?: T;
   usage_count?: T;
   created_timestamp?: T;
   modified_timestamp?: T;
-  tags?:
-    | T
-    | {
-        tag?: T;
-        id?: T;
-      };
   custom_instructions?: T;
   updatedAt?: T;
   createdAt?: T;

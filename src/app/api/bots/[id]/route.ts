@@ -4,6 +4,13 @@ import { currentUser } from '@clerk/nextjs/server'
 import config from '@payload-config'
 
 type GenderOption = 'male' | 'female' | 'non-binary' | 'other'
+type ToneOption = 'friendly' | 'professional' | 'playful' | 'mysterious' | 'wise' | 'humorous' | 'empathetic' | 'authoritative'
+type FormalityOption = 'very-casual' | 'casual' | 'neutral' | 'formal' | 'very-formal'
+type HumorOption = 'none' | 'light' | 'moderate' | 'dark' | 'sarcastic'
+type CommunicationOption = 'direct' | 'elaborate' | 'concise' | 'storytelling' | 'questioning'
+type ResponseLengthOption = 'very-short' | 'short' | 'medium' | 'long' | 'very-long'
+type CreativityOption = 'conservative' | 'moderate' | 'creative' | 'highly-creative'
+type KnowledgeSharingOption = 'very-limited' | 'limited' | 'balanced' | 'generous' | 'very-generous'
 
 interface BotUpdateRequest {
   name?: string
@@ -18,6 +25,19 @@ interface BotUpdateRequest {
   speech_examples?: string[]
   knowledge_collections?: (string | number)[]
   picture?: string | number
+  personality_traits?: {
+    tone?: ToneOption
+    formality_level?: FormalityOption
+    humor_style?: HumorOption
+    communication_style?: CommunicationOption
+  }
+  behavior_settings?: {
+    response_length?: ResponseLengthOption
+    creativity_level?: CreativityOption
+    knowledge_sharing?: KnowledgeSharingOption
+  }
+  signature_phrases?: string[]
+  tags?: string[]
 }
 
 // PATCH /api/bots/[id] - Update a bot
@@ -104,6 +124,30 @@ export async function PATCH(
       updateData.speech_examples = body.speech_examples
         .filter((ex: string) => ex && ex.trim())
         .map((ex: string) => ({ example: ex }))
+    }
+
+    // Handle personality_traits group
+    if (body.personality_traits !== undefined) {
+      updateData.personality_traits = body.personality_traits
+    }
+
+    // Handle behavior_settings group
+    if (body.behavior_settings !== undefined) {
+      updateData.behavior_settings = body.behavior_settings
+    }
+
+    // Transform signature_phrases array format if provided
+    if (body.signature_phrases !== undefined) {
+      updateData.signature_phrases = body.signature_phrases
+        .filter((phrase: string) => phrase && phrase.trim())
+        .map((phrase: string) => ({ phrase }))
+    }
+
+    // Transform tags array format if provided
+    if (body.tags !== undefined) {
+      updateData.tags = body.tags
+        .filter((tag: string) => tag && tag.trim())
+        .map((tag: string) => ({ tag }))
     }
 
     // Update the bot

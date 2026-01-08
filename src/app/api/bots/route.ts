@@ -202,6 +202,20 @@ export async function POST(request: NextRequest) {
           .map((ex: string) => ({ example: ex }))
       : []
 
+    // Transform signature_phrases array format
+    const transformedSignaturePhrases = body.signature_phrases
+      ? body.signature_phrases
+          .filter((phrase: string) => phrase && phrase.trim())
+          .map((phrase: string) => ({ phrase }))
+      : []
+
+    // Transform tags array format
+    const transformedTags = body.tags
+      ? body.tags
+          .filter((tag: string) => tag && tag.trim())
+          .map((tag: string) => ({ tag }))
+      : []
+
     // Create the bot
     const newBot = await payload.create({
       collection: 'bot',
@@ -218,6 +232,10 @@ export async function POST(request: NextRequest) {
         age: body.age ? parseInt(body.age.toString()) : undefined,
         is_public: body.is_public || false,
         speech_examples: transformedSpeechExamples,
+        personality_traits: body.personality_traits || {},
+        behavior_settings: body.behavior_settings || {},
+        signature_phrases: transformedSignaturePhrases,
+        tags: transformedTags,
         knowledge_collections: (body.knowledge_collections || []) as number[],
         created_date: new Date().toISOString(),
         likes_count: 0,

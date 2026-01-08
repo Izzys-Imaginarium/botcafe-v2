@@ -16,7 +16,6 @@ import {
 } from '@/components/ui/select'
 import {
   Users,
-  Plus,
   Search,
   Loader2,
   Globe,
@@ -190,18 +189,11 @@ export const CreatorDirectoryView = () => {
               Discover talented bot creators and their amazing creations
             </p>
           </div>
-          {hasProfile ? (
+          {hasProfile && (
             <Link href={`/creators/${myProfile?.username}`}>
               <Button>
                 <Users className="mr-2 h-4 w-4" />
                 View My Profile
-              </Button>
-            </Link>
-          ) : (
-            <Link href="/creators/setup">
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Become a Creator
               </Button>
             </Link>
           )}
@@ -325,19 +317,11 @@ export const CreatorDirectoryView = () => {
             <div className="text-center">
               <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <h3 className="text-lg font-semibold mb-2">No creators found</h3>
-              <p className="text-muted-foreground mb-4">
+              <p className="text-muted-foreground">
                 {searchQuery
                   ? 'Try adjusting your search'
-                  : 'Be the first to create a profile!'}
+                  : 'No creators yet'}
               </p>
-              {!hasProfile && (
-                <Link href="/creators/setup">
-                  <Button>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Become a Creator
-                  </Button>
-                </Link>
-              )}
             </div>
           </CardContent>
         </Card>

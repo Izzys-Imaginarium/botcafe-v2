@@ -6,7 +6,7 @@ import config from '@payload-config'
 export const dynamic = 'force-dynamic'
 
 interface KnowledgeCreateRequest {
-  type: 'text' | 'document' | 'url' | 'code' | 'image' | 'audio' | 'video' | 'legacy_memory'
+  type: 'text' | 'document' | 'url' | 'image' | 'audio' | 'video' | 'legacy_memory'
   entry: string
   knowledge_collection: string | number
   tags?: { tag: string }[]

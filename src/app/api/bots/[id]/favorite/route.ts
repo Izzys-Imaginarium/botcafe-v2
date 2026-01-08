@@ -30,6 +30,7 @@ export async function POST(
         email: { equals: clerkUser.emailAddresses[0]?.emailAddress },
       },
       limit: 1,
+      overrideAccess: true,
     })
 
     if (payloadUsers.docs.length === 0) {
@@ -45,6 +46,7 @@ export async function POST(
         and: [{ user: { equals: payloadUser.id } }, { bot: { equals: botId } }],
       },
       limit: 1,
+      overrideAccess: true,
     })
 
     let favorited = false
@@ -62,6 +64,7 @@ export async function POST(
           favorited,
           updated_date: new Date().toISOString(),
         },
+        overrideAccess: true,
       })
     } else {
       // Create new interaction with favorite
@@ -74,6 +77,7 @@ export async function POST(
           liked: false,
           favorited: true,
         },
+        overrideAccess: true,
       })
     }
 
@@ -81,6 +85,7 @@ export async function POST(
     const bot = await payload.findByID({
       collection: 'bot',
       id: botId,
+      overrideAccess: true,
     })
 
     const newFavoritesCount = Math.max(0, (bot.favorites_count || 0) + (favorited ? 1 : -1))

@@ -30,6 +30,7 @@ export async function POST(
         email: { equals: clerkUser.emailAddresses[0]?.emailAddress },
       },
       limit: 1,
+      overrideAccess: true,
     })
 
     if (payloadUsers.docs.length === 0) {
@@ -45,6 +46,7 @@ export async function POST(
         and: [{ user: { equals: payloadUser.id } }, { bot: { equals: botId } }],
       },
       limit: 1,
+      overrideAccess: true,
     })
 
     let liked = false
@@ -62,6 +64,7 @@ export async function POST(
           liked,
           updated_date: new Date().toISOString(),
         },
+        overrideAccess: true,
       })
     } else {
       // Create new interaction with like
@@ -74,6 +77,7 @@ export async function POST(
           liked: true,
           favorited: false,
         },
+        overrideAccess: true,
       })
     }
 
@@ -81,6 +85,7 @@ export async function POST(
     const bot = await payload.findByID({
       collection: 'bot',
       id: botId,
+      overrideAccess: true,
     })
 
     const newLikesCount = Math.max(0, (bot.likes_count || 0) + (liked ? 1 : -1))

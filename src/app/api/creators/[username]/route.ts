@@ -36,6 +36,7 @@ export async function GET(
         },
       },
       depth: 2,
+      overrideAccess: true,
     })
 
     if (creators.docs.length === 0) {
@@ -60,6 +61,7 @@ export async function GET(
             equals: clerkUser.id,
           },
         },
+        overrideAccess: true,
       })
 
       if (users.docs.length > 0) {
@@ -89,6 +91,7 @@ export async function GET(
         data: {
           last_active: new Date().toISOString(),
         },
+        overrideAccess: true,
       })
     }
 
@@ -146,6 +149,7 @@ export async function PUT(
           equals: clerkUser.id,
         },
       },
+      overrideAccess: true,
     })
 
     if (users.docs.length === 0) {
@@ -165,6 +169,7 @@ export async function PUT(
           equals: username.toLowerCase(),
         },
       },
+      overrideAccess: true,
     })
 
     if (creators.docs.length === 0) {
@@ -231,6 +236,7 @@ export async function PUT(
         modified_timestamp: new Date().toISOString(),
         last_active: new Date().toISOString(),
       } as any,
+      overrideAccess: true,
     })
 
     return NextResponse.json({
@@ -284,6 +290,7 @@ export async function DELETE(
           equals: clerkUser.id,
         },
       },
+      overrideAccess: true,
     })
 
     if (users.docs.length === 0) {
@@ -303,6 +310,7 @@ export async function DELETE(
           equals: username.toLowerCase(),
         },
       },
+      overrideAccess: true,
     })
 
     if (creators.docs.length === 0) {
@@ -331,6 +339,7 @@ export async function DELETE(
     await payload.delete({
       collection: 'creatorProfiles',
       id: creator.id,
+      overrideAccess: true,
     })
 
     return NextResponse.json({

@@ -237,6 +237,7 @@ export async function POST(request: NextRequest) {
         signature_phrases: transformedSignaturePhrases,
         tags: transformedTags,
         knowledge_collections: (body.knowledge_collections || []) as number[],
+        picture: body.picture || undefined,
         created_date: new Date().toISOString(),
         likes_count: 0,
         favorites_count: 0,

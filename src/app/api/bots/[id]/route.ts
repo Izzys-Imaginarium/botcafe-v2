@@ -100,6 +100,9 @@ export async function PATCH(
     // Parse request body
     const body = await request.json() as BotUpdateRequest
 
+    // Debug logging
+    console.log('Bot update request body:', JSON.stringify(body, null, 2))
+
     // Build update data object - only include fields that were provided
     const updateData: Record<string, any> = {}
 
@@ -149,6 +152,9 @@ export async function PATCH(
         .filter((tag: string) => tag && tag.trim())
         .map((tag: string) => ({ tag }))
     }
+
+    // Debug logging
+    console.log('Bot updateData being sent to Payload:', JSON.stringify(updateData, null, 2))
 
     // Update the bot
     const updatedBot = await payload.update({

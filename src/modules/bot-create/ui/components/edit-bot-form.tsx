@@ -55,6 +55,19 @@ export function EditBotForm({ username, botSlug }: EditBotFormProps) {
           speech_examples: data.speech_examples?.map((ex: { example: string }) => ex.example) || [''],
           knowledge_collections: data.knowledge_collections || [],
           picture: data.picture || null,
+          personality_traits: {
+            tone: data.personality_traits?.tone || '',
+            formality_level: data.personality_traits?.formality_level || '',
+            humor_style: data.personality_traits?.humor_style || '',
+            communication_style: data.personality_traits?.communication_style || '',
+          },
+          behavior_settings: {
+            response_length: data.behavior_settings?.response_length || 'medium',
+            creativity_level: data.behavior_settings?.creativity_level || 'moderate',
+            knowledge_sharing: data.behavior_settings?.knowledge_sharing || 'balanced',
+          },
+          signature_phrases: data.signature_phrases?.map((p: { phrase: string }) => p.phrase) || [''],
+          tags: data.tags?.map((t: { tag: string }) => t.tag) || [],
         })
       } catch (err: any) {
         console.error('Error fetching bot:', err)

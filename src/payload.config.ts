@@ -27,7 +27,6 @@ import { SubscriptionTiers } from './collections/SubscriptionTiers'
 import { TokenPackages } from './collections/TokenPackages'
 import { Personas } from './collections/Personas'
 import { CreatorProfiles } from './collections/CreatorProfiles'
-import { CreatorPrograms } from './collections/CreatorPrograms'
 import { AccessControl } from './collections/AccessControl'
 import { SelfModeration } from './collections/SelfModeration'
 import { CrisisSupport } from './collections/CrisisSupport'
@@ -77,7 +76,6 @@ export default buildConfig({
     // New collections for multi-tenant architecture
     Personas,
     CreatorProfiles,
-    CreatorPrograms,
     AccessControl,
     // Mental Health & Wellbeing System (Phase 3)
     SelfModeration,

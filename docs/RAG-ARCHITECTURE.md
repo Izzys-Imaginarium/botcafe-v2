@@ -34,46 +34,32 @@ BotCafé uses a unified vector database architecture to power three interconnect
 
 ### Core Metadata Structure
 
-Every vector in the unified index includes comprehensive metadata for filtering and context:
+Every vector in the unified index includes metadata for filtering and context. The actual implementation in `src/lib/vectorization/embeddings.ts`:
 
 ```typescript
 interface VectorMetadata {
   // System Classification
-  type: 'lore' | 'memory' | 'legacy_memory';
+  type: 'lore' | 'memory' | 'legacy_memory' | 'document';
 
   // Ownership & Access
-  user_id: string;                    // Owner user ID
-  tenant_id: string;                  // For multi-tenant isolation
-  is_public: boolean;                 // Public visibility
+  user_id: number;                    // Owner user ID (numeric)
+  tenant_id: number;                  // For multi-tenant isolation (same as user_id)
 
   // Content Identification
-  source_id: string;                  // ID of source (Knowledge/Memory)
-  source_collection: string;          // 'knowledge' | 'memory'
-  chunk_index: number;                // Position in document
-  total_chunks: number;               // Total chunks in document
+  source_type: 'knowledge' | 'memory'; // Source collection
+  source_id: string;                   // ID of source document in D1
+  chunk_index: number;                 // Position in document (0-based)
+  total_chunks: number;                // Total chunks in document
+  created_at: string;                  // ISO timestamp
 
-  // Content Metadata
-  title?: string;                     // Document/memory title
-  tags?: string[];                    // User-defined tags
-  created_at: string;                 // ISO timestamp
-  updated_at: string;                 // ISO timestamp
-
-  // Application Context
-  applies_to_bots?: string[];         // Bot IDs this applies to
-  collection_ids?: string[];          // KnowledgeCollection IDs
-
-  // Legacy Memory Specific (see below)
-  is_legacy_memory?: boolean;
-  original_conversation_id?: string;
-  participants?: {
-    personas: string[];               // Persona IDs present
-    bots: string[];                   // Bot IDs present
-  };
-  memory_created_at?: string;
-  converted_to_lore_at?: string;
-  applies_to_personas?: string[];     // Persona IDs this applies to
+  // Optional Filtering Fields
+  applies_to_bots?: number[];          // Bot IDs this applies to
+  applies_to_personas?: number[];      // Persona IDs this applies to
+  tags?: string[];                     // User-defined tags
 }
 ```
+
+> **Note**: The `is_public` field was removed from vector metadata. Privacy is controlled at the Knowledge/Memory collection level, not the vector level. All queries filter by `user_id` or `tenant_id` for isolation.
 
 ### Legacy Memory Extended Fields
 

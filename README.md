@@ -169,8 +169,7 @@ src/
 - **ApiKey** - API key management
 
 ### Creators
-- **CreatorProfiles** - Creator pages
-- **CreatorPrograms** - Featured programs
+- **CreatorProfiles** - Creator showcase pages with bots, bio, and social links
 
 ### Monetization
 - **TokenGifts** - Token transfers

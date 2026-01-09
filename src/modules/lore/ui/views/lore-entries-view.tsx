@@ -278,6 +278,13 @@ export const LoreEntriesView = () => {
   }
 
   const handleVectorizeEntry = async (entryId: string) => {
+    // Find the entry to get its content
+    const entry = entries.find(e => e.id === entryId)
+    if (!entry) {
+      toast.error('Entry not found')
+      return
+    }
+
     // Add to vectorizing set
     setVectorizingEntries(prev => new Set(prev).add(entryId))
 
@@ -288,18 +295,28 @@ export const LoreEntriesView = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          knowledgeId: entryId,
+          source_type: 'knowledge',
+          source_id: entryId,
+          content: entry.entry,
+          content_type: entry.type === 'document' ? 'document' : 'lore',
         }),
       })
 
       const data = (await response.json()) as {
-        success?: boolean
         message?: string
-        chunkCount?: number
+        vector_count?: number
+        chunks_info?: {
+          total_chunks: number
+        }
+        warning?: string
       }
 
-      if (data.success) {
-        toast.success(`Entry vectorized! Created ${data.chunkCount || 0} chunks.`)
+      if (response.ok) {
+        const chunkCount = data.chunks_info?.total_chunks || data.vector_count || 0
+        toast.success(`Entry vectorized! Created ${chunkCount} chunks.`)
+        if (data.warning) {
+          toast.info(data.warning)
+        }
         // Refresh entries to show updated vectorization status
         fetchEntries()
       } else {

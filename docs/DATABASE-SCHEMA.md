@@ -8,7 +8,7 @@
 
 ## Overview
 
-BotCafe v2 uses Payload CMS with 30 collections organized into functional groups:
+BotCafe v2 uses Payload CMS with 29 collections organized into functional groups:
 
 | Category | Collections | Count |
 |----------|-------------|-------|
@@ -17,7 +17,7 @@ BotCafe v2 uses Payload CMS with 30 collections organized into functional groups
 | Knowledge/RAG | Knowledge, KnowledgeCollections, VectorRecord | 3 |
 | Conversation | Conversation, Message, Memory | 3 |
 | User Features | Personas, ApiKey | 2 |
-| Creators | CreatorProfiles, CreatorPrograms | 2 |
+| Creators | CreatorProfiles | 1 |
 | Monetization | TokenGifts, SubscriptionPayments, SubscriptionTiers, TokenPackages, AccessControl | 5 |
 | Wellbeing | Mood, SelfModeration, CrisisSupport | 3 |
 | Analytics | UsageAnalytics, MemoryInsights, PersonaAnalytics | 3 |
@@ -136,53 +136,101 @@ User interactions with bots (likes, favorites).
 
 ### Knowledge
 
-Individual knowledge entries for bot context.
+Individual knowledge entries for bot context and RAG.
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | string | Primary key |
-| `title` | text | Entry title (required) |
-| `content` | textarea | Full text content |
-| `content_type` | select | Type: text, document, conversation, world_info |
-| `source_url` | text | Original source URL |
-| `collection` | relationship (KnowledgeCollections) | Parent collection |
-| `bot` | relationship (Bot) | Associated bot |
+| `user` | relationship (Users) | Owner (required) |
+| `entry` | textarea | Knowledge content (required) |
+| `type` | select | Type: text, document, url, image, audio, video, legacy_memory |
+| `knowledge_collection` | relationship (KnowledgeCollections) | Parent collection (required) |
+| `tags` | array | Array of `{ tag: string }` objects |
+| `tokens` | number | Token count estimate |
 | `is_vectorized` | checkbox | Vectorization status |
-| `embedding_metadata` | json | Chunk count, model, dimensions |
-| `priority` | select | Priority: low, normal, high, critical |
-| `createdBy` | relationship (Users) | Creator |
+| `vector_records` | relationship[] (VectorRecords) | Links to vector chunks |
+| `chunk_count` | number | Number of chunks created during vectorization |
+| `r2_file_key` | text | R2 object storage key for uploaded files |
+| `applies_to_bots` | relationship[] (Bot) | Bots this knowledge applies to |
+| `applies_to_personas` | relationship[] (Personas) | Personas this applies to (legacy memories) |
+| `is_legacy_memory` | checkbox | Whether this is a converted memory |
+| `source_memory_id` | relationship (Memory) | Link to original Memory (legacy memories) |
+| `source_conversation_id` | relationship (Conversation) | Link to original Conversation (legacy memories) |
+| `original_participants` | json | `{ personas: string[], bots: string[] }` (legacy memories) |
+| `memory_date_range` | json | `{ start: timestamp, end: timestamp }` (legacy memories) |
+| `privacy_settings` | group | Privacy level, sharing, access count (see below) |
+| `shared_access` | group | Shared users and permissions |
+| `content_metadata` | group | Source URL, author, language, word count, etc. |
+| `usage_analytics` | group | View count, search count, popularity score |
+| `created_timestamp` | date | Creation timestamp |
+| `modified_timestamp` | date | Modification timestamp |
 | `createdAt` | date | Auto-generated |
 | `updatedAt` | date | Auto-generated |
 
+#### Knowledge Privacy Settings (group)
+
+| Field | Type | Options/Description |
+|-------|------|---------------------|
+| `privacy_level` | select | private, shared, public |
+| `allow_sharing` | checkbox | Whether sharing is allowed |
+| `share_expiration` | date | Expiration date for share |
+| `password_protected` | checkbox | Require password |
+| `share_password` | text | Share password |
+| `access_count` | number | Times accessed |
+| `last_accessed` | date | Last access time |
+
 ### KnowledgeCollections
 
-Grouped knowledge for organization.
+Grouped knowledge for organization with sharing and collaboration features.
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | string | Primary key |
 | `name` | text | Collection name (required) |
+| `user` | relationship (Users) | Owner (required) |
+| `bot` | relationship[] (Bot) | Associated bots (many) |
 | `description` | textarea | Collection description |
-| `bot` | relationship (Bot) | Associated bot |
-| `is_public` | checkbox | Public visibility |
-| `createdBy` | relationship (Users) | Creator |
+| `sharing_settings` | group | Sharing level, collaboration, expiration (see below) |
+| `collaborators` | group | Collaborator users and permissions |
+| `collection_metadata` | group | Size, category, tags, difficulty level |
+| `usage_analytics` | group | View count, fork count, rating |
+| `created_timestamp` | date | Creation timestamp |
+| `modified_timestamp` | date | Modification timestamp |
 | `createdAt` | date | Auto-generated |
+| `updatedAt` | date | Auto-generated |
+
+#### KnowledgeCollections Sharing Settings (group)
+
+| Field | Type | Options/Description |
+|-------|------|---------------------|
+| `sharing_level` | select | private, shared, public |
+| `allow_collaboration` | checkbox | Allow collaborators |
+| `allow_fork` | checkbox | Allow forking |
+| `sharing_expiration` | date | Expiration date |
+| `share_password` | text | Password protection |
+| `collaboration_requests` | checkbox | Accept collaboration requests |
+| `knowledge_count` | number | Entry count in collection |
+| `last_updated` | date | Last update time |
+| `is_public` | checkbox | Public visibility |
 
 ### VectorRecord
 
-Vector embedding tracking for RAG.
+Vector embedding tracking for D1/Vectorize coordination.
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | string | Primary key |
-| `source_type` | select | Source: knowledge, memory, conversation |
-| `source_id` | text | Reference to source document |
-| `vectorize_index` | text | Cloudflare Vectorize index name |
-| `vector_ids` | json | Array of vector IDs in Vectorize |
-| `chunk_count` | number | Number of chunks |
-| `model` | text | Embedding model used |
-| `dimensions` | number | Vector dimensions |
-| `metadata` | json | Additional metadata |
+| `vector_id` | text | Unique ID in Vectorize database (required, unique, indexed) |
+| `source_type` | select | Source: knowledge, memory (required, indexed) |
+| `source_id` | text | Reference to source document in D1 (required, indexed) |
+| `user_id` | relationship (Users) | Owner (required, indexed) |
+| `tenant_id` | text | Multi-tenant isolation ID (required, indexed) |
+| `chunk_index` | number | Position in document, 0-based (required) |
+| `total_chunks` | number | Total chunks in document (required) |
+| `chunk_text` | textarea | Original text of this chunk (required) |
+| `metadata` | json | Full metadata object for Vectorize filtering (required) |
+| `embedding_model` | text | Embedding model used, e.g., "@cf/baai/bge-m3" (required) |
+| `embedding_dimensions` | number | Vector dimensions, e.g., 1024 (required) |
 | `createdAt` | date | Auto-generated |
 | `updatedAt` | date | Auto-generated |
 
@@ -302,44 +350,50 @@ Multi-provider API key management.
 
 ### CreatorProfiles
 
-Multi-tenant creator management.
+Creator showcase and profile management. Each creator has a public page at `/<username>` displaying their bots, bio, and social links.
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | string | Primary key |
-| `user` | relationship (Users) | User account |
-| `username` | text | Unique username (required) |
-| `display_name` | text | Display name |
-| `bio` | textarea | Creator biography |
-| `avatar` | relationship (Media) | Profile image |
-| `cover_image` | relationship (Media) | Cover banner |
-| `specialties` | array | Expertise areas |
-| `experience_level` | select | Level: beginner, intermediate, expert |
-| `social_links` | json | Website, GitHub, Twitter, etc. |
-| `is_verified` | checkbox | Verification badge |
-| `is_premium` | checkbox | Premium status |
-| `is_featured` | checkbox | Featured flag |
-| `visibility` | select | Visibility: public, unlisted, private |
-| `accepts_commissions` | checkbox | Commission availability |
-| `commission_info` | textarea | Commission details |
-| `follower_count` | number | Follower count |
-| `following_count` | number | Following count |
+| `user` | relationship (Users) | User account (required) |
+| `username` | text | Unique URL-friendly username (required) |
+| `display_name` | text | Public display name (required) |
+| `bio` | textarea | Creator biography (required) |
+| `profile_media` | group | Avatar and banner image |
+| `social_links` | group | Website, GitHub, Twitter, LinkedIn, Discord, YouTube, other links |
+| `creator_info` | group | Creator type, specialties, experience level, location, languages |
+| `portfolio` | group | Featured bots, bot count, total conversations, average rating |
+| `community_stats` | group | Follower count, following count, total likes |
+| `verification_status` | select | Status: unverified, pending, verified, premium |
+| `featured_creator` | checkbox | Featured on platform homepage |
+| `profile_settings` | group | Visibility, collaborations, commissions settings |
+| `tags` | array | Discovery tags |
+| `last_active` | date | Last activity timestamp |
+| `created_timestamp` | date | Creation timestamp |
+| `modified_timestamp` | date | Modification timestamp |
 | `createdAt` | date | Auto-generated |
 | `updatedAt` | date | Auto-generated |
 
-### CreatorPrograms
-
-Featured creator programs.
+#### CreatorProfiles Social Links (group)
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `id` | string | Primary key |
-| `name` | text | Program name |
-| `description` | textarea | Program description |
-| `requirements` | textarea | Eligibility requirements |
-| `benefits` | array | Program benefits |
-| `is_active` | checkbox | Active status |
-| `createdAt` | date | Auto-generated |
+| `website` | text | Personal/professional website URL |
+| `github` | text | GitHub profile URL |
+| `twitter` | text | Twitter/X profile URL |
+| `linkedin` | text | LinkedIn profile URL |
+| `discord` | text | Discord username or server invite |
+| `youtube` | text | YouTube channel URL |
+| `other_links` | array | Additional links (platform + url pairs) |
+
+#### CreatorProfiles Portfolio (group)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `featured_bots` | relationship[] (Bot) | Bots to feature prominently |
+| `bot_count` | number | Total bots created (read-only) |
+| `total_conversations` | number | Total conversations across all bots (read-only) |
+| `average_rating` | number | Average rating of creator's bots |
 
 ---
 

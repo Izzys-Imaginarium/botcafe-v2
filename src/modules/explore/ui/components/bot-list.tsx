@@ -16,7 +16,7 @@ interface BotData {
   likes_count: number
   favorites_count: number
   gender?: string
-  picture?: string | number | null
+  picture?: string | number | { id: number; url?: string; filename?: string } | null
   is_public: boolean
   slug: string
   creator_username: string
@@ -174,12 +174,11 @@ const BotCard = ({ bot }: BotCardProps) => {
       .slice(0, 2)
   }
 
-  // Handle picture - it could be a media ID or URL
-  const getPictureUrl = (picture?: string | number | null) => {
+  // Handle picture - it could be a media ID, URL, or Media object
+  const getPictureUrl = (picture?: string | number | { id: number; url?: string; filename?: string } | null) => {
     if (!picture) return undefined
     if (typeof picture === 'string') return picture
-    // If it's a number (media ID), we'd need to fetch the media URL
-    // For now, return undefined and show initials
+    if (typeof picture === 'object' && picture.url) return picture.url
     return undefined
   }
 

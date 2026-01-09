@@ -26,7 +26,7 @@ interface BotData {
   age?: number
   likes_count: number
   favorites_count: number
-  picture?: string | number | null
+  picture?: string | number | { id: number; url?: string; filename?: string } | null
   is_public: boolean
   created_date: string
   user: string | number | { id: string | number; email: string }
@@ -197,9 +197,10 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
       .slice(0, 2)
   }
 
-  const getPictureUrl = (picture?: string | number | null) => {
+  const getPictureUrl = (picture?: string | number | { id: number; url?: string; filename?: string } | null) => {
     if (!picture) return undefined
     if (typeof picture === 'string') return picture
+    if (typeof picture === 'object' && picture.url) return picture.url
     return undefined
   }
 

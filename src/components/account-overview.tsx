@@ -23,7 +23,7 @@ interface UserBot {
   name: string
   slug: string
   description: string
-  picture?: string | number | null
+  picture?: string | number | { id: number; url?: string; filename?: string } | null
   is_public: boolean
   likes_count: number
   created_date: string
@@ -122,9 +122,10 @@ export const AccountOverview = () => {
       .slice(0, 2)
   }
 
-  const getPictureUrl = (picture?: string | number | null) => {
+  const getPictureUrl = (picture?: string | number | { id: number; url?: string; filename?: string } | null) => {
     if (!picture) return undefined
     if (typeof picture === 'string') return picture
+    if (typeof picture === 'object' && picture.url) return picture.url
     return undefined
   }
 

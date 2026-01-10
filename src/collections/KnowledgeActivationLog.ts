@@ -149,23 +149,4 @@ export const KnowledgeActivationLog: CollectionConfig = {
       },
     },
   ],
-  indexes: [
-    {
-      fields: {
-        conversation_id: 'asc',
-        message_index: 'asc',
-      },
-    },
-    {
-      fields: {
-        knowledge_entry_id: 'asc',
-        activation_timestamp: 'desc',
-      },
-    },
-    {
-      fields: {
-        activation_method: 'asc',
-      },
-    },
-  ],
 }

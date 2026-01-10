@@ -549,6 +549,27 @@ When you add new Payload collections or modify existing ones:
 
 ## 🔄 **Recent Changes**
 
+### **2026-01-10 Updates:**
+- ✅ **Hybrid Activation System - Phase 3 UI Complete**
+  - Integrated ActivationSettings component into lore-entries-view.tsx
+  - Added collapsible activation settings panel with toggle button
+  - Added state management for all 6 settings sections:
+    - activationSettings (mode, keywords, vector threshold, scan settings)
+    - positioning (7 position types, depth, role, order)
+    - advancedActivation (sticky, cooldown, delay)
+    - filtering (bot/persona allowed/excluded lists)
+    - budgetControl (ignore budget, max tokens)
+    - groupSettings (group name, scoring, weight)
+  - Updated /api/knowledge/route.ts to accept all activation settings from UI
+    - Added converter functions for Payload's array formats (keywords, bot_ids)
+    - All fields have sensible defaults
+  - Updated /api/memories/convert-to-lore/route.ts with all activation defaults
+  - Form submission now includes all activation settings
+  - Form reset restores default values after successful creation
+- ✅ **Documentation Updates**
+  - Updated HYBRID-KNOWLEDGE-ACTIVATION.md to v3.1, Phase 3 Complete
+  - Updated COMPLETION-ROADMAP.md with Phase 4F completion status
+
 ### **2026-01-08 Updates:**
 - ✅ **Persona Schema Simplification**
   - Removed from Personas: `personality_traits`, `behavior_settings`, `tags`, `signature_phrases`, `is_public`
@@ -791,8 +812,8 @@ When you add new Payload collections or modify existing ones:
 
 ---
 
-**Last Updated**: 2026-01-09
-**Version**: 3.0
-**Total Tasks**: 145
-**Completed**: 115
-**Progress**: ~80% (hybrid system adds scope)
+**Last Updated**: 2026-01-10
+**Version**: 3.1
+**Total Tasks**: 148
+**Completed**: 120
+**Progress**: ~81% (hybrid activation UI complete)

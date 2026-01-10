@@ -96,6 +96,34 @@ export class KeywordMatcher {
   }
 
   /**
+   * Extract text content from a Message's Lexical structure
+   */
+  private extractMessageText(message: Message): string {
+    try {
+      // Handle Lexical editor format
+      const textContent = message.message_content?.text_content
+      if (textContent && typeof textContent === 'object') {
+        const root = (textContent as any).root
+        if (root?.children && Array.isArray(root.children)) {
+          // Recursively extract text from Lexical nodes
+          const extractText = (node: any): string => {
+            if (typeof node === 'string') return node
+            if (node?.text) return node.text
+            if (node?.children && Array.isArray(node.children)) {
+              return node.children.map(extractText).join('')
+            }
+            return ''
+          }
+          return root.children.map(extractText).join('\n')
+        }
+      }
+      return ''
+    } catch (error) {
+      return ''
+    }
+  }
+
+  /**
    * Build search text from messages based on scan config
    */
   private buildSearchText(
@@ -109,18 +137,21 @@ export class KeywordMatcher {
     const messagesToScan = messages.slice(-scanConfig.scanDepth)
 
     for (const message of messagesToScan) {
-      const role = message.role as string
+      const messageType = message.message_type as string
+      const content = this.extractMessageText(message)
 
-      if (scanConfig.matchInUserMessages && role === 'user') {
-        parts.push(message.content ?? '')
+      if (!content) continue
+
+      if (scanConfig.matchInUserMessages && messageType === 'text' && !message.bot) {
+        parts.push(content)
       }
 
-      if (scanConfig.matchInBotMessages && role === 'assistant') {
-        parts.push(message.content ?? '')
+      if (scanConfig.matchInBotMessages && message.bot) {
+        parts.push(content)
       }
 
-      if (scanConfig.matchInSystemPrompts && role === 'system') {
-        parts.push(message.content ?? '')
+      if (scanConfig.matchInSystemPrompts && messageType === 'system') {
+        parts.push(content)
       }
     }
 

@@ -137,6 +137,24 @@ export async function POST(request: NextRequest) {
           allow_sharing: true,
           access_count: 0,
         },
+        // Hybrid activation system defaults
+        activation_settings: {
+          activation_mode: 'vector',
+          vector_similarity_threshold: 0.7,
+          max_vector_results: 5,
+          probability: 100,
+          use_probability: false,
+          scan_depth: 2,
+          match_in_user_messages: true,
+          match_in_bot_messages: true,
+          match_in_system_prompts: false,
+        },
+        positioning: {
+          position: 'before_character',
+          depth: 0,
+          role: 'system',
+          order: 100,
+        },
       },
       overrideAccess: true,
     })

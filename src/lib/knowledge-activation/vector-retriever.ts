@@ -15,6 +15,7 @@ import { VectorSearchError } from './types'
 export class VectorRetriever {
   /**
    * Retrieve relevant knowledge entries using vector similarity search
+   * Returns entry IDs and similarity scores - caller must fetch full Knowledge entries
    */
   async retrieveRelevant(
     queryText: string,
@@ -23,14 +24,7 @@ export class VectorRetriever {
       VECTORIZE?: any
       AI?: any
     },
-  ): Promise<
-    Array<{
-      entry: Knowledge
-      similarity: number
-      chunkIndex: number
-      chunkText: string
-    }>
-  > {
+  ): Promise<VectorSearchResult[]> {
     try {
       // Generate embedding for query
       const embedding = await this.generateEmbedding(queryText, env)
@@ -175,11 +169,5 @@ export async function searchVectors(
   env: { VECTORIZE?: any; AI?: any },
 ): Promise<VectorSearchResult[]> {
   const retriever = new VectorRetriever()
-  const results = await retriever.retrieveRelevant(queryText, options, env)
-  return results.map((r) => ({
-    entryId: r.entry.id as string,
-    similarity: r.similarity,
-    chunkIndex: r.chunkIndex,
-    chunkText: r.chunkText,
-  }))
+  return await retriever.retrieveRelevant(queryText, options, env)
 }

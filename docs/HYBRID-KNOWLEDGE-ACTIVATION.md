@@ -1,8 +1,8 @@
 # Hybrid Knowledge Activation System - Design Document
 
-**Version:** 3.0
-**Last Updated:** 2026-01-09
-**Status:** Phase 3 In Progress
+**Version:** 3.1
+**Last Updated:** 2026-01-10
+**Status:** Phase 3 Complete, Phase 4 Pending
 
 ## Implementation Progress
 
@@ -47,7 +47,7 @@
 
 **Total: 2,080+ lines of activation engine code**
 
-### 🔄 Phase 3: UI Updates (IN PROGRESS)
+### ✅ Phase 3: UI Updates (COMPLETE)
 - ✅ **tag-input.tsx** - Reusable tag input component with visual chips
 - ✅ **activation-settings.tsx** - Complete accordion-based settings panel with:
   - Activation mode selector (keyword/vector/hybrid/constant/disabled)
@@ -57,9 +57,17 @@
   - Advanced activation (sticky, cooldown, delay)
   - Budget controls (ignore budget, max tokens)
   - Group settings (group name, scoring, weight)
-- ⏳ Integration into lore-entries-view.tsx
-- ⏳ Form submission updates
-- ⏳ Browse view activation indicators
+- ✅ **lore-entries-view.tsx** - Full integration with:
+  - Collapsible activation settings panel
+  - State management for all 6 settings sections
+  - Form submission includes all activation settings
+  - Form reset restores default values
+- ✅ **/api/knowledge/route.ts** - Updated to accept all activation settings
+  - Converts string arrays to Payload's keyword format
+  - Converts ID arrays to Payload's bot_id/persona_id format
+  - Falls back to sensible defaults for all fields
+- ✅ **/api/memories/convert-to-lore/route.ts** - Updated with all activation defaults
+- ⏳ Browse view activation indicators (future enhancement)
 
 ### ⏳ Phase 4: Chat Integration (PENDING)
 - Chat API endpoint integration

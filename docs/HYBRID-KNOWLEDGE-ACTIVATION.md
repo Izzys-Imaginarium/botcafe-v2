@@ -1,5 +1,47 @@
 # Hybrid Knowledge Activation System - Design Document
 
+**Version:** 2.0
+**Last Updated:** 2026-01-09
+**Status:** Phase 2 In Progress
+
+## Implementation Progress
+
+### ✅ Phase 1: Schema & Database (COMPLETE)
+- ✅ Knowledge collection enhanced with 37 new fields across 6 groups
+- ✅ KnowledgeActivationLog collection created
+- ✅ TypeScript types generated
+- ✅ All documentation updated
+- ✅ Production build passing
+- ✅ Default values added to API routes
+
+### 🔄 Phase 2: Activation Engine (IN PROGRESS)
+- ✅ **types.ts** - Complete type system with all interfaces, enums, and error classes
+- ✅ **keyword-matcher.ts** - Full keyword matching implementation with:
+  - Primary/secondary keyword extraction
+  - Selective logic (AND_ANY, AND_ALL, NOT_ALL, NOT_ANY)
+  - Case sensitivity, whole word matching, regex support
+  - Lexical message content extraction
+- ✅ **vector-retriever.ts** - Vector search implementation with:
+  - BGE-M3 embedding generation via Workers AI
+  - Vectorize index querying with filters
+  - Similarity threshold filtering
+- ⏳ **activation-engine.ts** - Main orchestrator (NEXT)
+- ⏳ **prompt-builder.ts** - Positioning system (PENDING)
+- ⏳ **budget-manager.ts** - Token budget management (PENDING)
+- ⏳ **index.ts** - Public exports (PENDING)
+
+### ⏳ Phase 3: UI Updates (PENDING)
+- Knowledge entry form with activation controls
+- Collection view with activation indicators
+- Debug panel for activation testing
+
+### ⏳ Phase 4: Chat Integration (PENDING)
+- Chat API endpoint integration
+- Real-time activation during conversations
+- Activation logging
+
+---
+
 ## Executive Summary
 
 This document outlines the design and implementation plan for BotCafé v2's hybrid knowledge activation system, which combines:

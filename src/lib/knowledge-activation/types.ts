@@ -68,7 +68,7 @@ export interface VectorSearchOptions {
 }
 
 export interface VectorSearchResult {
-  entryId: string
+  entryId: string | number
   similarity: number
   chunkIndex: number
   chunkText: string
@@ -80,19 +80,22 @@ export interface VectorSearchResult {
 
 export interface ActivationContext {
   conversationId: string
-  botId: number
-  personaId?: number
   userId: number
-  messageIndex: number
-  recentMessages: Message[]
-  bot: Bot
-  persona?: Persona
+  currentMessageIndex: number
+  messages: Message[]
+  filters: FilterConfig
+  budgetConfig: BudgetConfig
+  env?: {
+    VECTORIZE?: any
+    AI?: any
+  }
+  payload?: any // Payload instance
 }
 
 export interface ActivatedEntry {
   // Core entry data
   entry: Knowledge
-  entryId: string
+  entryId: string | number
 
   // Activation details
   activationMethod: ActivationMethod
@@ -161,10 +164,10 @@ export interface ConversationState {
 }
 
 export interface EntryState {
-  entryId: string
   lastActivatedAt?: number // Message index
   stickyUntil?: number // Message index
   cooldownUntil?: number // Message index
+  delayUntil?: number // Message index
 }
 
 // ============================================================================
@@ -200,15 +203,18 @@ export interface GroupScore {
 // ============================================================================
 
 export interface FilterConfig {
-  filterByBots: boolean
-  allowedBotIds: number[]
-  excludedBotIds: number[]
-  filterByPersonas: boolean
-  allowedPersonaIds: number[]
-  excludedPersonaIds: number[]
-  matchBotDescription: boolean
-  matchBotPersonality: boolean
-  matchPersonaDescription: boolean
+  userId: number
+  currentBotId?: number
+  currentPersonaId?: number
+  filterByBots?: boolean
+  allowedBotIds?: number[]
+  excludedBotIds?: number[]
+  filterByPersonas?: boolean
+  allowedPersonaIds?: number[]
+  excludedPersonaIds?: number[]
+  matchBotDescription?: boolean
+  matchBotPersonality?: boolean
+  matchPersonaDescription?: boolean
 }
 
 export interface FilterResult {

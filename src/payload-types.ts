@@ -75,6 +75,7 @@ export interface Config {
     mood: Mood;
     knowledge: Knowledge;
     knowledgeCollections: KnowledgeCollection;
+    knowledgeActivationLog: KnowledgeActivationLog;
     conversation: Conversation;
     message: Message;
     memory: Memory;
@@ -85,7 +86,6 @@ export interface Config {
     tokenPackages: TokenPackage;
     personas: Persona;
     creatorProfiles: CreatorProfile;
-    creatorPrograms: CreatorProgram;
     'access-control': AccessControl;
     'self-moderation': SelfModeration;
     'crisis-support': CrisisSupport;
@@ -111,6 +111,7 @@ export interface Config {
     mood: MoodSelect<false> | MoodSelect<true>;
     knowledge: KnowledgeSelect<false> | KnowledgeSelect<true>;
     knowledgeCollections: KnowledgeCollectionsSelect<false> | KnowledgeCollectionsSelect<true>;
+    knowledgeActivationLog: KnowledgeActivationLogSelect<false> | KnowledgeActivationLogSelect<true>;
     conversation: ConversationSelect<false> | ConversationSelect<true>;
     message: MessageSelect<false> | MessageSelect<true>;
     memory: MemorySelect<false> | MemorySelect<true>;
@@ -121,7 +122,6 @@ export interface Config {
     tokenPackages: TokenPackagesSelect<false> | TokenPackagesSelect<true>;
     personas: PersonasSelect<false> | PersonasSelect<true>;
     creatorProfiles: CreatorProfilesSelect<false> | CreatorProfilesSelect<true>;
-    creatorPrograms: CreatorProgramsSelect<false> | CreatorProgramsSelect<true>;
     'access-control': AccessControlSelect<false> | AccessControlSelect<true>;
     'self-moderation': SelfModerationSelect<false> | SelfModerationSelect<true>;
     'crisis-support': CrisisSupportSelect<false> | CrisisSupportSelect<true>;
@@ -813,6 +813,203 @@ export interface Knowledge {
     last_searched?: string | null;
     popularity_score?: number | null;
   };
+  /**
+   * Control how this knowledge entry is activated during conversations
+   */
+  activation_settings: {
+    /**
+     * How this entry should be activated
+     */
+    activation_mode: 'keyword' | 'vector' | 'hybrid' | 'constant' | 'disabled';
+    /**
+     * Primary keywords that trigger this entry
+     */
+    primary_keys?:
+      | {
+          keyword?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Secondary keywords (lower weight)
+     */
+    secondary_keys?:
+      | {
+          keyword?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * How to combine keywords
+     */
+    keywords_logic?: ('AND_ANY' | 'AND_ALL' | 'NOT_ALL' | 'NOT_ANY') | null;
+    case_sensitive?: boolean | null;
+    match_whole_words?: boolean | null;
+    /**
+     * Treat keywords as regex patterns (advanced)
+     */
+    use_regex?: boolean | null;
+    /**
+     * Minimum similarity score (0.0-1.0)
+     */
+    vector_similarity_threshold?: number | null;
+    /**
+     * Maximum results from vector search
+     */
+    max_vector_results?: number | null;
+    /**
+     * Activation probability (0-100%)
+     */
+    probability?: number | null;
+    /**
+     * Enable probability-based activation
+     */
+    use_probability?: boolean | null;
+    /**
+     * How many recent messages to scan for keywords
+     */
+    scan_depth?: number | null;
+    match_in_user_messages?: boolean | null;
+    match_in_bot_messages?: boolean | null;
+    match_in_system_prompts?: boolean | null;
+  };
+  /**
+   * Control where this entry is inserted in the prompt
+   */
+  positioning: {
+    position:
+      | 'before_character'
+      | 'after_character'
+      | 'before_examples'
+      | 'after_examples'
+      | 'at_depth'
+      | 'system_top'
+      | 'system_bottom';
+    /**
+     * Depth in conversation history (0 = most recent)
+     */
+    depth?: number | null;
+    /**
+     * Message role for depth insertion
+     */
+    role?: ('system' | 'user' | 'assistant') | null;
+    /**
+     * Priority (higher = inserted first)
+     */
+    order?: number | null;
+  };
+  /**
+   * Timed effects and advanced activation controls
+   */
+  advanced_activation?: {
+    /**
+     * Stay active for N messages after activation
+     */
+    sticky?: number | null;
+    /**
+     * Cooldown for N messages after deactivation
+     */
+    cooldown?: number | null;
+    /**
+     * Only activate after message N in conversation
+     */
+    delay?: number | null;
+  };
+  /**
+   * Filter which bots/personas can activate this entry
+   */
+  filtering?: {
+    /**
+     * Enable bot-specific filtering
+     */
+    filter_by_bots?: boolean | null;
+    /**
+     * Only activate for these bots (leave empty for all)
+     */
+    allowed_bot_ids?:
+      | {
+          bot_id?: number | null;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Never activate for these bots
+     */
+    excluded_bot_ids?:
+      | {
+          bot_id?: number | null;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Enable persona-specific filtering
+     */
+    filter_by_personas?: boolean | null;
+    /**
+     * Only activate for these personas
+     */
+    allowed_persona_ids?:
+      | {
+          persona_id?: number | null;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Never activate for these personas
+     */
+    excluded_persona_ids?:
+      | {
+          persona_id?: number | null;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Match keywords in bot description
+     */
+    match_bot_description?: boolean | null;
+    /**
+     * Match keywords in bot personality
+     */
+    match_bot_personality?: boolean | null;
+    /**
+     * Match keywords in persona description
+     */
+    match_persona_description?: boolean | null;
+  };
+  /**
+   * Token budget management
+   */
+  budget_control?: {
+    /**
+     * Always include this entry even if budget is exhausted
+     */
+    ignore_budget?: boolean | null;
+    /**
+     * Token count (auto-calculated)
+     */
+    token_cost?: number | null;
+    /**
+     * Maximum tokens this entry can use
+     */
+    max_tokens?: number | null;
+  };
+  /**
+   * Group scoring (only highest score in group activates)
+   */
+  group_settings?: {
+    /**
+     * Group identifier (e.g., "location", "character_background")
+     */
+    group_name?: string | null;
+    /**
+     * Enable group-based competition
+     */
+    use_group_scoring?: boolean | null;
+    /**
+     * Weight multiplier for this entry
+     */
+    group_weight?: number | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -1081,6 +1278,79 @@ export interface Persona {
   createdAt: string;
 }
 /**
+ * Tracks when and how knowledge entries are activated during conversations
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "knowledgeActivationLog".
+ */
+export interface KnowledgeActivationLog {
+  id: number;
+  /**
+   * The conversation this activation occurred in
+   */
+  conversation_id: number | Conversation;
+  /**
+   * Message number in the conversation (0-indexed)
+   */
+  message_index: number;
+  /**
+   * The knowledge entry that was activated
+   */
+  knowledge_entry_id: number | Knowledge;
+  /**
+   * How this entry was activated
+   */
+  activation_method: 'keyword' | 'vector' | 'constant' | 'manual';
+  /**
+   * Score that triggered activation (keyword score or vector similarity)
+   */
+  activation_score: number;
+  /**
+   * Keywords that matched (if keyword activation)
+   */
+  matched_keywords?:
+    | {
+        keyword?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Similarity score (if vector activation)
+   */
+  vector_similarity?: number | null;
+  /**
+   * Where the entry was inserted in the prompt
+   */
+  position_inserted: string;
+  /**
+   * Number of tokens this entry consumed
+   */
+  tokens_used: number;
+  /**
+   * Whether entry was actually included (false if budget exceeded)
+   */
+  was_included: boolean;
+  /**
+   * Why entry was excluded (if was_included = false)
+   */
+  exclusion_reason?:
+    | (
+        | 'budget_exceeded'
+        | 'group_scoring_lost'
+        | 'cooldown_active'
+        | 'delay_not_met'
+        | 'probability_failed'
+        | 'filter_excluded'
+      )
+    | null;
+  /**
+   * When this activation occurred
+   */
+  activation_timestamp: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "message".
  */
@@ -1229,254 +1499,6 @@ export interface TokenPackage {
   description?: string | null;
   is_popular?: boolean | null;
   is_active?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * Featured creator program management and applications
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "creatorPrograms".
- */
-export interface CreatorProgram {
-  id: number;
-  /**
-   * Name of the creator program
-   */
-  program_name: string;
-  /**
-   * URL-friendly identifier for the program
-   */
-  program_slug: string;
-  /**
-   * Detailed description of the program
-   */
-  description: string;
-  /**
-   * Brief description for program listings
-   */
-  short_description: string;
-  /**
-   * Type of creator program
-   */
-  program_type:
-    | 'featured-creator'
-    | 'verified-creator'
-    | 'premium-creator'
-    | 'mentorship'
-    | 'ambassador'
-    | 'educational'
-    | 'innovation-lab';
-  /**
-   * Current status of the program
-   */
-  program_status: 'active' | 'closed' | 'paused' | 'archived';
-  program_media?: {
-    /**
-     * Program banner/hero image
-     */
-    banner_image?: (number | null) | Media;
-    /**
-     * Program icon or logo
-     */
-    icon?: (number | null) | Media;
-  };
-  app_requirements?: {
-    /**
-     * Minimum number of bots required to apply
-     */
-    min_bot_count?: number | null;
-    /**
-     * Minimum total conversations required
-     */
-    min_conversations?: number | null;
-    /**
-     * Minimum average bot rating required
-     */
-    min_rating?: number | null;
-    /**
-     * Required specialties for this program
-     */
-    specialties?:
-      | {
-          specialty?:
-            | (
-                | 'conversational-ai'
-                | 'fantasy-rpg'
-                | 'educational'
-                | 'creative-writing'
-                | 'technical-support'
-                | 'entertainment'
-                | 'productivity'
-                | 'mental-health'
-                | 'gaming'
-                | 'business'
-              )
-            | null;
-          id?: string | null;
-        }[]
-      | null;
-    /**
-     * Requires identity verification
-     */
-    verification_required?: boolean | null;
-    /**
-     * Requires manual portfolio review
-     */
-    portfolio_review?: boolean | null;
-    /**
-     * Required community standing
-     */
-    community_standing?: ('none' | 'good' | 'excellent' | 'clean') | null;
-  };
-  app_process?: {
-    /**
-     * Application deadline (if applicable)
-     */
-    deadline?: string | null;
-    method?: ('automatic' | 'form' | 'portfolio' | 'interview' | 'voting') | null;
-    /**
-     * Custom application questions for this program
-     */
-    questions?:
-      | {
-          question: string;
-          question_type?: ('short-text' | 'long-text' | 'multiple-choice' | 'yes-no') | null;
-          required?: boolean | null;
-          options?:
-            | {
-                option?: string | null;
-                id?: string | null;
-              }[]
-            | null;
-          id?: string | null;
-        }[]
-      | null;
-    /**
-     * Description of how applications are reviewed
-     */
-    review_process?: string | null;
-    /**
-     * Expected timeline for application review
-     */
-    review_timeline?: string | null;
-  };
-  program_benefits?: {
-    /**
-     * Primary benefits of joining this program
-     */
-    primary_benefits?:
-      | {
-          benefit: string;
-          id?: string | null;
-        }[]
-      | null;
-    /**
-     * Promotional and marketing benefits
-     */
-    promotional_benefits?:
-      | {
-          benefit?: string | null;
-          id?: string | null;
-        }[]
-      | null;
-    /**
-     * Technical or feature benefits
-     */
-    technical_benefits?:
-      | {
-          benefit?: string | null;
-          id?: string | null;
-        }[]
-      | null;
-    /**
-     * Community and networking benefits
-     */
-    community_benefits?:
-      | {
-          benefit?: string | null;
-          id?: string | null;
-        }[]
-      | null;
-    /**
-     * Financial or monetization benefits
-     */
-    financial_benefits?:
-      | {
-          benefit?: string | null;
-          id?: string | null;
-        }[]
-      | null;
-  };
-  /**
-   * Multiple tiers within the program (if applicable)
-   */
-  program_tiers?:
-    | {
-        tier_name: string;
-        tier_level: number;
-        tier_description: string;
-        tier_benefits?:
-          | {
-              benefit?: string | null;
-              id?: string | null;
-            }[]
-          | null;
-        requirements?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  program_stats?: {
-    /**
-     * Total number of applications received
-     */
-    total_applicants?: number | null;
-    /**
-     * Number of creators accepted into the program
-     */
-    accepted_creators?: number | null;
-    /**
-     * Number of currently active program participants
-     */
-    active_creators?: number | null;
-  };
-  program_settings?: {
-    /**
-     * Maximum number of participants (leave empty for unlimited)
-     */
-    max_participants?: number | null;
-    /**
-     * Program membership requires periodic renewal
-     */
-    renewal_required?: boolean | null;
-    /**
-     * Renewal period in months
-     */
-    renewal_period_months?: number | null;
-    /**
-     * Criteria for automatic acceptance (if applicable)
-     */
-    auto_accept_criteria?: string | null;
-  };
-  created_timestamp?: string | null;
-  modified_timestamp?: string | null;
-  /**
-   * Date when the program was launched
-   */
-  launch_date?: string | null;
-  /**
-   * Tags to categorize and discover this program
-   */
-  tags?:
-    | {
-        tag?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Internal notes about the program (admin only)
-   */
-  program_notes?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -2695,6 +2717,10 @@ export interface PayloadLockedDocument {
         value: number | KnowledgeCollection;
       } | null)
     | ({
+        relationTo: 'knowledgeActivationLog';
+        value: number | KnowledgeActivationLog;
+      } | null)
+    | ({
         relationTo: 'conversation';
         value: number | Conversation;
       } | null)
@@ -2733,10 +2759,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'creatorProfiles';
         value: number | CreatorProfile;
-      } | null)
-    | ({
-        relationTo: 'creatorPrograms';
-        value: number | CreatorProgram;
       } | null)
     | ({
         relationTo: 'access-control';
@@ -3112,6 +3134,97 @@ export interface KnowledgeSelect<T extends boolean = true> {
         last_searched?: T;
         popularity_score?: T;
       };
+  activation_settings?:
+    | T
+    | {
+        activation_mode?: T;
+        primary_keys?:
+          | T
+          | {
+              keyword?: T;
+              id?: T;
+            };
+        secondary_keys?:
+          | T
+          | {
+              keyword?: T;
+              id?: T;
+            };
+        keywords_logic?: T;
+        case_sensitive?: T;
+        match_whole_words?: T;
+        use_regex?: T;
+        vector_similarity_threshold?: T;
+        max_vector_results?: T;
+        probability?: T;
+        use_probability?: T;
+        scan_depth?: T;
+        match_in_user_messages?: T;
+        match_in_bot_messages?: T;
+        match_in_system_prompts?: T;
+      };
+  positioning?:
+    | T
+    | {
+        position?: T;
+        depth?: T;
+        role?: T;
+        order?: T;
+      };
+  advanced_activation?:
+    | T
+    | {
+        sticky?: T;
+        cooldown?: T;
+        delay?: T;
+      };
+  filtering?:
+    | T
+    | {
+        filter_by_bots?: T;
+        allowed_bot_ids?:
+          | T
+          | {
+              bot_id?: T;
+              id?: T;
+            };
+        excluded_bot_ids?:
+          | T
+          | {
+              bot_id?: T;
+              id?: T;
+            };
+        filter_by_personas?: T;
+        allowed_persona_ids?:
+          | T
+          | {
+              persona_id?: T;
+              id?: T;
+            };
+        excluded_persona_ids?:
+          | T
+          | {
+              persona_id?: T;
+              id?: T;
+            };
+        match_bot_description?: T;
+        match_bot_personality?: T;
+        match_persona_description?: T;
+      };
+  budget_control?:
+    | T
+    | {
+        ignore_budget?: T;
+        token_cost?: T;
+        max_tokens?: T;
+      };
+  group_settings?:
+    | T
+    | {
+        group_name?: T;
+        use_group_scoring?: T;
+        group_weight?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -3185,6 +3298,31 @@ export interface KnowledgeCollectionsSelect<T extends boolean = true> {
         rating?: T;
         review_count?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "knowledgeActivationLog_select".
+ */
+export interface KnowledgeActivationLogSelect<T extends boolean = true> {
+  conversation_id?: T;
+  message_index?: T;
+  knowledge_entry_id?: T;
+  activation_method?: T;
+  activation_score?: T;
+  matched_keywords?:
+    | T
+    | {
+        keyword?: T;
+        id?: T;
+      };
+  vector_similarity?: T;
+  position_inserted?: T;
+  tokens_used?: T;
+  was_included?: T;
+  exclusion_reason?: T;
+  activation_timestamp?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -3542,138 +3680,6 @@ export interface CreatorProfilesSelect<T extends boolean = true> {
         tag?: T;
         id?: T;
       };
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "creatorPrograms_select".
- */
-export interface CreatorProgramsSelect<T extends boolean = true> {
-  program_name?: T;
-  program_slug?: T;
-  description?: T;
-  short_description?: T;
-  program_type?: T;
-  program_status?: T;
-  program_media?:
-    | T
-    | {
-        banner_image?: T;
-        icon?: T;
-      };
-  app_requirements?:
-    | T
-    | {
-        min_bot_count?: T;
-        min_conversations?: T;
-        min_rating?: T;
-        specialties?:
-          | T
-          | {
-              specialty?: T;
-              id?: T;
-            };
-        verification_required?: T;
-        portfolio_review?: T;
-        community_standing?: T;
-      };
-  app_process?:
-    | T
-    | {
-        deadline?: T;
-        method?: T;
-        questions?:
-          | T
-          | {
-              question?: T;
-              question_type?: T;
-              required?: T;
-              options?:
-                | T
-                | {
-                    option?: T;
-                    id?: T;
-                  };
-              id?: T;
-            };
-        review_process?: T;
-        review_timeline?: T;
-      };
-  program_benefits?:
-    | T
-    | {
-        primary_benefits?:
-          | T
-          | {
-              benefit?: T;
-              id?: T;
-            };
-        promotional_benefits?:
-          | T
-          | {
-              benefit?: T;
-              id?: T;
-            };
-        technical_benefits?:
-          | T
-          | {
-              benefit?: T;
-              id?: T;
-            };
-        community_benefits?:
-          | T
-          | {
-              benefit?: T;
-              id?: T;
-            };
-        financial_benefits?:
-          | T
-          | {
-              benefit?: T;
-              id?: T;
-            };
-      };
-  program_tiers?:
-    | T
-    | {
-        tier_name?: T;
-        tier_level?: T;
-        tier_description?: T;
-        tier_benefits?:
-          | T
-          | {
-              benefit?: T;
-              id?: T;
-            };
-        requirements?: T;
-        id?: T;
-      };
-  program_stats?:
-    | T
-    | {
-        total_applicants?: T;
-        accepted_creators?: T;
-        active_creators?: T;
-      };
-  program_settings?:
-    | T
-    | {
-        max_participants?: T;
-        renewal_required?: T;
-        renewal_period_months?: T;
-        auto_accept_criteria?: T;
-      };
-  created_timestamp?: T;
-  modified_timestamp?: T;
-  launch_date?: T;
-  tags?:
-    | T
-    | {
-        tag?: T;
-        id?: T;
-      };
-  program_notes?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -2,7 +2,7 @@
 
 **Date:** 2026-01-09
 **Phase:** 2 - Activation Engine Utilities
-**Status:** In Progress (3/7 files complete)
+**Status:** ✅ COMPLETE (7/7 files complete)
 
 ---
 
@@ -197,79 +197,90 @@ const results = await retriever.retrieveRelevant(
 
 ---
 
-## Pending Work
+## ✅ All Components Complete
 
-### ⏳ 1. Activation Engine Orchestrator (`activation-engine.ts`)
+### ✅ 4. Activation Engine Orchestrator (`activation-engine.ts` - 695 lines)
 
-**Purpose:** Main orchestrator that combines keyword + vector activation
+**Location:** `src/lib/knowledge-activation/activation-engine.ts`
 
-**Responsibilities:**
-1. Fetch all knowledge entries for user
-2. Run keyword activation on keyword/hybrid entries
-3. Run vector activation on vector/hybrid entries
-4. Merge and deduplicate results
-5. Apply bot/persona filtering
-6. Apply timed effects (sticky, cooldown, delay)
-7. Apply probability checks
-8. Perform group scoring
-9. Apply token budget
-10. Log activations to KnowledgeActivationLog
-11. Return final ActivatedEntry[]
-
-**Key Methods:**
-```typescript
-class ActivationEngine {
-  async activate(context: ActivationContext): Promise<ActivationResult>
-  private keywordActivation(...): Promise<ActivatedEntry[]>
-  private vectorActivation(...): Promise<ActivatedEntry[]>
-  private mergeResults(...): ActivatedEntry[]
-  private applyFiltering(...): ActivatedEntry[]
-  private applyTimedEffects(...): ActivatedEntry[]
-  private applyProbability(...): ActivatedEntry[]
-  private applyGroupScoring(...): ActivatedEntry[]
-  private applyBudget(...): ActivatedEntry[]
-  private logActivations(...): Promise<void>
-}
-```
+**Implemented Features:**
+- Main `activate()` method that orchestrates the entire activation pipeline
+- `fetchKnowledgeEntries()` - Fetches all user's knowledge entries from Payload
+- `keywordActivation()` - Runs keyword matching on keyword/hybrid mode entries
+- `vectorActivation()` - Runs vector search on vector/hybrid mode entries
+- `constantActivation()` - Handles always-active constant mode entries
+- `mergeResults()` - Combines keyword + vector + constant results, deduplicates, boosts hybrid matches
+- `applyFiltering()` - Bot/persona filtering with allowed/excluded lists
+- `applyTimedEffects()` - Sticky, cooldown, delay support with conversation state tracking
+- `applyProbability()` - Random probability checks for activation
+- `applyGroupScoring()` - Only highest-scoring entry in each group activates
+- `applyBudget()` - Token budget management with priority sorting
+- `calculateBudget()` - Budget calculation with percentage and caps
+- `getConversationState()` / `updateConversationState()` - State persistence for timed effects
+- `logActivations()` - Writes to KnowledgeActivationLog collection
 
 ---
 
-### ⏳ 2. Prompt Builder (`prompt-builder.ts`)
+### ✅ 5. Prompt Builder (`prompt-builder.ts` - 347 lines)
 
-**Purpose:** Insert activated entries into prompt at correct positions
+**Location:** `src/lib/knowledge-activation/prompt-builder.ts`
 
-**Responsibilities:**
-1. Group entries by position (before_character, after_character, etc.)
-2. Sort entries within each position by order
-3. Format entries for LLM consumption
-4. Insert at correct positions in prompt
-5. Handle at_depth positioning with role selection
-6. Preserve prompt structure
-
-**Key Methods:**
-```typescript
-class PromptBuilder {
-  buildPrompt(basePrompt: string, entries: ActivatedEntry[], bot: Bot, persona?: Persona): string
-  private groupByPosition(entries: ActivatedEntry[]): Map<Position, ActivatedEntry[]>
-  private sortByOrder(entries: ActivatedEntry[]): ActivatedEntry[]
-  private formatEntry(entry: ActivatedEntry): string
-  private insertAtPosition(prompt: string, entries: ActivatedEntry[], position: Position): string
-}
-```
+**Implemented Features:**
+- `buildPrompt()` - Main method that inserts entries at correct positions
+- `groupByPosition()` - Groups entries by their 7 position types
+- All position handlers:
+  - `insertAtSystemTop()` - Very beginning of prompt
+  - `insertBeforeCharacter()` - Before character card (smart detection)
+  - `insertAfterCharacter()` - After character card
+  - `insertBeforeExamples()` - Before example section
+  - `insertAfterExamples()` - After examples
+  - `insertAtDepth()` - Placeholder for message array insertion
+  - `insertAtSystemBottom()` - Very end of prompt
+- `formatEntry()` - Formats entries with tag labels
+- `buildMessagesWithDepthEntries()` - Inserts at_depth entries into message array
+- `getActivationDebugInfo()` - Debug output for troubleshooting
 
 ---
 
-### ⏳ 3. Budget Manager (`budget-manager.ts`)
+### ✅ 6. Budget Manager (`budget-manager.ts` - 342 lines)
 
-**Purpose:** Manage token budgets and ensure context window limits
+**Location:** `src/lib/knowledge-activation/budget-manager.ts`
 
-**Responsibilities:**
-1. Calculate total available budget
-2. Track token usage per entry
-3. Respect entry-level max_tokens
-4. Handle ignore_budget flag
-5. Ensure minimum activations (minActivations setting)
-6. Provide budget statistics
+**Implemented Features:**
+- `calculateBudget()` - Budget calculation with percentage, cap, and reserved tokens
+- `applyBudget()` - Basic budget application
+- `applyBudgetWithMin()` - Budget with minimum activation guarantee
+- `sortByPriority()` - Priority sorting by score × weight
+- `estimateTokens()` - Simple char/4 token estimation
+- `estimateEntryTokens()` - With formatting overhead
+- `calculateEntryCosts()` - Batch token cost calculation
+- `getUsageStats()` - Complete budget statistics
+- `optimizeBudgetAllocation()` - Greedy value/cost optimization
+- `wouldExceedBudget()` - Budget check helper
+- `getRecommendedBudgetConfig()` - Smart defaults for models
+- `formatBudgetStats()` - Human-readable stats output
+
+---
+
+### ✅ 7. Index Exports (`index.ts` - 52 lines)
+
+**Location:** `src/lib/knowledge-activation/index.ts`
+
+**Exports:**
+- All 5 main classes: ActivationEngine, KeywordMatcher, VectorRetriever, PromptBuilder, BudgetManager
+- Factory functions: createActivationEngine, createVectorRetriever, createPromptBuilder, createBudgetManager
+- Convenience functions: activateKnowledge, searchVectors, insertKnowledgeIntoPrompt, checkBudgetFit
+- All types from types.ts
+- All error classes
+
+---
+
+## Phase 2 Summary
+
+**Total Lines of Code:** 2,080+
+**Files Created:** 7
+**Build Status:** ✅ PASSING
+**All Tests:** Ready for integration testing
 
 **Key Methods:**
 ```typescript

@@ -140,6 +140,12 @@ export async function POST(request: NextRequest) {
         // Hybrid activation system defaults
         activation_settings: {
           activation_mode: 'vector',
+          primary_keys: [],
+          secondary_keys: [],
+          keywords_logic: 'AND_ANY',
+          case_sensitive: false,
+          match_whole_words: false,
+          use_regex: false,
           vector_similarity_threshold: 0.7,
           max_vector_results: 5,
           probability: 100,
@@ -154,6 +160,28 @@ export async function POST(request: NextRequest) {
           depth: 0,
           role: 'system',
           order: 100,
+        },
+        advanced_activation: {
+          sticky: 0,
+          cooldown: 0,
+          delay: 0,
+        },
+        filtering: {
+          filter_by_bots: false,
+          allowed_bot_ids: [],
+          excluded_bot_ids: [],
+          filter_by_personas: false,
+          allowed_persona_ids: [],
+          excluded_persona_ids: [],
+        },
+        budget_control: {
+          ignore_budget: false,
+          max_tokens: 1000,
+        },
+        group_settings: {
+          group_name: '',
+          use_group_scoring: false,
+          group_weight: 1.0,
         },
       },
       overrideAccess: true,

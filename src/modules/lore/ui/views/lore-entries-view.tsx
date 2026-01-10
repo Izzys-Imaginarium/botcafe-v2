@@ -20,10 +20,20 @@ import {
   ArrowLeft,
   Loader2,
   Check,
-  Trash2
+  Trash2,
+  Settings2
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import {
+  ActivationSettings,
+  type ActivationSettingsValue,
+  type PositioningValue,
+  type AdvancedActivationValue,
+  type FilteringValue,
+  type BudgetControlValue,
+  type GroupSettingsValue,
+} from '../components/activation-settings'
 
 interface Collection {
   id: string
@@ -63,6 +73,48 @@ export const LoreEntriesView = () => {
   const [applyToBots, setApplyToBots] = useState<string[]>([])
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [r2FileKey, setR2FileKey] = useState<string>('')
+  const [showActivationSettings, setShowActivationSettings] = useState(false)
+
+  // Activation settings state
+  const [activationSettings, setActivationSettings] = useState<ActivationSettingsValue>({
+    activation_mode: 'vector',
+    vector_similarity_threshold: 0.7,
+    max_vector_results: 5,
+    probability: 100,
+    use_probability: false,
+    scan_depth: 2,
+    match_in_user_messages: true,
+    match_in_bot_messages: true,
+    match_in_system_prompts: false,
+  })
+  const [positioning, setPositioning] = useState<PositioningValue>({
+    position: 'before_character',
+    depth: 0,
+    role: 'system',
+    order: 100,
+  })
+  const [advancedActivation, setAdvancedActivation] = useState<AdvancedActivationValue>({
+    sticky: 0,
+    cooldown: 0,
+    delay: 0,
+  })
+  const [filtering, setFiltering] = useState<FilteringValue>({
+    filter_by_bots: false,
+    allowed_bot_ids: [],
+    excluded_bot_ids: [],
+    filter_by_personas: false,
+    allowed_persona_ids: [],
+    excluded_persona_ids: [],
+  })
+  const [budgetControl, setBudgetControl] = useState<BudgetControlValue>({
+    ignore_budget: false,
+    max_tokens: 1000,
+  })
+  const [groupSettings, setGroupSettings] = useState<GroupSettingsValue>({
+    group_name: '',
+    use_group_scoring: false,
+    group_weight: 1.0,
+  })
 
   // Data state
   const [collections, setCollections] = useState<Collection[]>([])
@@ -151,7 +203,14 @@ export const LoreEntriesView = () => {
           knowledge_collection: collection,
           tags: tagArray,
           applies_to_bots: applyToBots,
-          r2_file_key: r2FileKey || undefined, // Include R2 file key if uploaded
+          r2_file_key: r2FileKey || undefined,
+          // Hybrid activation settings
+          activation_settings: activationSettings,
+          positioning: positioning,
+          advanced_activation: advancedActivation,
+          filtering: filtering,
+          budget_control: budgetControl,
+          group_settings: groupSettings,
         }),
       })
 
@@ -170,7 +229,38 @@ export const LoreEntriesView = () => {
         setApplyToBots([])
         setUploadedFile(null)
         setR2FileKey('')
-        setEntryType('text') // Reset to text type
+        setEntryType('text')
+        setShowActivationSettings(false)
+
+        // Reset activation settings to defaults
+        setActivationSettings({
+          activation_mode: 'vector',
+          vector_similarity_threshold: 0.7,
+          max_vector_results: 5,
+          probability: 100,
+          use_probability: false,
+          scan_depth: 2,
+          match_in_user_messages: true,
+          match_in_bot_messages: true,
+          match_in_system_prompts: false,
+        })
+        setPositioning({
+          position: 'before_character',
+          depth: 0,
+          role: 'system',
+          order: 100,
+        })
+        setAdvancedActivation({ sticky: 0, cooldown: 0, delay: 0 })
+        setFiltering({
+          filter_by_bots: false,
+          allowed_bot_ids: [],
+          excluded_bot_ids: [],
+          filter_by_personas: false,
+          allowed_persona_ids: [],
+          excluded_persona_ids: [],
+        })
+        setBudgetControl({ ignore_budget: false, max_tokens: 1000 })
+        setGroupSettings({ group_name: '', use_group_scoring: false, group_weight: 1.0 })
 
         // Refresh entries if on browse tab
         if (activeTab === 'browse') {
@@ -536,6 +626,41 @@ export const LoreEntriesView = () => {
                         className="glass-rune border-gold-ancient/30 text-parchment placeholder:text-parchment/40"
                       />
                     </div>
+
+                    {/* Activation Settings Toggle */}
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowActivationSettings(!showActivationSettings)}
+                        className="flex items-center gap-2 text-sm text-gold-rich hover:text-gold-ancient transition-colors"
+                      >
+                        <Settings2 className="w-4 h-4" />
+                        {showActivationSettings ? 'Hide' : 'Show'} Activation Settings
+                        <Badge variant="outline" className="border-gold-ancient/30 text-parchment/70 text-xs">
+                          {activationSettings.activation_mode}
+                        </Badge>
+                      </button>
+                    </div>
+
+                    {/* Activation Settings Panel */}
+                    {showActivationSettings && (
+                      <div className="border border-gold-ancient/20 rounded-lg p-4 bg-[#0a140a]/30">
+                        <ActivationSettings
+                          activationSettings={activationSettings}
+                          positioning={positioning}
+                          advancedActivation={advancedActivation}
+                          filtering={filtering}
+                          budgetControl={budgetControl}
+                          groupSettings={groupSettings}
+                          onActivationSettingsChange={setActivationSettings}
+                          onPositioningChange={setPositioning}
+                          onAdvancedActivationChange={setAdvancedActivation}
+                          onFilteringChange={setFiltering}
+                          onBudgetControlChange={setBudgetControl}
+                          onGroupSettingsChange={setGroupSettings}
+                        />
+                      </div>
+                    )}
 
                     {/* Actions */}
                     <div className="flex gap-3 pt-4">

@@ -1,8 +1,8 @@
 # Hybrid Knowledge Activation System - Design Document
 
-**Version:** 2.0
+**Version:** 3.0
 **Last Updated:** 2026-01-09
-**Status:** Phase 2 In Progress
+**Status:** Phase 3 In Progress
 
 ## Implementation Progress
 
@@ -14,31 +14,57 @@
 - ✅ Production build passing
 - ✅ Default values added to API routes
 
-### 🔄 Phase 2: Activation Engine (IN PROGRESS)
-- ✅ **types.ts** - Complete type system with all interfaces, enums, and error classes
-- ✅ **keyword-matcher.ts** - Full keyword matching implementation with:
+### ✅ Phase 2: Activation Engine (COMPLETE)
+- ✅ **types.ts** (234 lines) - Complete type system with all interfaces, enums, and error classes
+- ✅ **keyword-matcher.ts** (247 lines) - Full keyword matching implementation with:
   - Primary/secondary keyword extraction
   - Selective logic (AND_ANY, AND_ALL, NOT_ALL, NOT_ANY)
   - Case sensitivity, whole word matching, regex support
   - Lexical message content extraction
-- ✅ **vector-retriever.ts** - Vector search implementation with:
+- ✅ **vector-retriever.ts** (163 lines) - Vector search implementation with:
   - BGE-M3 embedding generation via Workers AI
   - Vectorize index querying with filters
   - Similarity threshold filtering
-- ⏳ **activation-engine.ts** - Main orchestrator (NEXT)
-- ⏳ **prompt-builder.ts** - Positioning system (PENDING)
-- ⏳ **budget-manager.ts** - Token budget management (PENDING)
-- ⏳ **index.ts** - Public exports (PENDING)
+- ✅ **activation-engine.ts** (695 lines) - Main orchestrator with:
+  - Combined keyword + vector + constant activation
+  - Bot/persona filtering
+  - Timed effects (sticky, cooldown, delay)
+  - Probability checks
+  - Group scoring
+  - Token budget management
+  - Activation logging to database
+- ✅ **prompt-builder.ts** (347 lines) - Positioning system with:
+  - 7 position types (system_top, before_character, after_character, etc.)
+  - Smart insertion at correct prompt locations
+  - at_depth message array modification
+  - Debug info generation
+- ✅ **budget-manager.ts** (342 lines) - Token budget management with:
+  - Budget calculation with caps
+  - Priority-based allocation
+  - Value-to-cost optimization
+  - Usage statistics
+- ✅ **index.ts** (52 lines) - Public API exports
 
-### ⏳ Phase 3: UI Updates (PENDING)
-- Knowledge entry form with activation controls
-- Collection view with activation indicators
-- Debug panel for activation testing
+**Total: 2,080+ lines of activation engine code**
+
+### 🔄 Phase 3: UI Updates (IN PROGRESS)
+- ✅ **tag-input.tsx** - Reusable tag input component with visual chips
+- ✅ **activation-settings.tsx** - Complete accordion-based settings panel with:
+  - Activation mode selector (keyword/vector/hybrid/constant/disabled)
+  - Keyword configuration (primary/secondary keys, logic, options)
+  - Vector settings (similarity threshold, max results)
+  - Positioning controls (7 positions, depth, role, order)
+  - Advanced activation (sticky, cooldown, delay)
+  - Budget controls (ignore budget, max tokens)
+  - Group settings (group name, scoring, weight)
+- ⏳ Integration into lore-entries-view.tsx
+- ⏳ Form submission updates
+- ⏳ Browse view activation indicators
 
 ### ⏳ Phase 4: Chat Integration (PENDING)
 - Chat API endpoint integration
 - Real-time activation during conversations
-- Activation logging
+- Activation logging and analytics
 
 ---
 

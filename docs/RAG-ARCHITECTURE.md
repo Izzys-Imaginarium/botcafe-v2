@@ -1,11 +1,17 @@
 # BotCafé RAG Architecture
 
+**Last Updated**: 2026-01-09
+**Version**: 2.0 (Added Hybrid Activation System)
+
 ## Overview
 
 BotCafé uses a unified vector database architecture to power three interconnected knowledge systems:
-1. **Lore** - User-curated knowledge collections
+1. **Lore** - User-curated knowledge collections with **hybrid keyword + vector activation** 🆕
 2. **Memories** - Auto-generated conversation summaries
 3. **Personas** - User identity/character information
+
+> **🆕 NEW: Hybrid Activation System**
+> As of Version 2.0, the Knowledge/Lore system supports both keyword-based activation (like SillyTavern) and vector-based semantic search. See [HYBRID-KNOWLEDGE-ACTIVATION.md](./HYBRID-KNOWLEDGE-ACTIVATION.md) for complete details.
 
 ## Technology Stack
 

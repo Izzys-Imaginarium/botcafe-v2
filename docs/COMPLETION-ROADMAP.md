@@ -7,7 +7,7 @@ Based on the sitemap, style guide, and database schema analysis, BotCafé v2 is 
 ### ✅ **CURRENT COMPLETION STATUS: ~80%**
 - **Fantasy UI/UX Foundation**: ✅ Beautiful theme system, homepage, basic navigation
 - **Authentication**: ✅ Clerk integration working with catch-all routes
-- **Database Architecture**: ✅ 29 comprehensive collections for multi-tenant SaaS (added BotInteraction, VectorRecord)
+- **Database Architecture**: ✅ 30 comprehensive collections for multi-tenant SaaS (added BotInteraction, VectorRecord, KnowledgeActivationLog)
 - **Core Infrastructure**: ✅ Next.js, Payload CMS, Cloudflare Workers
 - **Bot Creation Wizard**: ✅ Multi-step form wizard with validation, image upload, and fantasy theme
 - **Bot Editing**: ✅ Reusable form component for both create and edit workflows
@@ -197,6 +197,22 @@ By building foundational systems first, we avoid rework and ensure chat has all 
   - [ ] Implement knowledge analytics
   - [ ] Performance optimization (caching, batching)
   - [ ] Complete documentation
+- [x] **Phase 4F: Hybrid Knowledge Activation System** 🆕 **IN PROGRESS (2026-01-09)**
+  - [x] Design hybrid activation architecture (keyword + vector) ✅
+  - [x] Update Knowledge collection with activation fields ✅
+  - [x] Create KnowledgeActivationLog collection ✅
+  - [x] Update documentation (DATABASE-SCHEMA.md, HYBRID-KNOWLEDGE-ACTIVATION.md) ✅
+  - [ ] Create keyword activation engine utilities (NEXT)
+  - [ ] Implement vector retriever enhancements
+  - [ ] Build main activation orchestrator
+  - [ ] Create prompt builder with positioning system
+  - [ ] Implement token budget management
+  - [ ] Build timed effects system (sticky, cooldown, delay)
+  - [ ] Implement group scoring system
+  - [ ] Update lore UI with activation controls
+  - [ ] Create chat integration API endpoint
+  - [ ] Build activation analytics dashboard
+  - [ ] Add debug panel for activation troubleshooting
 
 ### **PHASE 5: Persona System** (Week 10-11) ✅ **COMPLETED**
 - [x] Create `/personas` persona management pages ✅
@@ -326,7 +342,7 @@ By building foundational systems first, we avoid rework and ensure chat has all 
 ### **Completed:**
 - ✅ **Home Page**: Complete splash page with magical effects
 - ✅ **Authentication**: Clerk integration with catch-all routes
-- ✅ **Database Schema**: All 29 collections configured (added BotInteraction, VectorRecord)
+- ✅ **Database Schema**: All 30 collections configured (added BotInteraction, VectorRecord, KnowledgeActivationLog)
 - ✅ **UI/UX Theme**: Fantasy theme system implemented
 - ✅ **Create Page**: Bot creation wizard with multi-step form
 - ✅ **Edit Workflow**: Reusable form component for create/edit
@@ -371,36 +387,37 @@ By building foundational systems first, we avoid rework and ensure chat has all 
 - **Effects**: Glass rune styling, ornate borders, floating animations, magical backgrounds
 - **Components**: All components must follow the established fantasy aesthetic
 
-### **Database Collections (29 total):**
+### **Database Collections (30 total):**
 1. **Users** - Authentication and profile management
 2. **Media** - File uploads and media management
 3. **Bot** - AI companion definitions
 4. **BotInteraction** - User likes/favorites for bots ✅
-5. **VectorRecord** - Vector embedding tracking for RAG ✅ NEW
+5. **VectorRecord** - Vector embedding tracking for RAG ✅
 6. **ApiKey** - Multi-provider API key management
 7. **Mood** - Mental health tracking
-8. **Knowledge** - Individual knowledge pieces (enhanced with RAG fields) ✅
+8. **Knowledge** - Individual knowledge pieces with hybrid activation system ✅ **ENHANCED**
 9. **KnowledgeCollections** - Grouped knowledge management
-10. **Conversation** - Chat conversation records (enhanced with participant tracking) ✅
-11. **Message** - Individual chat messages
-12. **Memory** - Conversation memory storage (enhanced with vectorization fields) ✅
-13. **TokenGifts** - Token transfer system
-14. **SubscriptionPayments** - Payment tracking
-15. **SubscriptionTiers** - Subscription plans
-16. **TokenPackages** - Token purchasing options
-17. **Personas** - User personas/masks system
-18. **CreatorProfiles** - Multi-tenant creator showcase pages
-19. **AccessControl** - Fine-grained permissions
-20. **SelfModeration** - Usage limits and health tools
-21. **CrisisSupport** - Mental health resources
-22. **UsageAnalytics** - Comprehensive usage tracking
-23. **MemoryInsights** - Story progression analytics
-24. **PersonaAnalytics** - Persona effectiveness metrics
-25. **LegalDocuments** - Terms, privacy, compliance
-26. **UserAgreements** - Legal acceptance tracking
-27. **Documentation** - Help documentation
-28. **Tutorials** - Interactive tutorials
-29. **SupportTickets** - Help desk system
+10. **KnowledgeActivationLog** - Activation tracking for analytics ✅ **NEW**
+11. **Conversation** - Chat conversation records (enhanced with participant tracking) ✅
+12. **Message** - Individual chat messages
+13. **Memory** - Conversation memory storage (enhanced with vectorization fields) ✅
+14. **TokenGifts** - Token transfer system
+15. **SubscriptionPayments** - Payment tracking
+16. **SubscriptionTiers** - Subscription plans
+17. **TokenPackages** - Token purchasing options
+18. **Personas** - User personas/masks system
+19. **CreatorProfiles** - Multi-tenant creator showcase pages
+20. **AccessControl** - Fine-grained permissions
+21. **SelfModeration** - Usage limits and health tools
+22. **CrisisSupport** - Mental health resources
+23. **UsageAnalytics** - Comprehensive usage tracking
+24. **MemoryInsights** - Story progression analytics
+25. **PersonaAnalytics** - Persona effectiveness metrics
+26. **LegalDocuments** - Terms, privacy, compliance
+27. **UserAgreements** - Legal acceptance tracking
+28. **Documentation** - Help documentation
+29. **Tutorials** - Interactive tutorials
+30. **SupportTickets** - Help desk system
 
 ---
 
@@ -770,8 +787,8 @@ When you add new Payload collections or modify existing ones:
 
 ---
 
-**Last Updated**: 2026-01-08
-**Version**: 2.9
-**Total Tasks**: 130
-**Completed**: 110
-**Progress**: ~85%
+**Last Updated**: 2026-01-09
+**Version**: 3.0
+**Total Tasks**: 145
+**Completed**: 115
+**Progress**: ~80% (hybrid system adds scope)

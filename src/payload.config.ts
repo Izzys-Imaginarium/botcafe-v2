@@ -17,6 +17,7 @@ import { ApiKey } from './collections/ApiKey'
 import { Mood } from './collections/Mood'
 import { Knowledge } from './collections/Knowledge'
 import { KnowledgeCollections } from './collections/KnowledgeCollections'
+import { KnowledgeActivationLog } from './collections/KnowledgeActivationLog'
 import { Conversation } from './collections/Conversation'
 import { Message } from './collections/Message'
 import { Memory } from './collections/Memory'
@@ -65,6 +66,7 @@ export default buildConfig({
     Mood,
     Knowledge,
     KnowledgeCollections,
+    KnowledgeActivationLog,
     Conversation,
     Message,
     Memory,

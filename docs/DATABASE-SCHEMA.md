@@ -1,20 +1,20 @@
 # BotCafe v2 - Database Schema
 
-**Last Updated**: 2026-01-08
-**Version**: 2.9
+**Last Updated**: 2026-01-09
+**Version**: 3.0
 **Database**: Cloudflare D1 (SQLite) via Payload CMS
 
 ---
 
 ## Overview
 
-BotCafe v2 uses Payload CMS with 29 collections organized into functional groups:
+BotCafe v2 uses Payload CMS with 30 collections organized into functional groups:
 
 | Category | Collections | Count |
 |----------|-------------|-------|
 | Core | Users, Media | 2 |
 | Bot System | Bot, BotInteraction | 2 |
-| Knowledge/RAG | Knowledge, KnowledgeCollections, VectorRecord | 3 |
+| Knowledge/RAG | Knowledge, KnowledgeCollections, KnowledgeActivationLog, VectorRecord | 4 |
 | Conversation | Conversation, Message, Memory | 3 |
 | User Features | Personas, ApiKey | 2 |
 | Creators | CreatorProfiles | 1 |
@@ -136,7 +136,9 @@ User interactions with bots (likes, favorites).
 
 ### Knowledge
 
-Individual knowledge entries for bot context and RAG.
+Individual knowledge entries for bot context and RAG with hybrid activation system.
+
+**Core Fields:**
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -162,10 +164,95 @@ Individual knowledge entries for bot context and RAG.
 | `shared_access` | group | Shared users and permissions |
 | `content_metadata` | group | Source URL, author, language, word count, etc. |
 | `usage_analytics` | group | View count, search count, popularity score |
+| `activation_settings` | group | **NEW:** Hybrid activation controls (see below) |
+| `positioning` | group | **NEW:** Prompt insertion positioning (see below) |
+| `advanced_activation` | group | **NEW:** Timed effects (sticky, cooldown, delay) |
+| `filtering` | group | **NEW:** Bot/persona filtering controls |
+| `budget_control` | group | **NEW:** Token budget management |
+| `group_settings` | group | **NEW:** Group scoring settings |
 | `created_timestamp` | date | Creation timestamp |
 | `modified_timestamp` | date | Modification timestamp |
 | `createdAt` | date | Auto-generated |
 | `updatedAt` | date | Auto-generated |
+
+#### Knowledge Activation Settings (group) 🆕
+
+Controls how knowledge entries are activated during conversations (hybrid keyword + vector system).
+
+| Field | Type | Options/Description |
+|-------|------|---------------------|
+| `activation_mode` | select | **keyword** (keyword only), **vector** (semantic only), **hybrid** (keyword OR vector), **constant** (always active), **disabled** |
+| `primary_keys` | array | Array of `{ keyword: string }` - primary activation keywords |
+| `secondary_keys` | array | Array of `{ keyword: string }` - secondary keywords (lower weight) |
+| `keywords_logic` | select | **AND_ANY** (any primary OR secondary), **AND_ALL** (all primary AND all secondary), **NOT_ALL**, **NOT_ANY** |
+| `case_sensitive` | checkbox | Case-sensitive keyword matching |
+| `match_whole_words` | checkbox | Match whole words only |
+| `use_regex` | checkbox | Treat keywords as regex patterns |
+| `vector_similarity_threshold` | number | Min similarity score (0.0-1.0, default: 0.7) |
+| `max_vector_results` | number | Max vector search results (1-20, default: 5) |
+| `probability` | number | Activation probability (0-100%, default: 100) |
+| `use_probability` | checkbox | Enable probability-based activation |
+| `scan_depth` | number | Messages to scan back (1-20, default: 2) |
+| `match_in_user_messages` | checkbox | Scan user messages |
+| `match_in_bot_messages` | checkbox | Scan bot messages |
+| `match_in_system_prompts` | checkbox | Scan system prompts |
+
+#### Knowledge Positioning (group) 🆕
+
+Controls where activated entries are inserted in the final prompt.
+
+| Field | Type | Options/Description |
+|-------|------|---------------------|
+| `position` | select | **before_character**, **after_character**, **before_examples**, **after_examples**, **at_depth**, **system_top**, **system_bottom** |
+| `depth` | number | Depth in conversation (0-100, for at_depth position) |
+| `role` | select | Message role: **system**, **user**, **assistant** (for at_depth) |
+| `order` | number | Priority/weight (0-1000, default: 100, higher = inserted first) |
+
+#### Knowledge Advanced Activation (group) 🆕
+
+Timed effects for activation behavior across multiple messages.
+
+| Field | Type | Options/Description |
+|-------|------|---------------------|
+| `sticky` | number | Stay active for N messages after activation (0-50) |
+| `cooldown` | number | Cooldown for N messages after deactivation (0-50) |
+| `delay` | number | Only activate after message N in conversation (0-100) |
+
+#### Knowledge Filtering (group) 🆕
+
+Control which bots/personas can trigger this entry.
+
+| Field | Type | Options/Description |
+|-------|------|---------------------|
+| `filter_by_bots` | checkbox | Enable bot-specific filtering |
+| `allowed_bot_ids` | array | Array of `{ bot_id: number }` - only these bots can activate |
+| `excluded_bot_ids` | array | Array of `{ bot_id: number }` - never activate for these bots |
+| `filter_by_personas` | checkbox | Enable persona-specific filtering |
+| `allowed_persona_ids` | array | Array of `{ persona_id: number }` - only these personas |
+| `excluded_persona_ids` | array | Array of `{ persona_id: number }` - exclude these personas |
+| `match_bot_description` | checkbox | Match keywords in bot description |
+| `match_bot_personality` | checkbox | Match keywords in bot personality traits |
+| `match_persona_description` | checkbox | Match keywords in persona description |
+
+#### Knowledge Budget Control (group) 🆕
+
+Token budget management for context optimization.
+
+| Field | Type | Options/Description |
+|-------|------|---------------------|
+| `ignore_budget` | checkbox | Always include even if budget exhausted |
+| `token_cost` | number | Token count (auto-calculated, read-only) |
+| `max_tokens` | number | Maximum tokens this entry can use (0-8000, default: 1000) |
+
+#### Knowledge Group Settings (group) 🆕
+
+Group scoring - only highest score in group activates (prevents redundant entries).
+
+| Field | Type | Options/Description |
+|-------|------|---------------------|
+| `group_name` | text | Group identifier (e.g., "location", "character_background") |
+| `use_group_scoring` | checkbox | Enable group-based competition |
+| `group_weight` | number | Weight multiplier for this entry (0-10, default: 1.0) |
 
 #### Knowledge Privacy Settings (group)
 
@@ -233,6 +320,33 @@ Vector embedding tracking for D1/Vectorize coordination.
 | `embedding_dimensions` | number | Vector dimensions, e.g., 1024 (required) |
 | `createdAt` | date | Auto-generated |
 | `updatedAt` | date | Auto-generated |
+
+### KnowledgeActivationLog 🆕
+
+Tracks when and how knowledge entries are activated during conversations for analytics and debugging.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Primary key |
+| `conversation_id` | relationship (Conversation) | The conversation where activation occurred (required) |
+| `message_index` | number | Message number in conversation, 0-based (required) |
+| `knowledge_entry_id` | relationship (Knowledge) | The knowledge entry that was activated (required) |
+| `activation_method` | select | How activated: **keyword**, **vector**, **constant**, **manual** (required) |
+| `activation_score` | number | Score that triggered activation (keyword score or vector similarity) (required) |
+| `matched_keywords` | array | Array of `{ keyword: string }` - keywords that matched (if keyword activation) |
+| `vector_similarity` | number | Similarity score (if vector activation) |
+| `position_inserted` | text | Where entry was inserted in prompt (required) |
+| `tokens_used` | number | Tokens consumed by this entry (required) |
+| `was_included` | checkbox | Whether entry was actually included (false if budget exceeded) (required) |
+| `exclusion_reason` | select | Why excluded: **budget_exceeded**, **group_scoring_lost**, **cooldown_active**, **delay_not_met**, **probability_failed**, **filter_excluded** |
+| `activation_timestamp` | date | When activation occurred (required, auto-generated) |
+| `createdAt` | date | Auto-generated |
+| `updatedAt` | date | Auto-generated |
+
+**Indexes:**
+- `conversation_id` + `message_index` (for retrieving activation history)
+- `knowledge_entry_id` + `activation_timestamp` DESC (for per-entry analytics)
+- `activation_method` (for filtering by method)
 
 ---
 

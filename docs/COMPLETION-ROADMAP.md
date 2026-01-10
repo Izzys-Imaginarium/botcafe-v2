@@ -566,6 +566,11 @@ When you add new Payload collections or modify existing ones:
   - Updated /api/memories/convert-to-lore/route.ts with all activation defaults
   - Form submission now includes all activation settings
   - Form reset restores default values after successful creation
+- ✅ **Database Schema Fix**
+  - Fixed `payload_locked_documents_rels` table missing `knowledge_activation_log_id` column
+  - This column was needed for Payload admin panel document locking feature
+  - Fix applied via: `ALTER TABLE payload_locked_documents_rels ADD COLUMN knowledge_activation_log_id INTEGER;`
+  - Same fix may be needed on remote database if deployed
 - ✅ **Documentation Updates**
   - Updated HYBRID-KNOWLEDGE-ACTIVATION.md to v3.1, Phase 3 Complete
   - Updated COMPLETION-ROADMAP.md with Phase 4F completion status

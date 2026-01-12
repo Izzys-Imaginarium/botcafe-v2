@@ -21,8 +21,11 @@ import {
   Loader2,
   Check,
   Trash2,
-  Settings2
+  Settings2,
+  Edit,
+  AlertCircle
 } from 'lucide-react'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import {
@@ -63,6 +66,15 @@ export const LoreEntriesView = () => {
   const [isLoadingEntries, setIsLoadingEntries] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [vectorizingEntries, setVectorizingEntries] = useState<Set<string>>(new Set())
+
+  // Edit state
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [editingEntry, setEditingEntry] = useState<KnowledgeEntry | null>(null)
+  const [editContent, setEditContent] = useState('')
+  const [editTags, setEditTags] = useState('')
+  const [editCollection, setEditCollection] = useState('')
+  const [editType, setEditType] = useState('text')
 
   // Form state
   const [entryType, setEntryType] = useState('text')
@@ -422,6 +434,74 @@ export const LoreEntriesView = () => {
         newSet.delete(entryId)
         return newSet
       })
+    }
+  }
+
+  const openEditDialog = (entry: KnowledgeEntry) => {
+    setEditingEntry(entry)
+    setEditContent(entry.entry)
+    setEditType(entry.type)
+    setEditTags(entry.tags?.map(t => t.tag).join(', ') || '')
+    // Handle collection - could be string or object
+    const collectionId = typeof entry.knowledge_collection === 'string'
+      ? entry.knowledge_collection
+      : entry.knowledge_collection?.id || ''
+    setEditCollection(collectionId)
+    setIsEditDialogOpen(true)
+  }
+
+  const handleUpdateEntry = async () => {
+    if (!editingEntry || !editContent || !editCollection) {
+      toast.error('Please fill in all required fields')
+      return
+    }
+
+    setIsUpdating(true)
+
+    try {
+      const tagArray = editTags
+        ? editTags.split(',').map((tag) => ({ tag: tag.trim() })).filter((t) => t.tag)
+        : []
+
+      const response = await fetch(`/api/knowledge/${editingEntry.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          entry: editContent,
+          type: editType,
+          knowledge_collection: editCollection,
+          tags: tagArray,
+        }),
+      })
+
+      const data = (await response.json()) as {
+        success?: boolean
+        knowledge?: KnowledgeEntry
+        message?: string
+        requiresRevectorization?: boolean
+      }
+
+      if (data.success) {
+        if (data.requiresRevectorization) {
+          toast.success('Entry updated! Content changed - please re-vectorize.', {
+            duration: 5000,
+          })
+        } else {
+          toast.success('Entry updated successfully!')
+        }
+        setIsEditDialogOpen(false)
+        setEditingEntry(null)
+        fetchEntries()
+      } else {
+        toast.error(data.message || 'Failed to update entry')
+      }
+    } catch (error: any) {
+      console.error('Error updating entry:', error)
+      toast.error(error.message || 'Failed to update entry')
+    } finally {
+      setIsUpdating(false)
     }
   }
 
@@ -887,6 +967,14 @@ export const LoreEntriesView = () => {
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                onClick={() => openEditDialog(entry)}
+                                className="text-parchment/60 hover:text-gold-rich"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => handleDeleteEntry(entry.id)}
                                 className="text-parchment/60 hover:text-red-400"
                               >
@@ -904,6 +992,133 @@ export const LoreEntriesView = () => {
           </TabsContent>
         </div>
       </Tabs>
+
+      {/* Edit Entry Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="glass-rune border-gold-ancient/30 text-parchment max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-gold-rich">Edit Knowledge Entry</DialogTitle>
+            <DialogDescription className="text-parchment/60">
+              Update the entry content, type, collection, or tags.
+              {editingEntry?.is_vectorized && (
+                <span className="block mt-2 text-amber-400">
+                  <AlertCircle className="w-4 h-4 inline mr-1" />
+                  Changing the content will require re-vectorization.
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            {/* Entry Type */}
+            <div className="space-y-2">
+              <Label htmlFor="edit-type" className="text-parchment">Entry Type</Label>
+              <Select value={editType} onValueChange={setEditType}>
+                <SelectTrigger id="edit-type" className="glass-rune border-gold-ancient/30 text-parchment">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="glass-rune border-gold-ancient/30">
+                  <SelectItem value="text">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4" />
+                      Text Entry
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="document">
+                    <div className="flex items-center gap-2">
+                      <Upload className="w-4 h-4" />
+                      Document
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="url">
+                    <div className="flex items-center gap-2">
+                      <LinkIcon className="w-4 h-4" />
+                      URL/Link
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Collection */}
+            <div className="space-y-2">
+              <Label htmlFor="edit-collection" className="text-parchment">
+                Collection <span className="text-red-400">*</span>
+              </Label>
+              <Select value={editCollection} onValueChange={setEditCollection}>
+                <SelectTrigger id="edit-collection" className="glass-rune border-gold-ancient/30 text-parchment">
+                  <SelectValue placeholder="Select a collection" />
+                </SelectTrigger>
+                <SelectContent className="glass-rune border-gold-ancient/30">
+                  {collections.map((coll) => (
+                    <SelectItem key={coll.id} value={coll.id}>
+                      {coll.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Content */}
+            <div className="space-y-2">
+              <Label htmlFor="edit-content" className="text-parchment">
+                Content <span className="text-red-400">*</span>
+              </Label>
+              <Textarea
+                id="edit-content"
+                placeholder="Enter your knowledge content here..."
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                rows={10}
+                className="glass-rune border-gold-ancient/30 text-parchment placeholder:text-parchment/40 font-lore"
+              />
+              <p className="text-xs text-parchment/50">
+                {editContent.length} characters • Estimated {Math.ceil(editContent.length / 4)} tokens
+              </p>
+            </div>
+
+            {/* Tags */}
+            <div className="space-y-2">
+              <Label htmlFor="edit-tags" className="text-parchment">Tags</Label>
+              <Input
+                id="edit-tags"
+                placeholder="fantasy, lore, character (comma-separated)"
+                value={editTags}
+                onChange={(e) => setEditTags(e.target.value)}
+                className="glass-rune border-gold-ancient/30 text-parchment placeholder:text-parchment/40"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-2">
+              <Button
+                onClick={handleUpdateEntry}
+                disabled={isUpdating || !editContent || !editCollection}
+                className="bg-gold-rich hover:bg-gold-rich/90 text-[#0a140a] flex-1"
+              >
+                {isUpdating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={() => setIsEditDialogOpen(false)}
+                variant="outline"
+                className="border-gold-ancient/30 text-parchment"
+                disabled={isUpdating}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

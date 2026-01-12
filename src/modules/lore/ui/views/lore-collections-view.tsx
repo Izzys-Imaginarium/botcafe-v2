@@ -33,12 +33,19 @@ interface Collection {
 
 export const LoreCollectionsView = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
   // Form state
   const [collectionName, setCollectionName] = useState('')
   const [collectionDescription, setCollectionDescription] = useState('')
+
+  // Edit state
+  const [editingCollection, setEditingCollection] = useState<Collection | null>(null)
+  const [editName, setEditName] = useState('')
+  const [editDescription, setEditDescription] = useState('')
 
   // Data state
   const [collections, setCollections] = useState<Collection[]>([])
@@ -138,6 +145,55 @@ export const LoreCollectionsView = () => {
     } catch (error) {
       console.error('Error deleting collection:', error)
       toast.error('Failed to delete collection')
+    }
+  }
+
+  const openEditDialog = (collection: Collection) => {
+    setEditingCollection(collection)
+    setEditName(collection.name)
+    setEditDescription(collection.description || '')
+    setIsEditDialogOpen(true)
+  }
+
+  const handleUpdateCollection = async () => {
+    if (!editingCollection || !editName) {
+      toast.error('Please enter a collection name')
+      return
+    }
+
+    setIsUpdating(true)
+
+    try {
+      const response = await fetch(`/api/knowledge-collections/${editingCollection.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: editName,
+          description: editDescription,
+        }),
+      })
+
+      const data = (await response.json()) as {
+        success?: boolean
+        collection?: Collection
+        message?: string
+      }
+
+      if (data.success) {
+        toast.success('Collection updated successfully!')
+        setIsEditDialogOpen(false)
+        setEditingCollection(null)
+        fetchCollections()
+      } else {
+        toast.error(data.message || 'Failed to update collection')
+      }
+    } catch (error: any) {
+      console.error('Error updating collection:', error)
+      toast.error(error.message || 'Failed to update collection')
+    } finally {
+      setIsUpdating(false)
     }
   }
 
@@ -263,6 +319,14 @@ export const LoreCollectionsView = () => {
                     <Button
                       variant="ghost"
                       size="sm"
+                      onClick={() => openEditDialog(collection)}
+                      className="h-8 w-8 p-0 text-parchment/60 hover:text-gold-rich"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => handleDeleteCollection(collection.id)}
                       className="h-8 w-8 p-0 text-parchment/60 hover:text-red-400"
                     >
@@ -319,6 +383,70 @@ export const LoreCollectionsView = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit Collection Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="glass-rune border-gold-ancient/30 text-parchment">
+          <DialogHeader>
+            <DialogTitle className="text-gold-rich">Edit Collection</DialogTitle>
+            <DialogDescription className="text-parchment/60">
+              Update the collection name and description.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name" className="text-parchment">
+                Collection Name <span className="text-red-400">*</span>
+              </Label>
+              <Input
+                id="edit-name"
+                placeholder="e.g., Character Backstories"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="glass-rune border-gold-ancient/30 text-parchment placeholder:text-parchment/40"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-description" className="text-parchment">Description</Label>
+              <Textarea
+                id="edit-description"
+                placeholder="Describe what this collection contains..."
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                rows={4}
+                className="glass-rune border-gold-ancient/30 text-parchment placeholder:text-parchment/40"
+              />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button
+                onClick={handleUpdateCollection}
+                disabled={isUpdating || !editName}
+                className="bg-gold-rich hover:bg-gold-rich/90 text-[#0a140a] flex-1"
+              >
+                {isUpdating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={() => setIsEditDialogOpen(false)}
+                variant="outline"
+                className="border-gold-ancient/30 text-parchment"
+                disabled={isUpdating}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

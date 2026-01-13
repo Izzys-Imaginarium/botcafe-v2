@@ -2,6 +2,8 @@ import type { CollectionConfig } from 'payload'
 
 export const Knowledge: CollectionConfig = {
   slug: 'knowledge',
+  // Disable document locking - causes issues with D1 adapter
+  lockDocuments: false,
   admin: {
     useAsTitle: 'entry',
     defaultColumns: ['user', 'type', 'privacy_level', 'access_count', 'last_accessed'],

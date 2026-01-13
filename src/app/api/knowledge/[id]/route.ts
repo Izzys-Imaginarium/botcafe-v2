@@ -81,6 +81,14 @@ export async function GET(
 ) {
   try {
     const { id } = await params
+    const numericId = parseInt(id, 10)
+
+    if (isNaN(numericId)) {
+      return NextResponse.json(
+        { message: 'Invalid knowledge entry ID' },
+        { status: 400 }
+      )
+    }
 
     const clerkUser = await currentUser()
     if (!clerkUser) {
@@ -112,7 +120,7 @@ export async function GET(
 
     const knowledge = await payload.findByID({
       collection: 'knowledge',
-      id,
+      id: numericId,
       overrideAccess: true,
     })
 
@@ -154,6 +162,14 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params
+    const numericId = parseInt(id, 10)
+
+    if (isNaN(numericId)) {
+      return NextResponse.json(
+        { message: 'Invalid knowledge entry ID' },
+        { status: 400 }
+      )
+    }
 
     const clerkUser = await currentUser()
     if (!clerkUser) {
@@ -188,7 +204,7 @@ export async function PATCH(
     // Fetch existing entry to verify ownership
     const existingKnowledge = await payload.findByID({
       collection: 'knowledge',
-      id,
+      id: numericId,
       overrideAccess: true,
     })
 
@@ -221,7 +237,7 @@ export async function PATCH(
           where: {
             and: [
               { source_type: { equals: 'knowledge' } },
-              { source_id: { equals: id } },
+              { source_id: { equals: String(numericId) } },
             ],
           },
           limit: 100,
@@ -236,7 +252,7 @@ export async function PATCH(
           })
         }
 
-        console.log(`Deleted ${vectorRecords.docs.length} old vector records for knowledge ${id} due to content change`)
+        console.log(`Deleted ${vectorRecords.docs.length} old vector records for knowledge ${numericId} due to content change`)
       } catch (vectorError) {
         console.error('Error deleting old vectors:', vectorError)
       }
@@ -375,7 +391,7 @@ export async function PATCH(
     // Update the knowledge entry
     const updatedKnowledge = await payload.update({
       collection: 'knowledge',
-      id,
+      id: numericId,
       data: updateData,
       overrideAccess: true,
     })
@@ -403,6 +419,14 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
+    const numericId = parseInt(id, 10)
+
+    if (isNaN(numericId)) {
+      return NextResponse.json(
+        { message: 'Invalid knowledge entry ID' },
+        { status: 400 }
+      )
+    }
 
     // Get authenticated Clerk user
     const clerkUser = await currentUser()
@@ -439,7 +463,7 @@ export async function DELETE(
     // Fetch the knowledge entry to verify ownership
     const knowledge = await payload.findByID({
       collection: 'knowledge',
-      id,
+      id: numericId,
       overrideAccess: true,
     })
 
@@ -469,7 +493,7 @@ export async function DELETE(
           where: {
             and: [
               { source_type: { equals: 'knowledge' } },
-              { source_id: { equals: id } },
+              { source_id: { equals: String(numericId) } },
               { user_id: { equals: payloadUser.id } },
             ],
           },
@@ -484,7 +508,7 @@ export async function DELETE(
           })
         }
 
-        console.log(`Deleted ${vectorRecords.docs.length} vector records for knowledge ${id}`)
+        console.log(`Deleted ${vectorRecords.docs.length} vector records for knowledge ${numericId}`)
       } catch (vectorError) {
         console.error('Error deleting vectors:', vectorError)
         // Continue with knowledge deletion even if vector deletion fails
@@ -494,7 +518,7 @@ export async function DELETE(
     // Delete the knowledge entry
     await payload.delete({
       collection: 'knowledge',
-      id,
+      id: numericId,
       overrideAccess: true,
     })
 

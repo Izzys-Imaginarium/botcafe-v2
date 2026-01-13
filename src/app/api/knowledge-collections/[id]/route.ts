@@ -30,6 +30,14 @@ export async function GET(
 ) {
   try {
     const { id } = await params
+    const numericId = parseInt(id, 10)
+
+    if (isNaN(numericId)) {
+      return NextResponse.json(
+        { message: 'Invalid collection ID' },
+        { status: 400 }
+      )
+    }
 
     const clerkUser = await currentUser()
     if (!clerkUser) {
@@ -61,7 +69,7 @@ export async function GET(
 
     const collection = await payload.findByID({
       collection: 'knowledgeCollections',
-      id,
+      id: numericId,
       overrideAccess: true,
     })
 
@@ -105,6 +113,14 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params
+    const numericId = parseInt(id, 10)
+
+    if (isNaN(numericId)) {
+      return NextResponse.json(
+        { message: 'Invalid collection ID' },
+        { status: 400 }
+      )
+    }
 
     const clerkUser = await currentUser()
     if (!clerkUser) {
@@ -139,7 +155,7 @@ export async function PATCH(
     // Fetch existing collection to verify ownership
     const existingCollection = await payload.findByID({
       collection: 'knowledgeCollections',
-      id,
+      id: numericId,
       overrideAccess: true,
     })
 
@@ -190,7 +206,7 @@ export async function PATCH(
     // Update the collection
     const updatedCollection = await payload.update({
       collection: 'knowledgeCollections',
-      id,
+      id: numericId,
       data: updateData,
       overrideAccess: true,
     })
@@ -215,6 +231,14 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
+    const numericId = parseInt(id, 10)
+
+    if (isNaN(numericId)) {
+      return NextResponse.json(
+        { message: 'Invalid collection ID' },
+        { status: 400 }
+      )
+    }
 
     // Get authenticated Clerk user
     const clerkUser = await currentUser()
@@ -251,7 +275,7 @@ export async function DELETE(
     // Fetch the collection to verify ownership
     const collection = await payload.findByID({
       collection: 'knowledgeCollections',
-      id,
+      id: numericId,
       overrideAccess: true,
     })
 
@@ -276,7 +300,7 @@ export async function DELETE(
       collection: 'knowledge',
       where: {
         knowledge_collection: {
-          equals: id,
+          equals: numericId,
         },
       },
       limit: 1,
@@ -293,7 +317,7 @@ export async function DELETE(
     // Delete the collection
     await payload.delete({
       collection: 'knowledgeCollections',
-      id,
+      id: numericId,
       overrideAccess: true,
     })
 

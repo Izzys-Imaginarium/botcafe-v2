@@ -549,6 +549,17 @@ When you add new Payload collections or modify existing ones:
 
 ## 🔄 **Recent Changes**
 
+### **2026-01-13 Updates:**
+- ✅ **Knowledge System Edit Functionality**
+  - Added `PATCH` endpoint to `/api/knowledge-collections/[id]` for updating collection name, description, and sharing settings
+  - Added `GET` endpoint to `/api/knowledge-collections/[id]` for fetching single collection
+  - Added `PATCH` endpoint to `/api/knowledge/[id]` for updating entry content, type, collection, tags, and all activation settings
+  - Added `GET` endpoint to `/api/knowledge/[id]` for fetching single entry
+  - **Re-vectorization handling**: When entry content changes, old vectors are automatically deleted and entry marked as needing re-vectorization
+  - Added edit UI to Collections page with edit dialog (name, description)
+  - Added edit UI to Entries browse tab with edit dialog (type, collection, content, tags)
+  - Warning shown when editing vectorized entries that content change requires re-vectorization
+
 ### **2026-01-10 Updates:**
 - ✅ **Hybrid Activation System - Phase 3 UI Complete**
   - Integrated ActivationSettings component into lore-entries-view.tsx
@@ -824,7 +835,7 @@ When you add new Payload collections or modify existing ones:
 
 ---
 
-**Last Updated**: 2026-01-10
+**Last Updated**: 2026-01-13
 **Version**: 3.1
 **Total Tasks**: 148
 **Completed**: 120

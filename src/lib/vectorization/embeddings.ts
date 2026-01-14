@@ -89,7 +89,7 @@ export async function generateEmbeddings(
 export interface VectorMetadata {
   type: 'lore' | 'memory' | 'legacy_memory' | 'document'
   user_id: number
-  tenant_id: number
+  tenant_id: string // String to match D1 column type
   source_type: 'knowledge' | 'memory'
   source_id: string
   chunk_index: number
@@ -142,7 +142,7 @@ export async function insertVectors(
 export interface SearchFilters {
   type?: 'lore' | 'memory' | 'legacy_memory' | 'document'
   user_id?: number
-  tenant_id?: number
+  tenant_id?: string | number // Accept both for flexibility
   source_type?: 'knowledge' | 'memory'
   applies_to_bots?: number[]
   applies_to_personas?: number[]

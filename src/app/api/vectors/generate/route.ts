@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
 
     const vectorRecords = []
     const vectorizeRecords: VectorRecord[] = []
-    const tenant_id = payloadUser.id // Use user ID as tenant ID for multi-tenant isolation
+    const tenant_id = String(payloadUser.id) // Use user ID as tenant ID for multi-tenant isolation (must be string)
 
     // Generate embeddings for all chunks using Workers AI (BGE-M3)
     const chunkTexts = chunks.map((c) => c.text)
@@ -235,7 +235,7 @@ async function createPlaceholderVectors(
   sourceCollection: string
 ) {
   const vectorRecords = []
-  const tenant_id = userId
+  const tenant_id = String(userId)
 
   for (const chunk of chunks) {
     const vector_id = `vec_placeholder_${source_type}_${source_id}_chunk_${chunk.index}_${Date.now()}`

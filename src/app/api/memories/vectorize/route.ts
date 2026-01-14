@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
+import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { generateEmbedding } from '@/lib/vectorization/embeddings'
 import { chunkText, getChunkConfig } from '@/lib/vectorization/chunking'
 
@@ -112,8 +113,16 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Get AI binding for embedding generation
-    const ai = (process.env as any).AI
+    // Get Cloudflare bindings from OpenNext context
+    let ai: any
+    let vectorize: any
+    try {
+      const { env } = await getCloudflareContext()
+      ai = env.AI
+      vectorize = env.VECTORIZE
+    } catch (e) {
+      console.warn('Failed to get Cloudflare context:', e)
+    }
 
     if (!ai) {
       console.warn('AI binding not available, cannot vectorize')
@@ -136,11 +145,12 @@ export async function POST(request: NextRequest) {
       const vectorId = `memory-${memoryId}-chunk-${i}`
 
       // Build metadata for Vectorize
+      const tenantId = String(payloadUser.id)
       const metadata = {
         source_type: 'memory',
         source_id: memoryId,
         user_id: payloadUser.id,
-        tenant_id: clerkUser.id,
+        tenant_id: tenantId,
         chunk_index: i,
         total_chunks: chunks.length,
         memory_type: memory.type || 'short_term',
@@ -152,9 +162,6 @@ export async function POST(request: NextRequest) {
       }
 
       // Store vector in Cloudflare Vectorize
-      // Access Vectorize through process.env
-      const vectorize = (process.env as any).VECTORIZE_INDEX
-
       if (vectorize) {
         await vectorize.insert([
           {
@@ -173,7 +180,7 @@ export async function POST(request: NextRequest) {
           source_type: 'memory',
           source_id: memoryId,
           user_id: payloadUser.id,
-          tenant_id: clerkUser.id,
+          tenant_id: tenantId,
           chunk_index: i,
           total_chunks: chunks.length,
           chunk_text: chunk,

@@ -50,12 +50,6 @@ interface BudgetControl {
   max_tokens?: number
 }
 
-interface GroupSettings {
-  group_name?: string
-  use_group_scoring?: boolean
-  group_weight?: number
-}
-
 interface KnowledgeUpdateRequest {
   entry?: string
   type?: 'text' | 'document' | 'url' | 'image' | 'audio' | 'video' | 'legacy_memory'
@@ -67,7 +61,6 @@ interface KnowledgeUpdateRequest {
   advanced_activation?: AdvancedActivation
   filtering?: Filtering
   budget_control?: BudgetControl
-  group_settings?: GroupSettings
   privacy_settings?: {
     privacy_level?: 'private' | 'shared' | 'public'
     allow_sharing?: boolean
@@ -369,14 +362,6 @@ export async function PATCH(
         // @ts-ignore
         ...existingKnowledge.budget_control,
         ...body.budget_control,
-      }
-    }
-
-    if (body.group_settings) {
-      updateData.group_settings = {
-        // @ts-ignore
-        ...existingKnowledge.group_settings,
-        ...body.group_settings,
       }
     }
 

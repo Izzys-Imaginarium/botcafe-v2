@@ -178,11 +178,6 @@ export async function POST(request: NextRequest) {
           ignore_budget: false,
           max_tokens: 1000,
         },
-        group_settings: {
-          group_name: '',
-          use_group_scoring: false,
-          group_weight: 1.0,
-        },
       },
       overrideAccess: true,
     })

@@ -50,12 +50,6 @@ interface BudgetControl {
   max_tokens?: number
 }
 
-interface GroupSettings {
-  group_name?: string
-  use_group_scoring?: boolean
-  group_weight?: number
-}
-
 interface KnowledgeCreateRequest {
   type: 'text' | 'document' | 'url' | 'image' | 'audio' | 'video' | 'legacy_memory'
   entry: string
@@ -67,7 +61,6 @@ interface KnowledgeCreateRequest {
   advanced_activation?: AdvancedActivation
   filtering?: Filtering
   budget_control?: BudgetControl
-  group_settings?: GroupSettings
 }
 
 export async function POST(request: NextRequest) {
@@ -184,13 +177,6 @@ export async function POST(request: NextRequest) {
       max_tokens: body.budget_control?.max_tokens ?? 1000,
     }
 
-    // Build group settings with defaults
-    const groupSettings = {
-      group_name: body.group_settings?.group_name ?? '',
-      use_group_scoring: body.group_settings?.use_group_scoring ?? false,
-      group_weight: body.group_settings?.group_weight ?? 1.0,
-    }
-
     // Create the knowledge entry
     const newKnowledge = await payload.create({
       collection: 'knowledge',
@@ -227,7 +213,6 @@ export async function POST(request: NextRequest) {
         advanced_activation: advancedActivation,
         filtering: filtering,
         budget_control: budgetControl,
-        group_settings: groupSettings,
       },
       overrideAccess: true,
     })

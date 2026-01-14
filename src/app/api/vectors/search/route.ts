@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPayloadHMR } from '@payloadcms/next/utilities'
 import { currentUser } from '@clerk/nextjs/server'
 import config from '@payload-config'
+import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { searchVectors, SearchFilters } from '@/lib/vectorization/embeddings'
 
 export const dynamic = 'force-dynamic'
@@ -70,11 +71,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Missing or invalid query' }, { status: 400 })
     }
 
-    // Get Cloudflare bindings from request context
-    // @ts-ignore - Next.js context type
-    const ai = request.nextUrl.searchParams.get('__env')?.AI || (global as any).__env?.AI
-    // @ts-ignore
-    const vectorize = request.nextUrl.searchParams.get('__env')?.VECTORIZE || (global as any).__env?.VECTORIZE
+    // Get Cloudflare bindings from OpenNext context
+    let ai: any
+    let vectorize: any
+    try {
+      const { env } = await getCloudflareContext()
+      ai = env.AI
+      vectorize = env.VECTORIZE
+    } catch (e) {
+      console.warn('Failed to get Cloudflare context:', e)
+    }
 
     if (!ai || !vectorize) {
       // Fallback: Return placeholder results if bindings not available (local dev)

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPayloadHMR } from '@payloadcms/next/utilities'
 import { currentUser } from '@clerk/nextjs/server'
 import config from '@payload-config'
+import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { chunkText, getChunkConfig, estimateTokens } from '@/lib/vectorization/chunking'
 import {
   generateEmbeddings,
@@ -106,11 +107,16 @@ export async function POST(request: NextRequest) {
 
     console.log(`Generated ${chunks.length} chunks for ${source_type} ${source_id}`)
 
-    // Get Cloudflare bindings from request context
-    // @ts-ignore - Next.js context type
-    const ai = request.nextUrl.searchParams.get('__env')?.AI || (global as any).__env?.AI
-    // @ts-ignore
-    const vectorize = request.nextUrl.searchParams.get('__env')?.VECTORIZE || (global as any).__env?.VECTORIZE
+    // Get Cloudflare bindings from OpenNext context
+    let ai: any
+    let vectorize: any
+    try {
+      const { env } = await getCloudflareContext()
+      ai = env.AI
+      vectorize = env.VECTORIZE
+    } catch (e) {
+      console.warn('Failed to get Cloudflare context:', e)
+    }
 
     if (!ai || !vectorize) {
       // Fallback: Create placeholder records if bindings not available (local dev)

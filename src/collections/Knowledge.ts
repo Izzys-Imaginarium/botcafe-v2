@@ -790,39 +790,5 @@ export const Knowledge: CollectionConfig = {
         },
       ],
     },
-    {
-      name: 'group_settings',
-      type: 'group',
-      admin: {
-        description: 'Group scoring (only highest score in group activates)',
-      },
-      fields: [
-        {
-          name: 'group_name',
-          type: 'text',
-          admin: {
-            description: 'Group identifier (e.g., "location", "character_background")',
-          },
-        },
-        {
-          name: 'use_group_scoring',
-          type: 'checkbox',
-          defaultValue: false,
-          admin: {
-            description: 'Enable group-based competition',
-          },
-        },
-        {
-          name: 'group_weight',
-          type: 'number',
-          defaultValue: 1.0,
-          min: 0,
-          max: 10,
-          admin: {
-            description: 'Weight multiplier for this entry',
-          },
-        },
-      ],
-    },
   ],
 }

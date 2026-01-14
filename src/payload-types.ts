@@ -1317,14 +1317,7 @@ export interface KnowledgeActivationLog {
    * Why entry was excluded (if was_included = false)
    */
   exclusion_reason?:
-    | (
-        | 'budget_exceeded'
-        | 'group_scoring_lost'
-        | 'cooldown_active'
-        | 'delay_not_met'
-        | 'probability_failed'
-        | 'filter_excluded'
-      )
+    | ('budget_exceeded' | 'cooldown_active' | 'delay_not_met' | 'probability_failed' | 'filter_excluded')
     | null;
   /**
    * When this activation occurred

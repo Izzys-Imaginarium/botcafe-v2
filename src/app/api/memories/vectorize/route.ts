@@ -173,18 +173,19 @@ export async function POST(request: NextRequest) {
       }
 
       // Create VectorRecord in D1
+      // Note: metadata must be JSON stringified to avoid "too many SQL variables" error
       const vectorRecord = await payload.create({
         collection: 'vectorRecords',
         data: {
           vector_id: vectorId,
           source_type: 'memory',
-          source_id: memoryId,
+          source_id: String(memoryId),
           user_id: payloadUser.id,
           tenant_id: tenantId,
           chunk_index: i,
           total_chunks: chunks.length,
           chunk_text: chunk,
-          metadata: metadata,
+          metadata: JSON.stringify(metadata),
           embedding_model: '@cf/baai/bge-m3',
           embedding_dimensions: 1024,
         },

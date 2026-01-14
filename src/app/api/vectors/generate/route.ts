@@ -169,6 +169,7 @@ export async function POST(request: NextRequest) {
       })
 
       // Create VectorRecord in D1 for tracking
+      // Note: metadata must be JSON stringified to avoid "too many SQL variables" error
       const vectorRecord = await payload.create({
         collection: 'vectorRecords' as any,
         data: {
@@ -180,7 +181,7 @@ export async function POST(request: NextRequest) {
           chunk_index: chunk.index,
           total_chunks: chunk.totalChunks,
           chunk_text: chunk.text,
-          metadata: metadata as any,
+          metadata: JSON.stringify(metadata),
           embedding_model: BGE_M3_MODEL,
           embedding_dimensions: BGE_M3_DIMENSIONS,
         },
@@ -251,6 +252,7 @@ async function createPlaceholderVectors(
       created_at: new Date().toISOString(),
     }
 
+    // Note: metadata must be JSON stringified to avoid "too many SQL variables" error
     const vectorRecord = await payload.create({
       collection: 'vectorRecords' as any,
       data: {
@@ -262,7 +264,7 @@ async function createPlaceholderVectors(
         chunk_index: chunk.index,
         total_chunks: chunk.totalChunks,
         chunk_text: chunk.text,
-        metadata: metadata as any,
+        metadata: JSON.stringify(metadata),
         embedding_model: `${BGE_M3_MODEL} (placeholder)`,
         embedding_dimensions: BGE_M3_DIMENSIONS,
       },

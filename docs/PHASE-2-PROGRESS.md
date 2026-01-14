@@ -38,7 +38,6 @@ Position = 'before_character' | 'after_character' | 'before_examples' | ...
 - `ActivationContext` - Full context passed to activation engine
 - `ActivationResult` - Final activation output
 - `FilterConfig` - Bot/persona filtering configuration
-- `GroupScoreMap` - Group-based scoring
 
 **Error Classes:**
 - `ActivationError` - Base error with context

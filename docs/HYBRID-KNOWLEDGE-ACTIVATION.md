@@ -252,7 +252,6 @@ Track activation history for analytics and debugging:
    - Add advanced_activation fields
    - Add filtering fields
    - Add budget_control fields
-   - Add group_settings fields
 
 2. **Create KnowledgeActivationLog Collection**
    - Set up relationships

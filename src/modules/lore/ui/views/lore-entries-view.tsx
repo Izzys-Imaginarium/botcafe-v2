@@ -35,7 +35,6 @@ import {
   type AdvancedActivationValue,
   type FilteringValue,
   type BudgetControlValue,
-  type GroupSettingsValue,
 } from '../components/activation-settings'
 
 interface Collection {
@@ -121,11 +120,6 @@ export const LoreEntriesView = () => {
   const [budgetControl, setBudgetControl] = useState<BudgetControlValue>({
     ignore_budget: false,
     max_tokens: 1000,
-  })
-  const [groupSettings, setGroupSettings] = useState<GroupSettingsValue>({
-    group_name: '',
-    use_group_scoring: false,
-    group_weight: 1.0,
   })
 
   // Data state
@@ -222,7 +216,6 @@ export const LoreEntriesView = () => {
           advanced_activation: advancedActivation,
           filtering: filtering,
           budget_control: budgetControl,
-          group_settings: groupSettings,
         }),
       })
 
@@ -272,7 +265,6 @@ export const LoreEntriesView = () => {
           excluded_persona_ids: [],
         })
         setBudgetControl({ ignore_budget: false, max_tokens: 1000 })
-        setGroupSettings({ group_name: '', use_group_scoring: false, group_weight: 1.0 })
 
         // Refresh entries if on browse tab
         if (activeTab === 'browse') {
@@ -731,13 +723,11 @@ export const LoreEntriesView = () => {
                           advancedActivation={advancedActivation}
                           filtering={filtering}
                           budgetControl={budgetControl}
-                          groupSettings={groupSettings}
                           onActivationSettingsChange={setActivationSettings}
                           onPositioningChange={setPositioning}
                           onAdvancedActivationChange={setAdvancedActivation}
                           onFilteringChange={setFiltering}
                           onBudgetControlChange={setBudgetControl}
-                          onGroupSettingsChange={setGroupSettings}
                         />
                       </div>
                     )}

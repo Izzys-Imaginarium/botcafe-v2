@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { TagInput } from './tag-input'
-import { Info, Key, Target, Clock, Filter, Coins, Users } from 'lucide-react'
+import { Info, Key, Target, Clock, Filter, Coins } from 'lucide-react'
 
 export type ActivationMode = 'keyword' | 'vector' | 'hybrid' | 'constant' | 'disabled'
 export type KeywordsLogic = 'AND_ANY' | 'AND_ALL' | 'NOT_ALL' | 'NOT_ANY'
@@ -67,25 +67,17 @@ export interface BudgetControlValue {
   max_tokens?: number
 }
 
-export interface GroupSettingsValue {
-  group_name?: string
-  use_group_scoring?: boolean
-  group_weight?: number
-}
-
 interface ActivationSettingsProps {
   activationSettings: ActivationSettingsValue
   positioning: PositioningValue
   advancedActivation: AdvancedActivationValue
   filtering: FilteringValue
   budgetControl: BudgetControlValue
-  groupSettings: GroupSettingsValue
   onActivationSettingsChange: (value: ActivationSettingsValue) => void
   onPositioningChange: (value: PositioningValue) => void
   onAdvancedActivationChange: (value: AdvancedActivationValue) => void
   onFilteringChange: (value: FilteringValue) => void
   onBudgetControlChange: (value: BudgetControlValue) => void
-  onGroupSettingsChange: (value: GroupSettingsValue) => void
 }
 
 export const ActivationSettings = ({
@@ -94,13 +86,11 @@ export const ActivationSettings = ({
   advancedActivation,
   filtering,
   budgetControl,
-  groupSettings,
   onActivationSettingsChange,
   onPositioningChange,
   onAdvancedActivationChange,
   onFilteringChange,
   onBudgetControlChange,
-  onGroupSettingsChange,
 }: ActivationSettingsProps) => {
   const mode = activationSettings.activation_mode
   const showKeywordSettings = mode === 'keyword' || mode === 'hybrid'
@@ -559,72 +549,6 @@ export const ActivationSettings = ({
               className="[&_[role=slider]]:bg-gold-rich"
             />
           </div>
-        </AccordionContent>
-      </AccordionItem>
-
-      {/* Group Settings */}
-      <AccordionItem value="group" className="border-gold-ancient/30">
-        <AccordionTrigger className="text-parchment hover:text-gold-rich">
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            <span>Group Settings</span>
-          </div>
-        </AccordionTrigger>
-        <AccordionContent className="space-y-4 pt-4">
-          {/* Group Name */}
-          <div className="space-y-2">
-            <Label className="text-parchment">Group Name (optional)</Label>
-            <Input
-              value={groupSettings.group_name || ''}
-              onChange={(e) => onGroupSettingsChange({ ...groupSettings, group_name: e.target.value })}
-              placeholder="e.g., dragon_lore"
-              className="glass-rune border-gold-ancient/30 text-parchment placeholder:text-parchment/40"
-            />
-            <p className="text-xs text-parchment/50">
-              Group entries to prevent duplicates
-            </p>
-          </div>
-
-          {/* Use Group Scoring */}
-          {groupSettings.group_name && (
-            <>
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label className="text-parchment">Use Group Scoring</Label>
-                  <p className="text-xs text-parchment/50">
-                    Only activate highest scoring entry in group
-                  </p>
-                </div>
-                <Switch
-                  checked={groupSettings.use_group_scoring || false}
-                  onCheckedChange={(checked) => onGroupSettingsChange({ ...groupSettings, use_group_scoring: checked })}
-                />
-              </div>
-
-              {/* Group Weight */}
-              {groupSettings.use_group_scoring && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-parchment">Group Weight</Label>
-                    <span className="text-sm text-gold-rich">
-                      {(groupSettings.group_weight || 1.0).toFixed(1)}
-                    </span>
-                  </div>
-                  <Slider
-                    value={[(groupSettings.group_weight || 1.0) * 10]}
-                    onValueChange={([value]) => onGroupSettingsChange({ ...groupSettings, group_weight: value / 10 })}
-                    min={1}
-                    max={30}
-                    step={1}
-                    className="[&_[role=slider]]:bg-gold-rich"
-                  />
-                  <p className="text-xs text-parchment/50">
-                    Score multiplier for group comparison
-                  </p>
-                </div>
-              )}
-            </>
-          )}
         </AccordionContent>
       </AccordionItem>
     </Accordion>

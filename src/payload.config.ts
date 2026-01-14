@@ -44,7 +44,10 @@ import { migrations } from './migrations'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
-const cloudflareRemoteBindings = process.env.NODE_ENV === 'production'
+// During Cloudflare Pages builds, CF_PAGES is set but D1 bindings aren't available
+// Use wrangler proxy for local dev, migration commands, and CI builds
+const isBuildTime = process.env.CF_PAGES === '1' || process.argv.includes('build')
+const cloudflareRemoteBindings = process.env.NODE_ENV === 'production' && !isBuildTime
 const cloudflare =
   process.argv.find((value) => value.match(/^(generate|migrate):?/)) || !cloudflareRemoteBindings
     ? await getCloudflareContextFromWrangler()

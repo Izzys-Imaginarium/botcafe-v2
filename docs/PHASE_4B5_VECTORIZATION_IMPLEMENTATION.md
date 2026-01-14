@@ -156,17 +156,23 @@ User searches knowledge
 All vectors are isolated by `tenant_id` (user ID):
 
 ```typescript
+// IMPORTANT: tenant_id and source_id MUST be strings
+const tenant_id = String(payloadUser.id)
+const source_id = String(knowledgeId)
+
 metadata: {
-  tenant_id: payloadUser.id,  // Ensures data isolation
-  user_id: payloadUser.id,
+  tenant_id: tenant_id,        // MUST be string, not number
+  user_id: payloadUser.id,     // Can be number (for Vectorize filtering)
   type: 'lore' | 'memory' | 'legacy_memory',
   source_type: 'knowledge' | 'memory',
-  source_id: '123',
+  source_id: source_id,        // MUST be string, not number
   // ... other metadata
 }
 ```
 
 Searches automatically filter by `tenant_id` to ensure users only see their own data.
+
+> **Critical:** The D1 database expects `tenant_id` and `source_id` to be strings. Passing numeric values will cause "invalid field" errors.
 
 ## Local Development Support
 
@@ -179,8 +185,18 @@ Since Cloudflare bindings are only available in Workers/Pages environment, we im
 
 ### Production Detection:
 ```typescript
-const ai = (global as any).__env?.AI
-const vectorize = (global as any).__env?.VECTORIZE
+// Use getCloudflareContext from @opennextjs/cloudflare
+import { getCloudflareContext } from '@opennextjs/cloudflare'
+
+let ai: any
+let vectorize: any
+try {
+  const { env } = await getCloudflareContext()
+  ai = env.AI
+  vectorize = env.VECTORIZE
+} catch (e) {
+  console.warn('Failed to get Cloudflare context:', e)
+}
 
 if (!ai || !vectorize) {
   // Use placeholder implementation
@@ -233,13 +249,20 @@ Configuration: 1024 dimensions, cosine similarity metric
 
 ### Still TODO:
 
-- [ ] Register workers.dev subdomain for local development (optional)
-- [ ] Deploy to Cloudflare Pages to test with real bindings
-- [ ] Add "Vectorize" button to lore entries UI (Phase 4B.6)
-- [ ] Display vectorization status badges (Phase 4B.6)
-- [ ] Add semantic search UI in lore dashboard (Phase 4B.6)
+- [x] Register workers.dev subdomain for local development (optional)
+- [x] Deploy to Cloudflare Pages to test with real bindings
+- [x] Add "Vectorize" button to lore entries UI (Phase 4B.6)
+- [x] Display vectorization status badges (Phase 4B.6)
+- [x] Add semantic search UI in lore dashboard (Phase 4B.6)
 - [ ] Monitor Workers AI usage and costs
 - [ ] Optimize batch sizes for performance
+
+### Known Issues Fixed (2026-01-14):
+
+1. **Type Mismatch Errors**: `tenant_id` and `source_id` must be strings (fixed in `embeddings.ts` and all generate routes)
+2. **SQL Variable Overflow**: Metadata must be `JSON.stringify()`'d, and `vector_records` relationship updates removed
+3. **Foreign Key Constraints**: `memory.lore_entry_id` now has `ON DELETE SET NULL`
+4. **Orphan FK References**: `payload_locked_documents_rels` no longer references removed `creator_programs` table
 
 ## Technical Specifications
 

@@ -1,7 +1,7 @@
 # BotCafe v2 - Database Schema
 
-**Last Updated**: 2026-01-09
-**Version**: 3.0
+**Last Updated**: 2026-01-14
+**Version**: 3.1
 **Database**: Cloudflare D1 (SQLite) via Payload CMS
 
 ---
@@ -300,15 +300,20 @@ Vector embedding tracking for D1/Vectorize coordination.
 | `source_type` | select | Source: knowledge, memory (required, indexed) |
 | `source_id` | text | Reference to source document in D1 (required, indexed) |
 | `user_id` | relationship (Users) | Owner (required, indexed) |
-| `tenant_id` | text | Multi-tenant isolation ID (required, indexed) |
+| `tenant_id` | text | Multi-tenant isolation ID (required, indexed) - **Must be string** |
 | `chunk_index` | number | Position in document, 0-based (required) |
 | `total_chunks` | number | Total chunks in document (required) |
 | `chunk_text` | textarea | Original text of this chunk (required) |
-| `metadata` | json | Full metadata object for Vectorize filtering (required) |
+| `metadata` | json | Full metadata object for Vectorize filtering (required) - **Stored as JSON string** |
 | `embedding_model` | text | Embedding model used, e.g., "@cf/baai/bge-m3" (required) |
 | `embedding_dimensions` | number | Vector dimensions, e.g., 1024 (required) |
 | `createdAt` | date | Auto-generated |
 | `updatedAt` | date | Auto-generated |
+
+> **Important Implementation Notes:**
+> - `tenant_id` must be a string (use `String(userId)` when creating records)
+> - `metadata` must be stored as a JSON string (use `JSON.stringify(metadata)`) to avoid SQLite "too many SQL variables" errors
+> - VectorRecords are queried by `source_id` rather than using hasMany relationships to avoid parameter overflow
 
 ### KnowledgeActivationLog 🆕
 
@@ -383,12 +388,15 @@ Conversation memory storage.
 |-------|------|-------------|
 | `id` | string | Primary key |
 | `user` | relationship (Users) | Memory owner |
+| `bot` | relationship (Bot) | Associated bot |
 | `conversation` | relationship (Conversation) | Source conversation |
+| `lore_entry_id` | relationship (Knowledge) | Link to converted lore entry (ON DELETE SET NULL) |
 | `memory_type` | select | Type: short_term, long_term, episodic, semantic |
 | `content` | textarea | Raw memory content |
+| `entry` | textarea | Memory entry text |
 | `summary` | textarea | AI-generated summary |
 | `participants` | json | Bot/persona IDs involved |
-| `importance` | number | Importance score (0-1) |
+| `importance` | number | Importance score (0-10) |
 | `is_vectorized` | checkbox | Vectorization status |
 | `embedding_metadata` | json | Vector metadata |
 | `last_accessed` | date | Last retrieval |
@@ -396,6 +404,8 @@ Conversation memory storage.
 | `expires_at` | date | Expiration (for short-term) |
 | `createdAt` | date | Auto-generated |
 | `updatedAt` | date | Auto-generated |
+
+> **Foreign Key Note**: The `lore_entry_id` field has `ON DELETE SET NULL` constraint, allowing knowledge entries to be deleted without breaking memory records.
 
 ---
 

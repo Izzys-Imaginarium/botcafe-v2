@@ -549,6 +549,28 @@ When you add new Payload collections or modify existing ones:
 
 ## 🔄 **Recent Changes**
 
+### **2026-01-14 Updates:**
+- ✅ **Vectorization System Bug Fixes**
+  - Fixed `tenant_id` type in `VectorMetadata` interface (changed from `number` to `string`)
+  - Fixed `source_id` to always be converted to string with `String(sourceId)`
+  - Fixed metadata storage to use `JSON.stringify(metadata)` avoiding D1 "too many SQL variables" error
+  - Removed `vector_records` relationship updates from generate routes (hasMany with large arrays causes parameter overflow)
+  - VectorRecords are now queried by `source_id` field instead of via relationships
+  - Updated both `/api/vectors/generate` and `/api/memories/vectorize` routes
+- ✅ **Knowledge Entry Deletion Fixes**
+  - Fixed `memory.lore_entry_id` foreign key to use `ON DELETE SET NULL` constraint
+  - Removed orphan `creator_programs_id` column from `payload_locked_documents_rels` table
+  - Knowledge entries can now be deleted without FK constraint errors
+- ✅ **Database Migrations Applied to Remote D1**
+  - Created `.wrangler/fix-memory-fk.sql` to fix memory table FK constraint
+  - Created `.wrangler/fix-payload-locked-documents-rels.sql` to remove `creator_programs` reference
+  - Both migrations successfully applied to production database
+- ✅ **Documentation Updates**
+  - Updated DATABASE-SCHEMA.md with type notes for VectorRecord fields
+  - Updated RAG-ARCHITECTURE.md with critical type requirements
+  - Updated VECTORIZE_SETUP.md with comprehensive troubleshooting section
+  - Updated PHASE_4B5_VECTORIZATION_IMPLEMENTATION.md with fixes and getCloudflareContext usage
+
 ### **2026-01-13 Updates:**
 - ✅ **Knowledge System Edit Functionality**
   - Added `PATCH` endpoint to `/api/knowledge-collections/[id]` for updating collection name, description, and sharing settings
@@ -845,8 +867,8 @@ When you add new Payload collections or modify existing ones:
 
 ---
 
-**Last Updated**: 2026-01-13
-**Version**: 3.1
+**Last Updated**: 2026-01-14
+**Version**: 3.2
 **Total Tasks**: 148
-**Completed**: 120
-**Progress**: ~81% (hybrid activation UI complete)
+**Completed**: 122
+**Progress**: ~82% (vectorization bugs fixed, knowledge deletion working)

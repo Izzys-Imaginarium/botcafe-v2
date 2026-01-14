@@ -1,7 +1,7 @@
 # BotCafé RAG Architecture
 
-**Last Updated**: 2026-01-09
-**Version**: 2.0 (Added Hybrid Activation System)
+**Last Updated**: 2026-01-14
+**Version**: 2.1 (Fixed vectorization types and metadata handling)
 
 ## Overview
 
@@ -49,11 +49,11 @@ interface VectorMetadata {
 
   // Ownership & Access
   user_id: number;                    // Owner user ID (numeric)
-  tenant_id: number;                  // For multi-tenant isolation (same as user_id)
+  tenant_id: string;                  // For multi-tenant isolation - MUST BE STRING
 
   // Content Identification
   source_type: 'knowledge' | 'memory'; // Source collection
-  source_id: string;                   // ID of source document in D1
+  source_id: string;                   // ID of source document in D1 - MUST BE STRING
   chunk_index: number;                 // Position in document (0-based)
   total_chunks: number;                // Total chunks in document
   created_at: string;                  // ISO timestamp
@@ -64,6 +64,11 @@ interface VectorMetadata {
   tags?: string[];                     // User-defined tags
 }
 ```
+
+> **Critical Type Requirements:**
+> - `tenant_id` MUST be a string (use `String(userId)` when creating)
+> - `source_id` MUST be a string (use `String(sourceId)` when creating)
+> - When storing metadata in D1 VectorRecord, use `JSON.stringify(metadata)` to avoid SQLite "too many SQL variables" error
 
 > **Note**: The `is_public` field was removed from vector metadata. Privacy is controlled at the Knowledge/Memory collection level, not the vector level. All queries filter by `user_id` or `tenant_id` for isolation.
 
@@ -620,24 +625,30 @@ const results = await vectorSearch(query, {
   vector_id: string;                 // Vectorize database ID
 
   source_type: 'knowledge' | 'memory';
-  source_id: string;                 // ID of source document
+  source_id: string;                 // ID of source document - MUST BE STRING
 
-  user_id: string;                   // Owner
-  tenant_id: string;                 // Multi-tenant isolation
+  user_id: string;                   // Owner (relationship)
+  tenant_id: string;                 // Multi-tenant isolation - MUST BE STRING
 
   chunk_index: number;
   total_chunks: number;
   chunk_text: text;                  // Original text of chunk
 
-  metadata: json;                    // Full metadata object
+  metadata: json;                    // Full metadata object - STORED AS JSON.stringify()
 
-  embedding_model: string;           // 'text-embedding-3-small'
-  embedding_dimensions: number;      // 1536
+  embedding_model: string;           // '@cf/baai/bge-m3'
+  embedding_dimensions: number;      // 1024
 
   created_at: timestamp;
   updated_at: timestamp;
 }
 ```
+
+> **Important Implementation Notes:**
+> - `tenant_id` must be converted to string: `String(payloadUser.id)`
+> - `source_id` must be converted to string: `String(sourceId)`
+> - `metadata` must be stringified: `JSON.stringify(metadata)` to avoid D1 "too many SQL variables" error
+> - VectorRecords are queried by `source_id` field, NOT via hasMany relationships (which can cause parameter overflow)
 
 ---
 

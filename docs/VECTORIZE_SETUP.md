@@ -86,14 +86,19 @@ Each vector in Vectorize stores the following metadata:
 {
   type: 'lore' | 'memory' | 'legacy_memory',
   user_id: number,
-  tenant_id: number,
+  tenant_id: string,        // MUST BE STRING - use String(userId)
   source_type: 'knowledge' | 'memory',
-  source_id: string,
+  source_id: string,        // MUST BE STRING - use String(sourceId)
   chunk_index: number,
   total_chunks: number,
   created_at: string (ISO 8601),
 }
 ```
+
+> **Critical Type Requirements:**
+> - `tenant_id` MUST be a string (convert with `String(userId)`)
+> - `source_id` MUST be a string (convert with `String(sourceId)`)
+> - D1 columns expect text type, not numeric
 
 ## Usage in Code
 
@@ -145,6 +150,57 @@ Make sure you've deployed your worker after updating `wrangler.jsonc`:
 ```bash
 wrangler deploy --env development
 ```
+
+### Error: "The following fields are invalid: Source_id, Tenant_id"
+This error occurs when numeric values are passed instead of strings.
+
+**Solution:** Ensure you convert IDs to strings:
+```typescript
+const tenant_id = String(payloadUser.id)  // NOT payloadUser.id directly
+const source_id = String(sourceId)         // NOT sourceId directly
+```
+
+### Error: "D1_ERROR: too many SQL variables"
+This error occurs when Payload tries to insert too many parameters in a single SQL statement.
+
+**Common causes and solutions:**
+
+1. **Metadata object expansion**: Use `JSON.stringify(metadata)` instead of passing the object directly:
+```typescript
+// WRONG
+data: { metadata: metadata }
+
+// CORRECT
+data: { metadata: JSON.stringify(metadata) }
+```
+
+2. **hasMany relationship updates**: Don't update relationships with large arrays:
+```typescript
+// WRONG - causes parameter overflow with many vector records
+await payload.update({
+  collection: 'knowledge',
+  id: sourceId,
+  data: {
+    vector_records: vectorRecordIds,  // Can have many IDs!
+  },
+})
+
+// CORRECT - query VectorRecords by source_id instead
+const vectorRecords = await payload.find({
+  collection: 'vectorRecords',
+  where: { source_id: { equals: String(sourceId) } },
+})
+```
+
+### Error: "SQLITE_ERROR: no such table: main.creator_programs"
+This occurs when a foreign key reference points to a non-existent table.
+
+**Solution:** If you've removed a collection but the `payload_locked_documents_rels` table still references it, recreate the table without the orphan column. See `.wrangler/fix-payload-locked-documents-rels.sql` for an example migration.
+
+### Error: "delete from 'knowledge' where id = ?" failing
+This is usually caused by foreign key constraints. Check:
+1. Does `memory.lore_entry_id` have `ON DELETE SET NULL`?
+2. Are there orphan foreign key references in `payload_locked_documents_rels`?
 
 ## Next Steps
 

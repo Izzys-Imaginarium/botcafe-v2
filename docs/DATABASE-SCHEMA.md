@@ -169,7 +169,6 @@ Individual knowledge entries for bot context and RAG with hybrid activation syst
 | `advanced_activation` | group | **NEW:** Timed effects (sticky, cooldown, delay) |
 | `filtering` | group | **NEW:** Bot/persona filtering controls |
 | `budget_control` | group | **NEW:** Token budget management |
-| `group_settings` | group | **NEW:** Group scoring settings |
 | `created_timestamp` | date | Creation timestamp |
 | `modified_timestamp` | date | Modification timestamp |
 | `createdAt` | date | Auto-generated |
@@ -243,16 +242,6 @@ Token budget management for context optimization.
 | `ignore_budget` | checkbox | Always include even if budget exhausted |
 | `token_cost` | number | Token count (auto-calculated, read-only) |
 | `max_tokens` | number | Maximum tokens this entry can use (0-8000, default: 1000) |
-
-#### Knowledge Group Settings (group) 🆕
-
-Group scoring - only highest score in group activates (prevents redundant entries).
-
-| Field | Type | Options/Description |
-|-------|------|---------------------|
-| `group_name` | text | Group identifier (e.g., "location", "character_background") |
-| `use_group_scoring` | checkbox | Enable group-based competition |
-| `group_weight` | number | Weight multiplier for this entry (0-10, default: 1.0) |
 
 #### Knowledge Privacy Settings (group)
 
@@ -338,7 +327,7 @@ Tracks when and how knowledge entries are activated during conversations for ana
 | `position_inserted` | text | Where entry was inserted in prompt (required) |
 | `tokens_used` | number | Tokens consumed by this entry (required) |
 | `was_included` | checkbox | Whether entry was actually included (false if budget exceeded) (required) |
-| `exclusion_reason` | select | Why excluded: **budget_exceeded**, **group_scoring_lost**, **cooldown_active**, **delay_not_met**, **probability_failed**, **filter_excluded** |
+| `exclusion_reason` | select | Why excluded: **budget_exceeded**, **cooldown_active**, **delay_not_met**, **probability_failed**, **filter_excluded** |
 | `activation_timestamp` | date | When activation occurred (required, auto-generated) |
 | `createdAt` | date | Auto-generated |
 | `updatedAt` | date | Auto-generated |

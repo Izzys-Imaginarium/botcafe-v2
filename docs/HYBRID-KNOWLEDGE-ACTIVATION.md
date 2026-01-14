@@ -7,7 +7,7 @@
 ## Implementation Progress
 
 ### ✅ Phase 1: Schema & Database (COMPLETE)
-- ✅ Knowledge collection enhanced with 37 new fields across 6 groups
+- ✅ Knowledge collection enhanced with new fields across 5 groups
 - ✅ KnowledgeActivationLog collection created
 - ✅ TypeScript types generated
 - ✅ All documentation updated
@@ -30,7 +30,6 @@
   - Bot/persona filtering
   - Timed effects (sticky, cooldown, delay)
   - Probability checks
-  - Group scoring
   - Token budget management
   - Activation logging to database
 - ✅ **prompt-builder.ts** (347 lines) - Positioning system with:
@@ -56,10 +55,9 @@
   - Positioning controls (7 positions, depth, role, order)
   - Advanced activation (sticky, cooldown, delay)
   - Budget controls (ignore budget, max tokens)
-  - Group settings (group name, scoring, weight)
 - ✅ **lore-entries-view.tsx** - Full integration with:
   - Collapsible activation settings panel
-  - State management for all 6 settings sections
+  - State management for all 5 settings sections
   - Form submission includes all activation settings
   - Form reset restores default values
 - ✅ **/api/knowledge/route.ts** - Updated to accept all activation settings
@@ -217,13 +215,6 @@ This hybrid approach provides users with both precise control and intelligent di
     ignore_budget: boolean,          // Skip this entry if budget exhausted
     token_cost: number,              // Calculated token count of content
     max_tokens: number,              // Max tokens this entry can use
-  },
-
-  // GROUPING (for scoring)
-  group_settings: {
-    group_name: string,              // Group identifier
-    use_group_scoring: boolean,      // Only highest score in group activates
-    group_weight: number,            // Weight multiplier for this entry
   },
 }
 ```
@@ -394,11 +385,6 @@ Update lore entry creation/editing UI with new fields:
    - Token cost display (auto-calculated)
    - Max tokens slider
 
-6. **Grouping** (collapsed by default)
-   - Group name input
-   - Use group scoring toggle
-   - Group weight slider
-
 #### Entry List View Enhancements
 
 Add columns/badges showing:
@@ -406,7 +392,6 @@ Add columns/badges showing:
 - Position badge
 - Order number
 - Trigger percentage (based on activation log)
-- Group name badge
 - Active filters count
 
 ### Phase 4: Chat Integration (Week 4)
@@ -881,17 +866,11 @@ const DEFAULT_BUDGET_CONTROL = {
   token_cost: 0, // calculated
   max_tokens: 1000,
 };
-
-const DEFAULT_GROUP_SETTINGS = {
-  group_name: '',
-  use_group_scoring: false,
-  group_weight: 1.0,
-};
 ```
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2026-01-09
+**Document Version**: 3.2
+**Last Updated**: 2026-01-13
 **Author**: BotCafé Development Team
-**Status**: Design Phase - Pending Implementation
+**Status**: Phase 3 Complete - Group settings removed for simplicity

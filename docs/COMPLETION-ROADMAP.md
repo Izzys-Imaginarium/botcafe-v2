@@ -559,18 +559,28 @@ When you add new Payload collections or modify existing ones:
   - Added edit UI to Collections page with edit dialog (name, description)
   - Added edit UI to Entries browse tab with edit dialog (type, collection, content, tags)
   - Warning shown when editing vectorized entries that content change requires re-vectorization
+- ✅ **Document Locking Fix**
+  - Added `lockDocuments: false` to Knowledge and KnowledgeCollections collections
+  - Fixes D1 adapter error: `delete from "payload_locked_documents" where false`
+- ✅ **Group Settings Removed**
+  - Removed `group_settings` field group from Knowledge collection schema
+  - Removed group settings UI from activation-settings.tsx and lore-entries-view.tsx
+  - Updated documentation (HYBRID-KNOWLEDGE-ACTIVATION.md, DATABASE-SCHEMA.md, HYBRID-SYSTEM-PHASE-1-COMPLETE.md)
+  - Simplifies the activation system - use collections and tags for organization instead
+- ⏳ **Migration Needed**
+  - Database migration required for new activation settings fields
+  - Run `pnpm payload migrate:create` then deploy to D1
 
 ### **2026-01-10 Updates:**
 - ✅ **Hybrid Activation System - Phase 3 UI Complete**
   - Integrated ActivationSettings component into lore-entries-view.tsx
   - Added collapsible activation settings panel with toggle button
-  - Added state management for all 6 settings sections:
+  - Added state management for all 5 settings sections:
     - activationSettings (mode, keywords, vector threshold, scan settings)
     - positioning (7 position types, depth, role, order)
     - advancedActivation (sticky, cooldown, delay)
     - filtering (bot/persona allowed/excluded lists)
     - budgetControl (ignore budget, max tokens)
-    - groupSettings (group name, scoring, weight)
   - Updated /api/knowledge/route.ts to accept all activation settings from UI
     - Added converter functions for Payload's array formats (keywords, bot_ids)
     - All fields have sensible defaults

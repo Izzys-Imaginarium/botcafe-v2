@@ -62,12 +62,9 @@ Added 6 new field groups to the Knowledge collection:
 - `token_cost` - Auto-calculated (read-only)
 - `max_tokens` - Max tokens (0-8000)
 
-#### `group_settings` (3 fields)
-- `group_name` - Group identifier
-- `use_group_scoring` - Enable competition
-- `group_weight` - Weight multiplier (0-10)
+**Total New Fields**: 34 fields across 5 groups
 
-**Total New Fields**: 37 fields across 6 groups
+*Note: Group settings were removed in v3.2 to reduce complexity.*
 
 ### 2. KnowledgeActivationLog Collection ✅
 

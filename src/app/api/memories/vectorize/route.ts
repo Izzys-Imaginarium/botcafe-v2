@@ -195,12 +195,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Update memory entry with vectorization status
+    // Note: We don't update vector_records relationship here to avoid "too many SQL variables" error
+    // VectorRecords can be queried by source_id instead
     await payload.update({
       collection: 'memory',
       id: memoryId,
       data: {
         is_vectorized: true,
-        vector_records: vectorRecordIds,
       },
     })
 

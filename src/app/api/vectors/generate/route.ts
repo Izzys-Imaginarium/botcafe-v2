@@ -195,12 +195,13 @@ export async function POST(request: NextRequest) {
     await insertVectors(vectorize, vectorizeRecords)
 
     // Update source document to mark as vectorized
+    // Note: We don't update vector_records relationship here to avoid "too many SQL variables" error
+    // VectorRecords can be queried by source_id instead
     await payload.update({
       collection: sourceCollection as any,
       id: source_id,
       data: {
         is_vectorized: true,
-        vector_records: vectorRecords.map((vr) => vr.id),
         chunk_count: chunks.length,
       },
     })
@@ -273,12 +274,13 @@ async function createPlaceholderVectors(
     vectorRecords.push(vectorRecord)
   }
 
+  // Note: We don't update vector_records relationship here to avoid "too many SQL variables" error
+  // VectorRecords can be queried by source_id instead
   await payload.update({
     collection: sourceCollection as any,
     id: source_id,
     data: {
       is_vectorized: true,
-      vector_records: vectorRecords.map((vr) => vr.id),
       chunk_count: chunks.length,
     },
   })

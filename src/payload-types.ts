@@ -993,23 +993,6 @@ export interface Knowledge {
      */
     max_tokens?: number | null;
   };
-  /**
-   * Group scoring (only highest score in group activates)
-   */
-  group_settings?: {
-    /**
-     * Group identifier (e.g., "location", "character_background")
-     */
-    group_name?: string | null;
-    /**
-     * Enable group-based competition
-     */
-    use_group_scoring?: boolean | null;
-    /**
-     * Weight multiplier for this entry
-     */
-    group_weight?: number | null;
-  };
   updatedAt: string;
   createdAt: string;
 }
@@ -3217,13 +3200,6 @@ export interface KnowledgeSelect<T extends boolean = true> {
         ignore_budget?: T;
         token_cost?: T;
         max_tokens?: T;
-      };
-  group_settings?:
-    | T
-    | {
-        group_name?: T;
-        use_group_scoring?: T;
-        group_weight?: T;
       };
   updatedAt?: T;
   createdAt?: T;

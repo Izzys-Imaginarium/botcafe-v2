@@ -86,9 +86,6 @@ export class ActivationEngine {
       // Apply probability checks
       activatedEntries = this.applyProbability(activatedEntries)
 
-      // Apply group scoring (only highest score in each group)
-      activatedEntries = this.applyGroupScoring(activatedEntries)
-
       // Apply token budget
       activatedEntries = this.applyBudget(activatedEntries, context.budgetConfig)
 
@@ -123,7 +120,6 @@ export class ActivationEngine {
         entriesExcludedByProbability: activatedEntries.filter((e) => e.exclusionReason === 'probability_failed').length,
         entriesExcludedByCooldown: activatedEntries.filter((e) => e.exclusionReason === 'cooldown_active').length,
         entriesExcludedByDelay: activatedEntries.filter((e) => e.exclusionReason === 'delay_not_met').length,
-        entriesExcludedByGroupScoring: activatedEntries.filter((e) => e.exclusionReason === 'group_scoring_lost').length,
       }
     } catch (error) {
       throw new ActivationError('Activation failed', 'ACTIVATION_FAILED', { error, context })
@@ -205,8 +201,6 @@ export class ActivationEngine {
           order: entry.positioning?.order ?? 100,
           tokenCost: entry.budget_control?.token_cost ?? 0,
           ignoreBudget: entry.budget_control?.ignore_budget ?? false,
-          groupName: entry.group_settings?.group_name,
-          groupWeight: entry.group_settings?.group_weight ?? 1.0,
           wasIncluded: true, // Will be updated by filters
         })
       }
@@ -285,8 +279,6 @@ export class ActivationEngine {
         order: entry.positioning?.order ?? 100,
         tokenCost: entry.budget_control?.token_cost ?? 0,
         ignoreBudget: entry.budget_control?.ignore_budget ?? false,
-        groupName: entry.group_settings?.group_name,
-        groupWeight: entry.group_settings?.group_weight ?? 1.0,
         wasIncluded: true,
       })
     }
@@ -316,8 +308,6 @@ export class ActivationEngine {
         order: entry.positioning?.order ?? 100,
         tokenCost: entry.budget_control?.token_cost ?? 0,
         ignoreBudget: entry.budget_control?.ignore_budget ?? false,
-        groupName: entry.group_settings?.group_name,
-        groupWeight: entry.group_settings?.group_weight ?? 1.0,
         wasIncluded: true,
       })
     }
@@ -492,52 +482,6 @@ export class ActivationEngine {
         }
       }
 
-      return entry
-    })
-  }
-
-  /**
-   * Apply group scoring (only highest score in each group)
-   */
-  private applyGroupScoring(entries: ActivatedEntry[]): ActivatedEntry[] {
-    // Group entries by group name
-    const groups = new Map<string, ActivatedEntry[]>()
-
-    for (const entry of entries) {
-      if (entry.groupName && entry.entry.group_settings?.use_group_scoring) {
-        if (!groups.has(entry.groupName)) {
-          groups.set(entry.groupName, [])
-        }
-        groups.get(entry.groupName)!.push(entry)
-      }
-    }
-
-    // For each group, keep only the highest scoring entry
-    const excludedEntries = new Set<string>()
-
-    for (const [groupName, groupEntries] of groups) {
-      if (groupEntries.length <= 1) continue
-
-      // Sort by score (weighted)
-      groupEntries.sort(
-        (a, b) => b.activationScore * b.groupWeight - a.activationScore * a.groupWeight,
-      )
-
-      // Mark all except the highest as excluded
-      for (let i = 1; i < groupEntries.length; i++) {
-        excludedEntries.add(String(groupEntries[i].entryId))
-      }
-    }
-
-    // Apply exclusions
-    return entries.map((entry) => {
-      if (excludedEntries.has(String(entry.entryId))) {
-        return {
-          ...entry,
-          wasIncluded: false,
-          exclusionReason: 'group_scoring_lost' as ExclusionReason,
-        }
-      }
       return entry
     })
   }

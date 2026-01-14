@@ -29,7 +29,6 @@ export type ActivationMethod = 'keyword' | 'vector' | 'constant' | 'manual'
 
 export type ExclusionReason =
   | 'budget_exceeded'
-  | 'group_scoring_lost'
   | 'cooldown_active'
   | 'delay_not_met'
   | 'probability_failed'
@@ -113,10 +112,6 @@ export interface ActivatedEntry {
   tokenCost: number
   ignoreBudget: boolean
 
-  // Grouping
-  groupName?: string
-  groupWeight: number
-
   // State
   wasIncluded: boolean
   exclusionReason?: ExclusionReason
@@ -131,7 +126,6 @@ export interface ActivationResult {
   entriesExcludedByProbability: number
   entriesExcludedByCooldown: number
   entriesExcludedByDelay: number
-  entriesExcludedByGroupScoring: number
 }
 
 // ============================================================================
@@ -186,16 +180,6 @@ export interface BuiltPrompt {
   systemMessages: string[]
   insertedContent: Map<Position, string[]>
   totalTokens: number
-}
-
-// ============================================================================
-// GROUP SCORING
-// ============================================================================
-
-export interface GroupScore {
-  groupName: string
-  entries: ActivatedEntry[]
-  winner?: ActivatedEntry
 }
 
 // ============================================================================

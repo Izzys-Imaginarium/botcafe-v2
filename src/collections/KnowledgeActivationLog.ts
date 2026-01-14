@@ -128,7 +128,6 @@ export const KnowledgeActivationLog: CollectionConfig = {
       type: 'select',
       options: [
         { label: 'Budget Exceeded', value: 'budget_exceeded' },
-        { label: 'Group Scoring Lost', value: 'group_scoring_lost' },
         { label: 'Cooldown Active', value: 'cooldown_active' },
         { label: 'Delay Not Met', value: 'delay_not_met' },
         { label: 'Probability Failed', value: 'probability_failed' },

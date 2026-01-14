@@ -113,13 +113,11 @@ export class BudgetManager {
   }
 
   /**
-   * Sort entries by priority (activation score weighted by group weight)
+   * Sort entries by priority (activation score)
    */
   private sortByPriority(entries: ActivatedEntry[]): ActivatedEntry[] {
     return entries.sort((a, b) => {
-      const aPriority = a.activationScore * a.groupWeight
-      const bPriority = b.activationScore * b.groupWeight
-      return bPriority - aPriority
+      return b.activationScore - a.activationScore
     })
   }
 

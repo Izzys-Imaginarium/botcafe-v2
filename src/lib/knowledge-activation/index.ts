@@ -40,7 +40,6 @@ export type {
   ActivationContext,
   ActivationResult,
   FilterConfig,
-  GroupScore,
 } from './types'
 
 // Error Classes

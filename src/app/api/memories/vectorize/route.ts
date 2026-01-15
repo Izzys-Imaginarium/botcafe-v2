@@ -197,13 +197,26 @@ export async function POST(request: NextRequest) {
     // Update memory entry with vectorization status
     // Note: We don't update vector_records relationship here to avoid "too many SQL variables" error
     // VectorRecords can be queried by source_id instead
-    await payload.update({
-      collection: 'memory',
-      id: memoryId,
-      data: {
-        is_vectorized: true,
-      },
-    })
+    // Using D1 directly to avoid Payload expanding all array fields which causes parameter overflow
+    try {
+      const { env } = await getCloudflareContext()
+      // D1 binding is named "D1" in wrangler.jsonc
+      const d1 = (env as any).D1
+      if (d1) {
+        await d1.prepare(`UPDATE memory SET is_vectorized = 1 WHERE id = ?`).bind(memoryId).run()
+      } else {
+        await payload.update({
+          collection: 'memory',
+          id: memoryId,
+          data: {
+            is_vectorized: true,
+          },
+          overrideAccess: true,
+        })
+      }
+    } catch (updateError) {
+      console.warn('Failed to update memory vectorization status:', updateError)
+    }
 
     return NextResponse.json({
       success: true,

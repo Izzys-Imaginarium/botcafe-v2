@@ -197,14 +197,35 @@ export async function POST(request: NextRequest) {
     // Update source document to mark as vectorized
     // Note: We don't update vector_records relationship here to avoid "too many SQL variables" error
     // VectorRecords can be queried by source_id instead
-    await payload.update({
-      collection: sourceCollection as any,
-      id: source_id,
-      data: {
-        is_vectorized: true,
-        chunk_count: chunks.length,
-      },
-    })
+    // Using D1 directly to avoid Payload expanding all array fields which causes parameter overflow
+    try {
+      const { env } = await getCloudflareContext()
+      // D1 binding is named "D1" in wrangler.jsonc
+      const d1 = (env as any).D1
+      if (d1) {
+        // Use D1 directly for a targeted update to avoid expanding all array fields
+        await d1
+          .prepare(`UPDATE ${sourceCollection} SET is_vectorized = 1, chunk_count = ? WHERE id = ?`)
+          .bind(chunks.length, source_id)
+          .run()
+        console.log(`Updated ${sourceCollection} ${source_id} vectorization status via D1`)
+      } else {
+        // Fallback to Payload update with overrideAccess
+        await payload.update({
+          collection: sourceCollection as any,
+          id: source_id,
+          data: {
+            is_vectorized: true,
+            chunk_count: chunks.length,
+          },
+          overrideAccess: true,
+        })
+      }
+    } catch (updateError) {
+      // If update fails, log but don't fail the whole operation
+      // The vectors are already created, this is just a status update
+      console.warn('Failed to update source document vectorization status:', updateError)
+    }
 
     return NextResponse.json({
       message: 'Vectors generated successfully',
@@ -276,14 +297,30 @@ async function createPlaceholderVectors(
 
   // Note: We don't update vector_records relationship here to avoid "too many SQL variables" error
   // VectorRecords can be queried by source_id instead
-  await payload.update({
-    collection: sourceCollection as any,
-    id: source_id,
-    data: {
-      is_vectorized: true,
-      chunk_count: chunks.length,
-    },
-  })
+  // Using D1 directly to avoid Payload expanding all array fields
+  try {
+    const { env } = await getCloudflareContext()
+    // D1 binding is named "D1" in wrangler.jsonc
+    const d1 = (env as any).D1
+    if (d1) {
+      await d1
+        .prepare(`UPDATE ${sourceCollection} SET is_vectorized = 1, chunk_count = ? WHERE id = ?`)
+        .bind(chunks.length, source_id)
+        .run()
+    } else {
+      await payload.update({
+        collection: sourceCollection as any,
+        id: source_id,
+        data: {
+          is_vectorized: true,
+          chunk_count: chunks.length,
+        },
+        overrideAccess: true,
+      })
+    }
+  } catch (updateError) {
+    console.warn('Failed to update source document vectorization status:', updateError)
+  }
 
   return NextResponse.json({
     message: 'Vectors generated successfully (placeholder mode - no real embeddings)',

@@ -1,7 +1,7 @@
 # BotCafe v2 - Database Schema
 
-**Last Updated**: 2026-01-14
-**Version**: 3.1
+**Last Updated**: 2026-01-15
+**Version**: 3.2
 **Database**: Cloudflare D1 (SQLite) via Payload CMS
 
 ---
@@ -307,6 +307,7 @@ Vector embedding tracking for D1/Vectorize coordination.
 | `metadata` | json | Full metadata object for Vectorize filtering (required) - **Stored as JSON string** |
 | `embedding_model` | text | Embedding model used, e.g., "@cf/baai/bge-m3" (required) |
 | `embedding_dimensions` | number | Vector dimensions, e.g., 1024 (required) |
+| `embedding` | text | The actual vector values as JSON array (optional) - **For future-proofing metadata updates** |
 | `createdAt` | date | Auto-generated |
 | `updatedAt` | date | Auto-generated |
 
@@ -314,6 +315,7 @@ Vector embedding tracking for D1/Vectorize coordination.
 > - `tenant_id` must be a string (use `String(userId)` when creating records)
 > - `metadata` must be stored as a JSON string (use `JSON.stringify(metadata)`) to avoid SQLite "too many SQL variables" errors
 > - VectorRecords are queried by `source_id` rather than using hasMany relationships to avoid parameter overflow
+> - The `embedding` field stores the actual vector values in D1, enabling future metadata-only updates without re-generating embeddings
 
 ### KnowledgeActivationLog 🆕
 

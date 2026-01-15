@@ -202,15 +202,33 @@ This is usually caused by foreign key constraints. Check:
 1. Does `memory.lore_entry_id` have `ON DELETE SET NULL`?
 2. Are there orphan foreign key references in `payload_locked_documents_rels`?
 
+## Auto-Vectorization Behavior 🆕
+
+As of 2026-01-15, knowledge entries with **vector** or **hybrid** activation modes are **automatically vectorized** when saved. There is no longer a separate "Vectorize" button in the UI.
+
+### How It Works
+
+- **On Create:** Entries with vector/hybrid mode are vectorized immediately after creation
+- **On Update:** If content changes, old vectors are deleted and new ones generated
+- **On Delete:** All associated vectors are automatically cleaned up
+- **Mode Change:** Changing to vector/hybrid triggers vectorization; changing away deletes vectors
+
+### Embedding Storage
+
+VectorRecords now include an `embedding` field that stores the actual vector values in D1. This enables:
+- Metadata updates without regenerating embeddings
+- Debugging and inspection of vectors
+- Recovery if Vectorize needs to be repopulated
+
 ## Next Steps
 
 After creating the indexes:
 
 1. ✅ Vectorize indexes created
 2. Deploy your worker with the bindings
-3. Test embedding generation via `/api/vectors/generate`
+3. ✅ Auto-vectorization enabled for vector/hybrid modes
 4. Test semantic search via `/api/vectors/search`
-5. Connect the UI to enable vectorization buttons
+5. ✅ UI simplified to single "Save" button (auto-vectorizes based on mode)
 
 ## References
 

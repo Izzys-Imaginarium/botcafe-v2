@@ -549,6 +549,29 @@ When you add new Payload collections or modify existing ones:
 
 ## 🔄 **Recent Changes**
 
+### **2026-01-15 Updates:**
+- ✅ **Auto-Vectorization on Save**
+  - Knowledge entries with `vector` or `hybrid` activation modes are now automatically vectorized when saved
+  - Implemented auto-vectorization in POST route (`/api/knowledge`) for new entries
+  - Implemented auto-vectorization in PATCH route (`/api/knowledge/[id]`) for updates
+  - When content changes, old vectors are deleted and new ones generated
+  - When activation mode changes to/from vector/hybrid, vectors are added/removed accordingly
+  - Vectors are automatically deleted when entries are deleted
+- ✅ **Embedding Storage in D1**
+  - Added `embedding` column to `vector_records` table via migration `20260115_015404`
+  - VectorRecords now store actual vector values for future-proofing metadata updates
+  - Enables recovery if Vectorize needs repopulation
+- ✅ **UI Simplification**
+  - Removed separate "Create & Vectorize" button from lore entries form
+  - Single "Save Entry" button now handles both creation and auto-vectorization
+  - Button text dynamically shows "Creating & Vectorizing..." for vector/hybrid modes
+  - Helper text indicates when auto-vectorization will occur
+  - Toast messages reflect vectorization results (e.g., "Entry created and vectorized with N chunks")
+- ✅ **Documentation Updates**
+  - Updated DATABASE-SCHEMA.md with `embedding` column in VectorRecord
+  - Updated RAG-ARCHITECTURE.md with auto-vectorization workflow
+  - Updated VECTORIZE_SETUP.md with auto-vectorization behavior section
+
 ### **2026-01-14 Updates:**
 - ✅ **Vectorization System Bug Fixes**
   - Fixed `tenant_id` type in `VectorMetadata` interface (changed from `number` to `string`)
@@ -867,8 +890,8 @@ When you add new Payload collections or modify existing ones:
 
 ---
 
-**Last Updated**: 2026-01-14
-**Version**: 3.2
+**Last Updated**: 2026-01-15
+**Version**: 3.3
 **Total Tasks**: 148
-**Completed**: 122
-**Progress**: ~82% (vectorization bugs fixed, knowledge deletion working)
+**Completed**: 124
+**Progress**: ~84% (auto-vectorization on save, UI simplification)

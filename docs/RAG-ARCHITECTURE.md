@@ -1,7 +1,7 @@
 # BotCafé RAG Architecture
 
-**Last Updated**: 2026-01-14
-**Version**: 2.1 (Fixed vectorization types and metadata handling)
+**Last Updated**: 2026-01-15
+**Version**: 2.2 (Added auto-vectorization on save, embedding storage in D1)
 
 ## Overview
 
@@ -638,6 +638,7 @@ const results = await vectorSearch(query, {
 
   embedding_model: string;           // '@cf/baai/bge-m3'
   embedding_dimensions: number;      // 1024
+  embedding: text;                   // Actual vector values as JSON array (optional)
 
   created_at: timestamp;
   updated_at: timestamp;
@@ -649,25 +650,63 @@ const results = await vectorSearch(query, {
 > - `source_id` must be converted to string: `String(sourceId)`
 > - `metadata` must be stringified: `JSON.stringify(metadata)` to avoid D1 "too many SQL variables" error
 > - VectorRecords are queried by `source_id` field, NOT via hasMany relationships (which can cause parameter overflow)
+> - The `embedding` field stores actual vectors in D1, enabling future metadata-only updates without regenerating embeddings
+
+---
+
+## Auto-Vectorization on Save 🆕
+
+As of version 2.2, knowledge entries with **vector** or **hybrid** activation modes are **automatically vectorized** when saved. This eliminates the need for a separate "Vectorize" button.
+
+### How It Works
+
+1. **On Create (POST `/api/knowledge`):**
+   - User saves a new knowledge entry
+   - If `activation_mode` is `vector` or `hybrid`:
+     - Content is automatically chunked
+     - Embeddings generated via BGE-M3
+     - Vectors inserted into Cloudflare Vectorize
+     - VectorRecords created in D1 (including embedding values)
+     - Knowledge entry marked as `is_vectorized: true`
+
+2. **On Update (PATCH `/api/knowledge/[id]`):**
+   - If content changed AND mode is `vector` or `hybrid`:
+     - Old vectors are deleted from Vectorize
+     - Old VectorRecords are deleted from D1
+     - New vectors are generated and stored
+   - If mode changed TO `vector` or `hybrid`:
+     - Auto-vectorization runs
+   - If mode changed FROM `vector`/`hybrid` to other:
+     - Old vectors are automatically deleted
+
+3. **On Delete (DELETE `/api/knowledge/[id]`):**
+   - All associated vectors are deleted from Vectorize
+   - All VectorRecords are deleted from D1
+
+### Embedding Storage in D1
+
+VectorRecords now store the actual embedding values in the `embedding` field. This enables:
+- **Future-proofing**: Metadata can be updated without re-generating embeddings
+- **Debugging**: Embeddings can be inspected directly in D1
+- **Recovery**: If Vectorize needs to be repopulated, embeddings are available locally
 
 ---
 
 ## Workflow Examples
 
-### Example 1: User Creates Lore Entry
+### Example 1: User Creates Lore Entry (Auto-Vectorized)
 ```
-1. User uploads PDF to /lore/entries/create
-2. System extracts text, stores file in R2
-3. Text is chunked (750 tokens, 75 overlap)
-4. Each chunk sent to OpenAI for embedding
-5. Vectors stored in Vectorize with metadata:
-   - type: 'lore'
-   - user_id: '...'
-   - source_id: knowledge_entry_id
-   - applies_to_bots: [selected_bot_ids]
-   - collection_ids: [selected_collections]
-6. VectorRecord entries created in D1 for tracking
-7. Knowledge entry marked as vectorized
+1. User fills out lore entry form
+2. User selects activation_mode: "vector" or "hybrid"
+3. User clicks "Save Entry"
+4. System creates Knowledge entry in D1
+5. If vector/hybrid mode:
+   - Content is chunked (up to 8192 tokens per chunk)
+   - Each chunk sent to BGE-M3 for embedding
+   - Vectors stored in Vectorize with metadata
+   - VectorRecord entries created in D1 (with embeddings)
+   - Knowledge entry updated: is_vectorized=true, chunk_count=N
+6. UI shows success: "Entry created and vectorized with N chunks"
 ```
 
 ### Example 2: Bot Retrieves Knowledge During Chat

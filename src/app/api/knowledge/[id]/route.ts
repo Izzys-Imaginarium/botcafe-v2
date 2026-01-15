@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { getPayloadHMR } from '@payloadcms/next/utilities'
 import config from '@payload-config'
+import { getCloudflareContext } from '@opennextjs/cloudflare'
+import {
+  deleteVectorsBySource,
+  generateEmbeddings,
+  insertVectors,
+  VectorRecord,
+  VectorMetadata,
+  BGE_M3_MODEL,
+  BGE_M3_DIMENSIONS,
+} from '@/lib/vectorization/embeddings'
+import { chunkText, getChunkConfig } from '@/lib/vectorization/chunking'
 
 export const dynamic = 'force-dynamic'
 
@@ -222,9 +233,27 @@ export async function PATCH(
     // @ts-ignore
     const wasVectorized = existingKnowledge.is_vectorized
 
-    // If content changed and was vectorized, delete old vectors
-    if (contentChanged && wasVectorized) {
+    // Check if activation mode is changing to/from vector-compatible modes
+    // @ts-ignore
+    const oldActivationMode = existingKnowledge.activation_settings?.activation_mode
+    const newActivationMode = body.activation_settings?.activation_mode
+    const modeChanged = newActivationMode !== undefined && newActivationMode !== oldActivationMode
+    const isVectorCompatible = (mode: string | undefined) => mode === 'vector' || mode === 'hybrid'
+    const wasVectorCompatible = isVectorCompatible(oldActivationMode)
+    const willBeVectorCompatible = newActivationMode !== undefined
+      ? isVectorCompatible(newActivationMode)
+      : wasVectorCompatible
+
+    // Determine if we need to delete vectors from Vectorize
+    const shouldDeleteVectors = wasVectorized && (
+      contentChanged || // Content changed, need to re-vectorize
+      (modeChanged && !willBeVectorCompatible) // Switching away from vector modes
+    )
+
+    // If we need to delete vectors, delete from both D1 and Vectorize
+    if (shouldDeleteVectors) {
       try {
+        // Delete from D1 (VectorRecords)
         const vectorRecords = await payload.find({
           collection: 'vectorRecords',
           where: {
@@ -245,7 +274,19 @@ export async function PATCH(
           })
         }
 
-        console.log(`Deleted ${vectorRecords.docs.length} old vector records for knowledge ${numericId} due to content change`)
+        console.log(`Deleted ${vectorRecords.docs.length} old vector records from D1 for knowledge ${numericId}`)
+
+        // Delete from Cloudflare Vectorize
+        try {
+          const { env } = await getCloudflareContext()
+          const vectorize = env.VECTORIZE
+          if (vectorize) {
+            await deleteVectorsBySource(vectorize, 'knowledge', String(numericId))
+            console.log(`Deleted vectors from Vectorize for knowledge ${numericId}`)
+          }
+        } catch (vectorizeError) {
+          console.error('Error deleting from Vectorize:', vectorizeError)
+        }
       } catch (vectorError) {
         console.error('Error deleting old vectors:', vectorError)
       }
@@ -283,6 +324,13 @@ export async function PATCH(
         updateData.chunk_count = 0
         updateData.vector_records = []
       }
+    }
+
+    // Also mark as not vectorized if switching away from vector modes
+    if (shouldDeleteVectors) {
+      updateData.is_vectorized = false
+      updateData.chunk_count = 0
+      updateData.vector_records = []
     }
 
     if (body.type !== undefined) {
@@ -381,13 +429,130 @@ export async function PATCH(
       overrideAccess: true,
     })
 
+    // Determine appropriate message and flags for response
+    const vectorsDeleted = shouldDeleteVectors
+    const needsVectorization = willBeVectorCompatible && !updatedKnowledge.is_vectorized
+    const switchedToVectorMode = modeChanged && willBeVectorCompatible && !wasVectorCompatible
+
+    // Auto-vectorize if using vector/hybrid mode and content needs vectorization
+    let autoVectorized = false
+    let vectorCount = 0
+    if (needsVectorization && updatedKnowledge.entry) {
+      try {
+        const { env } = await getCloudflareContext()
+        const ai = env.AI
+        const vectorize = env.VECTORIZE
+
+        if (ai && vectorize) {
+          // Get the content to vectorize
+          // @ts-ignore
+          const content = updatedKnowledge.entry as string
+          const contentType = (updatedKnowledge.type as string) === 'legacy_memory' ? 'legacy_memory' : 'lore'
+
+          // Chunk the content
+          const chunkConfig = getChunkConfig(contentType as any)
+          const chunks = chunkText(content, chunkConfig)
+
+          if (chunks.length > 0) {
+            const tenant_id = String(payloadUser.id)
+            const vectorizeRecords: VectorRecord[] = []
+
+            // Generate embeddings for all chunks
+            const chunkTexts = chunks.map((c) => c.text)
+            console.log(`Auto-vectorizing knowledge ${numericId}: generating embeddings for ${chunkTexts.length} chunks...`)
+            const embeddings = await generateEmbeddings(ai, chunkTexts)
+
+            for (let i = 0; i < chunks.length; i++) {
+              const chunk = chunks[i]
+              const embedding = embeddings[i]
+              const vector_id = `vec_knowledge_${numericId}_chunk_${chunk.index}_${Date.now()}_${i}`
+
+              // Create metadata for Vectorize
+              const metadata: VectorMetadata = {
+                type: contentType as any,
+                user_id: payloadUser.id,
+                tenant_id,
+                source_type: 'knowledge',
+                source_id: String(numericId),
+                chunk_index: chunk.index,
+                total_chunks: chunk.totalChunks,
+                created_at: new Date().toISOString(),
+              }
+
+              vectorizeRecords.push({
+                id: vector_id,
+                values: embedding,
+                metadata,
+              })
+
+              // Create VectorRecord in D1 (including embedding for future-proofing)
+              await payload.create({
+                collection: 'vectorRecords' as any,
+                data: {
+                  vector_id,
+                  source_type: 'knowledge',
+                  source_id: String(numericId),
+                  user_id: payloadUser.id,
+                  tenant_id,
+                  chunk_index: chunk.index,
+                  total_chunks: chunk.totalChunks,
+                  chunk_text: chunk.text,
+                  metadata: JSON.stringify(metadata),
+                  embedding_model: BGE_M3_MODEL,
+                  embedding_dimensions: BGE_M3_DIMENSIONS,
+                  embedding: JSON.stringify(embedding), // Store embedding for future metadata-only updates
+                },
+              })
+            }
+
+            // Insert vectors into Vectorize
+            console.log(`Inserting ${vectorizeRecords.length} vectors into Vectorize...`)
+            await insertVectors(vectorize, vectorizeRecords)
+
+            // Update knowledge entry as vectorized using D1 directly
+            const d1 = (env as any).D1
+            if (d1) {
+              await d1
+                .prepare(`UPDATE knowledge SET is_vectorized = 1, chunk_count = ? WHERE id = ?`)
+                .bind(chunks.length, numericId)
+                .run()
+            }
+
+            autoVectorized = true
+            vectorCount = chunks.length
+            console.log(`Auto-vectorized knowledge ${numericId} with ${vectorCount} chunks`)
+          }
+        } else {
+          console.warn('AI or Vectorize binding not available for auto-vectorization')
+        }
+      } catch (autoVectorError) {
+        console.error('Auto-vectorization failed:', autoVectorError)
+        // Don't fail the whole update if auto-vectorization fails
+      }
+    }
+
+    let message = 'Knowledge entry updated successfully'
+    if (autoVectorized) {
+      message = `Knowledge entry updated and auto-vectorized with ${vectorCount} chunks.`
+    } else if (vectorsDeleted && contentChanged) {
+      message = 'Knowledge entry updated. Content changed - vectors cleared for re-vectorization.'
+    } else if (vectorsDeleted && !willBeVectorCompatible) {
+      message = 'Knowledge entry updated. Vectors removed (no longer using vector-based activation).'
+    } else if (switchedToVectorMode && !autoVectorized) {
+      message = 'Knowledge entry updated. Vector-based activation enabled - vectorization required.'
+    }
+
     return NextResponse.json({
       success: true,
-      message: contentChanged && wasVectorized
-        ? 'Knowledge entry updated. Content changed - please re-vectorize.'
-        : 'Knowledge entry updated successfully',
-      knowledge: updatedKnowledge,
-      requiresRevectorization: contentChanged && wasVectorized,
+      message,
+      knowledge: autoVectorized
+        ? { ...updatedKnowledge, is_vectorized: true, chunk_count: vectorCount }
+        : updatedKnowledge,
+      vectorsDeleted,
+      needsVectorization: needsVectorization && !autoVectorized,
+      autoVectorized,
+      vectorCount: autoVectorized ? vectorCount : undefined,
+      requiresRevectorization: contentChanged && wasVectorized && willBeVectorCompatible && !autoVectorized,
     })
   } catch (error: any) {
     console.error('Error updating knowledge entry:', error)
@@ -472,7 +637,7 @@ export async function DELETE(
     // @ts-ignore
     if (knowledge.is_vectorized) {
       try {
-        // Delete vector records
+        // Delete vector records from D1
         const vectorRecords = await payload.find({
           collection: 'vectorRecords',
           where: {
@@ -493,7 +658,19 @@ export async function DELETE(
           })
         }
 
-        console.log(`Deleted ${vectorRecords.docs.length} vector records for knowledge ${numericId}`)
+        console.log(`Deleted ${vectorRecords.docs.length} vector records from D1 for knowledge ${numericId}`)
+
+        // Delete vectors from Cloudflare Vectorize
+        try {
+          const { env } = await getCloudflareContext()
+          const vectorize = env.VECTORIZE
+          if (vectorize) {
+            await deleteVectorsBySource(vectorize, 'knowledge', String(numericId))
+            console.log(`Deleted vectors from Vectorize for knowledge ${numericId}`)
+          }
+        } catch (vectorizeError) {
+          console.error('Error deleting from Vectorize:', vectorizeError)
+        }
       } catch (vectorError) {
         console.error('Error deleting vectors:', vectorError)
         // Continue with knowledge deletion even if vector deletion fails

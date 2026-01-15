@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
         ])
       }
 
-      // Create VectorRecord in D1
+      // Create VectorRecord in D1 (including embedding for future-proofing)
       // Note: metadata must be JSON stringified to avoid "too many SQL variables" error
       const vectorRecord = await payload.create({
         collection: 'vectorRecords',
@@ -188,7 +188,8 @@ export async function POST(request: NextRequest) {
           metadata: JSON.stringify(metadata),
           embedding_model: '@cf/baai/bge-m3',
           embedding_dimensions: 1024,
-        },
+          embedding: JSON.stringify(embedding), // Store embedding for future metadata-only updates
+        } as any, // Type will include 'embedding' after running `payload generate:types`
       })
 
       vectorRecordIds.push(vectorRecord.id)

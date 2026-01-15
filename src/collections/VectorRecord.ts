@@ -124,7 +124,7 @@ export const VectorRecord: CollectionConfig = {
       name: 'embedding_model',
       type: 'text',
       required: true,
-      defaultValue: 'text-embedding-3-small',
+      defaultValue: '@cf/baai/bge-m3',
       admin: {
         description: 'Embedding model used',
       },
@@ -133,9 +133,17 @@ export const VectorRecord: CollectionConfig = {
       name: 'embedding_dimensions',
       type: 'number',
       required: true,
-      defaultValue: 1536,
+      defaultValue: 1024,
       admin: {
         description: 'Vector dimensions',
+      },
+    },
+    {
+      name: 'embedding',
+      type: 'json',
+      required: false,
+      admin: {
+        description: 'Stored embedding vector (JSON array of floats) for future-proofing metadata-only updates',
       },
     },
   ],

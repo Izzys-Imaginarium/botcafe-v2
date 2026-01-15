@@ -60,7 +60,6 @@ interface KnowledgeEntry {
 export const LoreEntriesView = () => {
   const [activeTab, setActiveTab] = useState('create')
   const [isCreating, setIsCreating] = useState(false)
-  const [isVectorizing, setIsVectorizing] = useState(false)
   const [isLoadingCollections, setIsLoadingCollections] = useState(true)
   const [isLoadingEntries, setIsLoadingEntries] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
@@ -223,10 +222,16 @@ export const LoreEntriesView = () => {
         success?: boolean
         knowledge?: KnowledgeEntry
         message?: string
+        autoVectorized?: boolean
+        vectorCount?: number
       }
 
       if (data.success) {
-        toast.success('Entry created successfully!')
+        if (data.autoVectorized) {
+          toast.success(`Entry created and vectorized with ${data.vectorCount} chunks!`)
+        } else {
+          toast.success('Entry created successfully!')
+        }
 
         // Reset form
         setContent('')
@@ -355,22 +360,6 @@ export const LoreEntriesView = () => {
     }
   }
 
-  const handleVectorize = async () => {
-    setIsVectorizing(true)
-
-    try {
-      // TODO: Implement vectorization API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-
-      toast.success('Entry vectorized successfully!')
-
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to vectorize entry')
-    } finally {
-      setIsVectorizing(false)
-    }
-  }
-
   const handleVectorizeEntry = async (entryId: string) => {
     // Find the entry to get its content
     const entry = entries.find(e => e.id === entryId)
@@ -473,15 +462,18 @@ export const LoreEntriesView = () => {
         knowledge?: KnowledgeEntry
         message?: string
         requiresRevectorization?: boolean
+        autoVectorized?: boolean
+        vectorCount?: number
+        vectorsDeleted?: boolean
       }
 
       if (data.success) {
-        if (data.requiresRevectorization) {
-          toast.success('Entry updated! Content changed - please re-vectorize.', {
-            duration: 5000,
-          })
+        if (data.autoVectorized) {
+          toast.success(`Entry updated and vectorized with ${data.vectorCount} chunks!`)
+        } else if (data.vectorsDeleted) {
+          toast.success(data.message || 'Entry updated! Vectors cleared.')
         } else {
-          toast.success('Entry updated successfully!')
+          toast.success(data.message || 'Entry updated successfully!')
         }
         setIsEditDialogOpen(false)
         setEditingEntry(null)
@@ -742,34 +734,24 @@ export const LoreEntriesView = () => {
                         {isCreating ? (
                           <>
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Creating...
+                            {(activationSettings.activation_mode === 'vector' || activationSettings.activation_mode === 'hybrid')
+                              ? 'Creating & Vectorizing...'
+                              : 'Creating...'}
                           </>
                         ) : (
                           <>
                             <Plus className="w-4 h-4 mr-2" />
-                            Create Entry
-                          </>
-                        )}
-                      </Button>
-                      <Button
-                        onClick={handleVectorize}
-                        disabled={isVectorizing || isCreating}
-                        variant="outline"
-                        className="border-gold-ancient/30 text-gold-rich hover:bg-gold-ancient/10"
-                      >
-                        {isVectorizing ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Vectorizing...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="w-4 h-4 mr-2" />
-                            Create & Vectorize
+                            Save Entry
                           </>
                         )}
                       </Button>
                     </div>
+                    {(activationSettings.activation_mode === 'vector' || activationSettings.activation_mode === 'hybrid') && (
+                      <p className="text-xs text-parchment/50 flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-gold-rich" />
+                        Entry will be automatically vectorized on save (using {activationSettings.activation_mode} mode)
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
               </div>

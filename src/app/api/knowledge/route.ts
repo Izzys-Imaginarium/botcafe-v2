@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { getPayloadHMR } from '@payloadcms/next/utilities'
 import config from '@payload-config'
+import { getCloudflareContext } from '@opennextjs/cloudflare'
+import {
+  generateEmbeddings,
+  insertVectors,
+  VectorRecord,
+  VectorMetadata,
+  BGE_M3_MODEL,
+  BGE_M3_DIMENSIONS,
+} from '@/lib/vectorization/embeddings'
+import { chunkText, getChunkConfig } from '@/lib/vectorization/chunking'
 
 export const dynamic = 'force-dynamic'
 
@@ -217,10 +227,114 @@ export async function POST(request: NextRequest) {
       overrideAccess: true,
     })
 
+    // Auto-vectorize if using vector/hybrid activation mode
+    const isVectorCompatible = activationSettings.activation_mode === 'vector' || activationSettings.activation_mode === 'hybrid'
+    let autoVectorized = false
+    let vectorCount = 0
+
+    if (isVectorCompatible && body.entry) {
+      try {
+        const { env } = await getCloudflareContext()
+        const ai = env.AI
+        const vectorize = env.VECTORIZE
+
+        if (ai && vectorize) {
+          // Get the content to vectorize
+          const content = body.entry
+          const contentType = body.type === 'legacy_memory' ? 'legacy_memory' : 'lore'
+
+          // Chunk the content
+          const chunkConfig = getChunkConfig(contentType as any)
+          const chunks = chunkText(content, chunkConfig)
+
+          if (chunks.length > 0) {
+            const tenant_id = String(payloadUser.id)
+            const vectorizeRecords: VectorRecord[] = []
+
+            // Generate embeddings for all chunks
+            const chunkTexts = chunks.map((c) => c.text)
+            console.log(`Auto-vectorizing new knowledge ${newKnowledge.id}: generating embeddings for ${chunkTexts.length} chunks...`)
+            const embeddings = await generateEmbeddings(ai, chunkTexts)
+
+            for (let i = 0; i < chunks.length; i++) {
+              const chunk = chunks[i]
+              const embedding = embeddings[i]
+              const vector_id = `vec_knowledge_${newKnowledge.id}_chunk_${chunk.index}_${Date.now()}_${i}`
+
+              // Create metadata for Vectorize
+              const metadata: VectorMetadata = {
+                type: contentType as any,
+                user_id: payloadUser.id,
+                tenant_id,
+                source_type: 'knowledge',
+                source_id: String(newKnowledge.id),
+                chunk_index: chunk.index,
+                total_chunks: chunk.totalChunks,
+                created_at: new Date().toISOString(),
+              }
+
+              vectorizeRecords.push({
+                id: vector_id,
+                values: embedding,
+                metadata,
+              })
+
+              // Create VectorRecord in D1 (including embedding for future-proofing)
+              await payload.create({
+                collection: 'vectorRecords' as any,
+                data: {
+                  vector_id,
+                  source_type: 'knowledge',
+                  source_id: String(newKnowledge.id),
+                  user_id: payloadUser.id,
+                  tenant_id,
+                  chunk_index: chunk.index,
+                  total_chunks: chunk.totalChunks,
+                  chunk_text: chunk.text,
+                  metadata: JSON.stringify(metadata),
+                  embedding_model: BGE_M3_MODEL,
+                  embedding_dimensions: BGE_M3_DIMENSIONS,
+                  embedding: JSON.stringify(embedding),
+                },
+              })
+            }
+
+            // Insert vectors into Vectorize
+            console.log(`Inserting ${vectorizeRecords.length} vectors into Vectorize...`)
+            await insertVectors(vectorize, vectorizeRecords)
+
+            // Update knowledge entry as vectorized using D1 directly
+            const d1 = (env as any).D1
+            if (d1) {
+              await d1
+                .prepare(`UPDATE knowledge SET is_vectorized = 1, chunk_count = ? WHERE id = ?`)
+                .bind(chunks.length, newKnowledge.id)
+                .run()
+            }
+
+            autoVectorized = true
+            vectorCount = chunks.length
+            console.log(`Auto-vectorized new knowledge ${newKnowledge.id} with ${vectorCount} chunks`)
+          }
+        } else {
+          console.warn('AI or Vectorize binding not available for auto-vectorization')
+        }
+      } catch (autoVectorError) {
+        console.error('Auto-vectorization failed:', autoVectorError)
+        // Don't fail the whole creation if auto-vectorization fails
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      message: 'Knowledge entry created successfully',
-      knowledge: newKnowledge,
+      message: autoVectorized
+        ? `Knowledge entry created and auto-vectorized with ${vectorCount} chunks.`
+        : 'Knowledge entry created successfully',
+      knowledge: autoVectorized
+        ? { ...newKnowledge, is_vectorized: true, chunk_count: vectorCount }
+        : newKnowledge,
+      autoVectorized,
+      vectorCount: autoVectorized ? vectorCount : undefined,
     })
   } catch (error: any) {
     console.error('Error creating knowledge entry:', error)

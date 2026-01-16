@@ -137,9 +137,29 @@ export async function GET(request: NextRequest) {
       overrideAccess: true,
     })
 
+    // Count entries for each collection
+    const collectionsWithCounts = await Promise.all(
+      collections.docs.map(async (collection) => {
+        const entriesCount = await payload.count({
+          collection: 'knowledge',
+          where: {
+            knowledge_collection: {
+              equals: collection.id,
+            },
+          },
+          overrideAccess: true,
+        })
+
+        return {
+          ...collection,
+          entry_count: entriesCount.totalDocs,
+        }
+      })
+    )
+
     return NextResponse.json({
       success: true,
-      collections: collections.docs,
+      collections: collectionsWithCounts,
     })
   } catch (error: any) {
     console.error('Error fetching collections:', error)

@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Bot, Wand2, Image, MessageSquare, Settings, Sparkles, Sliders, Tag, Plus, X } from 'lucide-react'
+import { Bot, Wand2, Image, MessageSquare, Settings, Sparkles, Sliders, Tag, Plus, X, BookMarked, Check, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -128,6 +128,64 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
     tags: initialData?.tags || [],
   })
   const [picturePreview, setPicturePreview] = useState<string | null>(null)
+
+  // Knowledge collections state
+  interface KnowledgeCollection {
+    id: string | number
+    name: string
+    description?: string
+    entry_count?: number
+  }
+  const [availableCollections, setAvailableCollections] = useState<KnowledgeCollection[]>([])
+  const [isLoadingCollections, setIsLoadingCollections] = useState(false)
+
+  // Fetch available knowledge collections
+  const fetchCollections = useCallback(async () => {
+    setIsLoadingCollections(true)
+    try {
+      const response = await fetch('/api/knowledge-collections')
+      const data = (await response.json()) as { success?: boolean; collections?: KnowledgeCollection[] }
+      if (data.success && data.collections) {
+        setAvailableCollections(data.collections)
+      }
+    } catch (error) {
+      console.error('Error fetching collections:', error)
+    } finally {
+      setIsLoadingCollections(false)
+    }
+  }, [])
+
+  // Fetch collections when reaching the knowledge step
+  useEffect(() => {
+    if (currentStep === 4) {
+      fetchCollections()
+    }
+  }, [currentStep, fetchCollections])
+
+  // Toggle collection selection
+  const toggleCollectionSelection = (collectionId: string | number) => {
+    setBotData(prev => {
+      const currentSelections = prev.knowledge_collections
+      const stringId = String(collectionId)
+      const isSelected = currentSelections.some(id => String(id) === stringId)
+
+      if (isSelected) {
+        return {
+          ...prev,
+          knowledge_collections: currentSelections.filter(id => String(id) !== stringId)
+        }
+      } else {
+        return {
+          ...prev,
+          knowledge_collections: [...currentSelections, collectionId]
+        }
+      }
+    })
+  }
+
+  const isCollectionSelected = (collectionId: string | number) => {
+    return botData.knowledge_collections.some(id => String(id) === String(collectionId))
+  }
 
   // Load existing picture preview if in edit mode
   useEffect(() => {
@@ -744,16 +802,82 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
       case 4: // Knowledge Base
         return (
           <div className="space-y-6">
-            <div className="text-center py-8">
-              <Sparkles className="h-12 w-12 mx-auto text-forest mb-4" />
-              <h3 className="text-lg font-semibold mb-2 text-gold-rich">Knowledge Base</h3>
-              <p className="text-muted-foreground mb-4">
-                Connect knowledge collections to give your bot specialized knowledge.
-              </p>
+            <div className="space-y-2">
+              <Label className="text-gold-rich">Knowledge Tomes</Label>
               <p className="text-sm text-muted-foreground">
-                This feature will be available after {mode === 'create' ? 'creating' : 'updating'} the bot. You can add knowledge collections later.
+                Select knowledge tomes to give your bot specialized knowledge. Tomes contain entries that will be used during conversations.
               </p>
             </div>
+
+            {isLoadingCollections ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 text-forest animate-spin" />
+                <span className="ml-3 text-muted-foreground">Loading tomes...</span>
+              </div>
+            ) : availableCollections.length === 0 ? (
+              <div className="text-center py-8 border-2 border-dashed border-gold-ancient/30 rounded-lg glass-rune">
+                <BookMarked className="h-12 w-12 mx-auto text-gold-ancient/50 mb-4" />
+                <h3 className="text-lg font-semibold mb-2 text-parchment">No Tomes Available</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  You haven't created any knowledge tomes yet.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => window.open('/lore', '_blank')}
+                  className="glass-rune border-gold-ancient/30 hover:border-gold-rich"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create a Tome
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {availableCollections.map((collection) => (
+                  <div
+                    key={collection.id}
+                    onClick={() => toggleCollectionSelection(collection.id)}
+                    className={`
+                      p-4 rounded-lg border-2 cursor-pointer transition-all
+                      ${isCollectionSelected(collection.id)
+                        ? 'border-forest bg-forest/10 glass-rune'
+                        : 'border-gold-ancient/30 hover:border-gold-rich/50 glass-rune'
+                      }
+                    `}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3">
+                        <BookMarked className={`h-5 w-5 mt-0.5 ${isCollectionSelected(collection.id) ? 'text-forest' : 'text-gold-ancient'}`} />
+                        <div>
+                          <h4 className="font-medium text-parchment">{collection.name}</h4>
+                          {collection.description && (
+                            <p className="text-sm text-muted-foreground mt-1">{collection.description}</p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {collection.entry_count || 0} entries
+                          </p>
+                        </div>
+                      </div>
+                      <div className={`
+                        w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all
+                        ${isCollectionSelected(collection.id)
+                          ? 'border-forest bg-forest text-white'
+                          : 'border-gold-ancient/30'
+                        }
+                      `}>
+                        {isCollectionSelected(collection.id) && <Check className="h-4 w-4" />}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {botData.knowledge_collections.length > 0 && (
+                  <p className="text-sm text-forest mt-4">
+                    {botData.knowledge_collections.length} tome{botData.knowledge_collections.length !== 1 ? 's' : ''} selected
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         )
 

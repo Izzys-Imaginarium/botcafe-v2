@@ -1,0 +1,1114 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import {
+  BookOpen,
+  Plus,
+  Upload,
+  FileText,
+  Link as LinkIcon,
+  Sparkles,
+  Loader2,
+  Check,
+  Trash2,
+  Settings2,
+  Edit,
+  AlertCircle,
+  ChevronDown,
+  ChevronRight,
+  Library,
+  BookMarked,
+  X,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import {
+  ActivationSettings,
+  type ActivationSettingsValue,
+  type PositioningValue,
+  type AdvancedActivationValue,
+  type FilteringValue,
+  type BudgetControlValue,
+} from '../components/activation-settings'
+
+interface Tome {
+  id: string
+  name: string
+  description?: string
+  entry_count?: number
+  total_tokens?: number
+  createdAt?: string
+}
+
+interface KnowledgeEntry {
+  id: string
+  entry: string
+  type: string
+  knowledge_collection: string | { id: string; name: string }
+  tags?: { tag: string }[]
+  tokens: number
+  is_vectorized: boolean
+  chunk_count?: number
+  embedding_model?: string
+  vector_dimensions?: number
+  createdAt: string
+}
+
+export const LoreTomesView = () => {
+  // Tome state
+  const [tomes, setTomes] = useState<Tome[]>([])
+  const [isLoadingTomes, setIsLoadingTomes] = useState(true)
+  const [expandedTomeId, setExpandedTomeId] = useState<string | null>(null)
+  const [tomeEntries, setTomeEntries] = useState<Record<string, KnowledgeEntry[]>>({})
+  const [loadingEntriesForTome, setLoadingEntriesForTome] = useState<string | null>(null)
+
+  // Create tome state
+  const [isCreateTomeOpen, setIsCreateTomeOpen] = useState(false)
+  const [isCreatingTome, setIsCreatingTome] = useState(false)
+  const [newTomeName, setNewTomeName] = useState('')
+  const [newTomeDescription, setNewTomeDescription] = useState('')
+
+  // Edit tome state
+  const [isEditTomeOpen, setIsEditTomeOpen] = useState(false)
+  const [isUpdatingTome, setIsUpdatingTome] = useState(false)
+  const [editingTome, setEditingTome] = useState<Tome | null>(null)
+  const [editTomeName, setEditTomeName] = useState('')
+  const [editTomeDescription, setEditTomeDescription] = useState('')
+
+  // Create entry state (inline form)
+  const [showCreateEntry, setShowCreateEntry] = useState<string | null>(null) // tome ID
+  const [isCreatingEntry, setIsCreatingEntry] = useState(false)
+  const [entryType, setEntryType] = useState('text')
+  const [entryContent, setEntryContent] = useState('')
+  const [entryTags, setEntryTags] = useState('')
+  const [showActivationSettings, setShowActivationSettings] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [r2FileKey, setR2FileKey] = useState<string>('')
+
+  // Edit entry state
+  const [isEditEntryOpen, setIsEditEntryOpen] = useState(false)
+  const [isUpdatingEntry, setIsUpdatingEntry] = useState(false)
+  const [editingEntry, setEditingEntry] = useState<KnowledgeEntry | null>(null)
+  const [editEntryContent, setEditEntryContent] = useState('')
+  const [editEntryTags, setEditEntryTags] = useState('')
+  const [editEntryType, setEditEntryType] = useState('text')
+
+  // Activation settings state
+  const [activationSettings, setActivationSettings] = useState<ActivationSettingsValue>({
+    activation_mode: 'vector',
+    vector_similarity_threshold: 0.7,
+    max_vector_results: 5,
+    probability: 100,
+    use_probability: false,
+    scan_depth: 2,
+    match_in_user_messages: true,
+    match_in_bot_messages: true,
+    match_in_system_prompts: false,
+  })
+  const [positioning, setPositioning] = useState<PositioningValue>({
+    position: 'before_character',
+    depth: 0,
+    role: 'system',
+    order: 100,
+  })
+  const [advancedActivation, setAdvancedActivation] = useState<AdvancedActivationValue>({
+    sticky: 0,
+    cooldown: 0,
+    delay: 0,
+  })
+  const [filtering, setFiltering] = useState<FilteringValue>({
+    filter_by_bots: false,
+    allowed_bot_ids: [],
+    excluded_bot_ids: [],
+    filter_by_personas: false,
+    allowed_persona_ids: [],
+    excluded_persona_ids: [],
+  })
+  const [budgetControl, setBudgetControl] = useState<BudgetControlValue>({
+    ignore_budget: false,
+    max_tokens: 1000,
+  })
+
+  // Fetch tomes on mount
+  useEffect(() => {
+    fetchTomes()
+  }, [])
+
+  const fetchTomes = async () => {
+    setIsLoadingTomes(true)
+    try {
+      const response = await fetch('/api/knowledge-collections')
+      const data = (await response.json()) as { success?: boolean; collections?: Tome[]; message?: string }
+
+      if (data.success) {
+        setTomes(data.collections || [])
+      } else {
+        toast.error(data.message || 'Failed to fetch tomes')
+      }
+    } catch (error) {
+      console.error('Error fetching tomes:', error)
+      toast.error('Failed to fetch tomes')
+    } finally {
+      setIsLoadingTomes(false)
+    }
+  }
+
+  const fetchEntriesForTome = async (tomeId: string) => {
+    setLoadingEntriesForTome(tomeId)
+    try {
+      const response = await fetch(`/api/knowledge?collection=${tomeId}`)
+      const data = (await response.json()) as {
+        success?: boolean
+        docs?: KnowledgeEntry[]
+        message?: string
+      }
+
+      if (data.success) {
+        setTomeEntries(prev => ({ ...prev, [tomeId]: data.docs || [] }))
+      } else {
+        toast.error(data.message || 'Failed to fetch entries')
+      }
+    } catch (error) {
+      console.error('Error fetching entries:', error)
+      toast.error('Failed to fetch entries')
+    } finally {
+      setLoadingEntriesForTome(null)
+    }
+  }
+
+  const handleToggleTome = async (tomeId: string) => {
+    if (expandedTomeId === tomeId) {
+      setExpandedTomeId(null)
+      setShowCreateEntry(null)
+    } else {
+      setExpandedTomeId(tomeId)
+      setShowCreateEntry(null)
+      // Fetch entries if not already loaded
+      if (!tomeEntries[tomeId]) {
+        await fetchEntriesForTome(tomeId)
+      }
+    }
+  }
+
+  // Tome CRUD operations
+  const handleCreateTome = async () => {
+    if (!newTomeName) {
+      toast.error('Please enter a tome name')
+      return
+    }
+
+    setIsCreatingTome(true)
+    try {
+      const response = await fetch('/api/knowledge-collections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newTomeName,
+          description: newTomeDescription,
+        }),
+      })
+
+      const data = (await response.json()) as { success?: boolean; collection?: Tome; message?: string }
+
+      if (data.success) {
+        toast.success('Tome created successfully!')
+        setNewTomeName('')
+        setNewTomeDescription('')
+        setIsCreateTomeOpen(false)
+        fetchTomes()
+      } else {
+        toast.error(data.message || 'Failed to create tome')
+      }
+    } catch (error: any) {
+      console.error('Error creating tome:', error)
+      toast.error(error.message || 'Failed to create tome')
+    } finally {
+      setIsCreatingTome(false)
+    }
+  }
+
+  const handleUpdateTome = async () => {
+    if (!editingTome || !editTomeName) {
+      toast.error('Please enter a tome name')
+      return
+    }
+
+    setIsUpdatingTome(true)
+    try {
+      const response = await fetch(`/api/knowledge-collections/${editingTome.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editTomeName,
+          description: editTomeDescription,
+        }),
+      })
+
+      const data = (await response.json()) as { success?: boolean; collection?: Tome; message?: string }
+
+      if (data.success) {
+        toast.success('Tome updated successfully!')
+        setIsEditTomeOpen(false)
+        setEditingTome(null)
+        fetchTomes()
+      } else {
+        toast.error(data.message || 'Failed to update tome')
+      }
+    } catch (error: any) {
+      console.error('Error updating tome:', error)
+      toast.error(error.message || 'Failed to update tome')
+    } finally {
+      setIsUpdatingTome(false)
+    }
+  }
+
+  const handleDeleteTome = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this tome? All entries will be removed.')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/knowledge-collections/${id}`, {
+        method: 'DELETE',
+      })
+
+      const data = (await response.json()) as { success?: boolean; message?: string }
+
+      if (data.success) {
+        toast.success('Tome deleted successfully!')
+        if (expandedTomeId === id) {
+          setExpandedTomeId(null)
+        }
+        fetchTomes()
+      } else {
+        toast.error(data.message || 'Failed to delete tome')
+      }
+    } catch (error) {
+      console.error('Error deleting tome:', error)
+      toast.error('Failed to delete tome')
+    }
+  }
+
+  const openEditTome = (tome: Tome) => {
+    setEditingTome(tome)
+    setEditTomeName(tome.name)
+    setEditTomeDescription(tome.description || '')
+    setIsEditTomeOpen(true)
+  }
+
+  // Entry CRUD operations
+  const handleCreateEntry = async (tomeId: string) => {
+    if (!entryContent) {
+      toast.error('Please enter content')
+      return
+    }
+
+    setIsCreatingEntry(true)
+    try {
+      const tagArray = entryTags
+        ? entryTags.split(',').map((tag) => ({ tag: tag.trim() })).filter((t) => t.tag)
+        : []
+
+      const response = await fetch('/api/knowledge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: entryType,
+          entry: entryContent,
+          knowledge_collection: tomeId,
+          tags: tagArray,
+          r2_file_key: r2FileKey || undefined,
+          activation_settings: activationSettings,
+          positioning: positioning,
+          advanced_activation: advancedActivation,
+          filtering: filtering,
+          budget_control: budgetControl,
+        }),
+      })
+
+      const data = (await response.json()) as {
+        success?: boolean
+        knowledge?: KnowledgeEntry
+        message?: string
+        autoVectorized?: boolean
+        vectorCount?: number
+      }
+
+      if (data.success) {
+        if (data.autoVectorized) {
+          toast.success(`Entry created and vectorized with ${data.vectorCount} chunks!`)
+        } else {
+          toast.success('Entry created successfully!')
+        }
+
+        // Reset form
+        setEntryContent('')
+        setEntryTags('')
+        setEntryType('text')
+        setUploadedFile(null)
+        setR2FileKey('')
+        setShowActivationSettings(false)
+        setShowCreateEntry(null)
+
+        // Reset activation settings
+        setActivationSettings({
+          activation_mode: 'vector',
+          vector_similarity_threshold: 0.7,
+          max_vector_results: 5,
+          probability: 100,
+          use_probability: false,
+          scan_depth: 2,
+          match_in_user_messages: true,
+          match_in_bot_messages: true,
+          match_in_system_prompts: false,
+        })
+
+        // Refresh entries for this tome
+        await fetchEntriesForTome(tomeId)
+        // Also refresh tomes to update entry counts
+        fetchTomes()
+      } else {
+        toast.error(data.message || 'Failed to create entry')
+      }
+    } catch (error: any) {
+      console.error('Error creating entry:', error)
+      toast.error(error.message || 'Failed to create entry')
+    } finally {
+      setIsCreatingEntry(false)
+    }
+  }
+
+  const handleUpdateEntry = async () => {
+    if (!editingEntry || !editEntryContent) {
+      toast.error('Please enter content')
+      return
+    }
+
+    setIsUpdatingEntry(true)
+    try {
+      const tagArray = editEntryTags
+        ? editEntryTags.split(',').map((tag) => ({ tag: tag.trim() })).filter((t) => t.tag)
+        : []
+
+      const response = await fetch(`/api/knowledge/${editingEntry.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entry: editEntryContent,
+          type: editEntryType,
+          tags: tagArray,
+        }),
+      })
+
+      const data = (await response.json()) as {
+        success?: boolean
+        knowledge?: KnowledgeEntry
+        message?: string
+        autoVectorized?: boolean
+        vectorCount?: number
+      }
+
+      if (data.success) {
+        if (data.autoVectorized) {
+          toast.success(`Entry updated and vectorized with ${data.vectorCount} chunks!`)
+        } else {
+          toast.success(data.message || 'Entry updated successfully!')
+        }
+        setIsEditEntryOpen(false)
+        setEditingEntry(null)
+
+        // Refresh entries for the tome
+        const tomeId = typeof editingEntry.knowledge_collection === 'string'
+          ? editingEntry.knowledge_collection
+          : editingEntry.knowledge_collection?.id
+        if (tomeId) {
+          await fetchEntriesForTome(tomeId)
+        }
+      } else {
+        toast.error(data.message || 'Failed to update entry')
+      }
+    } catch (error: any) {
+      console.error('Error updating entry:', error)
+      toast.error(error.message || 'Failed to update entry')
+    } finally {
+      setIsUpdatingEntry(false)
+    }
+  }
+
+  const handleDeleteEntry = async (entry: KnowledgeEntry) => {
+    if (!confirm('Are you sure you want to delete this entry?')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/knowledge/${entry.id}`, {
+        method: 'DELETE',
+      })
+
+      const data = (await response.json()) as { success?: boolean; message?: string }
+
+      if (data.success) {
+        toast.success('Entry deleted successfully!')
+
+        // Refresh entries for the tome
+        const tomeId = typeof entry.knowledge_collection === 'string'
+          ? entry.knowledge_collection
+          : entry.knowledge_collection?.id
+        if (tomeId) {
+          await fetchEntriesForTome(tomeId)
+        }
+        // Also refresh tomes to update entry counts
+        fetchTomes()
+      } else {
+        toast.error(data.message || 'Failed to delete entry')
+      }
+    } catch (error) {
+      console.error('Error deleting entry:', error)
+      toast.error('Failed to delete entry')
+    }
+  }
+
+  const openEditEntry = (entry: KnowledgeEntry) => {
+    setEditingEntry(entry)
+    setEditEntryContent(entry.entry)
+    setEditEntryType(entry.type)
+    setEditEntryTags(entry.tags?.map(t => t.tag).join(', ') || '')
+    setIsEditEntryOpen(true)
+  }
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsUploading(true)
+    setUploadedFile(file)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = (await response.json()) as {
+        success?: boolean
+        data?: {
+          text: string
+          fileName: string
+          fileSize: number
+          tokenEstimate: number
+          r2FileKey: string
+          mediaId: string
+          wordCount: number
+        }
+        message?: string
+      }
+
+      if (data.success && data.data) {
+        toast.success(`File uploaded! Extracted ${data.data.wordCount} words.`)
+        setEntryContent(data.data.text)
+        setR2FileKey(data.data.mediaId)
+      } else {
+        toast.error(data.message || 'Failed to upload file')
+        setUploadedFile(null)
+      }
+    } catch (error: any) {
+      console.error('Upload error:', error)
+      toast.error(error.message || 'Failed to upload file')
+      setUploadedFile(null)
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  return (
+    <div className="px-4 lg:px-12 py-8 flex flex-col gap-6">
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center gap-y-4 lg:gap-y-0 justify-between">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-4xl font-display font-bold text-gold-rich">Lore Library</h1>
+          <p className="text-parchment/70 font-lore italic">
+            Organize your knowledge into tomes
+          </p>
+        </div>
+        <Button
+          onClick={() => setIsCreateTomeOpen(true)}
+          className="bg-gold-rich hover:bg-gold-rich/90 text-[#0a140a]"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          New Tome
+        </Button>
+      </div>
+
+      {/* Tomes List */}
+      {isLoadingTomes ? (
+        <div className="flex flex-col items-center justify-center py-12">
+          <Loader2 className="w-12 h-12 text-gold-rich animate-spin mb-4" />
+          <p className="text-parchment/60">Loading tomes...</p>
+        </div>
+      ) : tomes.length === 0 ? (
+        <Card className="glass-rune border-gold-ancient/30">
+          <CardContent className="py-12">
+            <div className="flex flex-col items-center justify-center text-center">
+              <BookMarked className="w-16 h-16 text-gold-ancient/50 mb-4" />
+              <h3 className="text-xl font-display text-parchment mb-2">No Tomes Yet</h3>
+              <p className="text-parchment/60 font-lore italic mb-4 max-w-md">
+                Tomes are collections of knowledge entries. Create your first tome to start organizing your lore.
+              </p>
+              <Button
+                onClick={() => setIsCreateTomeOpen(true)}
+                className="bg-gold-rich hover:bg-gold-rich/90 text-[#0a140a]"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Your First Tome
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {tomes.map((tome) => (
+            <Card key={tome.id} className="glass-rune border-gold-ancient/30 overflow-hidden">
+              {/* Tome Header */}
+              <div
+                className="flex items-center justify-between p-4 cursor-pointer hover:bg-gold-ancient/5 transition-colors"
+                onClick={() => handleToggleTome(tome.id)}
+              >
+                <div className="flex items-center gap-4">
+                  {expandedTomeId === tome.id ? (
+                    <ChevronDown className="w-5 h-5 text-gold-ancient" />
+                  ) : (
+                    <ChevronRight className="w-5 h-5 text-gold-ancient" />
+                  )}
+                  <BookMarked className="w-8 h-8 text-gold-rich" />
+                  <div>
+                    <h3 className="text-lg font-display text-parchment">{tome.name}</h3>
+                    {tome.description && (
+                      <p className="text-sm text-parchment/60">{tome.description}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <Badge variant="outline" className="border-gold-ancient/30 text-parchment/70">
+                    <BookOpen className="w-3 h-3 mr-1" />
+                    {tome.entry_count || 0} entries
+                  </Badge>
+                  <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openEditTome(tome)}
+                      className="h-8 w-8 p-0 text-parchment/60 hover:text-gold-rich"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteTome(tome.id)}
+                      className="h-8 w-8 p-0 text-parchment/60 hover:text-red-400"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tome Content (Expanded) */}
+              {expandedTomeId === tome.id && (
+                <div className="border-t border-gold-ancient/20">
+                  {/* Add Entry Button */}
+                  <div className="p-4 border-b border-gold-ancient/10 bg-[#0a140a]/20">
+                    {showCreateEntry === tome.id ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-parchment font-semibold">Add New Entry</h4>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowCreateEntry(null)}
+                            className="h-8 w-8 p-0 text-parchment/60 hover:text-parchment"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+
+                        {/* Entry Type */}
+                        <div className="space-y-2">
+                          <Label className="text-parchment">Entry Type</Label>
+                          <Select value={entryType} onValueChange={setEntryType}>
+                            <SelectTrigger className="glass-rune border-gold-ancient/30 text-parchment">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="glass-rune border-gold-ancient/30">
+                              <SelectItem value="text">
+                                <div className="flex items-center gap-2">
+                                  <FileText className="w-4 h-4" />
+                                  Text Entry
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="document">
+                                <div className="flex items-center gap-2">
+                                  <Upload className="w-4 h-4" />
+                                  Document Upload
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="url">
+                                <div className="flex items-center gap-2">
+                                  <LinkIcon className="w-4 h-4" />
+                                  URL/Link
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* File Upload (for document type) */}
+                        {entryType === 'document' && (
+                          <div className="space-y-2">
+                            <Label className="text-parchment">Upload Document</Label>
+                            <label
+                              className="flex items-center justify-center w-full px-4 py-6 border-2 border-dashed border-gold-ancient/30 rounded-lg cursor-pointer hover:border-gold-rich/50 transition-colors glass-rune"
+                            >
+                              {isUploading ? (
+                                <div className="flex items-center gap-2">
+                                  <Loader2 className="w-5 h-5 text-gold-rich animate-spin" />
+                                  <span className="text-sm text-parchment/60">Uploading...</span>
+                                </div>
+                              ) : uploadedFile ? (
+                                <div className="flex items-center gap-2">
+                                  <FileText className="w-5 h-5 text-gold-rich" />
+                                  <span className="text-sm text-parchment">{uploadedFile.name}</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <Upload className="w-5 h-5 text-gold-ancient" />
+                                  <span className="text-sm text-parchment">Click to upload (PDF, TXT, MD)</span>
+                                </div>
+                              )}
+                              <input
+                                type="file"
+                                accept=".pdf,.txt,.md"
+                                onChange={handleFileUpload}
+                                disabled={isUploading}
+                                className="hidden"
+                              />
+                            </label>
+                          </div>
+                        )}
+
+                        {/* Content */}
+                        {(entryType !== 'document' || entryContent) && (
+                          <div className="space-y-2">
+                            <Label className="text-parchment">
+                              Content <span className="text-red-400">*</span>
+                            </Label>
+                            <Textarea
+                              placeholder="Enter your knowledge content here..."
+                              value={entryContent}
+                              onChange={(e) => setEntryContent(e.target.value)}
+                              rows={6}
+                              className="glass-rune border-gold-ancient/30 text-parchment placeholder:text-parchment/40 font-lore"
+                            />
+                            <p className="text-xs text-parchment/50">
+                              {entryContent.length} characters • ~{Math.ceil(entryContent.length / 4)} tokens
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Tags */}
+                        <div className="space-y-2">
+                          <Label className="text-parchment">Tags</Label>
+                          <Input
+                            placeholder="fantasy, lore, character (comma-separated)"
+                            value={entryTags}
+                            onChange={(e) => setEntryTags(e.target.value)}
+                            className="glass-rune border-gold-ancient/30 text-parchment placeholder:text-parchment/40"
+                          />
+                        </div>
+
+                        {/* Activation Settings Toggle */}
+                        <button
+                          type="button"
+                          onClick={() => setShowActivationSettings(!showActivationSettings)}
+                          className="flex items-center gap-2 text-sm text-gold-rich hover:text-gold-ancient transition-colors"
+                        >
+                          <Settings2 className="w-4 h-4" />
+                          {showActivationSettings ? 'Hide' : 'Show'} Activation Settings
+                          <Badge variant="outline" className="border-gold-ancient/30 text-parchment/70 text-xs">
+                            {activationSettings.activation_mode}
+                          </Badge>
+                        </button>
+
+                        {/* Activation Settings */}
+                        {showActivationSettings && (
+                          <div className="border border-gold-ancient/20 rounded-lg p-4 bg-[#0a140a]/30">
+                            <ActivationSettings
+                              activationSettings={activationSettings}
+                              positioning={positioning}
+                              advancedActivation={advancedActivation}
+                              filtering={filtering}
+                              budgetControl={budgetControl}
+                              onActivationSettingsChange={setActivationSettings}
+                              onPositioningChange={setPositioning}
+                              onAdvancedActivationChange={setAdvancedActivation}
+                              onFilteringChange={setFiltering}
+                              onBudgetControlChange={setBudgetControl}
+                            />
+                          </div>
+                        )}
+
+                        {/* Create Button */}
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => handleCreateEntry(tome.id)}
+                            disabled={isCreatingEntry || !entryContent}
+                            className="bg-gold-rich hover:bg-gold-rich/90 text-[#0a140a]"
+                          >
+                            {isCreatingEntry ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Creating...
+                              </>
+                            ) : (
+                              <>
+                                <Plus className="w-4 h-4 mr-2" />
+                                Add Entry
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            onClick={() => setShowCreateEntry(null)}
+                            variant="outline"
+                            className="border-gold-ancient/30 text-parchment"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+
+                        {(activationSettings.activation_mode === 'vector' || activationSettings.activation_mode === 'hybrid') && (
+                          <p className="text-xs text-parchment/50 flex items-center gap-1">
+                            <Sparkles className="w-3 h-3 text-gold-rich" />
+                            Entry will be automatically vectorized on save
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <Button
+                        onClick={() => setShowCreateEntry(tome.id)}
+                        variant="outline"
+                        className="border-gold-ancient/30 text-parchment hover:bg-gold-ancient/10"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Entry to Tome
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Entries List */}
+                  <div className="p-4">
+                    {loadingEntriesForTome === tome.id ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-6 h-6 text-gold-ancient animate-spin" />
+                      </div>
+                    ) : (tomeEntries[tome.id]?.length || 0) === 0 ? (
+                      <div className="text-center py-8">
+                        <BookOpen className="w-12 h-12 text-gold-ancient/30 mx-auto mb-3" />
+                        <p className="text-parchment/50 font-lore italic">
+                          No entries in this tome yet
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {tomeEntries[tome.id]?.map((entry) => (
+                          <div
+                            key={entry.id}
+                            className="p-4 rounded-lg border border-gold-ancient/20 hover:border-gold-rich/30 transition-all bg-[#0a140a]/20"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1 space-y-2">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <Badge variant="secondary" className="bg-gold-ancient/20 text-gold-rich">
+                                    {entry.type}
+                                  </Badge>
+                                  {entry.is_vectorized ? (
+                                    <Badge variant="secondary" className="bg-forest/20 text-forest-light">
+                                      <Sparkles className="w-3 h-3 mr-1" />
+                                      Vectorized
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="secondary" className="bg-amber-900/20 text-amber-400">
+                                      Pending
+                                    </Badge>
+                                  )}
+                                  {entry.chunk_count && entry.chunk_count > 0 && (
+                                    <span className="text-xs text-parchment/50">
+                                      {entry.chunk_count} chunks
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-parchment font-lore line-clamp-3">{entry.entry}</p>
+                                <div className="flex flex-wrap items-center gap-3 text-xs text-parchment/50">
+                                  <span>{entry.tokens} tokens</span>
+                                  <span>{new Date(entry.createdAt).toLocaleDateString()}</span>
+                                  {entry.tags && entry.tags.length > 0 && (
+                                    <div className="flex gap-1">
+                                      {entry.tags.map((tag, idx) => (
+                                        <span key={idx} className="text-gold-rich">#{tag.tag}</span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openEditEntry(entry)}
+                                  className="h-8 w-8 p-0 text-parchment/60 hover:text-gold-rich"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteEntry(entry)}
+                                  className="h-8 w-8 p-0 text-parchment/60 hover:text-red-400"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Create Tome Dialog */}
+      <Dialog open={isCreateTomeOpen} onOpenChange={setIsCreateTomeOpen}>
+        <DialogContent className="glass-rune border-gold-ancient/30 text-parchment">
+          <DialogHeader>
+            <DialogTitle className="text-gold-rich">Create New Tome</DialogTitle>
+            <DialogDescription className="text-parchment/60">
+              Tomes help you organize your knowledge entries into themed groups.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label className="text-parchment">
+                Tome Name <span className="text-red-400">*</span>
+              </Label>
+              <Input
+                placeholder="e.g., Character Backstories"
+                value={newTomeName}
+                onChange={(e) => setNewTomeName(e.target.value)}
+                className="glass-rune border-gold-ancient/30 text-parchment placeholder:text-parchment/40"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-parchment">Description</Label>
+              <Textarea
+                placeholder="Describe what this tome contains..."
+                value={newTomeDescription}
+                onChange={(e) => setNewTomeDescription(e.target.value)}
+                rows={4}
+                className="glass-rune border-gold-ancient/30 text-parchment placeholder:text-parchment/40"
+              />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button
+                onClick={handleCreateTome}
+                disabled={isCreatingTome || !newTomeName}
+                className="bg-gold-rich hover:bg-gold-rich/90 text-[#0a140a] flex-1"
+              >
+                {isCreatingTome ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Tome
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={() => setIsCreateTomeOpen(false)}
+                variant="outline"
+                className="border-gold-ancient/30 text-parchment"
+                disabled={isCreatingTome}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Tome Dialog */}
+      <Dialog open={isEditTomeOpen} onOpenChange={setIsEditTomeOpen}>
+        <DialogContent className="glass-rune border-gold-ancient/30 text-parchment">
+          <DialogHeader>
+            <DialogTitle className="text-gold-rich">Edit Tome</DialogTitle>
+            <DialogDescription className="text-parchment/60">
+              Update the tome name and description.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label className="text-parchment">
+                Tome Name <span className="text-red-400">*</span>
+              </Label>
+              <Input
+                placeholder="e.g., Character Backstories"
+                value={editTomeName}
+                onChange={(e) => setEditTomeName(e.target.value)}
+                className="glass-rune border-gold-ancient/30 text-parchment placeholder:text-parchment/40"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-parchment">Description</Label>
+              <Textarea
+                placeholder="Describe what this tome contains..."
+                value={editTomeDescription}
+                onChange={(e) => setEditTomeDescription(e.target.value)}
+                rows={4}
+                className="glass-rune border-gold-ancient/30 text-parchment placeholder:text-parchment/40"
+              />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button
+                onClick={handleUpdateTome}
+                disabled={isUpdatingTome || !editTomeName}
+                className="bg-gold-rich hover:bg-gold-rich/90 text-[#0a140a] flex-1"
+              >
+                {isUpdatingTome ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={() => setIsEditTomeOpen(false)}
+                variant="outline"
+                className="border-gold-ancient/30 text-parchment"
+                disabled={isUpdatingTome}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Entry Dialog */}
+      <Dialog open={isEditEntryOpen} onOpenChange={setIsEditEntryOpen}>
+        <DialogContent className="glass-rune border-gold-ancient/30 text-parchment max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-gold-rich">Edit Entry</DialogTitle>
+            <DialogDescription className="text-parchment/60">
+              Update the entry content, type, or tags.
+              {editingEntry?.is_vectorized && (
+                <span className="block mt-2 text-amber-400">
+                  <AlertCircle className="w-4 h-4 inline mr-1" />
+                  Changing the content will trigger re-vectorization.
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label className="text-parchment">Entry Type</Label>
+              <Select value={editEntryType} onValueChange={setEditEntryType}>
+                <SelectTrigger className="glass-rune border-gold-ancient/30 text-parchment">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="glass-rune border-gold-ancient/30">
+                  <SelectItem value="text">Text Entry</SelectItem>
+                  <SelectItem value="document">Document</SelectItem>
+                  <SelectItem value="url">URL/Link</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-parchment">
+                Content <span className="text-red-400">*</span>
+              </Label>
+              <Textarea
+                placeholder="Enter your knowledge content here..."
+                value={editEntryContent}
+                onChange={(e) => setEditEntryContent(e.target.value)}
+                rows={10}
+                className="glass-rune border-gold-ancient/30 text-parchment placeholder:text-parchment/40 font-lore"
+              />
+              <p className="text-xs text-parchment/50">
+                {editEntryContent.length} characters • ~{Math.ceil(editEntryContent.length / 4)} tokens
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-parchment">Tags</Label>
+              <Input
+                placeholder="fantasy, lore, character (comma-separated)"
+                value={editEntryTags}
+                onChange={(e) => setEditEntryTags(e.target.value)}
+                className="glass-rune border-gold-ancient/30 text-parchment placeholder:text-parchment/40"
+              />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button
+                onClick={handleUpdateEntry}
+                disabled={isUpdatingEntry || !editEntryContent}
+                className="bg-gold-rich hover:bg-gold-rich/90 text-[#0a140a] flex-1"
+              >
+                {isUpdatingEntry ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={() => setIsEditEntryOpen(false)}
+                variant="outline"
+                className="border-gold-ancient/30 text-parchment"
+                disabled={isUpdatingEntry}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}

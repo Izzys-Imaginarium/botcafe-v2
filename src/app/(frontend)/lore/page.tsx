@@ -1,7 +1,7 @@
 import { currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { MagicalBackground } from '@/modules/home/ui/components/magical-background'
-import { LoreDashboard } from '@/modules/lore/ui/views/lore-dashboard'
+import { LoreTomesView } from '@/modules/lore/ui/views/lore-tomes-view'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,7 +19,7 @@ export default async function LorePage() {
 
       {/* Main lore page content */}
       <div className="relative z-10 pt-24">
-        <LoreDashboard />
+        <LoreTomesView />
       </div>
     </>
   )

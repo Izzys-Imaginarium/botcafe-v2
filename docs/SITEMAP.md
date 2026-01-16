@@ -198,6 +198,7 @@
 | Endpoint | Methods | Description |
 |----------|---------|-------------|
 | `/api/admin/seed-legal` | POST | Seed legal documents (Terms, Privacy, AI Use) |
+| `/api/admin/vector-sync-check` | GET, POST | Check and fix vector/knowledge sync issues |
 
 ### File Upload
 

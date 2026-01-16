@@ -567,10 +567,20 @@ When you add new Payload collections or modify existing ones:
   - Button text dynamically shows "Creating & Vectorizing..." for vector/hybrid modes
   - Helper text indicates when auto-vectorization will occur
   - Toast messages reflect vectorization results (e.g., "Entry created and vectorized with N chunks")
+- ✅ **Vector Sync Check Tool**
+  - New endpoint `/api/admin/vector-sync-check` for detecting and fixing vector/knowledge mismatches
+  - GET: Returns sync issues (missing_vectors, orphaned_vectors, chunk_count_mismatch, stale_vectors)
+  - POST: Fix actions (delete_orphaned_vectors, revectorize, fix_chunk_count)
+  - Helps maintain consistency between D1 knowledge entries and Vectorize embeddings
+- ✅ **Tailwind v4 Cleanup**
+  - Removed deprecated `tailwindcss-animate` package (using `tw-animate-css` instead)
+  - Updated `tailwind.config.ts` to remove old plugin reference
+  - Verified shadcn components are compatible with Tailwind v4
 - ✅ **Documentation Updates**
   - Updated DATABASE-SCHEMA.md with `embedding` column in VectorRecord
   - Updated RAG-ARCHITECTURE.md with auto-vectorization workflow
-  - Updated VECTORIZE_SETUP.md with auto-vectorization behavior section
+  - Updated VECTORIZE_SETUP.md with auto-vectorization behavior section and vector sync check tool
+  - Updated SITEMAP.md with `/api/admin/vector-sync-check` endpoint
 
 ### **2026-01-14 Updates:**
 - ✅ **Vectorization System Bug Fixes**

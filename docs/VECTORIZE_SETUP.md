@@ -220,6 +220,98 @@ VectorRecords now include an `embedding` field that stores the actual vector val
 - Debugging and inspection of vectors
 - Recovery if Vectorize needs to be repopulated
 
+## Vector Sync Check Tool 🆕
+
+The `/api/admin/vector-sync-check` endpoint helps detect and fix mismatches between knowledge entries and their vector records.
+
+### Checking for Issues (GET)
+
+```bash
+# Check for sync issues (requires authentication)
+curl -X GET "https://your-domain.com/api/admin/vector-sync-check" \
+  -H "Cookie: your-auth-cookie"
+```
+
+**Response example:**
+```json
+{
+  "success": true,
+  "timestamp": "2026-01-15T22:30:00.000Z",
+  "summary": {
+    "totalKnowledgeEntries": 10,
+    "totalVectorRecords": 15,
+    "entriesThatShouldBeVectorized": 8,
+    "entriesMarkedAsVectorized": 7,
+    "issuesFound": 2
+  },
+  "issues": [
+    {
+      "type": "missing_vectors",
+      "knowledgeId": 5,
+      "description": "Knowledge entry 5 has activation_mode=\"vector\" but no vector records exist"
+    },
+    {
+      "type": "orphaned_vectors",
+      "vectorId": "vec_knowledge_99_chunk_0_...",
+      "description": "Vector record references non-existent knowledge entry 99"
+    }
+  ]
+}
+```
+
+### Issue Types Detected
+
+| Issue Type | Description |
+|------------|-------------|
+| `missing_vectors` | Entry should be vectorized (vector/hybrid mode) but has no vectors |
+| `orphaned_vectors` | Vector records exist for deleted/non-existent knowledge entries |
+| `chunk_count_mismatch` | Knowledge `chunk_count` field doesn't match actual vector count |
+| `stale_vectors` | Knowledge entry was updated after its vectors were created |
+
+### Fixing Issues (POST)
+
+**Delete orphaned vectors:**
+```bash
+curl -X POST "https://your-domain.com/api/admin/vector-sync-check" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: your-auth-cookie" \
+  -d '{"action": "delete_orphaned_vectors", "vectorId": "vec_knowledge_99_chunk_0_..."}'
+```
+
+**Re-vectorize a knowledge entry:**
+```bash
+curl -X POST "https://your-domain.com/api/admin/vector-sync-check" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: your-auth-cookie" \
+  -d '{"action": "revectorize", "knowledgeId": 5}'
+```
+
+**Fix chunk count mismatch:**
+```bash
+curl -X POST "https://your-domain.com/api/admin/vector-sync-check" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: your-auth-cookie" \
+  -d '{"action": "fix_chunk_count", "knowledgeId": 5}'
+```
+
+### Available Actions
+
+| Action | Required Params | Description |
+|--------|-----------------|-------------|
+| `delete_orphaned_vectors` | `vectorId` | Deletes orphaned vector from D1 and Vectorize |
+| `revectorize` | `knowledgeId` | Deletes existing vectors and re-generates them |
+| `fix_chunk_count` | `knowledgeId` | Updates `chunk_count` to match actual vector count |
+
+### When to Use
+
+Run the sync check:
+- After database migrations
+- If you suspect data inconsistencies
+- After bulk operations on knowledge entries
+- Periodically as part of maintenance
+
+---
+
 ## Next Steps
 
 After creating the indexes:
@@ -229,6 +321,7 @@ After creating the indexes:
 3. ✅ Auto-vectorization enabled for vector/hybrid modes
 4. Test semantic search via `/api/vectors/search`
 5. ✅ UI simplified to single "Save" button (auto-vectorizes based on mode)
+6. ✅ Vector sync check tool available at `/api/admin/vector-sync-check`
 
 ## References
 

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
-import { BookOpen, Library, Upload, Search, Sparkles, Database, Loader2, FileText, Clock } from 'lucide-react'
+import { BookOpen, Library, Upload, Search, Sparkles, Database, Loader2, FileText, Clock, FolderPlus, Plus } from 'lucide-react'
 import Link from 'next/link'
 
 interface KnowledgeEntry {
@@ -151,17 +151,23 @@ export const LoreDashboard = () => {
             Manage your knowledge base and vectorized content
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button asChild className="bg-gold-rich/20 hover:bg-gold-rich/30 text-gold-rich border-gold-rich/30">
-            <Link href="/lore/entries">
-              <BookOpen className="w-4 h-4 mr-2" />
-              Entries
+        <div className="flex gap-2 flex-wrap">
+          <Button asChild className="bg-forest/20 hover:bg-forest/30 text-forest-light border border-forest/30">
+            <Link href="/lore/collections?action=create">
+              <FolderPlus className="w-4 h-4 mr-2" />
+              Create Collection
             </Link>
           </Button>
-          <Button asChild className="bg-forest/20 hover:bg-forest/30 text-forest-light border-forest/30">
+          <Button asChild className="bg-gold-rich/20 hover:bg-gold-rich/30 text-gold-rich border border-gold-rich/30">
+            <Link href="/lore/entries">
+              <Plus className="w-4 h-4 mr-2" />
+              Create Entry
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="border-gold-ancient/30 text-parchment hover:bg-gold-ancient/10">
             <Link href="/lore/collections">
               <Library className="w-4 h-4 mr-2" />
-              Collections
+              Browse Collections
             </Link>
           </Button>
         </div>
@@ -240,40 +246,40 @@ export const LoreDashboard = () => {
                   </p>
                   <div className="space-y-3">
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gold-rich/20 flex items-center justify-center flex-shrink-0">
-                        <span className="text-gold-rich font-bold">1</span>
+                      <div className="w-8 h-8 rounded-full bg-forest/30 flex items-center justify-center shrink-0">
+                        <span className="text-forest-light font-bold">1</span>
                       </div>
                       <div>
-                        <h4 className="font-semibold text-parchment">Create Collections</h4>
+                        <h4 className="font-semibold text-parchment">Create a Collection First</h4>
                         <p className="text-sm text-parchment/60">
-                          Organize your knowledge into themed collections
+                          Collections are required to organize your knowledge entries. Start by creating at least one collection.
                         </p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gold-rich/20 flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-gold-rich/20 flex items-center justify-center shrink-0">
                         <span className="text-gold-rich font-bold">2</span>
                       </div>
                       <div>
-                        <h4 className="font-semibold text-parchment">Add Entries</h4>
+                        <h4 className="font-semibold text-parchment">Add Entries to Collections</h4>
                         <p className="text-sm text-parchment/60">
-                          Upload documents or create text entries
+                          Upload documents or create text entries within your collections
                         </p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gold-rich/20 flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-gold-rich/20 flex items-center justify-center shrink-0">
                         <span className="text-gold-rich font-bold">3</span>
                       </div>
                       <div>
-                        <h4 className="font-semibold text-parchment">Vectorize Content</h4>
+                        <h4 className="font-semibold text-parchment">Auto-Vectorization</h4>
                         <p className="text-sm text-parchment/60">
-                          Generate embeddings for semantic search
+                          Entries using vector or hybrid mode are automatically vectorized on save
                         </p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gold-rich/20 flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-gold-rich/20 flex items-center justify-center shrink-0">
                         <span className="text-gold-rich font-bold">4</span>
                       </div>
                       <div>
@@ -284,10 +290,16 @@ export const LoreDashboard = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-3 pt-4">
+                  <div className="flex gap-3 pt-4 flex-wrap">
+                    <Button asChild className="bg-forest hover:bg-forest/90 text-parchment">
+                      <Link href="/lore/collections?action=create">
+                        <FolderPlus className="w-4 h-4 mr-2" />
+                        Create Collection
+                      </Link>
+                    </Button>
                     <Button asChild className="bg-gold-rich hover:bg-gold-rich/90 text-[#0a140a]">
                       <Link href="/lore/entries">
-                        <BookOpen className="w-4 h-4 mr-2" />
+                        <Plus className="w-4 h-4 mr-2" />
                         Create Entry
                       </Link>
                     </Button>

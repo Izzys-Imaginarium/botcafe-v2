@@ -549,6 +549,15 @@ When you add new Payload collections or modify existing ones:
 
 ## 🔄 **Recent Changes**
 
+### **2026-01-18 Updates:**
+- ✅ **Lore Page Filters**
+  - Added filter panel to lore tomes view with collapsible UI
+  - Filter by tome entry count (All Tomes, With Entries, Empty Tomes)
+  - Filter button shows active filter count badge
+  - Visual indication when filters are applied (gold border highlight)
+  - Clear filters button to reset all filters at once
+  - Filters integrate with existing search and sort functionality
+
 ### **2026-01-15 Updates:**
 - ✅ **Auto-Vectorization on Save**
   - Knowledge entries with `vector` or `hybrid` activation modes are now automatically vectorized when saved
@@ -900,8 +909,8 @@ When you add new Payload collections or modify existing ones:
 
 ---
 
-**Last Updated**: 2026-01-15
-**Version**: 3.3
-**Total Tasks**: 148
-**Completed**: 124
-**Progress**: ~84% (auto-vectorization on save, UI simplification)
+**Last Updated**: 2026-01-18
+**Version**: 3.4
+**Total Tasks**: 149
+**Completed**: 125
+**Progress**: ~84% (lore page filters, UI enhancements)

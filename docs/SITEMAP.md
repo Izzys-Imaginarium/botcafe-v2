@@ -1,7 +1,7 @@
 # BotCafe v2 - Complete Sitemap
 
-**Last Updated**: 2026-01-08
-**Version**: 2.9
+**Last Updated**: 2026-01-18
+**Version**: 2.10
 **Status**: ~85% Complete
 
 ---
@@ -40,7 +40,7 @@
 
 | Route | Status | Description |
 |-------|--------|-------------|
-| `/lore` | ✅ Complete | Lore dashboard with stats and quick actions |
+| `/lore` | ✅ Complete | Lore library with tomes, search, sort, and filters |
 | `/lore/entries` | ✅ Complete | Create and browse knowledge entries |
 | `/lore/collections` | ✅ Complete | Manage knowledge collections |
 

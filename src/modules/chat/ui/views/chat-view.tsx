@@ -13,6 +13,8 @@ import { ChatHeader } from '../components/chat-header'
 import { MessageList, type Message } from '../components/message-list'
 import { ChatInput } from '../components/chat-input'
 import { BotSidebar, type BotParticipant } from '../components/bot-sidebar'
+import { PersonaSwitcher } from '../components/persona-switcher'
+import { ApiKeySelector } from '../components/api-key-selector'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -31,10 +33,13 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
     isSending,
     isStreaming,
     error,
+    selectedApiKeyId,
+    setSelectedApiKeyId,
     sendMessage,
     stopStreaming,
     addBot,
     removeBot,
+    switchPersona,
     loadMoreMessages,
   } = useChat({
     conversationId,
@@ -42,6 +47,22 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
       toast.error(err)
     },
   })
+
+  // Get current persona from conversation
+  const currentPersonaId = useMemo(() => {
+    const primaryPersona = conversation?.participants?.primary_persona
+    return primaryPersona ? parseInt(primaryPersona, 10) : null
+  }, [conversation?.participants?.primary_persona])
+
+  // Handle persona change
+  const handlePersonaChange = useCallback(async (personaId: number | null) => {
+    try {
+      await switchPersona(personaId)
+      toast.success(personaId ? 'Persona switched' : 'Persona removed')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to switch persona')
+    }
+  }, [switchPersona])
 
   // Transform messages for MessageList
   const formattedMessages: Message[] = useMemo(() => {
@@ -128,6 +149,21 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
         totalTokens={conversation?.totalTokens}
         onOpenBotSidebar={() => setBotSidebarOpen(true)}
       />
+
+      {/* Settings bar - Persona & API Key selectors */}
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-border/30 bg-muted/30">
+        <PersonaSwitcher
+          currentPersonaId={currentPersonaId}
+          onSelect={handlePersonaChange}
+          disabled={isSending || isStreaming}
+        />
+        <div className="h-4 w-px bg-border/50" />
+        <ApiKeySelector
+          currentKeyId={selectedApiKeyId}
+          onSelect={setSelectedApiKeyId}
+          disabled={isSending || isStreaming}
+        />
+      </div>
 
       {/* Messages */}
       <MessageList

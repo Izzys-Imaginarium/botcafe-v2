@@ -143,29 +143,29 @@ export function NewChatClient() {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3 pr-4">
                 {filteredBots.map((bot) => (
                   <Card
                     key={bot.id}
                     className={cn(
-                      'cursor-pointer transition-colors',
+                      'cursor-pointer transition-all duration-200',
                       selectedBotId === bot.id
-                        ? 'border-primary bg-primary/5'
-                        : 'hover:bg-muted/50'
+                        ? 'border-primary bg-primary/5 ring-1 ring-primary/30'
+                        : 'hover:bg-muted/50 hover:border-border'
                     )}
                     onClick={() => setSelectedBotId(bot.id)}
                   >
-                    <CardContent className="flex items-center gap-4 p-4">
-                      <Avatar className="h-12 w-12 border border-border/50">
+                    <CardContent className="flex items-start gap-4 p-4">
+                      <Avatar className="h-12 w-12 flex-shrink-0 border border-border/50">
                         <AvatarImage src={bot.avatar?.url} alt={bot.name} />
                         <AvatarFallback className="bg-primary/10 text-primary">
                           <Bot className="h-6 w-6" />
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium truncate">{bot.name}</h3>
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <h3 className="font-medium leading-tight">{bot.name}</h3>
                         {bot.description && (
-                          <p className="text-sm text-muted-foreground truncate">
+                          <p className="text-sm text-muted-foreground line-clamp-2">
                             {bot.description}
                           </p>
                         )}
@@ -176,7 +176,7 @@ export function NewChatClient() {
                         )}
                       </div>
                       {selectedBotId === bot.id && (
-                        <div className="h-2 w-2 rounded-full bg-primary" />
+                        <div className="h-3 w-3 rounded-full bg-primary flex-shrink-0 mt-1" />
                       )}
                     </CardContent>
                   </Card>

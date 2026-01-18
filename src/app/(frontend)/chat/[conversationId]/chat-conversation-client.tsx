@@ -14,7 +14,7 @@ interface ChatConversationClientProps {
 
 export function ChatConversationClient({ conversationId }: ChatConversationClientProps) {
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen flex flex-col pt-20">
       <ChatView conversationId={conversationId} className="flex-1" />
     </div>
   )
@@ -22,7 +22,7 @@ export function ChatConversationClient({ conversationId }: ChatConversationClien
 
 export function InvalidConversationId() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center pt-20">
       <p className="text-destructive">Invalid conversation ID</p>
     </div>
   )

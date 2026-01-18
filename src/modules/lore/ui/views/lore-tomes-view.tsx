@@ -32,6 +32,7 @@ import {
   Info,
   Zap,
   FolderTree,
+  Filter,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -78,6 +79,10 @@ export const LoreTomesView = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'name' | 'createdAt' | 'entry_count'>('createdAt')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+
+  // Filter state
+  const [filterHasEntries, setFilterHasEntries] = useState<'all' | 'with_entries' | 'empty'>('all')
+  const [showFilters, setShowFilters] = useState(false)
 
   // Create tome state
   const [isCreateTomeOpen, setIsCreateTomeOpen] = useState(false)
@@ -204,6 +209,13 @@ export const LoreTomesView = () => {
       )
     }
 
+    // Filter by has entries
+    if (filterHasEntries === 'with_entries') {
+      result = result.filter((tome) => (tome.entry_count || 0) > 0)
+    } else if (filterHasEntries === 'empty') {
+      result = result.filter((tome) => (tome.entry_count || 0) === 0)
+    }
+
     // Sort
     result.sort((a, b) => {
       let comparison = 0
@@ -222,7 +234,14 @@ export const LoreTomesView = () => {
     })
 
     return result
-  }, [tomes, searchQuery, sortBy, sortOrder])
+  }, [tomes, searchQuery, sortBy, sortOrder, filterHasEntries])
+
+  // Count active filters
+  const activeFilterCount = useMemo(() => {
+    let count = 0
+    if (filterHasEntries !== 'all') count++
+    return count
+  }, [filterHasEntries])
 
   const fetchTomes = async () => {
     setIsLoadingTomes(true)
@@ -748,48 +767,103 @@ export const LoreTomesView = () => {
         </CardContent>
       </Card>
 
-      {/* Search and Sort Controls */}
+      {/* Search, Filter, and Sort Controls */}
       {tomes.length > 0 && (
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Search */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-parchment/50" />
-            <Input
-              placeholder="Search tomes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 glass-rune border-gold-ancient/30 text-parchment placeholder:text-parchment/40"
-            />
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-parchment/50" />
+              <Input
+                placeholder="Search tomes..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 glass-rune border-gold-ancient/30 text-parchment placeholder:text-parchment/40"
+              />
+            </div>
+
+            {/* Filter Toggle & Sort */}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className={`border-gold-ancient/30 text-parchment hover:bg-gold-ancient/10 ${
+                  activeFilterCount > 0 ? 'border-gold-rich text-gold-rich' : ''
+                }`}
+              >
+                <Filter className="w-4 h-4 mr-2" />
+                Filters
+                {activeFilterCount > 0 && (
+                  <Badge className="ml-2 bg-gold-rich text-[#0a140a] text-xs px-1.5 py-0">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
+
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+                <SelectTrigger className="w-40 glass-rune border-gold-ancient/30 text-parchment">
+                  <ArrowUpDown className="w-4 h-4 mr-2 text-parchment/50" />
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent className="glass-rune border-gold-ancient/30">
+                  <SelectItem value="createdAt">Date Created</SelectItem>
+                  <SelectItem value="name">Name</SelectItem>
+                  <SelectItem value="entry_count">Entry Count</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className="border-gold-ancient/30 text-parchment hover:bg-gold-ancient/10"
+                title={sortOrder === 'asc' ? 'Sort ascending' : 'Sort descending'}
+              >
+                {sortOrder === 'asc' ? (
+                  <SortAsc className="w-4 h-4" />
+                ) : (
+                  <SortDesc className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
           </div>
 
-          {/* Sort */}
-          <div className="flex gap-2">
-            <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
-              <SelectTrigger className="w-40 glass-rune border-gold-ancient/30 text-parchment">
-                <ArrowUpDown className="w-4 h-4 mr-2 text-parchment/50" />
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent className="glass-rune border-gold-ancient/30">
-                <SelectItem value="createdAt">Date Created</SelectItem>
-                <SelectItem value="name">Name</SelectItem>
-                <SelectItem value="entry_count">Entry Count</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Filter Panel */}
+          {showFilters && (
+            <Card className="glass-rune border-gold-ancient/30 p-4">
+              <div className="flex flex-wrap items-center gap-4">
+                {/* Has Entries Filter */}
+                <div className="flex items-center gap-2">
+                  <Label className="text-parchment text-sm whitespace-nowrap">Entries:</Label>
+                  <Select value={filterHasEntries} onValueChange={(v) => setFilterHasEntries(v as typeof filterHasEntries)}>
+                    <SelectTrigger className="w-36 glass-rune border-gold-ancient/30 text-parchment h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="glass-rune border-gold-ancient/30">
+                      <SelectItem value="all">All Tomes</SelectItem>
+                      <SelectItem value="with_entries">With Entries</SelectItem>
+                      <SelectItem value="empty">Empty Tomes</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              className="border-gold-ancient/30 text-parchment hover:bg-gold-ancient/10"
-              title={sortOrder === 'asc' ? 'Sort ascending' : 'Sort descending'}
-            >
-              {sortOrder === 'asc' ? (
-                <SortAsc className="w-4 h-4" />
-              ) : (
-                <SortDesc className="w-4 h-4" />
-              )}
-            </Button>
-          </div>
+                {/* Clear Filters */}
+                {activeFilterCount > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setFilterHasEntries('all')
+                    }}
+                    className="text-parchment/60 hover:text-parchment h-9"
+                  >
+                    <X className="w-4 h-4 mr-1" />
+                    Clear filters
+                  </Button>
+                )}
+              </div>
+            </Card>
+          )}
         </div>
       )}
 

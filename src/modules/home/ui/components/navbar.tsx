@@ -24,6 +24,7 @@ import {
   Heart,
   HelpCircle,
   ChevronDown,
+  MessageSquare,
 } from 'lucide-react'
 import { NavbarSidebar } from './navbar-sidebar'
 import { useUser, UserButton, SignInButton } from '@clerk/nextjs'
@@ -57,6 +58,7 @@ const navbarItems = [
 ]
 
 const userMenuItems = [
+  { href: '/chat', children: 'Chat', icon: MessageSquare },
   { href: '/account', children: 'My Bots', icon: User },
   { href: '/lore', children: 'Lore', icon: BookOpen },
   { href: '/memories/library', children: 'Memories', icon: Brain },

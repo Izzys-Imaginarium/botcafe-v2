@@ -221,7 +221,7 @@ export async function POST(request: NextRequest) {
         conversation: conversationId,
         bot: respondingBot.id,
         message_type: 'text',
-        entry: '', // Will be filled by streaming
+        entry: '...', // Placeholder - will be filled by streaming
         message_attribution: {
           source_bot_id: respondingBot.id,
           is_ai_generated: true,

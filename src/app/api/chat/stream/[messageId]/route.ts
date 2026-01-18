@@ -17,7 +17,7 @@ import { streamMessage, getDefaultModel, type ProviderName, type ChatMessage } f
 import { buildChatContext } from '@/lib/chat/context-builder'
 
 export const dynamic = 'force-dynamic'
-export const runtime = 'edge' // Use edge runtime for streaming
+// Note: Cannot use edge runtime here because Payload CMS requires Node.js modules
 
 // GET /api/chat/stream/[messageId] - Stream LLM response
 export async function GET(

@@ -1,13 +1,10 @@
-'use client'
-
 /**
  * Chat Conversation Page
  *
- * The main chat interface for a specific conversation.
+ * Server component wrapper to prevent static prerendering.
  */
 
-import { use } from 'react'
-import { ChatView } from '@/modules/chat/ui/views/chat-view'
+import { ChatConversationClient, InvalidConversationId } from './chat-conversation-client'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,21 +12,13 @@ interface ChatConversationPageProps {
   params: Promise<{ conversationId: string }>
 }
 
-export default function ChatConversationPage({ params }: ChatConversationPageProps) {
-  const { conversationId } = use(params)
+export default async function ChatConversationPage({ params }: ChatConversationPageProps) {
+  const { conversationId } = await params
   const id = parseInt(conversationId, 10)
 
   if (isNaN(id)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-destructive">Invalid conversation ID</p>
-      </div>
-    )
+    return <InvalidConversationId />
   }
 
-  return (
-    <div className="h-screen flex flex-col">
-      <ChatView conversationId={id} className="flex-1" />
-    </div>
-  )
+  return <ChatConversationClient conversationId={id} />
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { getPayloadHMR } from '@payloadcms/next/utilities'
 import config from '@payload-config'
+import { checkResourceAccess } from '@/lib/permissions/check-access'
 
 export const dynamic = 'force-dynamic'
 
@@ -80,13 +81,9 @@ export async function GET(
       )
     }
 
-    // Check ownership or if collection is public/shared
-    // @ts-ignore
-    const isOwner = collection.user === payloadUser.id || collection.user?.id === payloadUser.id
-    // @ts-ignore
-    const isPublic = collection.sharing_settings?.is_public || collection.sharing_settings?.sharing_level === 'public'
-
-    if (!isOwner && !isPublic) {
+    // Check if user has at least readonly access
+    const accessResult = await checkResourceAccess(payload, payloadUser.id, 'knowledgeCollection', numericId)
+    if (!accessResult.hasAccess) {
       return NextResponse.json(
         { message: 'Unauthorized - You do not have access to this collection' },
         { status: 403 }
@@ -152,7 +149,7 @@ export async function PATCH(
 
     const payloadUser = payloadUsers.docs[0]
 
-    // Fetch existing collection to verify ownership
+    // Fetch existing collection
     const existingCollection = await payload.findByID({
       collection: 'knowledgeCollections',
       id: numericId,
@@ -166,10 +163,34 @@ export async function PATCH(
       )
     }
 
-    // @ts-ignore
-    if (existingCollection.user !== payloadUser.id && existingCollection.user?.id !== payloadUser.id) {
+    // Check if user has at least editor permission
+    const accessResult = await checkResourceAccess(payload, payloadUser.id, 'knowledgeCollection', numericId)
+    if (!accessResult.hasAccess) {
       return NextResponse.json(
-        { message: 'Unauthorized - You do not own this collection' },
+        { message: 'Unauthorized - You do not have access to this collection' },
+        { status: 403 }
+      )
+    }
+
+    if (accessResult.permission !== 'owner' && accessResult.permission !== 'editor') {
+      return NextResponse.json(
+        { message: 'Unauthorized - You do not have permission to edit this collection' },
+        { status: 403 }
+      )
+    }
+
+    // Only owners can change sharing settings
+    if (body.sharing_settings && accessResult.permission !== 'owner') {
+      return NextResponse.json(
+        { message: 'Only owners can change sharing settings' },
+        { status: 403 }
+      )
+    }
+
+    // IMPORTANT: Lore books cannot be made public from the API - only via Payload admin
+    if (body.sharing_settings?.sharing_level === 'public') {
+      return NextResponse.json(
+        { message: 'Lore books cannot be made public from this interface. Please contact an administrator.' },
         { status: 403 }
       )
     }
@@ -272,7 +293,7 @@ export async function DELETE(
 
     const payloadUser = payloadUsers.docs[0]
 
-    // Fetch the collection to verify ownership
+    // Fetch the collection
     const collection = await payload.findByID({
       collection: 'knowledgeCollections',
       id: numericId,
@@ -286,11 +307,11 @@ export async function DELETE(
       )
     }
 
-    // Check if user owns this collection
-    // @ts-ignore - Payload types are complex
-    if (collection.user !== payloadUser.id && collection.user?.id !== payloadUser.id) {
+    // Only owners can delete collections
+    const accessResult = await checkResourceAccess(payload, payloadUser.id, 'knowledgeCollection', numericId)
+    if (!accessResult.hasAccess || accessResult.permission !== 'owner') {
       return NextResponse.json(
-        { message: 'Unauthorized - You do not own this collection' },
+        { message: 'Only owners can delete this collection' },
         { status: 403 }
       )
     }

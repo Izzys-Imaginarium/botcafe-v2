@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPayloadHMR } from '@payloadcms/next/utilities'
 import { currentUser } from '@clerk/nextjs/server'
 import config from '@payload-config'
+import { checkResourceAccess, canUserAccess } from '@/lib/permissions/check-access'
 
 type GenderOption = 'male' | 'female' | 'non-binary' | 'other'
 type ToneOption = 'friendly' | 'professional' | 'playful' | 'mysterious' | 'wise' | 'humorous' | 'empathetic' | 'authoritative'
@@ -11,6 +12,8 @@ type CommunicationOption = 'direct' | 'elaborate' | 'concise' | 'storytelling' |
 type ResponseLengthOption = 'very-short' | 'short' | 'medium' | 'long' | 'very-long'
 type CreativityOption = 'conservative' | 'moderate' | 'creative' | 'highly-creative'
 type KnowledgeSharingOption = 'very-limited' | 'limited' | 'balanced' | 'generous' | 'very-generous'
+
+type VisibilityOption = 'private' | 'shared' | 'public'
 
 interface BotUpdateRequest {
   name?: string
@@ -38,6 +41,9 @@ interface BotUpdateRequest {
   }
   signature_phrases?: string[]
   tags?: string[]
+  sharing?: {
+    visibility?: VisibilityOption
+  }
 }
 
 // PATCH /api/bots/[id] - Update a bot
@@ -77,7 +83,7 @@ export async function PATCH(
 
     const payloadUser = payloadUsers.docs[0]
 
-    // Fetch the bot to verify ownership
+    // Fetch the bot
     const bot = await payload.findByID({
       collection: 'bot',
       id,
@@ -88,9 +94,17 @@ export async function PATCH(
       return NextResponse.json({ message: 'Bot not found' }, { status: 404 })
     }
 
-    // Check if the current user is the owner of the bot
-    const botUserId = typeof bot.user === 'object' ? bot.user.id : bot.user
-    if (botUserId !== payloadUser.id) {
+    // Check if the current user has at least editor permission
+    const accessResult = await checkResourceAccess(payload, payloadUser.id, 'bot', id)
+    if (!accessResult.hasAccess) {
+      return NextResponse.json(
+        { message: 'You do not have permission to view this bot' },
+        { status: 403 }
+      )
+    }
+
+    // Editors and owners can edit content
+    if (accessResult.permission !== 'owner' && accessResult.permission !== 'editor') {
       return NextResponse.json(
         { message: 'You do not have permission to edit this bot' },
         { status: 403 }
@@ -99,6 +113,14 @@ export async function PATCH(
 
     // Parse request body
     const body = await request.json() as BotUpdateRequest
+
+    // Only owners can change visibility/sharing settings
+    if (body.sharing?.visibility !== undefined && accessResult.permission !== 'owner') {
+      return NextResponse.json(
+        { message: 'Only owners can change visibility settings' },
+        { status: 403 }
+      )
+    }
 
     // Build update data object - only include fields that were provided
     const updateData: Record<string, any> = {}
@@ -113,6 +135,16 @@ export async function PATCH(
     if (body.age !== undefined) updateData.age = body.age ? parseInt(body.age.toString()) : undefined
     if (body.is_public !== undefined) updateData.is_public = body.is_public
     if (body.picture !== undefined) updateData.picture = body.picture
+
+    // Handle sharing/visibility updates (bots CAN be made public from UI)
+    if (body.sharing?.visibility !== undefined) {
+      updateData.sharing = {
+        ...((bot as any).sharing || {}),
+        visibility: body.sharing.visibility,
+      }
+      // Sync is_public for backwards compatibility
+      updateData.is_public = body.sharing.visibility === 'public'
+    }
     if (body.knowledge_collections !== undefined) {
       updateData.knowledge_collections = body.knowledge_collections as number[]
     }
@@ -233,7 +265,7 @@ export async function DELETE(
 
     const payloadUser = payloadUsers.docs[0]
 
-    // Fetch the bot to verify ownership
+    // Fetch the bot
     const bot = await payload.findByID({
       collection: 'bot',
       id,
@@ -244,11 +276,11 @@ export async function DELETE(
       return NextResponse.json({ message: 'Bot not found' }, { status: 404 })
     }
 
-    // Check if the current user is the owner of the bot
-    const botUserId = typeof bot.user === 'object' ? bot.user.id : bot.user
-    if (botUserId !== payloadUser.id) {
+    // Only owners can delete bots
+    const accessResult = await checkResourceAccess(payload, payloadUser.id, 'bot', id)
+    if (!accessResult.hasAccess || accessResult.permission !== 'owner') {
       return NextResponse.json(
-        { message: 'You do not have permission to delete this bot' },
+        { message: 'Only owners can delete this bot' },
         { status: 403 }
       )
     }

@@ -1,7 +1,7 @@
 # BotCafe v2 - Complete Sitemap
 
 **Last Updated**: 2026-01-18
-**Version**: 2.10
+**Version**: 2.11
 **Status**: ~85% Complete
 
 ---
@@ -121,9 +121,17 @@
 | Endpoint | Methods | Description |
 |----------|---------|-------------|
 | `/api/knowledge` | GET, POST | List and create knowledge entries |
-| `/api/knowledge/[id]` | DELETE | Delete knowledge entry |
+| `/api/knowledge/[id]` | GET, PATCH, DELETE | Get, update, or delete knowledge entry |
 | `/api/knowledge-collections` | GET, POST | List and create collections |
-| `/api/knowledge-collections/[id]` | DELETE | Delete collection |
+| `/api/knowledge-collections/[id]` | GET, PATCH, DELETE | Get, update, or delete collection |
+
+### Sharing & Permissions
+
+| Endpoint | Methods | Description |
+|----------|---------|-------------|
+| `/api/sharing` | POST | Grant access to a resource (bot or lore book) |
+| `/api/sharing/[resourceType]/[resourceId]` | GET, DELETE | List collaborators, revoke access |
+| `/api/users/lookup` | GET | Look up user by username for sharing |
 
 ### Vector/Embeddings
 
@@ -241,8 +249,8 @@
 | Help | 3 | 0 | 3 |
 | Chat | 0 | 2 | 2 |
 | **Frontend Total** | **33** | **2** | **35** |
-| API Endpoints | 41 | 0 | 41 |
-| **Grand Total** | **74** | **2** | **76** |
+| API Endpoints | 44 | 0 | 44 |
+| **Grand Total** | **77** | **2** | **79** |
 
 ---
 

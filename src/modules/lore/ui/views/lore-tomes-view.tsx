@@ -33,6 +33,9 @@ import {
   Zap,
   FolderTree,
   Filter,
+  Share2,
+  Lock,
+  Users,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -43,6 +46,7 @@ import {
   type FilteringValue,
   type BudgetControlValue,
 } from '../components/activation-settings'
+import { ShareDialog } from '@/components/share-dialog'
 
 interface Tome {
   id: string
@@ -51,6 +55,9 @@ interface Tome {
   entry_count?: number
   total_tokens?: number
   createdAt?: string
+  sharing_settings?: {
+    sharing_level?: 'private' | 'shared' | 'public'
+  }
 }
 
 interface KnowledgeEntry {
@@ -96,6 +103,11 @@ export const LoreTomesView = () => {
   const [editingTome, setEditingTome] = useState<Tome | null>(null)
   const [editTomeName, setEditTomeName] = useState('')
   const [editTomeDescription, setEditTomeDescription] = useState('')
+  const [editTomeSharingLevel, setEditTomeSharingLevel] = useState<'private' | 'shared'>('private')
+
+  // Share dialog state
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false)
+  const [sharingTome, setSharingTome] = useState<Tome | null>(null)
 
   // Create entry state (inline form)
   const [showCreateEntry, setShowCreateEntry] = useState<string | null>(null) // tome ID
@@ -350,6 +362,9 @@ export const LoreTomesView = () => {
         body: JSON.stringify({
           name: editTomeName,
           description: editTomeDescription,
+          sharing_settings: {
+            sharing_level: editTomeSharingLevel,
+          },
         }),
       })
 
@@ -402,7 +417,15 @@ export const LoreTomesView = () => {
     setEditingTome(tome)
     setEditTomeName(tome.name)
     setEditTomeDescription(tome.description || '')
+    // Only allow private or shared for lore - not public
+    const sharingLevel = tome.sharing_settings?.sharing_level
+    setEditTomeSharingLevel(sharingLevel === 'shared' ? 'shared' : 'private')
     setIsEditTomeOpen(true)
+  }
+
+  const openShareDialog = (tome: Tome) => {
+    setSharingTome(tome)
+    setIsShareDialogOpen(true)
   }
 
   // Entry CRUD operations
@@ -939,7 +962,29 @@ export const LoreTomesView = () => {
                     <BookOpen className="w-3 h-3 mr-1" />
                     {tome.entry_count || 0} entries
                   </Badge>
+                  {/* Sharing status badge */}
+                  {tome.sharing_settings?.sharing_level === 'shared' && (
+                    <Badge variant="outline" className="border-forest/30 text-forest-light">
+                      <Users className="w-3 h-3 mr-1" />
+                      Shared
+                    </Badge>
+                  )}
+                  {tome.sharing_settings?.sharing_level === 'private' && (
+                    <Badge variant="outline" className="border-parchment/20 text-parchment/50">
+                      <Lock className="w-3 h-3 mr-1" />
+                      Private
+                    </Badge>
+                  )}
                   <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openShareDialog(tome)}
+                      className="h-8 w-8 p-0 text-parchment/60 hover:text-forest"
+                      title="Share"
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -1330,6 +1375,31 @@ export const LoreTomesView = () => {
                 className="glass-rune border-gold-ancient/30 text-parchment placeholder:text-parchment/40"
               />
             </div>
+            <div className="space-y-2">
+              <Label className="text-parchment">Visibility</Label>
+              <Select value={editTomeSharingLevel} onValueChange={(v) => setEditTomeSharingLevel(v as 'private' | 'shared')}>
+                <SelectTrigger className="glass-rune border-gold-ancient/30 text-parchment">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="glass-rune border-gold-ancient/30">
+                  <SelectItem value="private">
+                    <div className="flex items-center gap-2">
+                      <Lock className="w-3 h-3" />
+                      Private - Only you can access
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="shared">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-3 h-3" />
+                      Shared - Invite specific users
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-parchment/50">
+                Use the share button to invite collaborators when set to "Shared"
+              </p>
+            </div>
             <div className="flex gap-3 pt-2">
               <Button
                 onClick={handleUpdateTome}
@@ -1512,6 +1582,21 @@ export const LoreTomesView = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Share Dialog */}
+      {sharingTome && (
+        <ShareDialog
+          open={isShareDialogOpen}
+          onOpenChange={(open) => {
+            setIsShareDialogOpen(open)
+            if (!open) setSharingTome(null)
+          }}
+          resourceType="knowledgeCollection"
+          resourceId={sharingTome.id}
+          resourceName={sharingTome.name}
+          allowPublic={false}
+        />
+      )}
     </div>
   )
 }

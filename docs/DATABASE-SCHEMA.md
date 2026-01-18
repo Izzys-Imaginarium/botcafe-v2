@@ -1,7 +1,7 @@
 # BotCafe v2 - Database Schema
 
-**Last Updated**: 2026-01-15
-**Version**: 3.2
+**Last Updated**: 2026-01-18
+**Version**: 3.3
 **Database**: Cloudflare D1 (SQLite) via Payload CMS
 
 ---
@@ -89,7 +89,8 @@ AI companion definitions.
 | `behavior_settings` | group | Response behavior settings (see below) |
 | `signature_phrases` | array | Catchphrases or expressions |
 | `tags` | array | Category tags for discovery |
-| `is_public` | checkbox | Public visibility |
+| `is_public` | checkbox | Public visibility (legacy - use `sharing.visibility`) |
+| `sharing` | group | Sharing settings (see below) |
 | `likes_count` | number | Total likes |
 | `favorites_count` | number | Total favorites |
 | `user` | relationship (Users) | Owner reference (required) |
@@ -115,6 +116,14 @@ AI companion definitions.
 | `response_length` | select | very-short, short, medium, long, very-long |
 | `creativity_level` | select | conservative, moderate, creative, highly-creative |
 | `knowledge_sharing` | select | very-limited, limited, balanced, generous, very-generous |
+
+#### Bot Sharing Settings (group)
+
+| Field | Type | Options/Description |
+|-------|------|---------------------|
+| `visibility` | select | **private** (owner only), **shared** (specific users via AccessControl), **public** (anyone can view) |
+
+> **Note**: Bots CAN be made public from the UI. The `is_public` field is maintained for backwards compatibility and is synced with `sharing.visibility`.
 
 ### BotInteraction
 
@@ -267,7 +276,7 @@ Grouped knowledge for organization with sharing and collaboration features.
 | `bot` | relationship[] (Bot) | Associated bots (many) |
 | `description` | textarea | Collection description |
 | `sharing_settings` | group | Sharing level, collaboration, expiration (see below) |
-| `collaborators` | group | Collaborator users and permissions |
+| `collaborators` | group | **Deprecated** - Use AccessControl collection for managing collaborators |
 | `collection_metadata` | group | Size, category, tags, difficulty level |
 | `usage_analytics` | group | View count, fork count, rating |
 | `created_timestamp` | date | Creation timestamp |
@@ -288,6 +297,8 @@ Grouped knowledge for organization with sharing and collaboration features.
 | `knowledge_count` | number | Entry count in collection |
 | `last_updated` | date | Last update time |
 | `is_public` | checkbox | Public visibility |
+
+> **Important**: Lore books (KnowledgeCollections) can only be made public from the Payload admin backend, NOT from the main UI. The API blocks attempts to set `sharing_level: 'public'` from frontend requests.
 
 ### VectorRecord
 
@@ -576,17 +587,32 @@ Token purchasing options.
 
 ### AccessControl
 
-Fine-grained permissions.
+Fine-grained permissions for sharing bots and knowledge collections.
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | string | Primary key |
-| `user` | relationship (Users) | User |
-| `resource_type` | select | Type: bot, knowledge, collection |
-| `resource_id` | text | Resource reference |
-| `permission_level` | select | Level: view, edit, admin |
-| `granted_by` | relationship (Users) | Granter |
+| `user` | relationship (Users) | User who receives access |
+| `resource_type` | select | Type: **bot**, **knowledgeCollection** |
+| `resource_id` | text | Resource ID reference |
+| `permission_type` | select | Permission: **read** (readonly), **write** (editor), **admin** (owner) |
+| `granted_by` | relationship (Users) | User who granted access |
+| `is_revoked` | checkbox | Whether access has been revoked |
+| `revoked_at` | date | When access was revoked |
+| `revoked_by` | relationship (Users) | User who revoked access |
+| `expires_at` | date | Optional expiration date |
 | `createdAt` | date | Auto-generated |
+| `updatedAt` | date | Auto-generated |
+
+#### Permission Mapping
+
+| UI Permission | AccessControl `permission_type` | Capabilities |
+|---------------|--------------------------------|--------------|
+| Owner | `admin` | Full access: view, edit, manage shares, delete |
+| Editor | `write` | View and edit content |
+| Read-only | `read` | View only |
+
+> **Usage Pattern**: When sharing a bot or lore book with another user, an AccessControl record is created with the recipient user and appropriate permission type. The original creator (stored in the resource's `user` field) is implicit owner and does not have an AccessControl record.
 
 ---
 

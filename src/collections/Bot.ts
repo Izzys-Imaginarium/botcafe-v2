@@ -71,6 +71,32 @@ export const Bot: CollectionConfig = {
       name: 'is_public',
       type: 'checkbox',
       defaultValue: false,
+      admin: {
+        description: 'Legacy field - use sharing.visibility instead',
+        hidden: true,
+      },
+    },
+    {
+      name: 'sharing',
+      type: 'group',
+      admin: {
+        description: 'Control who can access and edit this bot',
+      },
+      fields: [
+        {
+          name: 'visibility',
+          type: 'select',
+          defaultValue: 'private',
+          options: [
+            { label: 'Private', value: 'private' },
+            { label: 'Shared', value: 'shared' },
+            { label: 'Public', value: 'public' },
+          ],
+          admin: {
+            description: 'Private: Only you. Shared: Specific users you invite. Public: Anyone can view.',
+          },
+        },
+      ],
     },
     {
       name: 'greeting',

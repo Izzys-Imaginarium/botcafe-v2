@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Bot, Wand2, Image, MessageSquare, Settings, Sparkles, Sliders, Tag, Plus, X, BookMarked, Check, Loader2 } from 'lucide-react'
+import { Bot, Wand2, Image, MessageSquare, Settings, Sparkles, Sliders, Tag, Plus, X, BookMarked, Check, Loader2, Users, Globe, Lock, Share2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -13,6 +13,9 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { MagicalBackground } from '@/modules/home/ui/components/magical-background'
+import { ShareDialog } from '@/components/share-dialog'
+
+type Visibility = 'private' | 'shared' | 'public'
 
 export interface BotFormData {
   name: string
@@ -23,6 +26,7 @@ export interface BotFormData {
   gender: string
   age: string
   is_public: boolean
+  visibility: Visibility
   slug: string
   speech_examples: string[]
   knowledge_collections: (string | number)[]
@@ -109,6 +113,7 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
     gender: initialData?.gender || '',
     age: initialData?.age || '',
     is_public: initialData?.is_public || false,
+    visibility: initialData?.visibility || (initialData?.is_public ? 'public' : 'private'),
     slug: initialData?.slug || '',
     speech_examples: initialData?.speech_examples || [''],
     knowledge_collections: initialData?.knowledge_collections || [],
@@ -127,6 +132,9 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
     signature_phrases: initialData?.signature_phrases || [''],
     tags: initialData?.tags || [],
   })
+
+  // Share dialog state
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false)
   const [picturePreview, setPicturePreview] = useState<string | null>(null)
 
   // Knowledge collections state
@@ -381,7 +389,7 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
         greeting: botData.greeting,
         gender: botData.gender,
         age: botData.age ? parseInt(botData.age.toString()) : undefined,
-        is_public: botData.is_public,
+        is_public: botData.visibility === 'public',
         slug: botData.slug,
         speech_examples: botData.speech_examples.filter(example => example.trim() !== ''),
         knowledge_collections: botData.knowledge_collections,
@@ -390,6 +398,9 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
         behavior_settings: botData.behavior_settings,
         signature_phrases: botData.signature_phrases.filter(phrase => phrase.trim() !== ''),
         tags: botData.tags,
+        sharing: {
+          visibility: botData.visibility,
+        },
       }
 
       const url = mode === 'create' ? '/api/bots' : `/api/bots/${botId}`
@@ -1007,20 +1018,91 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
               )}
 
               <div className="p-4 border border-gold-ancient/30 rounded-lg glass-rune">
-                <h4 className="font-semibold mb-2 text-gold-rich">Settings</h4>
+                <h4 className="font-semibold mb-2 text-gold-rich">Visibility & Sharing</h4>
                 <div className="space-y-1 text-sm text-parchment">
-                  <p><span className="font-medium text-parchment-dim">Public:</span> {botData.is_public ? 'Yes' : 'No'}</p>
+                  <p><span className="font-medium text-parchment-dim">Visibility:</span> {
+                    botData.visibility === 'public' ? 'Public' :
+                    botData.visibility === 'shared' ? 'Shared' : 'Private'
+                  }</p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="is_public"
-                checked={botData.is_public}
-                onCheckedChange={(checked) => handleInputChange('is_public', checked)}
-              />
-              <Label htmlFor="is_public">Make this bot public (other users can discover and chat with it)</Label>
+            {/* Visibility Options */}
+            <div className="space-y-4 border-t border-gold-ancient/20 pt-6">
+              <Label className="text-gold-rich text-base font-semibold">Who can access this bot?</Label>
+
+              <div className="grid gap-3">
+                {/* Private option */}
+                <div
+                  onClick={() => handleInputChange('visibility', 'private')}
+                  className={`p-4 rounded-lg border-2 cursor-pointer transition-all flex items-start gap-3 ${
+                    botData.visibility === 'private'
+                      ? 'border-forest bg-forest/10'
+                      : 'border-gold-ancient/30 hover:border-gold-rich/50'
+                  }`}
+                >
+                  <Lock className={`w-5 h-5 mt-0.5 ${botData.visibility === 'private' ? 'text-forest' : 'text-gold-ancient'}`} />
+                  <div className="flex-1">
+                    <div className="font-medium text-parchment">Private</div>
+                    <p className="text-sm text-muted-foreground">Only you can access this bot</p>
+                  </div>
+                  {botData.visibility === 'private' && (
+                    <Check className="w-5 h-5 text-forest" />
+                  )}
+                </div>
+
+                {/* Shared option */}
+                <div
+                  onClick={() => handleInputChange('visibility', 'shared')}
+                  className={`p-4 rounded-lg border-2 cursor-pointer transition-all flex items-start gap-3 ${
+                    botData.visibility === 'shared'
+                      ? 'border-forest bg-forest/10'
+                      : 'border-gold-ancient/30 hover:border-gold-rich/50'
+                  }`}
+                >
+                  <Users className={`w-5 h-5 mt-0.5 ${botData.visibility === 'shared' ? 'text-forest' : 'text-gold-ancient'}`} />
+                  <div className="flex-1">
+                    <div className="font-medium text-parchment">Shared</div>
+                    <p className="text-sm text-muted-foreground">Only people you invite can access</p>
+                  </div>
+                  {botData.visibility === 'shared' && (
+                    <Check className="w-5 h-5 text-forest" />
+                  )}
+                </div>
+
+                {/* Public option */}
+                <div
+                  onClick={() => handleInputChange('visibility', 'public')}
+                  className={`p-4 rounded-lg border-2 cursor-pointer transition-all flex items-start gap-3 ${
+                    botData.visibility === 'public'
+                      ? 'border-forest bg-forest/10'
+                      : 'border-gold-ancient/30 hover:border-gold-rich/50'
+                  }`}
+                >
+                  <Globe className={`w-5 h-5 mt-0.5 ${botData.visibility === 'public' ? 'text-forest' : 'text-gold-ancient'}`} />
+                  <div className="flex-1">
+                    <div className="font-medium text-parchment">Public</div>
+                    <p className="text-sm text-muted-foreground">Anyone can discover and chat with this bot</p>
+                  </div>
+                  {botData.visibility === 'public' && (
+                    <Check className="w-5 h-5 text-forest" />
+                  )}
+                </div>
+              </div>
+
+              {/* Manage collaborators button (only in edit mode with shared/private visibility) */}
+              {mode === 'edit' && botId && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsShareDialogOpen(true)}
+                  className="w-full glass-rune border-gold-ancient/30 hover:border-gold-rich"
+                >
+                  <Share2 className="w-4 h-4 mr-2" />
+                  Manage Collaborators
+                </Button>
+              )}
             </div>
           </div>
         )
@@ -1132,6 +1214,18 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
         </div>
       </div>
     </div>
+
+      {/* Share Dialog */}
+      {mode === 'edit' && botId && (
+        <ShareDialog
+          open={isShareDialogOpen}
+          onOpenChange={setIsShareDialogOpen}
+          resourceType="bot"
+          resourceId={String(botId)}
+          resourceName={botData.name}
+          allowPublic={true}
+        />
+      )}
     </>
   )
 }

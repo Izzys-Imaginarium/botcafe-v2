@@ -124,8 +124,8 @@ export async function GET(request: NextRequest) {
 
     const payloadUser = payloadUsers.docs[0]
 
-    // Fetch knowledge collections
-    const collections = await payload.find({
+    // Fetch owned knowledge collections
+    const ownedCollections = await payload.find({
       collection: 'knowledgeCollections',
       where: {
         user: {
@@ -137,9 +137,81 @@ export async function GET(request: NextRequest) {
       overrideAccess: true,
     })
 
+    // Fetch collections shared with this user via AccessControl
+    const sharedAccessResult = await payload.find({
+      collection: 'access-control',
+      where: {
+        and: [
+          { user: { equals: payloadUser.id } },
+          { resource_type: { equals: 'knowledgeCollection' } },
+          { is_revoked: { equals: false } },
+        ],
+      },
+      limit: 100,
+      overrideAccess: true,
+    })
+
+    // Get the collection IDs that are shared with this user
+    const sharedCollectionIds = sharedAccessResult.docs
+      .map((ac: any) => ac.resource_id)
+      .filter((id: string) => id)
+
+    // Fetch the shared collections
+    let sharedCollections: any[] = []
+    if (sharedCollectionIds.length > 0) {
+      const numericIds = sharedCollectionIds
+        .map((id: string) => parseInt(id, 10))
+        .filter((id: number) => !isNaN(id))
+
+      if (numericIds.length > 0) {
+        const sharedCollectionsResult = await payload.find({
+          collection: 'knowledgeCollections',
+          where: {
+            id: { in: numericIds },
+          },
+          overrideAccess: true,
+        })
+        sharedCollections = sharedCollectionsResult.docs
+      }
+    }
+
+    // Create a map to track permission level for shared collections
+    const sharedPermissions = new Map<string, string>()
+    sharedAccessResult.docs.forEach((ac: any) => {
+      const existing = sharedPermissions.get(ac.resource_id)
+      if (!existing ||
+          (ac.permission_type === 'admin') ||
+          (ac.permission_type === 'write' && existing === 'read')) {
+        sharedPermissions.set(ac.resource_id, ac.permission_type)
+      }
+    })
+
+    // Combine and count entries for all collections
+    const ownedCollectionIds = new Set(ownedCollections.docs.map((c: any) => String(c.id)))
+    const allCollections = [
+      ...ownedCollections.docs.map((c: any) => ({
+        ...c,
+        access_level: 'owner',
+        is_shared_with_me: false,
+      })),
+      ...sharedCollections
+        .filter((c: any) => !ownedCollectionIds.has(String(c.id)))
+        .map((c: any) => {
+          const permissionType = sharedPermissions.get(String(c.id))
+          let accessLevel = 'readonly'
+          if (permissionType === 'admin') accessLevel = 'owner'
+          else if (permissionType === 'write') accessLevel = 'editor'
+          return {
+            ...c,
+            access_level: accessLevel,
+            is_shared_with_me: true,
+          }
+        }),
+    ]
+
     // Count entries for each collection
     const collectionsWithCounts = await Promise.all(
-      collections.docs.map(async (collection) => {
+      allCollections.map(async (collection) => {
         const entriesCount = await payload.count({
           collection: 'knowledge',
           where: {

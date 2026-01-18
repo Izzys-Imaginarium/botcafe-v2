@@ -82,6 +82,9 @@ export const KnowledgeCollections: CollectionConfig = {
     {
       name: 'sharing_settings',
       type: 'group',
+      admin: {
+        description: 'Control who can access this lore book. Note: Public visibility can only be set via admin panel.',
+      },
       fields: [
         {
           name: 'sharing_level',
@@ -93,6 +96,9 @@ export const KnowledgeCollections: CollectionConfig = {
             { label: 'Shared', value: 'shared' },
             { label: 'Public', value: 'public' },
           ],
+          admin: {
+            description: 'Private: Only you. Shared: Specific users via AccessControl. Public: Anyone (admin-only).',
+          },
         },
         {
           name: 'allow_collaboration',
@@ -137,6 +143,10 @@ export const KnowledgeCollections: CollectionConfig = {
     {
       name: 'collaborators',
       type: 'group',
+      admin: {
+        description: 'DEPRECATED: Use AccessControl collection for managing collaborators. This field is kept for backwards compatibility.',
+        condition: () => false, // Hide from admin UI
+      },
       fields: [
         {
           name: 'collab_user_ids',

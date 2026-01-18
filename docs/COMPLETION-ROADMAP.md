@@ -192,11 +192,14 @@ By building foundational systems first, we avoid rework and ensure chat has all 
   - [x] Add advanced filtering (type, status, search) and statistics dashboard ✅
   - [x] Implement vectorization action for memories ✅
   - [x] Test TypeScript compilation and Next.js build ✅
-- [ ] **Phase 4E: Integration & Polish**
-  - [ ] Add privacy controls (Private/Public/Shared)
-  - [ ] Implement knowledge analytics
-  - [ ] Performance optimization (caching, batching)
-  - [ ] Complete documentation
+- [x] **Phase 4E: Integration & Polish** ✅ **COMPLETED**
+  - [x] Add privacy controls (Private/Public/Shared) ✅
+  - [x] Implement sharing/permission system for bots and lore books ✅
+  - [x] Create share dialog UI component ✅
+  - [x] Add user lookup by username for sharing ✅
+  - [x] Integrate sharing into bot wizard and lore tomes view ✅
+  - [ ] Implement knowledge analytics (deferred)
+  - [ ] Performance optimization (caching, batching) (deferred)
 - [x] **Phase 4F: Hybrid Knowledge Activation System** 🆕 **UI COMPLETE (2026-01-10)**
   - [x] Design hybrid activation architecture (keyword + vector) ✅
   - [x] Update Knowledge collection with activation fields ✅
@@ -550,6 +553,20 @@ When you add new Payload collections or modify existing ones:
 ## 🔄 **Recent Changes**
 
 ### **2026-01-18 Updates:**
+- ✅ **Permission/Sharing System Complete (Phase 4E)**
+  - Implemented comprehensive sharing system for bots and lore books
+  - Three visibility levels: Private, Shared (specific users), Public
+  - Three permission roles: Owner, Editor, Read-only
+  - Username-based sharing with case-insensitive lookup via CreatorProfiles
+  - Owners can grant owner-level access to other users
+  - Original creator protected (cannot have access revoked)
+  - Bots can be made public from UI; lore books can only be made public via Payload admin
+  - New API endpoints: `/api/sharing`, `/api/sharing/[resourceType]/[resourceId]`, `/api/users/lookup`
+  - New utility: `/lib/permissions/check-access.ts` for permission checking
+  - New UI component: `share-dialog.tsx` for managing collaborators
+  - Integrated sharing UI into bot wizard form and lore tomes view
+  - Updated my-bots and knowledge-collections APIs to include shared items
+
 - ✅ **Lore Page Filters**
   - Added filter panel to lore tomes view with collapsible UI
   - Filter by tome entry count (All Tomes, With Entries, Empty Tomes)
@@ -910,7 +927,7 @@ When you add new Payload collections or modify existing ones:
 ---
 
 **Last Updated**: 2026-01-18
-**Version**: 3.4
-**Total Tasks**: 149
-**Completed**: 125
-**Progress**: ~84% (lore page filters, UI enhancements)
+**Version**: 3.5
+**Total Tasks**: 156
+**Completed**: 133
+**Progress**: ~85% (permission/sharing system, lore page filters)

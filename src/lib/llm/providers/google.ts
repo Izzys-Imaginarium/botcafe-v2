@@ -146,12 +146,65 @@ export const googleProvider: LLMProvider = {
     const decoder = new TextDecoder()
     let buffer = ''
     let lastUsage: StreamChunk['usage'] = undefined
+    let hasEnded = false
+
+    // Helper to process a single SSE line
+    const processLine = function* (line: string): Generator<StreamChunk> {
+      const trimmed = line.trim()
+      if (!trimmed || !trimmed.startsWith('data: ')) return
+
+      const data = trimmed.slice(6)
+      if (!data || data === '[DONE]') {
+        hasEnded = true
+        return
+      }
+
+      try {
+        const parsed: GoogleStreamResponse = JSON.parse(data)
+
+        if (parsed.candidates?.[0]) {
+          const candidate = parsed.candidates[0]
+          const text = candidate.content?.parts?.[0]?.text || ''
+          const finishReason = candidate.finishReason
+
+          if (parsed.usageMetadata) {
+            lastUsage = {
+              inputTokens: parsed.usageMetadata.promptTokenCount || 0,
+              outputTokens: parsed.usageMetadata.candidatesTokenCount || 0,
+              totalTokens: parsed.usageMetadata.totalTokenCount || 0,
+            }
+          }
+
+          // Yield content even if there's a finish reason (don't skip final text)
+          yield {
+            content: text,
+            done: !!finishReason,
+            finishReason: finishReason === 'STOP'
+              ? 'stop'
+              : finishReason === 'MAX_TOKENS'
+                ? 'length'
+                : finishReason === 'SAFETY'
+                  ? 'content_filter'
+                  : null,
+            usage: finishReason ? lastUsage : undefined,
+          }
+
+          if (finishReason) {
+            hasEnded = true
+          }
+        }
+      } catch {
+        // Skip malformed JSON
+      }
+    }
 
     try {
       while (true) {
         const { done, value } = await reader.read()
 
         if (done) {
+          // Flush remaining buffer content with final decode
+          buffer += decoder.decode(new Uint8Array(), { stream: false })
           break
         }
 
@@ -162,58 +215,24 @@ export const googleProvider: LLMProvider = {
         buffer = lines.pop() || ''
 
         for (const line of lines) {
-          const trimmed = line.trim()
-          if (!trimmed || !trimmed.startsWith('data: ')) continue
-
-          const data = trimmed.slice(6)
-          if (!data || data === '[DONE]') continue
-
-          try {
-            const parsed: GoogleStreamResponse = JSON.parse(data)
-
-            if (parsed.candidates?.[0]) {
-              const candidate = parsed.candidates[0]
-              const text = candidate.content?.parts?.[0]?.text || ''
-              const isDone = !!candidate.finishReason
-
-              if (parsed.usageMetadata) {
-                lastUsage = {
-                  inputTokens: parsed.usageMetadata.promptTokenCount || 0,
-                  outputTokens: parsed.usageMetadata.candidatesTokenCount || 0,
-                  totalTokens: parsed.usageMetadata.totalTokenCount || 0,
-                }
-              }
-
-              yield {
-                content: text,
-                done: isDone,
-                finishReason: candidate.finishReason === 'STOP'
-                  ? 'stop'
-                  : candidate.finishReason === 'MAX_TOKENS'
-                    ? 'length'
-                    : candidate.finishReason === 'SAFETY'
-                      ? 'content_filter'
-                      : null,
-                usage: isDone ? lastUsage : undefined,
-              }
-
-              if (isDone) {
-                return
-              }
-            }
-          } catch {
-            // Skip malformed JSON
-            continue
-          }
+          yield* processLine(line)
+          if (hasEnded) return
         }
       }
 
+      // Process any remaining data in the buffer
+      if (buffer.trim()) {
+        yield* processLine(buffer)
+      }
+
       // Final yield if we didn't get a proper end signal
-      yield {
-        content: '',
-        done: true,
-        finishReason: 'stop',
-        usage: lastUsage,
+      if (!hasEnded) {
+        yield {
+          content: '',
+          done: true,
+          finishReason: 'stop',
+          usage: lastUsage,
+        }
       }
     } finally {
       reader.releaseLock()

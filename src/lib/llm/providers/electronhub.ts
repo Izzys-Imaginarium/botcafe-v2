@@ -16,7 +16,7 @@ import type {
 import { LLMError, parseSSELine } from '../types'
 import { estimateTokens } from '../token-counter'
 
-const ELECTRONHUB_API_URL = 'https://api.electronhub.top/v1/chat/completions'
+const ELECTRONHUB_API_URL = 'https://api.electronhub.ai/v1/chat/completions'
 
 // Models available on ElectronHub
 const SUPPORTED_MODELS = [

@@ -1,8 +1,8 @@
 # BotCafe v2 - Complete Sitemap
 
-**Last Updated**: 2026-01-18
-**Version**: 2.11
-**Status**: ~85% Complete
+**Last Updated**: 2026-01-19
+**Version**: 2.12
+**Status**: ~90% Complete
 
 ---
 
@@ -93,12 +93,12 @@
 | `/help/[slug]` | ✅ Complete | Individual help article viewer |
 | `/help/category/[category]` | ✅ Complete | Category browsing page |
 
-### Chat (Pending)
+### Chat (In Progress)
 
 | Route | Status | Description |
 |-------|--------|-------------|
-| `/chat` | ❌ Pending | Chat interface hub |
-| `/chat/[conversationId]` | ❌ Pending | Real-time conversation interface |
+| `/chat` | ⏳ In Progress | Chat interface hub |
+| `/chat/[conversationId]` | ⏳ In Progress | Real-time conversation interface |
 
 ---
 
@@ -215,6 +215,16 @@
 | `/api/upload` | POST | File upload with text extraction |
 | `/api/upload/image` | POST | Image upload with Clerk auth (for bot wizard) |
 
+### Chat
+
+| Endpoint | Methods | Description |
+|----------|---------|-------------|
+| `/api/chat/conversations` | GET, POST | List conversations, create new conversation |
+| `/api/chat/conversations/[id]` | GET, DELETE | Get or delete conversation |
+| `/api/chat/conversations/[id]/messages` | GET | Get messages for conversation |
+| `/api/chat/send` | POST | Send message and trigger LLM response |
+| `/api/chat/stream/[messageId]` | GET | SSE endpoint for streaming LLM responses |
+
 ### API Keys
 
 | Endpoint | Methods | Description |
@@ -249,8 +259,8 @@
 | Help | 3 | 0 | 3 |
 | Chat | 0 | 2 | 2 |
 | **Frontend Total** | **33** | **2** | **35** |
-| API Endpoints | 44 | 0 | 44 |
-| **Grand Total** | **77** | **2** | **79** |
+| API Endpoints | 49 | 0 | 49 |
+| **Grand Total** | **82** | **2** | **84** |
 
 ---
 
@@ -290,8 +300,8 @@ BotCafe
 │   ├── Terms (/legal/terms)
 │   ├── Privacy (/legal/privacy)
 │   └── Responsible AI (/legal/responsible-ai)
-├── Chat (/chat) [PENDING]
-│   └── Conversation (/chat/[conversationId]) [PENDING]
+├── Chat (/chat) [IN PROGRESS]
+│   └── Conversation (/chat/[conversationId]) [IN PROGRESS]
 └── Auth
     ├── Sign In (/sign-in)
     └── Sign Up (/sign-up)

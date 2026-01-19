@@ -20,21 +20,19 @@ const ELECTRONHUB_API_URL = 'https://api.electronhub.top/v1/chat/completions'
 
 // Models available on ElectronHub
 const SUPPORTED_MODELS = [
+  'gpt-5.2',
+  'gpt-4.1',
   'gpt-4o',
-  'gpt-4-turbo',
-  'gpt-3.5-turbo',
-  'claude-3-5-sonnet',
-  'claude-3-opus',
-  'gemini-1.5-pro',
-  'llama-3.1-70b',
-  'mistral-large',
+  'claude-sonnet-4-5-20250929',
+  'claude-opus-4-5-20251101',
+  'gemini-2.5-flash',
 ]
 
 export const electronhubProvider: LLMProvider = {
   name: 'electronhub',
   displayName: 'ElectronHub',
   supportedModels: SUPPORTED_MODELS,
-  defaultModel: 'gpt-4o',
+  defaultModel: 'gpt-4.1',
 
   async *sendMessage(
     params: SendMessageParams,

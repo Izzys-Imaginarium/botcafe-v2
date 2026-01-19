@@ -18,13 +18,20 @@ import { estimateTokens } from '../token-counter'
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
 
 const SUPPORTED_MODELS = [
+  // Llama models
   'llama-3.3-70b-versatile',
-  'llama-3.1-70b-versatile',
   'llama-3.1-8b-instant',
-  'llama3-70b-8192',
-  'llama3-8b-8192',
-  'mixtral-8x7b-32768',
-  'gemma2-9b-it',
+  'meta-llama/llama-4-scout-17b-16e-instruct',
+  'meta-llama/llama-4-maverick-17b-128e-instruct',
+  // OpenAI open models
+  'openai/gpt-oss-120b',
+  'openai/gpt-oss-20b',
+  // Compound models
+  'groq/compound',
+  'groq/compound-mini',
+  // Other models
+  'qwen/qwen3-32b',
+  'moonshotai/kimi-k2-instruct-0905',
 ]
 
 export const groqProvider: LLMProvider = {

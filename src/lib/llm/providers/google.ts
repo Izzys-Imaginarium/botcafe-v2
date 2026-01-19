@@ -19,11 +19,17 @@ import { estimateTokens } from '../token-counter'
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models'
 
 const SUPPORTED_MODELS = [
-  'gemini-1.5-pro',
-  'gemini-1.5-flash',
-  'gemini-1.5-flash-8b',
-  'gemini-pro',
-  'gemini-2.0-flash-exp',
+  // Gemini 3 (Preview)
+  'gemini-3-pro-preview',
+  'gemini-3-flash-preview',
+  'gemini-3-pro-image-preview',
+  // Gemini 2.5 (Stable)
+  'gemini-2.5-pro',
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
+  // Gemini 2.0 (Being retired March 2026)
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite',
 ]
 
 // Convert OpenAI-style messages to Gemini format
@@ -55,7 +61,7 @@ export const googleProvider: LLMProvider = {
   name: 'google',
   displayName: 'Google Gemini',
   supportedModels: SUPPORTED_MODELS,
-  defaultModel: 'gemini-1.5-flash',
+  defaultModel: 'gemini-2.5-flash',
 
   async *sendMessage(
     params: SendMessageParams,

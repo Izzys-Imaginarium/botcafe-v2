@@ -18,14 +18,23 @@ import { estimateTokens } from '../token-counter'
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions'
 
 const SUPPORTED_MODELS = [
+  // GPT-5.x Series (Latest)
+  'gpt-5.2',
+  'gpt-5.2-chat',
+  'gpt-5.1',
+  'gpt-5',
+  'gpt-5-mini',
+  'gpt-5-nano',
+  // Codex models
+  'gpt-5.2-codex',
+  'gpt-5.1-codex',
+  'gpt-5.1-codex-mini',
+  // GPT-4.x Series
+  'gpt-4.1',
+  'gpt-4.1-mini',
   'gpt-4o',
   'gpt-4o-mini',
-  'gpt-4-turbo',
-  'gpt-4-turbo-preview',
-  'gpt-4',
-  'gpt-4-32k',
-  'gpt-3.5-turbo',
-  'gpt-3.5-turbo-16k',
+  // Reasoning models
   'o1-preview',
   'o1-mini',
 ]
@@ -34,7 +43,7 @@ export const openaiProvider: LLMProvider = {
   name: 'openai',
   displayName: 'OpenAI',
   supportedModels: SUPPORTED_MODELS,
-  defaultModel: 'gpt-4o-mini',
+  defaultModel: 'gpt-4.1-mini',
 
   async *sendMessage(
     params: SendMessageParams,

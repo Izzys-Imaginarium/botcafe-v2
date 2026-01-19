@@ -19,13 +19,17 @@ import { estimateTokens } from '../token-counter'
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
 
 const SUPPORTED_MODELS = [
-  'claude-3-5-sonnet-20241022',
-  'claude-3-5-haiku-20241022',
-  'claude-3-opus-20240229',
-  'claude-3-sonnet-20240229',
-  'claude-3-haiku-20240307',
-  'claude-opus-4-20250514',
+  // Claude 4.5 Series (Latest)
+  'claude-opus-4-5-20251101',
+  'claude-sonnet-4-5-20250929',
+  'claude-haiku-4-5-20251001',
+  // Claude 4.x Series (Legacy)
+  'claude-opus-4-1-20250805',
   'claude-sonnet-4-20250514',
+  'claude-opus-4-20250514',
+  // Claude 3.x Series (Legacy)
+  'claude-3-7-sonnet-20250219',
+  'claude-3-haiku-20240307',
 ]
 
 // Convert OpenAI-style messages to Anthropic format
@@ -69,7 +73,7 @@ export const anthropicProvider: LLMProvider = {
   name: 'anthropic',
   displayName: 'Anthropic',
   supportedModels: SUPPORTED_MODELS,
-  defaultModel: 'claude-3-5-sonnet-20241022',
+  defaultModel: 'claude-sonnet-4-5-20250929',
 
   async *sendMessage(
     params: SendMessageParams,

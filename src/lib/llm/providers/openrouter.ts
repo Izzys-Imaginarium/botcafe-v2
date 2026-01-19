@@ -19,25 +19,30 @@ const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
 // Popular models on OpenRouter (subset - they support hundreds)
 const SUPPORTED_MODELS = [
+  // Anthropic
+  'anthropic/claude-opus-4.5',
+  'anthropic/claude-sonnet-4.5',
+  'anthropic/claude-haiku-4.5',
+  // OpenAI
+  'openai/gpt-5.2',
+  'openai/gpt-4.1',
   'openai/gpt-4o',
-  'openai/gpt-4-turbo',
-  'anthropic/claude-3.5-sonnet',
-  'anthropic/claude-3-opus',
-  'google/gemini-pro-1.5',
-  'meta-llama/llama-3.1-70b-instruct',
-  'meta-llama/llama-3.1-8b-instruct',
-  'mistralai/mixtral-8x7b-instruct',
-  'mistralai/mistral-large',
-  'cohere/command-r-plus',
-  'perplexity/llama-3.1-sonar-large-128k-online',
+  // Google
+  'google/gemini-3-pro-preview',
+  'google/gemini-2.5-flash',
+  // Meta
+  'meta-llama/llama-4-maverick',
+  'meta-llama/llama-3.3-70b-instruct',
+  // DeepSeek
   'deepseek/deepseek-chat',
+  'deepseek/deepseek-r1',
 ]
 
 export const openrouterProvider: LLMProvider = {
   name: 'openrouter',
   displayName: 'OpenRouter',
   supportedModels: SUPPORTED_MODELS,
-  defaultModel: 'openai/gpt-4o',
+  defaultModel: 'anthropic/claude-sonnet-4.5',
 
   async *sendMessage(
     params: SendMessageParams,

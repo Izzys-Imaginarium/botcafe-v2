@@ -19,45 +19,65 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Cpu, ChevronDown, Loader2 } from 'lucide-react'
 
-// Provider model info - matches src/lib/llm/providers
+// Provider model info - updated January 2026
 const providerModels: Record<string, { models: string[]; default: string; displayName: string }> = {
   openai: {
     displayName: 'OpenAI',
-    default: 'gpt-4o-mini',
+    default: 'gpt-4.1-mini',
     models: [
+      // GPT-5.x Series (Latest)
+      'gpt-5.2',
+      'gpt-5.2-chat',
+      'gpt-5.1',
+      'gpt-5',
+      'gpt-5-mini',
+      'gpt-5-nano',
+      // Codex models
+      'gpt-5.2-codex',
+      'gpt-5.1-codex',
+      'gpt-5.1-codex-mini',
+      // GPT-4.x Series
+      'gpt-4.1',
+      'gpt-4.1-mini',
       'gpt-4o',
       'gpt-4o-mini',
-      'gpt-4-turbo',
-      'gpt-4-turbo-preview',
-      'gpt-4',
-      'gpt-4-32k',
-      'gpt-3.5-turbo',
-      'gpt-3.5-turbo-16k',
+      // Reasoning models
       'o1-preview',
       'o1-mini',
     ],
   },
   anthropic: {
     displayName: 'Anthropic',
-    default: 'claude-3-5-sonnet-20241022',
+    default: 'claude-sonnet-4-5-20250929',
     models: [
-      'claude-3-5-sonnet-20241022',
-      'claude-3-5-haiku-20241022',
-      'claude-3-opus-20240229',
-      'claude-3-sonnet-20240229',
-      'claude-3-haiku-20240307',
-      'claude-opus-4-20250514',
+      // Claude 4.5 Series (Latest)
+      'claude-opus-4-5-20251101',
+      'claude-sonnet-4-5-20250929',
+      'claude-haiku-4-5-20251001',
+      // Claude 4.x Series (Legacy)
+      'claude-opus-4-1-20250805',
       'claude-sonnet-4-20250514',
+      'claude-opus-4-20250514',
+      // Claude 3.x Series (Legacy)
+      'claude-3-7-sonnet-20250219',
+      'claude-3-haiku-20240307',
     ],
   },
   google: {
     displayName: 'Google',
-    default: 'gemini-1.5-pro',
+    default: 'gemini-2.5-flash',
     models: [
-      'gemini-1.5-pro',
-      'gemini-1.5-flash',
-      'gemini-1.5-flash-8b',
-      'gemini-1.0-pro',
+      // Gemini 3 (Preview)
+      'gemini-3-pro-preview',
+      'gemini-3-flash-preview',
+      'gemini-3-pro-image-preview',
+      // Gemini 2.5 (Stable)
+      'gemini-2.5-pro',
+      'gemini-2.5-flash',
+      'gemini-2.5-flash-lite',
+      // Gemini 2.0 (Being retired March 2026)
+      'gemini-2.0-flash',
+      'gemini-2.0-flash-lite',
     ],
   },
   deepseek: {
@@ -70,88 +90,136 @@ const providerModels: Record<string, { models: string[]; default: string; displa
   },
   groq: {
     displayName: 'Groq',
-    default: 'llama-3.1-70b-versatile',
+    default: 'llama-3.3-70b-versatile',
     models: [
-      'llama-3.1-405b-reasoning',
-      'llama-3.1-70b-versatile',
+      // Llama models
+      'llama-3.3-70b-versatile',
       'llama-3.1-8b-instant',
-      'llama3-groq-70b-8192-tool-use-preview',
-      'llama3-groq-8b-8192-tool-use-preview',
-      'mixtral-8x7b-32768',
-      'gemma2-9b-it',
+      'meta-llama/llama-4-scout-17b-16e-instruct',
+      'meta-llama/llama-4-maverick-17b-128e-instruct',
+      // OpenAI open models
+      'openai/gpt-oss-120b',
+      'openai/gpt-oss-20b',
+      // Compound models
+      'groq/compound',
+      'groq/compound-mini',
+      // Other models
+      'qwen/qwen3-32b',
+      'moonshotai/kimi-k2-instruct-0905',
     ],
   },
   openrouter: {
     displayName: 'OpenRouter',
-    default: 'openai/gpt-4o',
+    default: 'anthropic/claude-sonnet-4.5',
     models: [
+      // Anthropic
+      'anthropic/claude-opus-4.5',
+      'anthropic/claude-sonnet-4.5',
+      'anthropic/claude-haiku-4.5',
+      // OpenAI
+      'openai/gpt-5.2',
+      'openai/gpt-4.1',
       'openai/gpt-4o',
-      'openai/gpt-4o-mini',
-      'anthropic/claude-3.5-sonnet',
-      'anthropic/claude-3-opus',
-      'google/gemini-pro-1.5',
-      'meta-llama/llama-3.1-405b-instruct',
-      'mistralai/mixtral-8x22b-instruct',
+      // Google
+      'google/gemini-3-pro-preview',
+      'google/gemini-2.5-flash',
+      // Meta
+      'meta-llama/llama-4-maverick',
+      'meta-llama/llama-3.3-70b-instruct',
+      // DeepSeek
+      'deepseek/deepseek-chat',
+      'deepseek/deepseek-r1',
     ],
   },
   electronhub: {
     displayName: 'ElectronHub',
-    default: 'gpt-4o',
+    default: 'gpt-4.1',
     models: [
+      'gpt-5.2',
+      'gpt-4.1',
       'gpt-4o',
-      'gpt-4o-mini',
-      'claude-3-5-sonnet-20241022',
-      'claude-3-opus-20240229',
-      'gemini-1.5-pro',
+      'claude-sonnet-4-5-20250929',
+      'claude-opus-4-5-20251101',
+      'gemini-2.5-flash',
     ],
   },
 }
 
 // Friendly model names for display
 const modelDisplayNames: Record<string, string> = {
-  // OpenAI
+  // OpenAI - GPT-5.x Series
+  'gpt-5.2': 'GPT-5.2',
+  'gpt-5.2-chat': 'GPT-5.2 Chat',
+  'gpt-5.1': 'GPT-5.1',
+  'gpt-5': 'GPT-5',
+  'gpt-5-mini': 'GPT-5 Mini',
+  'gpt-5-nano': 'GPT-5 Nano',
+  'gpt-5.2-codex': 'GPT-5.2 Codex',
+  'gpt-5.1-codex': 'GPT-5.1 Codex',
+  'gpt-5.1-codex-mini': 'GPT-5.1 Codex Mini',
+  // OpenAI - GPT-4.x Series
+  'gpt-4.1': 'GPT-4.1',
+  'gpt-4.1-mini': 'GPT-4.1 Mini',
   'gpt-4o': 'GPT-4o',
   'gpt-4o-mini': 'GPT-4o Mini',
-  'gpt-4-turbo': 'GPT-4 Turbo',
-  'gpt-4-turbo-preview': 'GPT-4 Turbo Preview',
-  'gpt-4': 'GPT-4',
-  'gpt-4-32k': 'GPT-4 32K',
-  'gpt-3.5-turbo': 'GPT-3.5 Turbo',
-  'gpt-3.5-turbo-16k': 'GPT-3.5 Turbo 16K',
   'o1-preview': 'o1 Preview',
   'o1-mini': 'o1 Mini',
-  // Anthropic
-  'claude-3-5-sonnet-20241022': 'Claude 3.5 Sonnet',
-  'claude-3-5-haiku-20241022': 'Claude 3.5 Haiku',
-  'claude-3-opus-20240229': 'Claude 3 Opus',
-  'claude-3-sonnet-20240229': 'Claude 3 Sonnet',
+  // Anthropic - Claude 4.5 Series
+  'claude-opus-4-5-20251101': 'Claude Opus 4.5',
+  'claude-sonnet-4-5-20250929': 'Claude Sonnet 4.5',
+  'claude-haiku-4-5-20251001': 'Claude Haiku 4.5',
+  // Anthropic - Claude 4.x Series
+  'claude-opus-4-1-20250805': 'Claude Opus 4.1',
+  'claude-sonnet-4-20250514': 'Claude Sonnet 4',
+  'claude-opus-4-20250514': 'Claude Opus 4',
+  // Anthropic - Claude 3.x Series
+  'claude-3-7-sonnet-20250219': 'Claude 3.7 Sonnet',
   'claude-3-haiku-20240307': 'Claude 3 Haiku',
-  'claude-opus-4-20250514': 'Claude 4 Opus',
-  'claude-sonnet-4-20250514': 'Claude 4 Sonnet',
-  // Google
-  'gemini-1.5-pro': 'Gemini 1.5 Pro',
-  'gemini-1.5-flash': 'Gemini 1.5 Flash',
-  'gemini-1.5-flash-8b': 'Gemini 1.5 Flash 8B',
-  'gemini-1.0-pro': 'Gemini 1.0 Pro',
+  // Google - Gemini 3
+  'gemini-3-pro-preview': 'Gemini 3 Pro (Preview)',
+  'gemini-3-flash-preview': 'Gemini 3 Flash (Preview)',
+  'gemini-3-pro-image-preview': 'Gemini 3 Pro Image (Preview)',
+  // Google - Gemini 2.5
+  'gemini-2.5-pro': 'Gemini 2.5 Pro',
+  'gemini-2.5-flash': 'Gemini 2.5 Flash',
+  'gemini-2.5-flash-lite': 'Gemini 2.5 Flash Lite',
+  // Google - Gemini 2.0
+  'gemini-2.0-flash': 'Gemini 2.0 Flash',
+  'gemini-2.0-flash-lite': 'Gemini 2.0 Flash Lite',
   // DeepSeek
   'deepseek-chat': 'DeepSeek Chat',
   'deepseek-reasoner': 'DeepSeek Reasoner',
-  // Groq
-  'llama-3.1-405b-reasoning': 'Llama 3.1 405B',
-  'llama-3.1-70b-versatile': 'Llama 3.1 70B',
-  'llama-3.1-8b-instant': 'Llama 3.1 8B',
-  'llama3-groq-70b-8192-tool-use-preview': 'Llama 3 70B Tool Use',
-  'llama3-groq-8b-8192-tool-use-preview': 'Llama 3 8B Tool Use',
-  'mixtral-8x7b-32768': 'Mixtral 8x7B',
-  'gemma2-9b-it': 'Gemma 2 9B',
-  // OpenRouter
+  // Groq - Llama models
+  'llama-3.3-70b-versatile': 'Llama 3.3 70B',
+  'llama-3.1-8b-instant': 'Llama 3.1 8B Instant',
+  'meta-llama/llama-4-scout-17b-16e-instruct': 'Llama 4 Scout 17B',
+  'meta-llama/llama-4-maverick-17b-128e-instruct': 'Llama 4 Maverick 17B',
+  // Groq - OpenAI open models
+  'openai/gpt-oss-120b': 'GPT-OSS 120B',
+  'openai/gpt-oss-20b': 'GPT-OSS 20B',
+  // Groq - Compound models
+  'groq/compound': 'Groq Compound',
+  'groq/compound-mini': 'Groq Compound Mini',
+  // Groq - Other models
+  'qwen/qwen3-32b': 'Qwen3 32B',
+  'moonshotai/kimi-k2-instruct-0905': 'Kimi K2',
+  // OpenRouter - Anthropic
+  'anthropic/claude-opus-4.5': 'Claude Opus 4.5',
+  'anthropic/claude-sonnet-4.5': 'Claude Sonnet 4.5',
+  'anthropic/claude-haiku-4.5': 'Claude Haiku 4.5',
+  // OpenRouter - OpenAI
+  'openai/gpt-5.2': 'GPT-5.2',
+  'openai/gpt-4.1': 'GPT-4.1',
   'openai/gpt-4o': 'GPT-4o',
-  'openai/gpt-4o-mini': 'GPT-4o Mini',
-  'anthropic/claude-3.5-sonnet': 'Claude 3.5 Sonnet',
-  'anthropic/claude-3-opus': 'Claude 3 Opus',
-  'google/gemini-pro-1.5': 'Gemini 1.5 Pro',
-  'meta-llama/llama-3.1-405b-instruct': 'Llama 3.1 405B',
-  'mistralai/mixtral-8x22b-instruct': 'Mixtral 8x22B',
+  // OpenRouter - Google
+  'google/gemini-3-pro-preview': 'Gemini 3 Pro',
+  'google/gemini-2.5-flash': 'Gemini 2.5 Flash',
+  // OpenRouter - Meta
+  'meta-llama/llama-4-maverick': 'Llama 4 Maverick',
+  'meta-llama/llama-3.3-70b-instruct': 'Llama 3.3 70B',
+  // OpenRouter - DeepSeek
+  'deepseek/deepseek-chat': 'DeepSeek Chat',
+  'deepseek/deepseek-r1': 'DeepSeek R1',
 }
 
 export interface ModelSelectorProps {

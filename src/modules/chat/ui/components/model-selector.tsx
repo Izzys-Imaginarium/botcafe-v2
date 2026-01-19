@@ -7,8 +7,9 @@
  * Models are filtered based on the selected API key's provider.
  */
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +18,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Cpu, ChevronDown, Loader2 } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Cpu, ChevronDown, Pencil } from 'lucide-react'
 
 // Provider model info - updated January 2026
 const providerModels: Record<string, { models: string[]; default: string; displayName: string }> = {
@@ -230,6 +239,9 @@ export interface ModelSelectorProps {
   className?: string
 }
 
+// Providers that support custom model input (they have hundreds of models)
+const CUSTOM_MODEL_PROVIDERS = ['openrouter', 'electronhub']
+
 export function ModelSelector({
   provider,
   currentModel,
@@ -238,6 +250,12 @@ export function ModelSelector({
   className,
 }: ModelSelectorProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [customModelDialogOpen, setCustomModelDialogOpen] = useState(false)
+  const [customModelInput, setCustomModelInput] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // Check if this provider supports custom model input
+  const supportsCustomModel = provider ? CUSTOM_MODEL_PROVIDERS.includes(provider) : false
 
   // Get available models for the current provider
   const availableModels = useMemo(() => {
@@ -261,23 +279,44 @@ export function ModelSelector({
     }
   }, [provider, defaultModel, currentModel, onSelect])
 
-  // Reset model when provider changes and current model isn't available
+  // Reset model when provider changes and current model isn't in the list
+  // But only for providers that don't support custom models
   useEffect(() => {
-    if (provider && currentModel && availableModels.length > 0) {
+    if (provider && currentModel && availableModels.length > 0 && !supportsCustomModel) {
       if (!availableModels.includes(currentModel)) {
         onSelect(defaultModel || availableModels[0])
       }
     }
-  }, [provider, currentModel, availableModels, defaultModel, onSelect])
+  }, [provider, currentModel, availableModels, defaultModel, onSelect, supportsCustomModel])
 
   const handleSelect = (model: string) => {
     onSelect(model)
     setIsOpen(false)
   }
 
+  const handleCustomModelSubmit = () => {
+    const trimmed = customModelInput.trim()
+    if (trimmed) {
+      onSelect(trimmed)
+      setCustomModelDialogOpen(false)
+      setCustomModelInput('')
+    }
+  }
+
+  const openCustomModelDialog = () => {
+    setCustomModelInput(currentModel || '')
+    setCustomModelDialogOpen(true)
+    setIsOpen(false)
+    // Focus input after dialog opens
+    setTimeout(() => inputRef.current?.focus(), 100)
+  }
+
   const getModelDisplayName = (model: string) => {
     return modelDisplayNames[model] || model
   }
+
+  // Check if current model is a custom one (not in the predefined list)
+  const isCustomModel = currentModel && !availableModels.includes(currentModel)
 
   // No provider selected
   if (!provider) {
@@ -310,48 +349,123 @@ export function ModelSelector({
   }
 
   return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={disabled}
-          className={className}
-        >
-          <Cpu className="h-4 w-4 mr-2" />
-          <span className="max-w-[140px] truncate">
-            {currentModel ? getModelDisplayName(currentModel) : 'Select Model'}
-          </span>
-          <ChevronDown className="h-3 w-3 ml-1 opacity-50" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-64 max-h-80 overflow-y-auto">
-        <DropdownMenuLabel>
-          Select Model ({providerModels[provider]?.displayName || provider})
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-
-        {/* Model list */}
-        {availableModels.map((model) => (
-          <DropdownMenuItem
-            key={model}
-            onClick={() => handleSelect(model)}
-            className="cursor-pointer"
+    <>
+      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={disabled}
+            className={className}
           >
-            <Cpu className="h-4 w-4 mr-2 text-muted-foreground" />
-            <div className="flex flex-col flex-1 min-w-0">
-              <span className="truncate">{getModelDisplayName(model)}</span>
-              <span className="text-xs text-muted-foreground truncate">{model}</span>
-            </div>
-            {currentModel === model && (
-              <span className="ml-auto text-xs text-primary shrink-0">Active</span>
-            )}
-            {model === defaultModel && currentModel !== model && (
-              <span className="ml-auto text-xs text-muted-foreground shrink-0">Default</span>
-            )}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+            <Cpu className="h-4 w-4 mr-2" />
+            <span className="max-w-[140px] truncate">
+              {currentModel ? getModelDisplayName(currentModel) : 'Select Model'}
+            </span>
+            <ChevronDown className="h-3 w-3 ml-1 opacity-50" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-64 max-h-80 overflow-y-auto">
+          <DropdownMenuLabel>
+            Select Model ({providerModels[provider]?.displayName || provider})
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+
+          {/* Custom model option for supported providers */}
+          {supportsCustomModel && (
+            <>
+              <DropdownMenuItem
+                onClick={openCustomModelDialog}
+                className="cursor-pointer"
+              >
+                <Pencil className="h-4 w-4 mr-2 text-muted-foreground" />
+                <div className="flex flex-col flex-1 min-w-0">
+                  <span>Enter Custom Model</span>
+                  <span className="text-xs text-muted-foreground">Type any model ID</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
+
+          {/* Show current custom model if it's not in the list */}
+          {isCustomModel && (
+            <>
+              <DropdownMenuItem
+                onClick={() => handleSelect(currentModel!)}
+                className="cursor-pointer bg-primary/5"
+              >
+                <Cpu className="h-4 w-4 mr-2 text-primary" />
+                <div className="flex flex-col flex-1 min-w-0">
+                  <span className="truncate">{currentModel}</span>
+                  <span className="text-xs text-muted-foreground">Custom model</span>
+                </div>
+                <span className="ml-auto text-xs text-primary shrink-0">Active</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
+
+          {/* Model list */}
+          {availableModels.map((model) => (
+            <DropdownMenuItem
+              key={model}
+              onClick={() => handleSelect(model)}
+              className="cursor-pointer"
+            >
+              <Cpu className="h-4 w-4 mr-2 text-muted-foreground" />
+              <div className="flex flex-col flex-1 min-w-0">
+                <span className="truncate">{getModelDisplayName(model)}</span>
+                <span className="text-xs text-muted-foreground truncate">{model}</span>
+              </div>
+              {currentModel === model && (
+                <span className="ml-auto text-xs text-primary shrink-0">Active</span>
+              )}
+              {model === defaultModel && currentModel !== model && (
+                <span className="ml-auto text-xs text-muted-foreground shrink-0">Default</span>
+              )}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Custom model input dialog */}
+      <Dialog open={customModelDialogOpen} onOpenChange={setCustomModelDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Enter Custom Model</DialogTitle>
+            <DialogDescription>
+              Enter the model ID exactly as provided by {providerModels[provider!]?.displayName || provider}.
+              {provider === 'openrouter' && (
+                <span className="block mt-1">
+                  Format: <code className="bg-muted px-1 rounded">provider/model-name</code>
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              ref={inputRef}
+              value={customModelInput}
+              onChange={(e) => setCustomModelInput(e.target.value)}
+              placeholder={provider === 'openrouter' ? 'e.g., anthropic/claude-sonnet-4.5' : 'e.g., gpt-4.1'}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleCustomModelSubmit()
+                }
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCustomModelDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCustomModelSubmit} disabled={!customModelInput.trim()}>
+              Use Model
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

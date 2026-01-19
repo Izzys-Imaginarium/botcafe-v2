@@ -15,6 +15,7 @@ import { ChatInput } from '../components/chat-input'
 import { BotSidebar, type BotParticipant } from '../components/bot-sidebar'
 import { PersonaSwitcher } from '../components/persona-switcher'
 import { ApiKeySelector } from '../components/api-key-selector'
+import { ModelSelector } from '../components/model-selector'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -25,6 +26,7 @@ export interface ChatViewProps {
 
 export function ChatView({ conversationId, className }: ChatViewProps) {
   const [botSidebarOpen, setBotSidebarOpen] = useState(false)
+  const [selectedProvider, setSelectedProvider] = useState<string | null>(null)
 
   const {
     conversation,
@@ -35,6 +37,8 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
     error,
     selectedApiKeyId,
     setSelectedApiKeyId,
+    selectedModel,
+    setSelectedModel,
     sendMessage,
     stopStreaming,
     addBot,
@@ -150,8 +154,8 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
         onOpenBotSidebar={() => setBotSidebarOpen(true)}
       />
 
-      {/* Settings bar - Persona & API Key selectors */}
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-border/30 bg-muted/30">
+      {/* Settings bar - Persona, API Key & Model selectors */}
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-border/30 bg-muted/30 flex-wrap">
         <PersonaSwitcher
           currentPersonaId={currentPersonaId}
           onSelect={handlePersonaChange}
@@ -161,6 +165,14 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
         <ApiKeySelector
           currentKeyId={selectedApiKeyId}
           onSelect={setSelectedApiKeyId}
+          onProviderChange={setSelectedProvider}
+          disabled={isSending || isStreaming}
+        />
+        <div className="h-4 w-px bg-border/50" />
+        <ModelSelector
+          provider={selectedProvider}
+          currentModel={selectedModel}
+          onSelect={setSelectedModel}
           disabled={isSending || isStreaming}
         />
       </div>

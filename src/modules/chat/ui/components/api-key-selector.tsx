@@ -40,6 +40,7 @@ const providerInfo: Record<string, { name: string; color: string }> = {
 export interface ApiKeySelectorProps {
   currentKeyId?: number | null
   onSelect: (keyId: number) => void
+  onProviderChange?: (provider: string) => void
   disabled?: boolean
   className?: string
 }
@@ -47,6 +48,7 @@ export interface ApiKeySelectorProps {
 export function ApiKeySelector({
   currentKeyId,
   onSelect,
+  onProviderChange,
   disabled,
   className,
 }: ApiKeySelectorProps) {
@@ -68,6 +70,9 @@ export function ApiKeySelector({
           // Auto-select first key if none selected
           if (!currentKeyId && activeKeys.length > 0) {
             onSelect(activeKeys[0].id)
+            if (onProviderChange) {
+              onProviderChange(activeKeys[0].provider)
+            }
           }
         }
       } catch (error) {
@@ -86,7 +91,11 @@ export function ApiKeySelector({
     : null
 
   const handleSelect = (keyId: number) => {
+    const selectedKey = apiKeys.find((k) => k.id === keyId)
     onSelect(keyId)
+    if (selectedKey && onProviderChange) {
+      onProviderChange(selectedKey.provider)
+    }
     setIsOpen(false)
   }
 

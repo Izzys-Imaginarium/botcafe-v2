@@ -21,9 +21,9 @@ import Link from 'next/link'
 
 interface ApiKey {
   id: number
-  name: string
+  nickname: string
   provider: string
-  isActive: boolean
+  is_active: boolean
 }
 
 // Provider display names and colors
@@ -58,11 +58,11 @@ export function ApiKeySelector({
   useEffect(() => {
     const fetchApiKeys = async () => {
       try {
-        const response = await fetch('/api/account/api-keys')
+        const response = await fetch('/api/api-keys')
         const data = await response.json() as { keys?: ApiKey[] }
         if (response.ok) {
           // Only show active keys
-          const activeKeys = (data.keys || []).filter((k) => k.isActive)
+          const activeKeys = (data.keys || []).filter((k) => k.is_active)
           setApiKeys(activeKeys)
 
           // Auto-select first key if none selected
@@ -122,7 +122,7 @@ export function ApiKeySelector({
             <>
               <Key className={`h-4 w-4 mr-2 ${provider?.color || ''}`} />
               <span className="max-w-[120px] truncate">
-                {currentKey.name || provider?.name || 'API Key'}
+                {currentKey.nickname || provider?.name || 'API Key'}
               </span>
             </>
           ) : (
@@ -152,7 +152,7 @@ export function ApiKeySelector({
             >
               <Key className={`h-4 w-4 mr-2 ${keyProvider.color}`} />
               <div className="flex flex-col">
-                <span className="truncate">{key.name || `${keyProvider.name} Key`}</span>
+                <span className="truncate">{key.nickname || `${keyProvider.name} Key`}</span>
                 <span className="text-xs text-muted-foreground">
                   {keyProvider.name}
                 </span>

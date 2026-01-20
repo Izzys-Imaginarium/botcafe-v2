@@ -4,11 +4,13 @@
  * ChatMessage Component
  *
  * Renders a single message in the chat, handling both user and bot messages.
+ * Supports Discord-style markdown formatting.
  */
 
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Loader2, Bot, User } from 'lucide-react'
+import { DiscordMarkdown } from './discord-markdown'
 
 export interface ChatMessageProps {
   content: string
@@ -85,16 +87,22 @@ export function ChatMessage({
           )}
         </div>
 
-        {/* Message content */}
-        <div className="text-foreground/90 whitespace-pre-wrap break-words">
-          {content || (isStreaming && (
-            <span className="inline-flex items-center gap-1 text-muted-foreground">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              Thinking...
-            </span>
-          ))}
-          {isStreaming && content && (
-            <span className="inline-block w-1.5 h-4 bg-primary/50 ml-0.5 animate-pulse" />
+        {/* Message content with Discord-style markdown */}
+        <div className="text-foreground/90 break-words">
+          {content ? (
+            <>
+              <DiscordMarkdown content={content} />
+              {isStreaming && (
+                <span className="inline-block w-1.5 h-4 bg-primary/50 ml-0.5 animate-pulse" />
+              )}
+            </>
+          ) : (
+            isStreaming && (
+              <span className="inline-flex items-center gap-1 text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Thinking...
+              </span>
+            )
           )}
         </div>
 

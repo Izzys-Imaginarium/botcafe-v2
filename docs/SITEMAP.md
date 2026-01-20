@@ -1,7 +1,7 @@
 # BotCafe v2 - Complete Sitemap
 
-**Last Updated**: 2026-01-20
-**Version**: 2.13
+**Last Updated**: 2026-01-21
+**Version**: 2.14
 **Status**: ~93% Complete
 
 ---

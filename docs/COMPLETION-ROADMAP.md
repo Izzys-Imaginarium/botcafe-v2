@@ -574,6 +574,27 @@ When you add new Payload collections or modify existing ones:
 
 ## 🔄 **Recent Changes**
 
+### **2026-01-21 Updates:**
+- ✅ **Chat UI Styling & UX Improvements**
+  - Added `MagicalBackground` component to chat pages for consistent site-wide styling
+    - Chat home page (`chat-home-client.tsx`) now has animated firefly background
+    - Chat conversation page (`chat-conversation-client.tsx`) now matches site aesthetic
+  - Fixed scroll containment so only message list scrolls, not entire page
+    - Created dedicated layout (`layout.tsx`) that hides footer on chat pages
+    - Chat container uses `fixed top-20 left-0 right-0 bottom-0` for full viewport
+    - Added `shrink-0` to header and input to prevent flex shrinking
+    - Added `min-h-0` to message list for proper flex containment
+  - Glass effect styling applied to chat components:
+    - Header: `bg-background/60 backdrop-blur-md`
+    - Input area: `bg-background/60 backdrop-blur-md`
+    - Settings bar: `bg-background/40 backdrop-blur-sm`
+  - Removed duplicate "New Chat" button on chat selection page
+    - Added `showHeader` prop to `ConversationList` component
+    - Page header already provides the "New Chat" button
+  - Fixed mobile menu accessibility for chat list
+    - Menu button now always visible on mobile (`opacity-100 md:opacity-0 md:group-hover:opacity-100`)
+    - Users can delete/archive chats on touch devices
+
 ### **2026-01-20 Updates:**
 - ✅ **Chat System Enhancements (Phase 9 continued)**
   - Added Discord-style markdown support in chat messages:
@@ -997,8 +1018,8 @@ When you add new Payload collections or modify existing ones:
 
 ---
 
-**Last Updated**: 2026-01-20
-**Version**: 3.7
+**Last Updated**: 2026-01-21
+**Version**: 3.8
 **Total Tasks**: 168
 **Completed**: 156
-**Progress**: ~93% (chat system with markdown, greetings, and improved streaming)
+**Progress**: ~93% (chat UI styling, scroll containment, mobile accessibility)

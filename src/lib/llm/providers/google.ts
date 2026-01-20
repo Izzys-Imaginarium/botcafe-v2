@@ -146,16 +146,12 @@ export const googleProvider: LLMProvider = {
     const decoder = new TextDecoder()
     let buffer = ''
     let lastUsage: StreamChunk['usage'] = undefined
-    let hasEnded = false
+    let allContent = '' // Track all content for debugging
+    let finishReasonReceived: string | null = null
 
-    // Helper to process a single SSE line
-    const processLine = function* (line: string): Generator<StreamChunk> {
-      const trimmed = line.trim()
-      if (!trimmed || !trimmed.startsWith('data: ')) return
-
-      const data = trimmed.slice(6)
+    // Helper to process a single SSE data payload
+    const processData = function* (data: string): Generator<StreamChunk> {
       if (!data || data === '[DONE]') {
-        hasEnded = true
         return
       }
 
@@ -164,7 +160,17 @@ export const googleProvider: LLMProvider = {
 
         if (parsed.candidates?.[0]) {
           const candidate = parsed.candidates[0]
-          const text = candidate.content?.parts?.[0]?.text || ''
+
+          // Gemini can have multiple parts, concatenate them all
+          let text = ''
+          if (candidate.content?.parts) {
+            for (const part of candidate.content.parts) {
+              if (part.text) {
+                text += part.text
+              }
+            }
+          }
+
           const finishReason = candidate.finishReason
 
           if (parsed.usageMetadata) {
@@ -175,26 +181,27 @@ export const googleProvider: LLMProvider = {
             }
           }
 
-          // Yield content even if there's a finish reason (don't skip final text)
-          yield {
-            content: text,
-            done: !!finishReason,
-            finishReason: finishReason === 'STOP'
-              ? 'stop'
-              : finishReason === 'MAX_TOKENS'
-                ? 'length'
-                : finishReason === 'SAFETY'
-                  ? 'content_filter'
-                  : null,
-            usage: finishReason ? lastUsage : undefined,
+          // Track content
+          allContent += text
+
+          // Always yield if there's content, regardless of finish reason
+          if (text) {
+            yield {
+              content: text,
+              done: false,
+              finishReason: null,
+              usage: undefined,
+            }
           }
 
+          // Track finish reason but don't yield done=true yet
+          // We'll yield the final done event after processing all data
           if (finishReason) {
-            hasEnded = true
+            finishReasonReceived = finishReason
           }
         }
       } catch {
-        // Skip malformed JSON
+        // Skip malformed JSON - could be partial data
       }
     }
 
@@ -210,29 +217,51 @@ export const googleProvider: LLMProvider = {
 
         buffer += decoder.decode(value, { stream: true })
 
-        // Process complete lines - Gemini SSE format
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
+        // Process complete SSE events
+        // Gemini SSE format: "data: {json}\n\n" or "data: {json}\r\n\r\n"
+        // Split on double newlines to separate events
+        const events = buffer.split(/\r?\n\r?\n/)
 
-        for (const line of lines) {
-          yield* processLine(line)
-          if (hasEnded) return
+        // Keep the last part (might be incomplete)
+        buffer = events.pop() || ''
+
+        for (const event of events) {
+          // Each event can have multiple lines, find the data line(s)
+          const lines = event.split(/\r?\n/)
+          for (const line of lines) {
+            const trimmed = line.trim()
+            if (trimmed.startsWith('data: ')) {
+              const data = trimmed.slice(6)
+              yield* processData(data)
+            }
+          }
         }
       }
 
       // Process any remaining data in the buffer
       if (buffer.trim()) {
-        yield* processLine(buffer)
+        const lines = buffer.split(/\r?\n/)
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (trimmed.startsWith('data: ')) {
+            const data = trimmed.slice(6)
+            yield* processData(data)
+          }
+        }
       }
 
-      // Final yield if we didn't get a proper end signal
-      if (!hasEnded) {
-        yield {
-          content: '',
-          done: true,
-          finishReason: 'stop',
-          usage: lastUsage,
-        }
+      // Now yield the final done event
+      yield {
+        content: '',
+        done: true,
+        finishReason: finishReasonReceived === 'STOP'
+          ? 'stop'
+          : finishReasonReceived === 'MAX_TOKENS'
+            ? 'length'
+            : finishReasonReceived === 'SAFETY'
+              ? 'content_filter'
+              : 'stop', // Default to stop if no finish reason
+        usage: lastUsage,
       }
     } finally {
       reader.releaseLock()

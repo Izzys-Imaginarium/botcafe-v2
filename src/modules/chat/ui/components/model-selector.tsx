@@ -119,38 +119,13 @@ const providerModels: Record<string, { models: string[]; default: string; displa
   },
   openrouter: {
     displayName: 'OpenRouter',
-    default: 'anthropic/claude-sonnet-4.5',
-    models: [
-      // Anthropic
-      'anthropic/claude-opus-4.5',
-      'anthropic/claude-sonnet-4.5',
-      'anthropic/claude-haiku-4.5',
-      // OpenAI
-      'openai/gpt-5.2',
-      'openai/gpt-4.1',
-      'openai/gpt-4o',
-      // Google
-      'google/gemini-3-pro-preview',
-      'google/gemini-2.5-flash',
-      // Meta
-      'meta-llama/llama-4-maverick',
-      'meta-llama/llama-3.3-70b-instruct',
-      // DeepSeek
-      'deepseek/deepseek-chat',
-      'deepseek/deepseek-r1',
-    ],
+    default: '', // No default - user must enter custom model
+    models: [], // No predefined models - custom input only
   },
   electronhub: {
     displayName: 'ElectronHub',
-    default: 'gpt-4.1',
-    models: [
-      'gpt-5.2',
-      'gpt-4.1',
-      'gpt-4o',
-      'claude-sonnet-4-5-20250929',
-      'claude-opus-4-5-20251101',
-      'gemini-2.5-flash',
-    ],
+    default: '', // No default - user must enter custom model
+    models: [], // No predefined models - custom input only
   },
 }
 
@@ -333,8 +308,8 @@ export function ModelSelector({
     )
   }
 
-  // No models available for provider
-  if (availableModels.length === 0) {
+  // No models available and not a custom model provider
+  if (availableModels.length === 0 && !supportsCustomModel) {
     return (
       <Button
         variant="ghost"

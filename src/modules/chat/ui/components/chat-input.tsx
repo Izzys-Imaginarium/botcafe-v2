@@ -64,7 +64,7 @@ export function ChatInput({
 
   return (
     <div className={cn(
-      'flex gap-3 items-end px-6 py-5 border-t border-border/20',
+      'flex gap-3 items-end px-6 py-5 border-t border-border/20 shrink-0',
       'bg-background/60 backdrop-blur-md',
       className
     )}>

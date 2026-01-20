@@ -68,12 +68,12 @@ export function MessageList({
 
   return (
     <ScrollArea
-      className={cn('flex-1', className)}
+      className={cn('flex-1 h-full', className)}
     >
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex flex-col min-h-full px-4 py-6"
+        className="flex flex-col px-4 py-6"
       >
         {/* Load more button */}
         {hasMore && (

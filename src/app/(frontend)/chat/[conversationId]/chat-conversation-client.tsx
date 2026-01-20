@@ -19,8 +19,9 @@ export function ChatConversationClient({ conversationId }: ChatConversationClien
       {/* Magical background effects */}
       <MagicalBackground />
 
-      <div className="relative z-10 h-screen flex flex-col pt-20">
-        <ChatView conversationId={conversationId} className="flex-1" />
+      {/* Fixed height container - prevents page scroll, only message list scrolls */}
+      <div className="fixed inset-0 z-10 flex flex-col pt-20 overflow-hidden">
+        <ChatView conversationId={conversationId} className="flex-1 min-h-0" />
       </div>
     </>
   )

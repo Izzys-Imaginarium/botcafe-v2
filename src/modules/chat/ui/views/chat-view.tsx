@@ -143,8 +143,8 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
   }
 
   return (
-    <div className={cn('flex flex-col h-full', className)}>
-      {/* Header */}
+    <div className={cn('flex flex-col h-full overflow-hidden', className)}>
+      {/* Header - fixed height */}
       <ChatHeader
         botName={primaryBot?.name}
         botAvatar={primaryBot?.avatar?.url}
@@ -154,8 +154,8 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
         onOpenBotSidebar={() => setBotSidebarOpen(true)}
       />
 
-      {/* Settings bar - Persona, API Key & Model selectors */}
-      <div className="flex items-center gap-4 px-6 py-4 border-b border-border/20 bg-background/40 backdrop-blur-sm flex-wrap">
+      {/* Settings bar - fixed height */}
+      <div className="flex items-center gap-4 px-6 py-4 border-b border-border/20 bg-background/40 backdrop-blur-sm flex-wrap shrink-0">
         <PersonaSwitcher
           currentPersonaId={currentPersonaId}
           onSelect={handlePersonaChange}
@@ -177,13 +177,13 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
         />
       </div>
 
-      {/* Messages */}
+      {/* Messages - scrollable area, takes remaining space */}
       <MessageList
         messages={formattedMessages}
         isLoading={isLoading}
         hasMore={false} // TODO: Implement pagination
         onLoadMore={loadMoreMessages}
-        className="flex-1"
+        className="flex-1 min-h-0 overflow-hidden"
       />
 
       {/* Input */}

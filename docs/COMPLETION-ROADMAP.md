@@ -574,6 +574,29 @@ When you add new Payload collections or modify existing ones:
 
 ## 🔄 **Recent Changes**
 
+### **2026-01-20 Updates:**
+- ✅ **Chat System Enhancements (Phase 9 continued)**
+  - Added Discord-style markdown support in chat messages:
+    - **Bold**, *italic*, __underline__, ~~strikethrough~~
+    - `inline code` and ```code blocks``` with language labels
+    - ||Spoilers|| (click to reveal)
+    - > Blockquotes and # Headers
+    - [Links](url) with safe external handling
+    - `<action text>` for roleplay actions (renders as italic with angle brackets preserved)
+  - Proper handling of angle brackets `<>` to prevent HTML injection
+  - Bot greeting message now automatically sent when conversation is created
+    - Uses `buildGreeting()` function with `{{user}}` and `{{char}}` placeholder support
+    - Personalized with user's persona name if selected
+  - OpenRouter and ElectronHub now only show "Enter Custom Model" option (no predefined list)
+  - Improved Gemini streaming reliability:
+    - Better SSE event parsing with proper double-newline splitting
+    - Handle multiple parts in Gemini responses
+    - Deferred done signal to ensure all content is captured
+  - Chat UI spacing improvements:
+    - Header padding increased from py-3 to py-4
+    - Settings bar padding increased from py-2 to py-3
+    - Better gap spacing between elements
+
 ### **2026-01-19 Updates:**
 - ✅ **Chat System Core Infrastructure (Phase 9)**
   - Implemented LLM provider abstraction with 7 providers:
@@ -974,8 +997,8 @@ When you add new Payload collections or modify existing ones:
 
 ---
 
-**Last Updated**: 2026-01-19
-**Version**: 3.6
+**Last Updated**: 2026-01-20
+**Version**: 3.7
 **Total Tasks**: 168
-**Completed**: 152
-**Progress**: ~90% (chat system core infrastructure complete)
+**Completed**: 156
+**Progress**: ~93% (chat system with markdown, greetings, and improved streaming)

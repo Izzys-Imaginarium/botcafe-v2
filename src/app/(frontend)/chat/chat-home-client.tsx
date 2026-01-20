@@ -81,7 +81,7 @@ export function ChatHomeClient() {
               onDelete={handleDelete}
               onArchive={handleArchive}
               isLoading={isLoading}
-              onNewChat={() => router.push('/chat/new')}
+              showHeader={false}
             />
           </div>
         </div>

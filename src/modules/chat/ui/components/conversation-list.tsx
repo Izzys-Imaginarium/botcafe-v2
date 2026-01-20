@@ -53,6 +53,7 @@ export interface ConversationListProps {
   onDelete?: (id: number) => void
   onNewChat?: () => void
   isLoading?: boolean
+  showHeader?: boolean
   className?: string
 }
 
@@ -64,6 +65,7 @@ export function ConversationList({
   onDelete,
   onNewChat,
   isLoading = false,
+  showHeader = true,
   className,
 }: ConversationListProps) {
   const formatTimeAgo = (dateString: string) => {
@@ -88,18 +90,20 @@ export function ConversationList({
 
   return (
     <div className={cn('flex flex-col h-full', className)}>
-      {/* Header */}
-      <div className="p-4 border-b border-border/50">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-lg">Chats</h2>
-          {onNewChat && (
-            <Button size="sm" onClick={onNewChat} className="gap-2">
-              <Plus className="h-4 w-4" />
-              New
-            </Button>
-          )}
+      {/* Header - optional, hidden when page already has one */}
+      {showHeader && (
+        <div className="p-4 border-b border-border/50">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold text-lg">Chats</h2>
+            {onNewChat && (
+              <Button size="sm" onClick={onNewChat} className="gap-2">
+                <Plus className="h-4 w-4" />
+                New
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* List */}
       <ScrollArea className="flex-1">

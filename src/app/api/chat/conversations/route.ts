@@ -2,13 +2,15 @@
  * Chat Conversations API
  *
  * GET - List user's conversations
- * POST - Create a new conversation
+ * POST - Create a new conversation (includes bot greeting as first message)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
+import { buildGreeting } from '@/lib/chat/context-builder'
+import type { Bot, Persona } from '@/payload-types'
 
 export const dynamic = 'force-dynamic'
 
@@ -216,7 +218,7 @@ export async function POST(request: NextRequest) {
         },
         total_tokens: 0,
         conversation_metadata: {
-          total_messages: 0,
+          total_messages: 1, // Start with 1 for the greeting
           participant_count: botIdsToAdd.length + 1,
           last_activity: new Date().toISOString(),
         },
@@ -224,6 +226,45 @@ export async function POST(request: NextRequest) {
           allow_file_sharing: true,
           message_retention_days: 365,
           auto_save_conversations: true,
+        },
+      },
+      overrideAccess: true,
+    })
+
+    // Get persona if provided (for greeting personalization)
+    let persona: Persona | null = null
+    if (personaId) {
+      const personaResult = await payload.findByID({
+        collection: 'personas',
+        id: personaId,
+        overrideAccess: true,
+      })
+      persona = personaResult as Persona
+    }
+
+    // Get primary bot for greeting
+    const primaryBot = bots.docs[0] as Bot
+
+    // Build the bot's greeting message with persona context
+    const greetingContent = buildGreeting(primaryBot, persona)
+
+    // Create the greeting message from the bot
+    await payload.create({
+      collection: 'message',
+      data: {
+        conversation: conversation.id,
+        user: payloadUser.id,
+        bot: primaryBot.id,
+        entry: greetingContent,
+        message_type: 'text',
+        message_attribution: {
+          is_ai_generated: true,
+          source_bot_id: primaryBot.id,
+          model_used: 'greeting', // Special marker for greeting messages
+        },
+        message_status: {
+          delivery_status: 'delivered',
+          is_edited: false,
         },
       },
       overrideAccess: true,
@@ -249,6 +290,12 @@ export async function POST(request: NextRequest) {
           role: bp.role,
         })) || [],
         participants: fullConversation.participants,
+      },
+      // Include greeting info so the client knows the conversation started
+      greeting: {
+        content: greetingContent,
+        botId: primaryBot.id,
+        botName: primaryBot.name,
       },
     })
   } catch (error: unknown) {

@@ -19,8 +19,14 @@ export function ChatConversationClient({ conversationId }: ChatConversationClien
       {/* Magical background effects */}
       <MagicalBackground />
 
-      {/* Fixed height container - prevents page scroll, only message list scrolls */}
-      <div className="fixed inset-0 z-10 flex flex-col pt-20 overflow-hidden">
+      {/*
+        Full viewport chat container
+        - fixed inset-0: fills the entire viewport
+        - top-20: accounts for navbar height (80px = 5rem = 20 in tailwind)
+        - z-10: above the background
+        - overflow-hidden: prevents any page scrolling
+      */}
+      <div className="fixed top-20 left-0 right-0 bottom-0 z-10 flex flex-col overflow-hidden">
         <ChatView conversationId={conversationId} className="flex-1 min-h-0" />
       </div>
     </>

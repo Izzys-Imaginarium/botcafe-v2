@@ -155,7 +155,7 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
       />
 
       {/* Settings bar - Persona, API Key & Model selectors */}
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-border/30 bg-muted/30 flex-wrap">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border/30 bg-muted/30 flex-wrap">
         <PersonaSwitcher
           currentPersonaId={currentPersonaId}
           onSelect={handlePersonaChange}

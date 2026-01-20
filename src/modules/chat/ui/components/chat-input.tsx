@@ -63,7 +63,11 @@ export function ChatInput({
   }, [handleSend])
 
   return (
-    <div className={cn('flex gap-2 items-end p-4 border-t border-border/50', className)}>
+    <div className={cn(
+      'flex gap-3 items-end px-6 py-5 border-t border-border/20',
+      'bg-background/60 backdrop-blur-md',
+      className
+    )}>
       <Textarea
         ref={textareaRef}
         value={content}
@@ -72,8 +76,8 @@ export function ChatInput({
         placeholder={placeholder}
         disabled={disabled || isLoading}
         className={cn(
-          'min-h-[44px] max-h-[200px] resize-none py-3',
-          'bg-background/50 border-border/50',
+          'min-h-12 max-h-50 resize-none py-3 px-4',
+          'bg-background/50 border-border/30 rounded-xl',
           'focus:border-primary/50 focus:ring-primary/20',
         )}
         rows={1}
@@ -84,21 +88,21 @@ export function ChatInput({
           onClick={onStop}
           variant="destructive"
           size="icon"
-          className="shrink-0 h-11 w-11"
+          className="shrink-0 h-12 w-12 rounded-xl"
         >
-          <Square className="h-4 w-4" />
+          <Square className="h-5 w-5" />
         </Button>
       ) : (
         <Button
           onClick={handleSend}
           disabled={!content.trim() || isLoading || disabled}
           size="icon"
-          className="shrink-0 h-11 w-11"
+          className="shrink-0 h-12 w-12 rounded-xl"
         >
           {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
-            <Send className="h-4 w-4" />
+            <Send className="h-5 w-5" />
           )}
         </Button>
       )}

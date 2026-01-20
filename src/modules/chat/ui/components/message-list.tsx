@@ -73,11 +73,11 @@ export function MessageList({
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex flex-col min-h-full"
+        className="flex flex-col min-h-full px-4 py-6"
       >
         {/* Load more button */}
         {hasMore && (
-          <div className="flex justify-center p-4">
+          <div className="flex justify-center py-4 mb-4">
             <Button
               variant="ghost"
               size="sm"
@@ -97,37 +97,39 @@ export function MessageList({
 
         {/* Loading state */}
         {isLoading && messages.length === 0 && (
-          <div className="flex items-center justify-center py-8">
+          <div className="flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         )}
 
         {/* Empty state */}
         {!isLoading && messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="flex flex-col items-center justify-center py-16 text-center">
             <p className="text-muted-foreground">
               No messages yet. Start the conversation!
             </p>
           </div>
         )}
 
-        {/* Messages */}
-        {messages.map((message) => (
-          <ChatMessage
-            key={message.id}
-            content={message.content}
-            isAI={message.isAI}
-            isStreaming={message.isStreaming}
-            botName={message.botName}
-            botAvatar={message.botAvatar}
-            timestamp={message.timestamp}
-            model={message.model}
-            tokens={message.tokens}
-          />
-        ))}
+        {/* Messages with spacing */}
+        <div className="space-y-6">
+          {messages.map((message) => (
+            <ChatMessage
+              key={message.id}
+              content={message.content}
+              isAI={message.isAI}
+              isStreaming={message.isStreaming}
+              botName={message.botName}
+              botAvatar={message.botAvatar}
+              timestamp={message.timestamp}
+              model={message.model}
+              tokens={message.tokens}
+            />
+          ))}
+        </div>
 
         {/* Scroll anchor */}
-        <div ref={bottomRef} />
+        <div ref={bottomRef} className="h-4" />
       </div>
     </ScrollArea>
   )

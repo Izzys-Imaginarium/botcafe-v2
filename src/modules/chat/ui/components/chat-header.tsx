@@ -57,35 +57,35 @@ export function ChatHeader({
   return (
     <div
       className={cn(
-        'flex items-center gap-4 px-4 py-4 border-b border-border/50',
-        'bg-background/80 backdrop-blur-sm',
+        'flex items-center gap-5 px-6 py-5 border-b border-border/20',
+        'bg-background/60 backdrop-blur-md',
         className
       )}
     >
       {/* Back button */}
       <Link href="/chat">
-        <Button variant="ghost" size="icon" className="shrink-0">
+        <Button variant="ghost" size="icon" className="shrink-0 hover:bg-primary/10">
           <ChevronLeft className="h-5 w-5" />
         </Button>
       </Link>
 
       {/* Bot avatar */}
-      <Avatar className="h-10 w-10 border border-border/50">
+      <Avatar className="h-12 w-12 border-2 border-primary/20 shadow-md">
         <AvatarImage src={botAvatar} alt={botName || 'Bot'} />
         <AvatarFallback className="bg-primary/10 text-primary">
-          <Bot className="h-5 w-5" />
+          <Bot className="h-6 w-6" />
         </AvatarFallback>
       </Avatar>
 
       {/* Bot info */}
       <div className="flex-1 min-w-0">
-        <h2 className="font-semibold text-foreground truncate">
+        <h2 className="font-semibold text-lg text-foreground truncate">
           {botName || 'Chat'}
         </h2>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
           {isMultiBot && (
-            <span className="flex items-center gap-1">
-              <Users className="h-3 w-3" />
+            <span className="flex items-center gap-1.5">
+              <Users className="h-3.5 w-3.5" />
               {botCount} bots
             </span>
           )}

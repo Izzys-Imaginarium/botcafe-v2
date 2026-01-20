@@ -155,20 +155,20 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
       />
 
       {/* Settings bar - Persona, API Key & Model selectors */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-border/30 bg-muted/30 flex-wrap">
+      <div className="flex items-center gap-4 px-6 py-4 border-b border-border/20 bg-background/40 backdrop-blur-sm flex-wrap">
         <PersonaSwitcher
           currentPersonaId={currentPersonaId}
           onSelect={handlePersonaChange}
           disabled={isSending || isStreaming}
         />
-        <div className="h-4 w-px bg-border/50" />
+        <div className="h-5 w-px bg-border/30" />
         <ApiKeySelector
           currentKeyId={selectedApiKeyId}
           onSelect={setSelectedApiKeyId}
           onProviderChange={setSelectedProvider}
           disabled={isSending || isStreaming}
         />
-        <div className="h-4 w-px bg-border/50" />
+        <div className="h-5 w-px bg-border/30" />
         <ModelSelector
           provider={selectedProvider}
           currentModel={selectedModel}

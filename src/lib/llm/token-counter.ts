@@ -199,7 +199,7 @@ export function getContextWindow(model: string): number {
   if (modelLower.includes('deepseek-chat')) return 32768
   if (modelLower.includes('deepseek-coder')) return 16384
 
-  // Groq (Llama models)
+  // Llama models (via OpenRouter, etc.)
   if (modelLower.includes('llama-3.1')) return 131072
   if (modelLower.includes('llama-3')) return 8192
   if (modelLower.includes('mixtral')) return 32768

@@ -230,7 +230,19 @@ export interface Bot {
   age?: number | null;
   description?: string | null;
   system_prompt: string;
+  /**
+   * Legacy field - use sharing.visibility instead
+   */
   is_public?: boolean | null;
+  /**
+   * Control who can access and edit this bot
+   */
+  sharing?: {
+    /**
+     * Private: Only you. Shared: Specific users you invite. Public: Anyone can view.
+     */
+    visibility?: ('private' | 'shared' | 'public') | null;
+  };
   greeting?: string | null;
   speech_examples?:
     | {
@@ -501,7 +513,13 @@ export interface KnowledgeCollection {
   created_timestamp?: string | null;
   modified_timestamp?: string | null;
   description?: string | null;
+  /**
+   * Control who can access this lore book. Note: Public visibility can only be set via admin panel.
+   */
   sharing_settings: {
+    /**
+     * Private: Only you. Shared: Specific users via AccessControl. Public: Anyone (admin-only).
+     */
     sharing_level: 'private' | 'shared' | 'public';
     allow_collaboration?: boolean | null;
     allow_fork?: boolean | null;
@@ -512,6 +530,9 @@ export interface KnowledgeCollection {
     last_updated?: string | null;
     is_public?: boolean | null;
   };
+  /**
+   * DEPRECATED: Use AccessControl collection for managing collaborators. This field is kept for backwards compatibility.
+   */
   collaborators?: {
     collab_user_ids?:
       | {
@@ -578,7 +599,7 @@ export interface ApiKey {
   id: number;
   user: number | User;
   nickname: string;
-  provider: 'openai' | 'anthropic' | 'google' | 'deepseek' | 'groq' | 'openrouter' | 'electronhub';
+  provider: 'openai' | 'anthropic' | 'google' | 'deepseek' | 'openrouter' | 'electronhub';
   key: string;
   key_configuration?: {
     model_preferences?:
@@ -1184,6 +1205,18 @@ export interface VectorRecord {
    * Vector dimensions
    */
   embedding_dimensions: number;
+  /**
+   * Stored embedding vector (JSON array of floats) for future-proofing metadata-only updates
+   */
+  embedding?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -2877,6 +2910,11 @@ export interface BotSelect<T extends boolean = true> {
   description?: T;
   system_prompt?: T;
   is_public?: T;
+  sharing?:
+    | T
+    | {
+        visibility?: T;
+      };
   greeting?: T;
   speech_examples?:
     | T
@@ -3459,6 +3497,7 @@ export interface VectorRecordsSelect<T extends boolean = true> {
   metadata?: T;
   embedding_model?: T;
   embedding_dimensions?: T;
+  embedding?: T;
   updatedAt?: T;
   createdAt?: T;
 }

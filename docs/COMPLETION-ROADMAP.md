@@ -301,7 +301,6 @@ By building foundational systems first, we avoid rework and ensure chat has all 
   - [x] Anthropic provider with Claude 4.5 series
   - [x] Google provider with Gemini 3/2.5 series (streaming fix applied)
   - [x] DeepSeek provider
-  - [x] Groq provider with Llama 4, Compound models
   - [x] OpenRouter provider (multi-model gateway)
   - [x] ElectronHub provider (API URL fixed)
 - [x] Implement SSE streaming for LLM responses
@@ -620,12 +619,11 @@ When you add new Payload collections or modify existing ones:
 
 ### **2026-01-19 Updates:**
 - ✅ **Chat System Core Infrastructure (Phase 9)**
-  - Implemented LLM provider abstraction with 7 providers:
+  - Implemented LLM provider abstraction with 6 providers:
     - OpenAI (GPT-5.x, GPT-4.x, o1 reasoning models)
     - Anthropic (Claude 4.5 Opus/Sonnet/Haiku)
     - Google Gemini (3.0 preview, 2.5 stable) - fixed streaming cutoff issue
     - DeepSeek (chat and reasoner)
-    - Groq (Llama 4, Compound, GPT-OSS)
     - OpenRouter (multi-model gateway)
     - ElectronHub (fixed API URL from api.electronhub.top to api.electronhub.ai)
   - Created SSE streaming endpoint `/api/chat/stream/[messageId]`

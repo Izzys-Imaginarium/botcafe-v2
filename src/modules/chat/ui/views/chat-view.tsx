@@ -7,7 +7,7 @@
  * Supports multi-bot conversations with turn-taking modes.
  */
 
-import { useState, useCallback, useMemo, useRef } from 'react'
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useChat } from '../../hooks/use-chat'
@@ -55,8 +55,39 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const [isClearing, setIsClearing] = useState(false)
 
+  // Available bots for adding to conversation
+  const [availableBots, setAvailableBots] = useState<Array<{
+    id: number
+    name: string
+    avatar?: string
+    description?: string
+  }>>([])
+
   // Conversation management
   const { deleteConversation, archiveConversation } = useConversations()
+
+  // Fetch available bots when sidebar opens
+  useEffect(() => {
+    if (botSidebarOpen && availableBots.length === 0) {
+      const fetchBots = async () => {
+        try {
+          const response = await fetch('/api/bots/explore?limit=50')
+          const data = await response.json() as { bots?: Array<{ id: number; name: string; avatar?: { url: string }; description?: string }> }
+          if (response.ok && data.bots) {
+            setAvailableBots(data.bots.map(bot => ({
+              id: bot.id,
+              name: bot.name,
+              avatar: bot.avatar?.url,
+              description: bot.description,
+            })))
+          }
+        } catch (error) {
+          console.error('Failed to fetch available bots:', error)
+        }
+      }
+      fetchBots()
+    }
+  }, [botSidebarOpen, availableBots.length])
 
   const {
     conversation,
@@ -406,6 +437,7 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
         open={botSidebarOpen}
         onOpenChange={setBotSidebarOpen}
         bots={botParticipants}
+        availableBots={availableBots}
         onAddBot={handleAddBot}
         onRemoveBot={handleRemoveBot}
       />

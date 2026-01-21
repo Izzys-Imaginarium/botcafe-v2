@@ -4,35 +4,67 @@
  * ChatInput Component
  *
  * Message input with send button and optional controls.
+ * Supports @mentions for targeting specific bots in multi-bot conversations.
  */
 
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Send, Square, Loader2 } from 'lucide-react'
 
+export interface BotForMention {
+  id: number
+  name: string
+}
+
 export interface ChatInputProps {
-  onSend: (content: string) => void
+  onSend: (content: string, mentionedBotId?: number) => void
   onStop?: () => void
+  onMentionDetected?: (botId: number | null) => void
   isLoading?: boolean
   isStreaming?: boolean
   disabled?: boolean
   placeholder?: string
+  bots?: BotForMention[]
   className?: string
 }
 
 export function ChatInput({
   onSend,
   onStop,
+  onMentionDetected,
   isLoading = false,
   isStreaming = false,
   disabled = false,
   placeholder = 'Type a message...',
+  bots = [],
   className,
 }: ChatInputProps) {
   const [content, setContent] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Detect @mentions in the content
+  const detectedMention = useMemo(() => {
+    if (bots.length === 0) return null
+
+    // Match @BotName at the start of the message (case-insensitive)
+    const mentionMatch = content.match(/^@(\S+)/i)
+    if (!mentionMatch) return null
+
+    const mentionedName = mentionMatch[1].toLowerCase()
+    const matchedBot = bots.find(
+      (b) => b.name.toLowerCase() === mentionedName ||
+             b.name.toLowerCase().startsWith(mentionedName)
+    )
+
+    return matchedBot || null
+  }, [content, bots])
+
+  // Notify parent of mention changes
+  useEffect(() => {
+    onMentionDetected?.(detectedMention?.id || null)
+  }, [detectedMention, onMentionDetected])
 
   // Auto-resize textarea
   useEffect(() => {
@@ -46,14 +78,15 @@ export function ChatInput({
   const handleSend = useCallback(() => {
     const trimmed = content.trim()
     if (trimmed && !isLoading && !disabled) {
-      onSend(trimmed)
+      // Pass the detected mention to the send handler
+      onSend(trimmed, detectedMention?.id)
       setContent('')
       // Reset textarea height
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto'
       }
     }
-  }, [content, isLoading, disabled, onSend])
+  }, [content, isLoading, disabled, onSend, detectedMention])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -64,48 +97,59 @@ export function ChatInput({
 
   return (
     <div className={cn(
-      'flex gap-3 items-end px-6 py-5 border-t border-border/20 shrink-0',
+      'flex flex-col gap-2 px-6 py-5 border-t border-border/20 shrink-0',
       'bg-background/60 backdrop-blur-md',
       className
     )}>
-      <Textarea
-        ref={textareaRef}
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-        disabled={disabled || isLoading}
-        className={cn(
-          'min-h-12 max-h-50 resize-none py-3 px-4',
-          'bg-background/50 border-border/30 rounded-xl',
-          'focus:border-primary/50 focus:ring-primary/20',
-        )}
-        rows={1}
-      />
-
-      {isStreaming ? (
-        <Button
-          onClick={onStop}
-          variant="destructive"
-          size="icon"
-          className="shrink-0 h-12 w-12 rounded-xl"
-        >
-          <Square className="h-5 w-5" />
-        </Button>
-      ) : (
-        <Button
-          onClick={handleSend}
-          disabled={!content.trim() || isLoading || disabled}
-          size="icon"
-          className="shrink-0 h-12 w-12 rounded-xl"
-        >
-          {isLoading ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            <Send className="h-5 w-5" />
-          )}
-        </Button>
+      {/* Mention indicator */}
+      {detectedMention && (
+        <div className="flex items-center gap-2 text-xs text-primary">
+          <span className="font-medium">@{detectedMention.name}</span>
+          <span className="text-muted-foreground">will respond to this message</span>
+        </div>
       )}
+
+      <div className="flex gap-3 items-end">
+        <Textarea
+          ref={textareaRef}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={bots.length > 1 ? `${placeholder} (type @name to target a bot)` : placeholder}
+          disabled={disabled || isLoading}
+          className={cn(
+            'min-h-12 max-h-50 resize-none py-3 px-4',
+            'bg-background/50 border-border/30 rounded-xl',
+            'focus:border-primary/50 focus:ring-primary/20',
+            detectedMention && 'border-primary/30',
+          )}
+          rows={1}
+        />
+
+        {isStreaming ? (
+          <Button
+            onClick={onStop}
+            variant="destructive"
+            size="icon"
+            className="shrink-0 h-12 w-12 rounded-xl"
+          >
+            <Square className="h-5 w-5" />
+          </Button>
+        ) : (
+          <Button
+            onClick={handleSend}
+            disabled={!content.trim() || isLoading || disabled}
+            size="icon"
+            className="shrink-0 h-12 w-12 rounded-xl"
+          >
+            {isLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Send className="h-5 w-5" />
+            )}
+          </Button>
+        )}
+      </div>
     </div>
   )
 }

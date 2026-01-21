@@ -321,8 +321,13 @@ By building foundational systems first, we avoid rework and ensure chat has all 
   - [x] ModelSelector with custom model input for OpenRouter/ElectronHub
   - [x] PersonaSwitcher for persona hot-swap
 - [x] Integrate RAG/knowledge activation with chat
-- [ ] Create `/chat/[conversationId]` page routes
-- [ ] Add multi-bot conversation orchestration
+- [x] Create `/chat/[conversationId]` page routes
+- [x] Add multi-bot conversation orchestration
+  - [x] BotSelector component with turn mode selection
+  - [x] Turn modes: Manual, Round-Robin, Random, All Bots
+  - [x] @mention detection in ChatInput (type @BotName)
+  - [x] Visual feedback for targeted bot
+  - [x] Integration with ChatView state management
 - [ ] Implement memory auto-generation during chat
 - [ ] Add wellness gate checks before sending
 - [ ] Implement voice input capabilities
@@ -574,6 +579,23 @@ When you add new Payload collections or modify existing ones:
 ## 🔄 **Recent Changes**
 
 ### **2026-01-21 Updates:**
+- ✅ **Multi-Bot Conversation Orchestration (Phase 9)**
+  - Created `BotSelector` component (`/modules/chat/ui/components/bot-selector.tsx`)
+    - Dropdown to select which bot responds in multi-bot conversations
+    - Four turn modes: Manual (select specific bot), Round-Robin (bots take turns), Random, All Bots
+    - Visual indicators for current mode and selected bot
+  - Enhanced `ChatInput` component with @mention detection
+    - Type `@BotName` at start of message to target specific bot
+    - Case-insensitive partial matching (e.g., "@Ar" matches "Aria")
+    - Visual feedback showing which bot will respond
+    - Hint in placeholder when multiple bots are in conversation
+  - Updated `ChatView` to manage multi-bot state
+    - Target bot selection state with turn mode tracking
+    - Round-robin index tracking for sequential turn-taking
+    - Integration of BotSelector in settings bar (only shows with 2+ bots)
+    - @mention overrides turn mode for targeted responses
+  - Backend already supported `targetBotId` in `/api/chat/send` endpoint
+
 - ✅ **Chat UI Styling & UX Improvements**
   - Added `MagicalBackground` component to chat pages for consistent site-wide styling
     - Chat home page (`chat-home-client.tsx`) now has animated firefly background
@@ -1017,7 +1039,7 @@ When you add new Payload collections or modify existing ones:
 ---
 
 **Last Updated**: 2026-01-21
-**Version**: 3.8
-**Total Tasks**: 168
-**Completed**: 156
-**Progress**: ~93% (chat UI styling, scroll containment, mobile accessibility)
+**Version**: 3.9
+**Total Tasks**: 173
+**Completed**: 162
+**Progress**: ~94% (multi-bot orchestration with turn modes and @mentions)

@@ -8,8 +8,10 @@
  */
 
 import { useState, useCallback, useMemo, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useChat } from '../../hooks/use-chat'
+import { useConversations } from '../../hooks/use-conversations'
 import { ChatHeader } from '../components/chat-header'
 import { MessageList, type Message } from '../components/message-list'
 import { ChatInput, type BotForMention } from '../components/chat-input'
@@ -18,6 +20,16 @@ import { BotSelector, type TurnMode, type BotOption } from '../components/bot-se
 import { PersonaSwitcher } from '../components/persona-switcher'
 import { ApiKeySelector } from '../components/api-key-selector'
 import { ModelSelector } from '../components/model-selector'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -27,6 +39,7 @@ export interface ChatViewProps {
 }
 
 export function ChatView({ conversationId, className }: ChatViewProps) {
+  const router = useRouter()
   const [botSidebarOpen, setBotSidebarOpen] = useState(false)
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null)
 
@@ -35,6 +48,15 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
   const [targetBotId, setTargetBotId] = useState<number | null>(null)
   const [mentionedBotId, setMentionedBotId] = useState<number | null>(null)
   const roundRobinIndexRef = useRef(0)
+
+  // Confirmation dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [clearHistoryDialogOpen, setClearHistoryDialogOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isClearing, setIsClearing] = useState(false)
+
+  // Conversation management
+  const { deleteConversation, archiveConversation } = useConversations()
 
   const {
     conversation,
@@ -198,6 +220,94 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
     }
   }, [removeBot])
 
+  // Handle opening bot sidebar for adding bots
+  const handleOpenAddBot = useCallback(() => {
+    setBotSidebarOpen(true)
+  }, [])
+
+  // Handle archive conversation
+  const handleArchive = useCallback(async () => {
+    try {
+      await archiveConversation(conversationId)
+      toast.success('Conversation archived')
+      router.push('/chat')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to archive conversation')
+    }
+  }, [archiveConversation, conversationId, router])
+
+  // Handle delete conversation
+  const handleDelete = useCallback(async () => {
+    setIsDeleting(true)
+    try {
+      await deleteConversation(conversationId)
+      toast.success('Conversation deleted')
+      router.push('/chat')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete conversation')
+    } finally {
+      setIsDeleting(false)
+      setDeleteDialogOpen(false)
+    }
+  }, [deleteConversation, conversationId, router])
+
+  // Handle clear history
+  const handleClearHistory = useCallback(async () => {
+    setIsClearing(true)
+    try {
+      const response = await fetch(`/api/chat/conversations/${conversationId}/messages`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) {
+        throw new Error('Failed to clear history')
+      }
+      toast.success('Chat history cleared')
+      // Refresh messages
+      window.location.reload()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to clear history')
+    } finally {
+      setIsClearing(false)
+      setClearHistoryDialogOpen(false)
+    }
+  }, [conversationId])
+
+  // Handle export chat
+  const handleExport = useCallback(async () => {
+    try {
+      // Build export data
+      const exportData = {
+        conversation: {
+          id: conversationId,
+          type: conversation?.type,
+          bots: conversation?.bots?.map(b => b.bot.name),
+          exportedAt: new Date().toISOString(),
+        },
+        messages: messages.map(msg => ({
+          role: msg.isAI ? 'assistant' : 'user',
+          content: msg.content,
+          bot: msg.bot?.name,
+          timestamp: msg.createdAt,
+        })),
+      }
+
+      // Create and download file
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `chat-${conversationId}-${new Date().toISOString().split('T')[0]}.json`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+
+      toast.success('Chat exported')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to export chat')
+    }
+  }, [conversationId, conversation, messages])
+
   // Loading state
   if (isLoading && !conversation) {
     return (
@@ -227,6 +337,11 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
         conversationType={conversation?.type}
         totalTokens={conversation?.totalTokens}
         onOpenBotSidebar={() => setBotSidebarOpen(true)}
+        onAddBot={handleOpenAddBot}
+        onArchive={handleArchive}
+        onDelete={() => setDeleteDialogOpen(true)}
+        onClearHistory={() => setClearHistoryDialogOpen(true)}
+        onExport={handleExport}
       />
 
       {/* Settings bar - fixed height */}
@@ -294,6 +409,52 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
         onAddBot={handleAddBot}
         onRemoveBot={handleRemoveBot}
       />
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Conversation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this conversation? This action cannot be undone
+              and all messages will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Clear history confirmation dialog */}
+      <AlertDialog open={clearHistoryDialogOpen} onOpenChange={setClearHistoryDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear Chat History</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to clear all messages in this conversation?
+              The conversation will remain but all messages will be deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isClearing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleClearHistory}
+              disabled={isClearing}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isClearing ? 'Clearing...' : 'Clear History'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

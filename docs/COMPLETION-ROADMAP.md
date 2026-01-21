@@ -328,6 +328,13 @@ By building foundational systems first, we avoid rework and ensure chat has all 
   - [x] @mention detection in ChatInput (type @BotName)
   - [x] Visual feedback for targeted bot
   - [x] Integration with ChatView state management
+- [x] Chat menu actions (header ⋮ menu)
+  - [x] Add Bot (opens sidebar for single-bot chats)
+  - [x] Export Chat (downloads JSON with conversation data)
+  - [x] Clear History (deletes messages, keeps conversation)
+  - [x] Archive conversation
+  - [x] Delete conversation with confirmation dialog
+  - [x] Created DELETE endpoint for `/api/chat/conversations/[id]/messages`
 - [ ] Implement memory auto-generation during chat
 - [ ] Add wellness gate checks before sending
 - [ ] Implement voice input capabilities
@@ -595,6 +602,22 @@ When you add new Payload collections or modify existing ones:
     - Integration of BotSelector in settings bar (only shows with 2+ bots)
     - @mention overrides turn mode for targeted responses
   - Backend already supported `targetBotId` in `/api/chat/send` endpoint
+
+- ✅ **Chat Menu Actions (Phase 9 continued)**
+  - Updated `ChatHeader` component with full menu functionality
+    - **Add Bot**: Opens bot sidebar for single-bot chats (multi-bot shows "Bots" button instead)
+    - **Export Chat**: Downloads conversation as JSON file with all messages and metadata
+    - **Clear History**: Deletes all messages but keeps the conversation (with confirmation dialog)
+    - **Archive**: Soft-delete conversation and redirect to chat list
+    - **Delete**: Permanently delete conversation with confirmation dialog
+  - Updated `ChatView` with handlers for all menu actions
+    - Integrated `useConversations` hook for delete/archive
+    - Added confirmation dialogs for destructive actions
+    - Export builds JSON with conversation info and formatted messages
+  - Created `DELETE /api/chat/conversations/[id]/messages` endpoint
+    - Clears all messages in a conversation
+    - Resets conversation metadata (message count, tokens)
+    - Requires authentication and ownership verification
 
 - ✅ **Chat UI Styling & UX Improvements**
   - Added `MagicalBackground` component to chat pages for consistent site-wide styling
@@ -1039,7 +1062,7 @@ When you add new Payload collections or modify existing ones:
 ---
 
 **Last Updated**: 2026-01-21
-**Version**: 3.9
-**Total Tasks**: 173
-**Completed**: 162
-**Progress**: ~94% (multi-bot orchestration with turn modes and @mentions)
+**Version**: 3.10
+**Total Tasks**: 179
+**Completed**: 169
+**Progress**: ~94% (chat menu actions: add bot, export, clear history, archive, delete)

@@ -22,8 +22,10 @@ import {
   MoreVertical,
   Archive,
   Trash2,
-  Settings,
   Users,
+  UserPlus,
+  Eraser,
+  Download,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -34,9 +36,11 @@ export interface ChatHeaderProps {
   conversationType?: string
   totalTokens?: number
   onOpenBotSidebar?: () => void
+  onAddBot?: () => void
   onArchive?: () => void
   onDelete?: () => void
-  onSettings?: () => void
+  onClearHistory?: () => void
+  onExport?: () => void
   className?: string
 }
 
@@ -47,9 +51,11 @@ export function ChatHeader({
   conversationType = 'single-bot',
   totalTokens,
   onOpenBotSidebar,
+  onAddBot,
   onArchive,
   onDelete,
-  onSettings,
+  onClearHistory,
+  onExport,
   className,
 }: ChatHeaderProps) {
   const isMultiBot = conversationType !== 'single-bot' || botCount > 1
@@ -116,10 +122,23 @@ export function ChatHeader({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
-          {onSettings && (
-            <DropdownMenuItem onClick={onSettings}>
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
+          {/* Add Bot - only for single-bot chats */}
+          {!isMultiBot && onAddBot && (
+            <DropdownMenuItem onClick={onAddBot}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Add Bot
+            </DropdownMenuItem>
+          )}
+          {onExport && (
+            <DropdownMenuItem onClick={onExport}>
+              <Download className="h-4 w-4 mr-2" />
+              Export Chat
+            </DropdownMenuItem>
+          )}
+          {onClearHistory && (
+            <DropdownMenuItem onClick={onClearHistory}>
+              <Eraser className="h-4 w-4 mr-2" />
+              Clear History
             </DropdownMenuItem>
           )}
           {onArchive && (

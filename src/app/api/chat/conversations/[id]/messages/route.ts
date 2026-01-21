@@ -2,6 +2,7 @@
  * Conversation Messages API
  *
  * GET - Get messages for a conversation (paginated)
+ * DELETE - Clear all messages in a conversation (keep conversation)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -151,6 +152,103 @@ export async function GET(
     console.error('Error fetching messages:', error)
     return NextResponse.json(
       { message: error instanceof Error ? error.message : 'Failed to fetch messages' },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE /api/chat/conversations/[id]/messages - Clear all messages
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const clerkUser = await currentUser()
+    if (!clerkUser) {
+      return NextResponse.json(
+        { message: 'Unauthorized - Please sign in' },
+        { status: 401 }
+      )
+    }
+
+    const { id } = await params
+    const payload = await getPayload({ config })
+
+    // Find Payload user
+    const payloadUsers = await payload.find({
+      collection: 'users',
+      where: {
+        email: { equals: clerkUser.emailAddresses[0]?.emailAddress },
+      },
+      limit: 1,
+      overrideAccess: true,
+    })
+
+    if (payloadUsers.docs.length === 0) {
+      return NextResponse.json(
+        { message: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    const payloadUser = payloadUsers.docs[0]
+
+    // Verify conversation exists and user owns it
+    const conversation = await payload.findByID({
+      collection: 'conversation',
+      id: parseInt(id),
+      overrideAccess: true,
+    })
+
+    if (!conversation) {
+      return NextResponse.json(
+        { message: 'Conversation not found' },
+        { status: 404 }
+      )
+    }
+
+    const conversationUserId = typeof conversation.user === 'object'
+      ? conversation.user.id
+      : conversation.user
+
+    if (conversationUserId !== payloadUser.id) {
+      return NextResponse.json(
+        { message: 'Not authorized to modify this conversation' },
+        { status: 403 }
+      )
+    }
+
+    // Delete all messages in the conversation
+    const result = await payload.delete({
+      collection: 'message',
+      where: {
+        conversation: { equals: parseInt(id) },
+      },
+      overrideAccess: true,
+    })
+
+    // Reset conversation metadata
+    await payload.update({
+      collection: 'conversation',
+      id: parseInt(id),
+      data: {
+        conversation_metadata: {
+          total_messages: 0,
+          last_activity: new Date().toISOString(),
+        },
+        total_tokens: 0,
+      },
+      overrideAccess: true,
+    })
+
+    return NextResponse.json({
+      message: 'Chat history cleared',
+      deletedCount: result.docs?.length || 0,
+    })
+  } catch (error: unknown) {
+    console.error('Error clearing messages:', error)
+    return NextResponse.json(
+      { message: error instanceof Error ? error.message : 'Failed to clear messages' },
       { status: 500 }
     )
   }

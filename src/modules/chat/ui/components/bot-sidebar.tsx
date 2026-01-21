@@ -101,32 +101,32 @@ export function BotSidebar({
         </SheetHeader>
 
         <ScrollArea className="flex-1 h-[calc(100vh-8rem)]">
-          <div className="p-4 space-y-3">
+          <div className="p-3 space-y-2">
             {bots.map((bot) => (
               <div
                 key={bot.id}
                 className={cn(
-                  'flex items-center gap-3 p-3 rounded-lg',
+                  'flex items-center gap-2 p-2 rounded-lg',
                   'bg-muted/30 border border-border/50',
                   !bot.isActive && 'opacity-50'
                 )}
               >
                 {/* Drag handle (for future reordering) */}
-                <div className="cursor-grab text-muted-foreground">
+                <div className="cursor-grab text-muted-foreground shrink-0">
                   <GripVertical className="h-4 w-4" />
                 </div>
 
                 {/* Avatar */}
-                <Avatar className="h-10 w-10 border border-border/50">
+                <Avatar className="h-9 w-9 border border-border/50 shrink-0">
                   <AvatarImage src={bot.avatar} alt={bot.name} />
                   <AvatarFallback className="bg-primary/10 text-primary">
-                    <Bot className="h-5 w-5" />
+                    <Bot className="h-4 w-4" />
                   </AvatarFallback>
                 </Avatar>
 
                 {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{bot.name}</div>
+                <div className="flex-1 min-w-0 overflow-hidden">
+                  <div className="font-medium truncate text-sm">{bot.name}</div>
                   <Badge
                     variant={getRoleBadgeVariant(bot.role)}
                     className="text-xs capitalize"
@@ -141,7 +141,7 @@ export function BotSidebar({
                     variant="ghost"
                     size="icon"
                     onClick={() => onRemoveBot(bot.id)}
-                    className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive"
+                    className="shrink-0 h-7 w-7 text-muted-foreground hover:text-destructive"
                   >
                     <X className="h-4 w-4" />
                   </Button>

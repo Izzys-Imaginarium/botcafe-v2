@@ -32,7 +32,6 @@ const providerInfo: Record<string, { name: string; color: string }> = {
   anthropic: { name: 'Anthropic', color: 'text-orange-500' },
   google: { name: 'Google', color: 'text-blue-500' },
   deepseek: { name: 'DeepSeek', color: 'text-purple-500' },
-  groq: { name: 'Groq', color: 'text-red-500' },
   openrouter: { name: 'OpenRouter', color: 'text-cyan-500' },
   electronhub: { name: 'ElectronHub', color: 'text-yellow-500' },
 }

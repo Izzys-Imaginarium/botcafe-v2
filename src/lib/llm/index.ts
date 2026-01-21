@@ -21,7 +21,6 @@ import { openaiProvider } from './providers/openai'
 import { anthropicProvider } from './providers/anthropic'
 import { googleProvider } from './providers/google'
 import { deepseekProvider } from './providers/deepseek'
-import { groqProvider } from './providers/groq'
 import { openrouterProvider } from './providers/openrouter'
 import { electronhubProvider } from './providers/electronhub'
 
@@ -31,7 +30,6 @@ const providers: Record<ProviderName, LLMProvider> = {
   anthropic: anthropicProvider,
   google: googleProvider,
   deepseek: deepseekProvider,
-  groq: groqProvider,
   openrouter: openrouterProvider,
   electronhub: electronhubProvider,
 }

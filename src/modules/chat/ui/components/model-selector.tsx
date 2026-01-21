@@ -97,26 +97,6 @@ const providerModels: Record<string, { models: string[]; default: string; displa
       'deepseek-reasoner',
     ],
   },
-  groq: {
-    displayName: 'Groq',
-    default: 'llama-3.3-70b-versatile',
-    models: [
-      // Llama models
-      'llama-3.3-70b-versatile',
-      'llama-3.1-8b-instant',
-      'meta-llama/llama-4-scout-17b-16e-instruct',
-      'meta-llama/llama-4-maverick-17b-128e-instruct',
-      // OpenAI open models
-      'openai/gpt-oss-120b',
-      'openai/gpt-oss-20b',
-      // Compound models
-      'groq/compound',
-      'groq/compound-mini',
-      // Other models
-      'qwen/qwen3-32b',
-      'moonshotai/kimi-k2-instruct-0905',
-    ],
-  },
   openrouter: {
     displayName: 'OpenRouter',
     default: '', // No default - user must enter custom model
@@ -173,20 +153,6 @@ const modelDisplayNames: Record<string, string> = {
   // DeepSeek
   'deepseek-chat': 'DeepSeek Chat',
   'deepseek-reasoner': 'DeepSeek Reasoner',
-  // Groq - Llama models
-  'llama-3.3-70b-versatile': 'Llama 3.3 70B',
-  'llama-3.1-8b-instant': 'Llama 3.1 8B Instant',
-  'meta-llama/llama-4-scout-17b-16e-instruct': 'Llama 4 Scout 17B',
-  'meta-llama/llama-4-maverick-17b-128e-instruct': 'Llama 4 Maverick 17B',
-  // Groq - OpenAI open models
-  'openai/gpt-oss-120b': 'GPT-OSS 120B',
-  'openai/gpt-oss-20b': 'GPT-OSS 20B',
-  // Groq - Compound models
-  'groq/compound': 'Groq Compound',
-  'groq/compound-mini': 'Groq Compound Mini',
-  // Groq - Other models
-  'qwen/qwen3-32b': 'Qwen3 32B',
-  'moonshotai/kimi-k2-instruct-0905': 'Kimi K2',
   // OpenRouter - Anthropic
   'anthropic/claude-opus-4.5': 'Claude Opus 4.5',
   'anthropic/claude-sonnet-4.5': 'Claude Sonnet 4.5',

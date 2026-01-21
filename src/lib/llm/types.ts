@@ -10,7 +10,6 @@ export type ProviderName =
   | 'anthropic'
   | 'google'
   | 'deepseek'
-  | 'groq'
   | 'openrouter'
   | 'electronhub'
 

@@ -64,7 +64,6 @@ export const ApiKey: CollectionConfig = {
         { label: 'Anthropic', value: 'anthropic' },
         { label: 'Google AI', value: 'google' },
         { label: 'DeepSeek', value: 'deepseek' },
-        { label: 'Groq', value: 'groq' },
         { label: 'OpenRouter', value: 'openrouter' },
         { label: 'Electron Hub', value: 'electronhub' },
       ],

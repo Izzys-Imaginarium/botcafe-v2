@@ -100,7 +100,7 @@ export async function GET(
       sort: before ? '-created_timestamp' : 'created_timestamp',
       page,
       limit,
-      depth: 1, // Include bot details
+      depth: 2, // Include bot details and nested relationships (like bot.picture)
       overrideAccess: true,
     })
 

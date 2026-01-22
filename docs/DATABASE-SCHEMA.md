@@ -1,7 +1,7 @@
 # BotCafe v2 - Database Schema
 
-**Last Updated**: 2026-01-21
-**Version**: 3.4
+**Last Updated**: 2026-01-22
+**Version**: 3.5
 **Database**: Cloudflare D1 (SQLite) via Payload CMS
 
 ---
@@ -89,7 +89,8 @@ AI companion definitions.
 | `behavior_settings` | group | Response behavior settings (see below) |
 | `signature_phrases` | array | Catchphrases or expressions |
 | `tags` | array | Category tags for discovery |
-| `is_public` | checkbox | Public visibility (legacy - use `sharing.visibility`) |
+| `is_public` | checkbox | Public visibility (legacy - use `sharing_visibility`) |
+| `sharing_visibility` | select | Visibility: **private**, **shared**, **public** (default: private) |
 | `sharing` | group | Sharing settings (see below) |
 | `likes_count` | number | Total likes |
 | `favorites_count` | number | Total favorites |
@@ -366,6 +367,7 @@ Chat conversation records supporting single-bot and multi-bot conversations.
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | string | Primary key |
+| `title` | text | Custom conversation name (optional, user-editable) |
 | `user` | relationship (Users) | Conversation owner (required) |
 | `created_timestamp` | date | Creation timestamp |
 | `modified_timestamp` | date | Last modification timestamp |

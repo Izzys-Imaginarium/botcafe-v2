@@ -585,6 +585,23 @@ When you add new Payload collections or modify existing ones:
 
 ## 🔄 **Recent Changes**
 
+### **2026-01-22 Updates:**
+- ✅ **Conversation Rename Feature**
+  - Added `title` field to Conversation collection for user-editable names
+  - Updated conversation list to show title with fallback to bot name
+  - Added rename dialog in chat header menu (Pencil icon)
+  - Updated `/api/chat/conversations` GET to return title
+  - Updated `/api/chat/conversations/[id]` GET/PATCH to support title
+  - Users can now name conversations for easier navigation in history
+- ✅ **Bot Sharing Visibility Column**
+  - Added `sharing_visibility` column to Bot table (private/shared/public)
+  - Simplifies visibility checks without nested group access
+- ✅ **Database Migration Sync**
+  - Fixed migration tracking for `20260122_053925` on both local and remote D1
+  - Applied schema changes via direct ALTER TABLE commands
+- ✅ **Build Fix**
+  - Fixed `/api/account/export` import path (`@/payload.config` → `@payload-config`)
+
 ### **2026-01-21 Updates:**
 - ✅ **Selected Access for Bots (Bot Sharing Enforcement)**
   - Updated `/api/bots/explore` to include bots shared with the current user
@@ -1084,8 +1101,8 @@ When you add new Payload collections or modify existing ones:
 
 ---
 
-**Last Updated**: 2026-01-21
-**Version**: 3.12
+**Last Updated**: 2026-01-22
+**Version**: 3.13
 **Total Tasks**: 180
 **Completed**: 171
 **Progress**: ~95% (multi-bot voice separation fix)

@@ -58,6 +58,7 @@ export const openrouterProvider: LLMProvider = {
         ...(m.name && { name: m.name }),
       })),
       stream: true,
+      stream_options: { include_usage: true },
       ...(params.temperature !== undefined && { temperature: params.temperature }),
       ...(params.maxTokens && { max_tokens: params.maxTokens }),
       ...(params.topP !== undefined && { top_p: params.topP }),
@@ -159,14 +160,15 @@ export const openrouterProvider: LLMProvider = {
               const parsed: OpenAIStreamResponse = JSON.parse(data)
 
               const choice = parsed.choices?.[0]
-              if (choice) {
-                const content = choice.delta?.content || ''
-                const isDone = choice.finish_reason !== null
+              const content = choice?.delta?.content || ''
+              const isDone = choice?.finish_reason !== null && choice?.finish_reason !== undefined
 
+              // Yield chunk if we have content, finish reason, or usage data
+              if (content || isDone || parsed.usage) {
                 yield {
                   content,
-                  done: isDone,
-                  finishReason: choice.finish_reason as StreamChunk['finishReason'],
+                  done: isDone || !!parsed.usage,
+                  finishReason: choice?.finish_reason as StreamChunk['finishReason'],
                   ...(parsed.usage && {
                     usage: {
                       inputTokens: parsed.usage.prompt_tokens,
@@ -176,7 +178,8 @@ export const openrouterProvider: LLMProvider = {
                   }),
                 }
 
-                if (isDone) {
+                // Only return after we've received usage data
+                if (parsed.usage) {
                   return
                 }
               }

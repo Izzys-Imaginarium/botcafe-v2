@@ -164,14 +164,15 @@ export const openaiProvider: LLMProvider = {
               const parsed: OpenAIStreamResponse = JSON.parse(data)
 
               const choice = parsed.choices?.[0]
-              if (choice) {
-                const content = choice.delta?.content || ''
-                const isDone = choice.finish_reason !== null
+              const content = choice?.delta?.content || ''
+              const isDone = choice?.finish_reason !== null && choice?.finish_reason !== undefined
 
+              // Yield chunk if we have content, finish reason, or usage data
+              if (content || isDone || parsed.usage) {
                 yield {
                   content,
-                  done: isDone,
-                  finishReason: choice.finish_reason as StreamChunk['finishReason'],
+                  done: isDone || !!parsed.usage,
+                  finishReason: choice?.finish_reason as StreamChunk['finishReason'],
                   ...(parsed.usage && {
                     usage: {
                       inputTokens: parsed.usage.prompt_tokens,
@@ -181,7 +182,8 @@ export const openaiProvider: LLMProvider = {
                   }),
                 }
 
-                if (isDone) {
+                // Only return after we've received usage data
+                if (parsed.usage) {
                   return
                 }
               }

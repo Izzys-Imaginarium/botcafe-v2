@@ -148,11 +148,14 @@ export async function POST(request: NextRequest) {
     let respondingBot = null
 
     if (targetBotId) {
-      // Find specific bot
-      const botParticipant = botParticipants.find(
-        (bp) =>
-          (typeof bp.bot_id === 'object' ? bp.bot_id.id : bp.bot_id) === targetBotId
-      )
+      // Find specific bot - convert to numbers for reliable comparison
+      const targetId = Number(targetBotId)
+      const botParticipant = botParticipants.find((bp) => {
+        const participantBotId = typeof bp.bot_id === 'object'
+          ? Number(bp.bot_id.id)
+          : Number(bp.bot_id)
+        return participantBotId === targetId
+      })
       if (botParticipant) {
         respondingBot = typeof botParticipant.bot_id === 'object'
           ? botParticipant.bot_id

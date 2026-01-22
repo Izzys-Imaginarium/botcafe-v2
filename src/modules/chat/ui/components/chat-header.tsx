@@ -26,10 +26,12 @@ import {
   UserPlus,
   Eraser,
   Download,
+  Pencil,
 } from 'lucide-react'
 import Link from 'next/link'
 
 export interface ChatHeaderProps {
+  title?: string | null
   botName?: string
   botAvatar?: string
   botCount?: number
@@ -37,6 +39,7 @@ export interface ChatHeaderProps {
   totalTokens?: number
   onOpenBotSidebar?: () => void
   onAddBot?: () => void
+  onRename?: () => void
   onArchive?: () => void
   onDelete?: () => void
   onClearHistory?: () => void
@@ -45,6 +48,7 @@ export interface ChatHeaderProps {
 }
 
 export function ChatHeader({
+  title,
   botName,
   botAvatar,
   botCount = 1,
@@ -52,6 +56,7 @@ export function ChatHeader({
   totalTokens,
   onOpenBotSidebar,
   onAddBot,
+  onRename,
   onArchive,
   onDelete,
   onClearHistory,
@@ -86,9 +91,12 @@ export function ChatHeader({
       {/* Bot info */}
       <div className="flex-1 min-w-0">
         <h2 className="font-semibold text-lg text-foreground truncate">
-          {botName || 'Chat'}
+          {title || botName || 'Chat'}
         </h2>
         <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          {title && botName && (
+            <span className="truncate">with {botName}</span>
+          )}
           {isMultiBot && (
             <span className="flex items-center gap-1.5">
               <Users className="h-3.5 w-3.5" />
@@ -122,6 +130,12 @@ export function ChatHeader({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
+          {onRename && (
+            <DropdownMenuItem onClick={onRename}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Rename
+            </DropdownMenuItem>
+          )}
           {/* Add Bot - only for single-bot chats */}
           {!isMultiBot && onAddBot && (
             <DropdownMenuItem onClick={onAddBot}>

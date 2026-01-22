@@ -80,6 +80,7 @@ export async function GET(
     return NextResponse.json({
       conversation: {
         id: conversation.id,
+        title: (conversation as any).title || null,
         type: conversation.conversation_type,
         status: conversation.status,
         createdAt: conversation.created_timestamp,
@@ -173,16 +174,22 @@ export async function PATCH(
     }
 
     const body = await request.json() as {
+      title?: string
       status?: string
       addBotId?: number
       removeBotId?: number
       personaId?: number | null
       settings?: Record<string, unknown>
     }
-    const { status, addBotId, removeBotId, personaId, settings } = body
+    const { title, status, addBotId, removeBotId, personaId, settings } = body
 
     const updateData: Record<string, unknown> = {
       modified_timestamp: new Date().toISOString(),
+    }
+
+    // Update title
+    if (title !== undefined) {
+      updateData.title = title || null // Allow clearing the title
     }
 
     // Update status
@@ -338,6 +345,7 @@ export async function PATCH(
       success: true,
       conversation: {
         id: updated.id,
+        title: (updated as any).title || null,
         type: updated.conversation_type,
         status: updated.status,
         bots: updated.bot_participation?.map((bp) => ({

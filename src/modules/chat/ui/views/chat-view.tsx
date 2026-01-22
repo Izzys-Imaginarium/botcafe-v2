@@ -30,6 +30,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -52,8 +62,12 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
   // Confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [clearHistoryDialogOpen, setClearHistoryDialogOpen] = useState(false)
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isClearing, setIsClearing] = useState(false)
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [newTitle, setNewTitle] = useState('')
+  const [conversationTitle, setConversationTitle] = useState<string | null>(null)
 
   // Available bots for adding to conversation
   const [availableBots, setAvailableBots] = useState<Array<{
@@ -112,6 +126,13 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
       toast.error(err)
     },
   })
+
+  // Sync conversation title from API
+  useEffect(() => {
+    if (conversation && (conversation as any).title !== undefined) {
+      setConversationTitle((conversation as any).title || null)
+    }
+  }, [conversation])
 
   // Get current persona from conversation
   const currentPersonaId = useMemo(() => {
@@ -303,6 +324,33 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
     }
   }, [conversationId])
 
+  // Handle rename conversation
+  const handleOpenRename = useCallback(() => {
+    setNewTitle(conversationTitle || '')
+    setRenameDialogOpen(true)
+  }, [conversationTitle])
+
+  const handleRename = useCallback(async () => {
+    setIsRenaming(true)
+    try {
+      const response = await fetch(`/api/chat/conversations/${conversationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newTitle.trim() || null }),
+      })
+      if (!response.ok) {
+        throw new Error('Failed to rename conversation')
+      }
+      setConversationTitle(newTitle.trim() || null)
+      toast.success('Conversation renamed')
+      setRenameDialogOpen(false)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to rename conversation')
+    } finally {
+      setIsRenaming(false)
+    }
+  }, [conversationId, newTitle])
+
   // Handle export chat
   const handleExport = useCallback(async () => {
     try {
@@ -362,6 +410,7 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
     <div className={cn('flex flex-col h-full overflow-hidden', className)}>
       {/* Header - fixed height */}
       <ChatHeader
+        title={conversationTitle}
         botName={primaryBot?.name}
         botAvatar={primaryBot?.avatar?.url}
         botCount={conversation?.bots?.length || 1}
@@ -369,6 +418,7 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
         totalTokens={conversation?.totalTokens}
         onOpenBotSidebar={() => setBotSidebarOpen(true)}
         onAddBot={handleOpenAddBot}
+        onRename={handleOpenRename}
         onArchive={handleArchive}
         onDelete={() => setDeleteDialogOpen(true)}
         onClearHistory={() => setClearHistoryDialogOpen(true)}
@@ -487,6 +537,41 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Rename dialog */}
+      <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Conversation</DialogTitle>
+            <DialogDescription>
+              Give this conversation a custom name to find it easily later.
+              Leave empty to use the bot name.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            placeholder={primaryBot?.name || 'Conversation name...'}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !isRenaming) {
+                handleRename()
+              }
+            }}
+          />
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRenameDialogOpen(false)}
+              disabled={isRenaming}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleRename} disabled={isRenaming}>
+              {isRenaming ? 'Saving...' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

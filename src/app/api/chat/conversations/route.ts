@@ -78,6 +78,7 @@ export async function GET(request: NextRequest) {
     // Format response
     const conversations = result.docs.map((conv) => ({
       id: conv.id,
+      title: (conv as any).title || null,
       type: conv.conversation_type,
       status: conv.status,
       createdAt: conv.created_timestamp,

@@ -30,6 +30,7 @@ import Link from 'next/link'
 
 export interface ConversationItem {
   id: number
+  title?: string | null
   type: 'single-bot' | 'multi-bot' | 'group-chat'
   status: 'active' | 'archived' | 'muted' | 'pinned'
   lastActivity: string
@@ -155,7 +156,7 @@ export function ConversationList({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-medium truncate">
-                      {primaryBot?.name || 'Chat'}
+                      {item.title || primaryBot?.name || 'Chat'}
                     </span>
                     {item.bots.length > 1 && (
                       <Badge variant="outline" className="text-xs shrink-0">
@@ -168,7 +169,10 @@ export function ConversationList({
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span className="truncate">
-                      {item.summary || `${item.messageCount} messages`}
+                      {item.title
+                        ? (primaryBot?.name ? `with ${primaryBot.name}` : `${item.messageCount} messages`)
+                        : (item.summary || `${item.messageCount} messages`)
+                      }
                     </span>
                   </div>
                 </div>

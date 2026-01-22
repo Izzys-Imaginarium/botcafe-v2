@@ -34,6 +34,7 @@ export interface ChatMessage {
 
 export interface ConversationDetails {
   id: number
+  title?: string | null
   type: string
   status: string
   bots: Array<{

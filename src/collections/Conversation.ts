@@ -3,8 +3,8 @@ import type { CollectionConfig } from 'payload'
 export const Conversation: CollectionConfig = {
   slug: 'conversation',
   admin: {
-    useAsTitle: 'created_timestamp',
-    defaultColumns: ['user', 'conversation_type', 'participant_count', 'last_activity', 'status'],
+    useAsTitle: 'title',
+    defaultColumns: ['title', 'user', 'conversation_type', 'participant_count', 'last_activity', 'status'],
   },
   access: {
     read: ({ req: { user } }) => {
@@ -37,6 +37,13 @@ export const Conversation: CollectionConfig = {
     },
   },
   fields: [
+    {
+      name: 'title',
+      type: 'text',
+      admin: {
+        description: 'Custom name for the conversation (optional)',
+      },
+    },
     {
       name: 'user',
       type: 'relationship',

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { getPayload } from 'payload'
-import config from '@/payload.config'
+import config from '@payload-config'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,8 +21,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payloadConfig = await config
-    const payload = await getPayload({ config: payloadConfig })
+    const payload = await getPayload({ config })
 
     // Find the Payload user
     const users = await payload.find({

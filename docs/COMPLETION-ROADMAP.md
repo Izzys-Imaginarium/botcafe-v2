@@ -617,6 +617,15 @@ When you add new Payload collections or modify existing ones:
     - @mention overrides turn mode for targeted responses
   - Backend already supported `targetBotId` in `/api/chat/send` endpoint
 
+- ✅ **Multi-Bot Voice Separation Fix**
+  - Fixed issue where different bots would respond using the same character voice
+  - Root cause: All AI messages were sent as `role: 'assistant'` regardless of which bot wrote them
+  - Updated `context-builder.ts` to differentiate message roles by source bot:
+    - Messages from the **current responding bot** → `role: 'assistant'`
+    - Messages from **other bots** → `role: 'user'` with `[BotName]: content` prefix
+  - This ensures the LLM treats only its own previous messages as assistant responses
+  - Added `Number()` conversion for reliable bot ID comparison in send route
+
 - ✅ **Chat Menu Actions (Phase 9 continued)**
   - Updated `ChatHeader` component with full menu functionality
     - **Add Bot**: Opens bot sidebar for single-bot chats (multi-bot shows "Bots" button instead)
@@ -1076,7 +1085,7 @@ When you add new Payload collections or modify existing ones:
 ---
 
 **Last Updated**: 2026-01-21
-**Version**: 3.11
+**Version**: 3.12
 **Total Tasks**: 180
-**Completed**: 170
-**Progress**: ~94% (selected access for bots - sharing enforcement in chat)
+**Completed**: 171
+**Progress**: ~95% (multi-bot voice separation fix)

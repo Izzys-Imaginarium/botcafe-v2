@@ -1,7 +1,7 @@
 # BotCafe v2 - Database Schema
 
-**Last Updated**: 2026-01-18
-**Version**: 3.3
+**Last Updated**: 2026-01-21
+**Version**: 3.4
 **Database**: Cloudflare D1 (SQLite) via Payload CMS
 
 ---
@@ -361,37 +361,131 @@ Tracks when and how knowledge entries are activated during conversations for ana
 
 ### Conversation
 
-Chat conversation records.
+Chat conversation records supporting single-bot and multi-bot conversations.
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | string | Primary key |
-| `title` | text | Conversation title |
-| `user` | relationship (Users) | Conversation owner |
-| `bot` | relationship (Bot) | Primary bot |
-| `persona` | relationship (Personas) | Active persona |
-| `participants` | json | Bot and persona IDs involved |
-| `message_count` | number | Total messages |
-| `last_message_at` | date | Last activity |
-| `context_snapshot` | json | Cached context |
-| `is_active` | checkbox | Active status |
+| `user` | relationship (Users) | Conversation owner (required) |
+| `created_timestamp` | date | Creation timestamp |
+| `modified_timestamp` | date | Last modification timestamp |
+| `conversation_type` | select | Type: single-bot, multi-bot, group-chat |
+| `bot_participation` | array | Bot participants (see below) |
+| `participants` | json | Tracks all participants: `{ personas: string[], bots: string[], primary_persona?: string, persona_changes?: Array }` |
+| `total_tokens` | number | Running token count for conversation |
+| `last_summarized_at` | date | When conversation was last summarized |
+| `last_summarized_message_index` | number | Last message included in summary |
+| `requires_summarization` | checkbox | Flag when token threshold reached |
+| `conversation_metadata` | group | Metadata (see below) |
+| `status` | select | Status: active, archived, muted, pinned |
+| `conversation_settings` | group | Settings (see below) |
 | `createdAt` | date | Auto-generated |
 | `updatedAt` | date | Auto-generated |
 
+#### Bot Participation (array)
+
+Each bot in the conversation has an entry with:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `bot_id` | relationship (Bot) | The bot (required) |
+| `joined_at` | date | When bot joined the conversation |
+| `role` | select | Role: primary, secondary, moderator |
+| `is_active` | checkbox | Whether bot is currently active |
+
+#### Conversation Metadata (group)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `total_messages` | number | Total message count |
+| `participant_count` | number | Number of participants |
+| `last_activity` | date | Last activity timestamp |
+| `conversation_summary` | textarea | AI-generated summary |
+| `tags` | array | Array of `{ tag: string }` |
+
+#### Conversation Settings (group)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `allow_file_sharing` | checkbox | Allow file attachments |
+| `message_retention_days` | number | Days to retain messages (default: 365) |
+| `auto_save_conversations` | checkbox | Auto-save enabled |
+
 ### Message
 
-Individual chat messages.
+Individual chat messages with full attribution and tracking.
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | string | Primary key |
-| `conversation` | relationship (Conversation) | Parent conversation |
-| `role` | select | Role: user, assistant, system |
-| `content` | textarea | Message content |
-| `sender_type` | select | Type: user, bot, persona |
-| `sender_id` | text | Sender reference |
-| `metadata` | json | Token count, model used |
+| `user` | relationship (Users) | Message owner (required) |
+| `created_timestamp` | date | Creation timestamp |
+| `modified_timestamp` | date | Modification timestamp |
+| `conversation` | relationship (Conversation) | Parent conversation (required) |
+| `message_type` | select | Type: text, image, file, system, voice, code |
+| `bot` | relationship (Bot) | Bot that sent this message (if AI-generated) |
+| `entry` | textarea | Message text content (required) |
+| `message_attribution` | group | Attribution details (see below) |
+| `message_content` | group | Rich content (see below) |
+| `message_thread` | group | Threading info (see below) |
+| `token_tracking` | group | Token usage (see below) |
+| `byo_key` | checkbox | Whether user's own API key was used |
+| `message_status` | group | Delivery status (see below) |
+| `metadata` | group | Processing metadata (see below) |
 | `createdAt` | date | Auto-generated |
+| `updatedAt` | date | Auto-generated |
+
+#### Message Attribution (group)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `source_bot_id` | relationship (Bot) | Bot that generated this message |
+| `is_ai_generated` | checkbox | Whether message is AI-generated |
+| `model_used` | text | LLM model used (e.g., "gpt-4", "claude-3") |
+| `confidence_score` | number | AI confidence score (0-1) |
+
+#### Message Content (group)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `text_content` | richText | Rich text content |
+| `media_attachments` | relationship[] (Media) | Attached media files |
+| `code_snippets` | array | Code blocks: `{ language, code, filename }` |
+| `reactions` | json | User reactions |
+
+#### Message Thread (group)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `reply_to_id` | relationship (Message) | Message being replied to |
+| `thread_depth` | number | Depth in thread |
+| `is_thread_parent` | checkbox | Whether this starts a thread |
+
+#### Token Tracking (group)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `input_tokens` | number | Input tokens used |
+| `output_tokens` | number | Output tokens generated |
+| `total_tokens` | number | Total tokens |
+| `cost_estimate` | number | Estimated cost |
+
+#### Message Status (group)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `delivery_status` | select | Status: sent, delivered, read, failed |
+| `edit_history` | array | Previous versions: `{ previous_content, edited_at, edit_reason }` |
+| `is_edited` | checkbox | Whether message was edited |
+| `edited_at` | date | When message was last edited |
+
+#### Message Metadata (group)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `processing_time_ms` | number | LLM processing time |
+| `priority_level` | select | Priority: low, normal, high, urgent |
+| `sensitivity_level` | select | Sensitivity: public, private, confidential |
 
 ### Memory
 

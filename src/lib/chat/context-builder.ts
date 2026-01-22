@@ -108,6 +108,8 @@ export async function buildChatContext(params: BuildContextParams): Promise<Chat
   // Add conversation history
   // For multi-bot conversations, messages from OTHER bots should be represented
   // as "user" messages with the bot's name prefix, so the LLM knows they weren't its own responses
+  console.log(`[Context Builder] Building context for bot: ${bot.name} (ID: ${bot.id})`)
+
   for (const msg of recentMessages) {
     const isAI = msg.message_attribution?.is_ai_generated
     const content = msg.entry || ''
@@ -115,12 +117,15 @@ export async function buildChatContext(params: BuildContextParams): Promise<Chat
     if (!content) continue
 
     if (isAI) {
-      // Get the bot ID from this message
-      const msgBotId = typeof msg.bot === 'object' ? msg.bot?.id : msg.bot
+      // Get the bot ID from this message - convert to numbers for reliable comparison
+      const msgBotId = typeof msg.bot === 'object' ? Number(msg.bot?.id) : Number(msg.bot)
       const msgBotName = typeof msg.bot === 'object' ? msg.bot?.name : undefined
+      const currentBotId = Number(bot.id)
 
       // Check if this message was from the current responding bot or a different bot
-      const isFromCurrentBot = msgBotId === bot.id
+      const isFromCurrentBot = msgBotId === currentBotId
+
+      console.log(`[Context Builder] AI message from bot ID ${msgBotId} (${msgBotName}), current bot ID ${currentBotId}, isFromCurrentBot: ${isFromCurrentBot}`)
 
       if (isFromCurrentBot) {
         // This bot's own previous messages - use 'assistant' role
@@ -145,6 +150,8 @@ export async function buildChatContext(params: BuildContextParams): Promise<Chat
       })
     }
   }
+
+  console.log(`[Context Builder] Final message count: ${messages.length}, roles: ${messages.map(m => m.role).join(', ')}`)
 
   // Estimate tokens (rough)
   let totalTokensEstimate = 0

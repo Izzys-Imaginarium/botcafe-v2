@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayloadHMR } from '@payloadcms/next/utilities'
+import { currentUser } from '@clerk/nextjs/server'
 import config from '@payload-config'
 
 export async function GET(request: NextRequest) {
@@ -9,6 +10,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '12')
     const sort = searchParams.get('sort') || 'recent'
     const search = searchParams.get('search') || ''
+    const includeShared = searchParams.get('includeShared') !== 'false' // Default true
 
     // Get Payload instance with error handling
     let payload
@@ -26,30 +28,80 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Build query
+    // Get current user for shared bot access
+    let payloadUserId: number | null = null
+    if (includeShared) {
+      const clerkUser = await currentUser()
+      if (clerkUser) {
+        const payloadUsers = await payload.find({
+          collection: 'users',
+          where: {
+            email: { equals: clerkUser.emailAddresses[0]?.emailAddress },
+          },
+          limit: 1,
+          overrideAccess: true,
+        })
+        if (payloadUsers.docs.length > 0) {
+          payloadUserId = payloadUsers.docs[0].id as number
+        }
+      }
+    }
+
+    // Get IDs of bots shared with this user via AccessControl
+    const sharedBotIds: number[] = []
+    if (payloadUserId) {
+      const accessControls = await payload.find({
+        collection: 'access-control',
+        where: {
+          and: [
+            { user: { equals: payloadUserId } },
+            { resource_type: { equals: 'bot' } },
+            { is_revoked: { equals: false } },
+          ],
+        },
+        limit: 100,
+        overrideAccess: true,
+      })
+
+      for (const ac of accessControls.docs as any[]) {
+        if (ac.resource_id) {
+          const botId = parseInt(ac.resource_id, 10)
+          if (!isNaN(botId)) {
+            sharedBotIds.push(botId)
+          }
+        }
+      }
+    }
+
+    // Build query - include public bots OR shared bots OR user's own bots
+    const orConditions: any[] = [
+      { is_public: { equals: true } },
+      { 'sharing.visibility': { equals: 'public' } },
+    ]
+
+    // Add shared bots if user is logged in
+    if (sharedBotIds.length > 0) {
+      orConditions.push({ id: { in: sharedBotIds } })
+    }
+
+    // Add user's own bots
+    if (payloadUserId) {
+      orConditions.push({ user: { equals: payloadUserId } })
+    }
+
     const where: any = {
-      is_public: {
-        equals: true,
-      },
+      or: orConditions,
     }
 
     // Add search filter if provided
     if (search) {
-      where.or = [
+      where.and = [
         {
-          name: {
-            contains: search,
-          },
-        },
-        {
-          description: {
-            contains: search,
-          },
-        },
-        {
-          creator_display_name: {
-            contains: search,
-          },
+          or: [
+            { name: { contains: search } },
+            { description: { contains: search } },
+            { creator_display_name: { contains: search } },
+          ],
         },
       ]
     }
@@ -88,13 +140,24 @@ export async function GET(request: NextRequest) {
       overrideAccess: true,
     })
 
-    // Transform docs to include creator username from the creator profile
+    // Transform docs to include creator username and access info
     const botsWithCreatorUsername = result.docs.map((bot: any) => {
       const creatorProfile = bot.creator_profile
+      const botUserId = typeof bot.user === 'object' ? bot.user?.id : bot.user
+
+      // Determine access type for this user
+      let accessType: 'public' | 'shared' | 'owned' = 'public'
+      if (payloadUserId && botUserId === payloadUserId) {
+        accessType = 'owned'
+      } else if (sharedBotIds.includes(bot.id)) {
+        accessType = 'shared'
+      }
+
       return {
         ...bot,
         creator_username:
           typeof creatorProfile === 'object' ? creatorProfile.username : null,
+        accessType,
       }
     })
 

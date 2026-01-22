@@ -10,6 +10,7 @@ import { currentUser } from '@clerk/nextjs/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { buildGreeting } from '@/lib/chat/context-builder'
+import { checkResourceAccess } from '@/lib/permissions/check-access'
 import type { Bot, Persona } from '@/payload-types'
 
 export const dynamic = 'force-dynamic'
@@ -172,6 +173,23 @@ export async function POST(request: NextRequest) {
         { message: 'One or more bots not found' },
         { status: 404 }
       )
+    }
+
+    // Verify user has access to each bot (public, owned, or shared)
+    for (const bot of bots.docs) {
+      const accessResult = await checkResourceAccess(
+        payload,
+        payloadUser.id,
+        'bot',
+        bot.id
+      )
+
+      if (!accessResult.hasAccess) {
+        return NextResponse.json(
+          { message: `You do not have access to the bot "${(bot as Bot).name}"` },
+          { status: 403 }
+        )
+      }
     }
 
     // Verify persona if provided

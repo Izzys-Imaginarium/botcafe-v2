@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
+import { checkResourceAccess } from '@/lib/permissions/check-access'
 
 export const dynamic = 'force-dynamic'
 
@@ -201,6 +202,21 @@ export async function PATCH(
         return NextResponse.json(
           { message: 'Bot not found' },
           { status: 404 }
+        )
+      }
+
+      // Verify user has access to this bot (public, owned, or shared)
+      const accessResult = await checkResourceAccess(
+        payload,
+        payloadUser.id,
+        'bot',
+        addBotId
+      )
+
+      if (!accessResult.hasAccess) {
+        return NextResponse.json(
+          { message: `You do not have access to the bot "${bot.name}"` },
+          { status: 403 }
         )
       }
 

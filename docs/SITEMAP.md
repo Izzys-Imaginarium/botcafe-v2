@@ -1,8 +1,8 @@
 # BotCafe v2 - Complete Sitemap
 
 **Last Updated**: 2026-01-21
-**Version**: 2.14
-**Status**: ~93% Complete
+**Version**: 2.15
+**Status**: ~94% Complete
 
 ---
 
@@ -13,7 +13,7 @@
 | Route | Status | Description |
 |-------|--------|-------------|
 | `/` | ✅ Complete | Homepage with magical splash, feature cards, and CTA |
-| `/explore` | ✅ Complete | Browse all public bots with search, sort, and pagination |
+| `/explore` | ✅ Complete | Browse accessible bots (public + owned + shared) with search, sort, pagination |
 | `/[username]/[botSlug]` | ✅ Complete | Individual bot detail page (per-creator URL format) |
 | `/[username]/[botSlug]/edit` | ✅ Complete | Edit bot (owner only) |
 | `/bot/[slug]` | ⚠️ Legacy | Returns 404 - use `/<username>/<bot-slug>` instead |
@@ -109,7 +109,7 @@
 | Endpoint | Methods | Description |
 |----------|---------|-------------|
 | `/api/bots` | GET, POST | List all bots, create new bot |
-| `/api/bots/explore` | GET | Public bot discovery with pagination |
+| `/api/bots/explore` | GET | Bot discovery (public + owned + shared via AccessControl) |
 | `/api/bots/my-bots` | GET | Get current user's bots |
 | `/api/bots/[id]` | GET, PUT, DELETE | Bot CRUD operations |
 | `/api/bots/[id]/like` | POST | Toggle like on bot |
@@ -219,9 +219,9 @@
 
 | Endpoint | Methods | Description |
 |----------|---------|-------------|
-| `/api/chat/conversations` | GET, POST | List conversations, create new conversation |
-| `/api/chat/conversations/[id]` | GET, DELETE | Get or delete conversation |
-| `/api/chat/conversations/[id]/messages` | GET | Get messages for conversation |
+| `/api/chat/conversations` | GET, POST | List conversations, create new (with bot access check) |
+| `/api/chat/conversations/[id]` | GET, PATCH, DELETE | Get, update (add/remove bots with access check), or delete |
+| `/api/chat/conversations/[id]/messages` | GET, DELETE | Get messages, clear chat history |
 | `/api/chat/send` | POST | Send message and trigger LLM response |
 | `/api/chat/stream/[messageId]` | GET | SSE endpoint for streaming LLM responses |
 

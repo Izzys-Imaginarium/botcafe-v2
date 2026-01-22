@@ -586,6 +586,20 @@ When you add new Payload collections or modify existing ones:
 ## 🔄 **Recent Changes**
 
 ### **2026-01-21 Updates:**
+- ✅ **Selected Access for Bots (Bot Sharing Enforcement)**
+  - Updated `/api/bots/explore` to include bots shared with the current user
+    - Fetches AccessControl records for the user to find shared bot IDs
+    - Query now uses OR conditions: public bots + shared bots + user's own bots
+    - Added `accessType` field to response: `'public'` | `'shared'` | `'owned'`
+    - Optional `includeShared` query param (defaults to true)
+  - Updated `/api/chat/conversations` (POST) to verify bot access before creating conversation
+    - Uses `checkResourceAccess()` from permissions library
+    - Returns 403 with bot name if user doesn't have access
+  - Updated `/api/chat/conversations/[id]` (PATCH) to verify bot access when adding bot
+    - Same access check applied when adding bots to existing conversations
+    - Ensures users can only chat with public, owned, or shared bots
+  - Sharing system already supports: owner/editor/readonly permissions, direct sharing by username
+
 - ✅ **Multi-Bot Conversation Orchestration (Phase 9)**
   - Created `BotSelector` component (`/modules/chat/ui/components/bot-selector.tsx`)
     - Dropdown to select which bot responds in multi-bot conversations
@@ -1062,7 +1076,7 @@ When you add new Payload collections or modify existing ones:
 ---
 
 **Last Updated**: 2026-01-21
-**Version**: 3.10
-**Total Tasks**: 179
-**Completed**: 169
-**Progress**: ~94% (chat menu actions: add bot, export, clear history, archive, delete)
+**Version**: 3.11
+**Total Tasks**: 180
+**Completed**: 170
+**Progress**: ~94% (selected access for bots - sharing enforcement in chat)

@@ -1083,6 +1083,10 @@ export interface Memory {
  */
 export interface Conversation {
   id: number;
+  /**
+   * Custom name for the conversation (optional)
+   */
+  title?: string | null;
   user: number | User;
   created_timestamp?: string | null;
   modified_timestamp?: string | null;
@@ -3338,6 +3342,7 @@ export interface KnowledgeActivationLogSelect<T extends boolean = true> {
  * via the `definition` "conversation_select".
  */
 export interface ConversationSelect<T extends boolean = true> {
+  title?: T;
   user?: T;
   created_timestamp?: T;
   modified_timestamp?: T;

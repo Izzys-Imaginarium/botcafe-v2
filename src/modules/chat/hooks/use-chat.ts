@@ -156,16 +156,46 @@ export function useChat(options: UseChatOptions) {
       const response = await fetch(
         `/api/chat/conversations/${conversationId}/messages?${params}`
       )
-      const data = await response.json() as { message?: string; messages?: ChatMessage[] }
+      const data = await response.json() as {
+        message?: string
+        messages?: Array<{
+          id: number
+          type: string
+          content: string
+          createdAt: string
+          isAI: boolean
+          model?: string
+          bot?: { id: number; name: string; picture?: { url: string } }
+          tokens?: { input: number; output: number; total: number; cost: number }
+          status?: string
+        }>
+      }
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to fetch messages')
       }
 
+      // Transform messages to map bot.picture to bot.avatar
+      const transformedMessages: ChatMessage[] = (data.messages || []).map(msg => ({
+        id: msg.id,
+        type: msg.type as ChatMessage['type'],
+        content: msg.content,
+        createdAt: msg.createdAt,
+        isAI: msg.isAI,
+        model: msg.model,
+        bot: msg.bot ? {
+          id: msg.bot.id,
+          name: msg.bot.name,
+          avatar: msg.bot.picture, // Map picture to avatar
+        } : undefined,
+        tokens: msg.tokens,
+        status: msg.status,
+      }))
+
       if (before) {
-        setMessages(prev => [...(data.messages || []), ...prev])
+        setMessages(prev => [...transformedMessages, ...prev])
       } else {
-        setMessages(data.messages || [])
+        setMessages(transformedMessages)
       }
 
       return data

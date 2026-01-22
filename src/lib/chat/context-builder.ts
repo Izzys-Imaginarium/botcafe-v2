@@ -106,19 +106,44 @@ export async function buildChatContext(params: BuildContextParams): Promise<Chat
   ]
 
   // Add conversation history
+  // For multi-bot conversations, messages from OTHER bots should be represented
+  // as "user" messages with the bot's name prefix, so the LLM knows they weren't its own responses
   for (const msg of recentMessages) {
     const isAI = msg.message_attribution?.is_ai_generated
     const content = msg.entry || ''
 
     if (!content) continue
 
-    messages.push({
-      role: isAI ? 'assistant' : 'user',
-      content,
-      name: isAI
-        ? (typeof msg.bot === 'object' ? msg.bot?.name : undefined)
-        : persona?.name,
-    })
+    if (isAI) {
+      // Get the bot ID from this message
+      const msgBotId = typeof msg.bot === 'object' ? msg.bot?.id : msg.bot
+      const msgBotName = typeof msg.bot === 'object' ? msg.bot?.name : undefined
+
+      // Check if this message was from the current responding bot or a different bot
+      const isFromCurrentBot = msgBotId === bot.id
+
+      if (isFromCurrentBot) {
+        // This bot's own previous messages - use 'assistant' role
+        messages.push({
+          role: 'assistant',
+          content,
+        })
+      } else {
+        // Another bot's message - represent as a character speaking
+        // This helps the LLM understand it shouldn't continue this character's voice
+        messages.push({
+          role: 'user',
+          content: `[${msgBotName || 'Other character'}]: ${content}`,
+        })
+      }
+    } else {
+      // User message
+      messages.push({
+        role: 'user',
+        content,
+        name: persona?.name,
+      })
+    }
   }
 
   // Estimate tokens (rough)

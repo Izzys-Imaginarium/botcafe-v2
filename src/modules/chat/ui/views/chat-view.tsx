@@ -9,6 +9,7 @@
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useUser } from '@clerk/nextjs'
 import { cn } from '@/lib/utils'
 import { useChat } from '../../hooks/use-chat'
 import { useConversations } from '../../hooks/use-conversations'
@@ -50,6 +51,7 @@ export interface ChatViewProps {
 
 export function ChatView({ conversationId, className }: ChatViewProps) {
   const router = useRouter()
+  const { user } = useUser()
   const [botSidebarOpen, setBotSidebarOpen] = useState(false)
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null)
 
@@ -119,6 +121,8 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
     addBot,
     removeBot,
     switchPersona,
+    updateAISettings,
+    savedSettings,
     loadMoreMessages,
   } = useChat({
     conversationId,
@@ -127,12 +131,37 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
     },
   })
 
+  // Handle API key change and persist
+  const handleApiKeyChange = useCallback((keyId: number | null) => {
+    setSelectedApiKeyId(keyId)
+    updateAISettings({ api_key_id: keyId })
+  }, [setSelectedApiKeyId, updateAISettings])
+
+  // Handle model change and persist
+  const handleModelChange = useCallback((model: string | null) => {
+    setSelectedModel(model)
+    updateAISettings({ model })
+  }, [setSelectedModel, updateAISettings])
+
+  // Handle provider change and persist
+  const handleProviderChange = useCallback((provider: string | null) => {
+    setSelectedProvider(provider)
+    updateAISettings({ provider })
+  }, [updateAISettings])
+
   // Sync conversation title from API
   useEffect(() => {
     if (conversation && (conversation as any).title !== undefined) {
       setConversationTitle((conversation as any).title || null)
     }
   }, [conversation])
+
+  // Initialize provider from saved settings
+  useEffect(() => {
+    if (savedSettings?.provider && !selectedProvider) {
+      setSelectedProvider(savedSettings.provider)
+    }
+  }, [savedSettings?.provider, selectedProvider])
 
   // Get current persona from conversation
   const currentPersonaId = useMemo(() => {
@@ -449,15 +478,15 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
         <div className="h-5 w-px bg-border/30" />
         <ApiKeySelector
           currentKeyId={selectedApiKeyId}
-          onSelect={setSelectedApiKeyId}
-          onProviderChange={setSelectedProvider}
+          onSelect={handleApiKeyChange}
+          onProviderChange={handleProviderChange}
           disabled={isSending || isStreaming}
         />
         <div className="h-5 w-px bg-border/30" />
         <ModelSelector
           provider={selectedProvider}
           currentModel={selectedModel}
-          onSelect={setSelectedModel}
+          onSelect={handleModelChange}
           disabled={isSending || isStreaming}
         />
       </div>
@@ -468,6 +497,8 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
         isLoading={isLoading}
         hasMore={false} // TODO: Implement pagination
         onLoadMore={loadMoreMessages}
+        userName={user?.firstName || user?.username || undefined}
+        userAvatar={user?.imageUrl}
         className="flex-1 min-h-0 overflow-hidden"
       />
 

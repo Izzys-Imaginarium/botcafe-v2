@@ -1145,6 +1145,18 @@ export interface Conversation {
     allow_file_sharing?: boolean | null;
     message_retention_days?: number | null;
     auto_save_conversations?: boolean | null;
+    /**
+     * Selected API key ID for this conversation
+     */
+    api_key_id?: number | null;
+    /**
+     * Selected AI model for this conversation
+     */
+    model?: string | null;
+    /**
+     * AI provider name (e.g., openai, anthropic)
+     */
+    provider?: string | null;
   };
   updatedAt: string;
   createdAt: string;
@@ -3382,6 +3394,9 @@ export interface ConversationSelect<T extends boolean = true> {
         allow_file_sharing?: T;
         message_retention_days?: T;
         auto_save_conversations?: T;
+        api_key_id?: T;
+        model?: T;
+        provider?: T;
       };
   updatedAt?: T;
   createdAt?: T;

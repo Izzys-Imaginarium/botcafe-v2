@@ -32,6 +32,15 @@ export interface ChatMessage {
   isStreaming?: boolean
 }
 
+export interface ConversationSettings {
+  allow_file_sharing?: boolean
+  message_retention_days?: number
+  auto_save_conversations?: boolean
+  api_key_id?: number | null
+  model?: string | null
+  provider?: string | null
+}
+
 export interface ConversationDetails {
   id: number
   title?: string | null
@@ -52,6 +61,7 @@ export interface ConversationDetails {
     bots?: string[]
   }
   totalTokens: number
+  settings?: ConversationSettings
 }
 
 export interface UseChatOptions {
@@ -335,6 +345,29 @@ export function useChat(options: UseChatOptions) {
     }
   }, [conversationId, fetchConversation])
 
+  // Update AI settings
+  const updateAISettings = useCallback(async (settings: {
+    api_key_id?: number | null
+    model?: string | null
+    provider?: string | null
+  }) => {
+    try {
+      const response = await fetch(`/api/chat/conversations/${conversationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json() as { message?: string }
+        throw new Error(data.message || 'Failed to update settings')
+      }
+    } catch (err) {
+      console.error('Failed to save AI settings:', err)
+      // Don't throw - silently fail for settings saves
+    }
+  }, [conversationId])
+
   // Initial load
   useEffect(() => {
     const load = async () => {
@@ -347,6 +380,18 @@ export function useChat(options: UseChatOptions) {
     }
     load()
   }, [fetchConversation, fetchMessages])
+
+  // Initialize AI settings from conversation when loaded
+  useEffect(() => {
+    if (conversation?.settings) {
+      if (conversation.settings.api_key_id && !selectedApiKeyId) {
+        setSelectedApiKeyId(conversation.settings.api_key_id)
+      }
+      if (conversation.settings.model && !selectedModel) {
+        setSelectedModel(conversation.settings.model)
+      }
+    }
+  }, [conversation?.settings])
 
   return {
     // State
@@ -363,12 +408,16 @@ export function useChat(options: UseChatOptions) {
     selectedModel,
     setSelectedModel,
 
+    // Saved settings (for initializing provider in parent)
+    savedSettings: conversation?.settings,
+
     // Actions
     sendMessage,
     stopStreaming,
     addBot,
     removeBot,
     switchPersona,
+    updateAISettings,
     refresh: () => {
       fetchConversation()
       fetchMessages()

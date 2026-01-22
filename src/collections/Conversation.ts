@@ -209,6 +209,28 @@ export const Conversation: CollectionConfig = {
           type: 'checkbox',
           defaultValue: true,
         },
+        // AI Configuration - persisted between sessions
+        {
+          name: 'api_key_id',
+          type: 'number',
+          admin: {
+            description: 'Selected API key ID for this conversation',
+          },
+        },
+        {
+          name: 'model',
+          type: 'text',
+          admin: {
+            description: 'Selected AI model for this conversation',
+          },
+        },
+        {
+          name: 'provider',
+          type: 'text',
+          admin: {
+            description: 'AI provider name (e.g., openai, anthropic)',
+          },
+        },
       ],
     },
   ],

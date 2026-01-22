@@ -25,7 +25,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Bot, Plus, X, GripVertical } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Bot, Plus, X, GripVertical, Search } from 'lucide-react'
 
 export interface BotParticipant {
   id: number
@@ -66,6 +67,7 @@ export function BotSidebar({
   className,
 }: BotSidebarProps) {
   const [addBotDialogOpen, setAddBotDialogOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   const canRemoveBots = bots.length > minBots
 
@@ -74,9 +76,25 @@ export function BotSidebar({
     ab => !bots.some(b => b.id === ab.id)
   )
 
+  // Filter bots by search query
+  const filteredBotsToAdd = searchQuery.trim()
+    ? botsToAdd.filter(bot =>
+        bot.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        bot.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : botsToAdd
+
   const handleAddBot = (botId: number) => {
     onAddBot?.(botId)
     setAddBotDialogOpen(false)
+    setSearchQuery('')
+  }
+
+  const handleDialogChange = (open: boolean) => {
+    setAddBotDialogOpen(open)
+    if (!open) {
+      setSearchQuery('')
+    }
   }
 
   const getRoleBadgeVariant = (role: string) => {
@@ -154,7 +172,7 @@ export function BotSidebar({
         {/* Add bot button */}
         {onAddBot && botsToAdd.length > 0 && (
           <div className="p-4 border-t">
-            <Dialog open={addBotDialogOpen} onOpenChange={setAddBotDialogOpen}>
+            <Dialog open={addBotDialogOpen} onOpenChange={handleDialogChange}>
               <DialogTrigger asChild>
                 <Button className="w-full gap-2">
                   <Plus className="h-4 w-4" />
@@ -165,33 +183,49 @@ export function BotSidebar({
                 <DialogHeader>
                   <DialogTitle>Add Bot to Conversation</DialogTitle>
                 </DialogHeader>
-                <ScrollArea className="max-h-96">
+                {/* Search input */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search bots..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <ScrollArea className="max-h-80">
                   <div className="space-y-2 p-1">
-                    {botsToAdd.map((bot) => (
-                      <button
-                        key={bot.id}
-                        onClick={() => handleAddBot(bot.id)}
-                        className={cn(
-                          'flex items-center gap-3 w-full p-3 rounded-lg',
-                          'hover:bg-muted/50 transition-colors text-left'
-                        )}
-                      >
-                        <Avatar className="h-10 w-10 border border-border/50">
-                          <AvatarImage src={bot.avatar} alt={bot.name} />
-                          <AvatarFallback className="bg-primary/10 text-primary">
-                            <Bot className="h-5 w-5" />
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium truncate">{bot.name}</div>
-                          {bot.description && (
-                            <div className="text-xs text-muted-foreground truncate">
-                              {bot.description}
-                            </div>
+                    {filteredBotsToAdd.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        {searchQuery ? 'No bots found matching your search' : 'No bots available'}
+                      </div>
+                    ) : (
+                      filteredBotsToAdd.map((bot) => (
+                        <button
+                          key={bot.id}
+                          onClick={() => handleAddBot(bot.id)}
+                          className={cn(
+                            'flex items-center gap-3 w-full p-3 rounded-lg',
+                            'hover:bg-muted/50 transition-colors text-left'
                           )}
-                        </div>
-                      </button>
-                    ))}
+                        >
+                          <Avatar className="h-10 w-10 border border-border/50">
+                            <AvatarImage src={bot.avatar} alt={bot.name} />
+                            <AvatarFallback className="bg-primary/10 text-primary">
+                              <Bot className="h-5 w-5" />
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium truncate">{bot.name}</div>
+                            {bot.description && (
+                              <div className="text-xs text-muted-foreground truncate">
+                                {bot.description}
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                      ))
+                    )}
                   </div>
                 </ScrollArea>
               </DialogContent>

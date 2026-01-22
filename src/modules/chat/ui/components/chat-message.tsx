@@ -18,6 +18,8 @@ export interface ChatMessageProps {
   isStreaming?: boolean
   botName?: string
   botAvatar?: string
+  userName?: string
+  userAvatar?: string
   timestamp?: string
   model?: string
   tokens?: {
@@ -34,6 +36,8 @@ export function ChatMessage({
   isStreaming = false,
   botName,
   botAvatar,
+  userName,
+  userAvatar,
   timestamp,
   model,
   tokens,
@@ -64,9 +68,12 @@ export function ChatMessage({
             </AvatarFallback>
           </>
         ) : (
-          <AvatarFallback className="bg-secondary/10 text-secondary-foreground">
-            <User className="h-4 w-4" />
-          </AvatarFallback>
+          <>
+            <AvatarImage src={userAvatar} alt={userName || 'You'} />
+            <AvatarFallback className="bg-secondary/10 text-secondary-foreground">
+              <User className="h-4 w-4" />
+            </AvatarFallback>
+          </>
         )}
       </Avatar>
 
@@ -75,7 +82,7 @@ export function ChatMessage({
         {/* Header */}
         <div className="flex items-center gap-2 text-sm">
           <span className="font-medium text-foreground">
-            {isAI ? botName || 'Assistant' : 'You'}
+            {isAI ? botName || 'Assistant' : userName || 'You'}
           </span>
           {formattedTime && (
             <span className="text-muted-foreground text-xs">{formattedTime}</span>

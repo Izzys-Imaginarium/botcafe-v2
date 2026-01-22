@@ -586,6 +586,18 @@ When you add new Payload collections or modify existing ones:
 ## 🔄 **Recent Changes**
 
 ### **2026-01-22 Updates:**
+- ✅ **Chat Profile Icons**
+  - Bot avatars now display in all chat messages (intro message and responses)
+  - User profile pictures from Clerk now show next to user messages
+  - Falls back to placeholder icons when no avatar available
+- ✅ **Bot Search in Add Bot Dialog**
+  - Added search input to bot selection dialog in multi-bot conversations
+  - Filters bots by name and description in real-time
+  - Clear empty state messaging when no results found
+- ✅ **Persist AI Configuration**
+  - Added `api_key_id`, `model`, `provider` fields to `conversation_settings`
+  - AI settings now saved per-conversation and restored on re-open
+  - Settings persist between messages during active session
 - ✅ **Conversation Rename Feature**
   - Added `title` field to Conversation collection for user-editable names
   - Updated conversation list to show title with fallback to bot name
@@ -1102,7 +1114,7 @@ When you add new Payload collections or modify existing ones:
 ---
 
 **Last Updated**: 2026-01-22
-**Version**: 3.13
+**Version**: 3.14
 **Total Tasks**: 180
 **Completed**: 171
 **Progress**: ~95% (multi-bot voice separation fix)

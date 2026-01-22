@@ -1,7 +1,7 @@
 # BotCafe v2 - Database Schema
 
 **Last Updated**: 2026-01-22
-**Version**: 3.5
+**Version**: 3.6
 **Database**: Cloudflare D1 (SQLite) via Payload CMS
 
 ---
@@ -412,6 +412,9 @@ Each bot in the conversation has an entry with:
 | `allow_file_sharing` | checkbox | Allow file attachments |
 | `message_retention_days` | number | Days to retain messages (default: 365) |
 | `auto_save_conversations` | checkbox | Auto-save enabled |
+| `api_key_id` | number | Selected API key ID (persisted between sessions) |
+| `model` | text | Selected AI model (persisted between sessions) |
+| `provider` | text | AI provider name (e.g., openai, anthropic) |
 
 ### Message
 

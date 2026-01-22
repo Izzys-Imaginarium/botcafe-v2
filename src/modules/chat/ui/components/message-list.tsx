@@ -22,6 +22,8 @@ export interface MessageListProps {
   isLoading?: boolean
   hasMore?: boolean
   onLoadMore?: () => void
+  userName?: string
+  userAvatar?: string
   className?: string
 }
 
@@ -30,6 +32,8 @@ export function MessageList({
   isLoading = false,
   hasMore = false,
   onLoadMore,
+  userName,
+  userAvatar,
   className,
 }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -121,6 +125,8 @@ export function MessageList({
               isStreaming={message.isStreaming}
               botName={message.botName}
               botAvatar={message.botAvatar}
+              userName={userName}
+              userAvatar={userAvatar}
               timestamp={message.timestamp}
               model={message.model}
               tokens={message.tokens}

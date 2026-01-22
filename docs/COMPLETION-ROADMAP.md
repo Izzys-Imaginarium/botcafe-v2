@@ -586,6 +586,15 @@ When you add new Payload collections or modify existing ones:
 ## 🔄 **Recent Changes**
 
 ### **2026-01-22 Updates:**
+- ✅ **Token Count Display Fix**
+  - Fixed token counts not showing for OpenAI, OpenRouter, and ElectronHub providers
+  - Added `stream_options: { include_usage: true }` to OpenRouter and ElectronHub
+  - Fixed all three providers to handle usage data in separate final SSE chunk
+  - Token counts now display correctly for all supported LLM providers
+- ✅ **Bot Avatar Persistence Fix**
+  - Fixed bot profile pictures disappearing when reopening conversations
+  - Changed Payload query depth from 1 to 2 in messages API endpoint
+  - Now properly populates nested `bot.picture` media relationship
 - ✅ **Chat Profile Icons**
   - Bot avatars now display in all chat messages (intro message and responses)
   - User profile pictures from Clerk now show next to user messages

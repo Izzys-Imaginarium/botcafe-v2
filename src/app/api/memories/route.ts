@@ -194,7 +194,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!botId || isNaN(parseInt(botId, 10))) {
+    const botIdNum = typeof botId === 'number' ? botId : parseInt(String(botId), 10)
+    if (!botId || isNaN(botIdNum)) {
       return NextResponse.json(
         { success: false, message: 'Bot ID is required' },
         { status: 400 }
@@ -213,7 +214,7 @@ export async function POST(request: NextRequest) {
     // Verify bot exists and user has access
     const bot = await payload.findByID({
       collection: 'bot',
-      id: parseInt(botId, 10),
+      id: botIdNum,
     })
 
     if (!bot) {
@@ -224,29 +225,35 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate type if provided
-    const validTypes = ['short_term', 'long_term', 'consolidated']
-    const memoryType = type && validTypes.includes(type) ? type : 'short_term'
+    const validTypes = ['short_term', 'long_term', 'consolidated'] as const
+    type MemoryType = 'short_term' | 'long_term' | 'consolidated'
+    const memoryType: MemoryType = type && validTypes.includes(type as MemoryType)
+      ? (type as MemoryType)
+      : 'short_term'
 
     // Validate importance if provided
     let memoryImportance = 5
-    if (importance !== undefined) {
-      const imp = parseInt(importance, 10)
-      if (!isNaN(imp) && imp >= 1 && imp <= 10) {
-        memoryImportance = imp
+    if (importance !== undefined && typeof importance === 'number') {
+      if (importance >= 1 && importance <= 10) {
+        memoryImportance = importance
       }
     }
 
     // Create memory
+    const conversationIdNum = conversationId
+      ? (typeof conversationId === 'number' ? conversationId : parseInt(String(conversationId), 10))
+      : null
+
     const memory = await payload.create({
       collection: 'memory',
       data: {
         user: payloadUser.id,
-        bot: parseInt(botId, 10),
+        bot: botIdNum,
         entry: entry.trim(),
         type: memoryType,
         importance: memoryImportance,
         emotional_context: emotional_context || null,
-        conversation: conversationId ? parseInt(conversationId, 10) : null,
+        conversation: conversationIdNum,
         created_timestamp: new Date().toISOString(),
         modified_timestamp: new Date().toISOString(),
         is_vectorized: false,

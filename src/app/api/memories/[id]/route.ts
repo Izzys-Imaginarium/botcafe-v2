@@ -188,14 +188,13 @@ export async function PATCH(
     }
 
     if (importance !== undefined) {
-      const imp = parseInt(importance, 10)
-      if (isNaN(imp) || imp < 1 || imp > 10) {
+      if (typeof importance !== 'number' || importance < 1 || importance > 10) {
         return NextResponse.json(
           { success: false, message: 'Importance must be between 1 and 10' },
           { status: 400 }
         )
       }
-      updateData.importance = imp
+      updateData.importance = importance
     }
 
     if (emotional_context !== undefined) {

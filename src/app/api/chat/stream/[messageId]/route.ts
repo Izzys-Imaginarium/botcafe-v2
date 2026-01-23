@@ -204,6 +204,7 @@ export async function GET(
         // Stream from LLM
         let fullContent = ''
         let finalUsage = null
+        let finishReason = null
 
         try {
           for await (const chunk of streamMessage(
@@ -230,14 +231,17 @@ export async function GET(
               finalUsage = chunk.usage
             }
 
-            if (chunk.done) {
-              sendEvent({
-                type: 'end',
-                finishReason: chunk.finishReason,
-                usage: chunk.usage,
-              })
+            if (chunk.finishReason) {
+              finishReason = chunk.finishReason
             }
           }
+
+          // Send end event after loop completes (ensures we have all data)
+          sendEvent({
+            type: 'end',
+            finishReason,
+            usage: finalUsage,
+          })
         } catch (llmError: unknown) {
           const errorMessage = llmError instanceof Error ? llmError.message : 'LLM error'
           sendError(errorMessage, 'LLM_ERROR')

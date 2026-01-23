@@ -459,6 +459,30 @@ export function useChat(options: UseChatOptions) {
     }
   }, [conversationId])
 
+  // Sync streaming state - when streaming stops, ensure message is updated
+  // This is a safety net in case the onComplete callback doesn't fire properly
+  useEffect(() => {
+    if (!streaming.isStreaming && streamingMessageIdRef.current) {
+      const messageId = streamingMessageIdRef.current
+      setMessages(prev => prev.map(m =>
+        m.id === messageId
+          ? {
+              ...m,
+              isStreaming: false,
+              // Also update tokens if we have usage data
+              tokens: streaming.usage ? {
+                input: streaming.usage.inputTokens,
+                output: streaming.usage.outputTokens,
+                total: streaming.usage.totalTokens,
+                cost: 0,
+              } : m.tokens,
+            }
+          : m
+      ))
+      streamingMessageIdRef.current = null
+    }
+  }, [streaming.isStreaming, streaming.usage])
+
   // Initial load
   useEffect(() => {
     const load = async () => {

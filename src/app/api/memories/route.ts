@@ -176,7 +176,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const body = await request.json()
+    const body = await request.json() as {
+      entry?: string
+      botId?: string | number
+      type?: string
+      importance?: number
+      emotional_context?: string
+      conversationId?: string | number
+    }
     const { entry, botId, type, importance, emotional_context, conversationId } = body
 
     // Validate required fields

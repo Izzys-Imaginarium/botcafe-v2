@@ -116,7 +116,12 @@ export async function PATCH(
       )
     }
 
-    const body = await request.json()
+    const body = await request.json() as {
+      entry?: string
+      type?: string
+      importance?: number
+      emotional_context?: string
+    }
     const { entry, type, importance, emotional_context } = body
 
     const payloadConfig = await config

@@ -15,6 +15,7 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import { streamMessage, getDefaultModel, type ProviderName, type ChatMessage } from '@/lib/llm'
 import { buildChatContext } from '@/lib/chat/context-builder'
+import { generateConversationMemory } from '@/lib/chat/memory-service'
 
 export const dynamic = 'force-dynamic'
 // Note: Cannot use edge runtime here because Payload CMS requires Node.js modules
@@ -300,6 +301,24 @@ export async function GET(
           },
           overrideAccess: true,
         })
+
+        // Trigger memory auto-generation (non-blocking)
+        // First memory: Force generate when tokens first exceed threshold
+        // Subsequent memories: Let the message count threshold (20 messages) decide
+        const hasEverSummarized = (conversation.last_summarized_message_index || 0) > 0
+        const shouldCheck = newTokens > 4000
+
+        if (shouldCheck) {
+          generateConversationMemory(payload, conversation.id, {
+            forceGenerate: !hasEverSummarized, // Force first memory, use checks for subsequent
+          })
+            .then(result => {
+              if (result.success) {
+                console.log(`Memory auto-generated for conversation ${conversation.id}:`, result.memoryId)
+              }
+            })
+            .catch(err => console.error('Memory auto-generation error:', err))
+        }
 
         // Update API key usage (non-blocking)
         payload.update({

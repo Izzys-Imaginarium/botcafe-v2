@@ -6,6 +6,25 @@ import config from '@/payload.config'
 export const dynamic = 'force-dynamic'
 
 /**
+ * Helper to get payload user from Clerk user
+ */
+async function getPayloadUser(clerkUser: NonNullable<Awaited<ReturnType<typeof currentUser>>>) {
+  const payloadConfig = await config
+  const payload = await getPayload({ config: payloadConfig })
+
+  const users = await payload.find({
+    collection: 'users',
+    where: {
+      email: {
+        equals: clerkUser.emailAddresses[0]?.emailAddress,
+      },
+    },
+  })
+
+  return { payload, user: users.docs[0] || null }
+}
+
+/**
  * GET /api/memories
  *
  * Fetch all memory entries for the current user.
@@ -126,5 +145,119 @@ export async function GET(request: NextRequest) {
       page: 1,
       totalPages: 0,
     })
+  }
+}
+
+/**
+ * POST /api/memories
+ *
+ * Create a new memory entry.
+ *
+ * Body:
+ * - entry: string (required) - Memory content
+ * - botId: number (required) - Associated bot
+ * - type?: 'short_term' | 'long_term' | 'consolidated' (default: 'short_term')
+ * - importance?: number (1-10, default: 5)
+ * - emotional_context?: string
+ * - conversationId?: number - Associated conversation
+ *
+ * Response:
+ * - success: boolean
+ * - memory: Memory
+ * - message?: string
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const clerkUser = await currentUser()
+    if (!clerkUser) {
+      return NextResponse.json(
+        { success: false, message: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const body = await request.json()
+    const { entry, botId, type, importance, emotional_context, conversationId } = body
+
+    // Validate required fields
+    if (!entry || typeof entry !== 'string' || entry.trim().length === 0) {
+      return NextResponse.json(
+        { success: false, message: 'Memory content is required' },
+        { status: 400 }
+      )
+    }
+
+    if (!botId || isNaN(parseInt(botId, 10))) {
+      return NextResponse.json(
+        { success: false, message: 'Bot ID is required' },
+        { status: 400 }
+      )
+    }
+
+    const { payload, user: payloadUser } = await getPayloadUser(clerkUser)
+
+    if (!payloadUser) {
+      return NextResponse.json(
+        { success: false, message: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    // Verify bot exists and user has access
+    const bot = await payload.findByID({
+      collection: 'bot',
+      id: parseInt(botId, 10),
+    })
+
+    if (!bot) {
+      return NextResponse.json(
+        { success: false, message: 'Bot not found' },
+        { status: 404 }
+      )
+    }
+
+    // Validate type if provided
+    const validTypes = ['short_term', 'long_term', 'consolidated']
+    const memoryType = type && validTypes.includes(type) ? type : 'short_term'
+
+    // Validate importance if provided
+    let memoryImportance = 5
+    if (importance !== undefined) {
+      const imp = parseInt(importance, 10)
+      if (!isNaN(imp) && imp >= 1 && imp <= 10) {
+        memoryImportance = imp
+      }
+    }
+
+    // Create memory
+    const memory = await payload.create({
+      collection: 'memory',
+      data: {
+        user: payloadUser.id,
+        bot: parseInt(botId, 10),
+        entry: entry.trim(),
+        type: memoryType,
+        importance: memoryImportance,
+        emotional_context: emotional_context || null,
+        conversation: conversationId ? parseInt(conversationId, 10) : null,
+        created_timestamp: new Date().toISOString(),
+        modified_timestamp: new Date().toISOString(),
+        is_vectorized: false,
+        converted_to_lore: false,
+      },
+      depth: 2,
+    })
+
+    return NextResponse.json({
+      success: true,
+      memory,
+      message: 'Memory created successfully',
+    })
+  } catch (error) {
+    console.error('Create memory error:', error)
+    return NextResponse.json(
+      { success: false, message: 'Failed to create memory' },
+      { status: 500 }
+    )
   }
 }

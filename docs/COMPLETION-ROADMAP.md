@@ -335,7 +335,7 @@ By building foundational systems first, we avoid rework and ensure chat has all 
   - [x] Archive conversation
   - [x] Delete conversation with confirmation dialog
   - [x] Created DELETE endpoint for `/api/chat/conversations/[id]/messages`
-- [ ] Implement memory auto-generation during chat
+- [x] Implement memory auto-generation during chat
 - [ ] Add wellness gate checks before sending
 - [ ] Implement voice input capabilities
 - [ ] Add file sharing in chat
@@ -586,6 +586,22 @@ When you add new Payload collections or modify existing ones:
 ## 🔄 **Recent Changes**
 
 ### **2026-01-23 Updates:**
+- ✅ **Memory CRUD Operations**
+  - Added full create, read, update, delete functionality for memories
+  - Created `POST /api/memories` endpoint for creating new memories
+  - Created `GET/PATCH/DELETE /api/memories/[id]` endpoints
+  - Added "Create Memory" button to memory library
+  - Added edit and delete buttons to each memory card
+  - Edit dialog allows updating content, type, importance, and emotional context
+  - Delete dialog with confirmation and vector record cleanup
+  - Create dialog with bot selection, type, importance, and emotional context
+- ✅ **Memory Auto-Generation During Chat**
+  - Automatically generates memories when conversation exceeds token threshold (4000)
+  - First memory is force-generated when threshold is crossed
+  - Subsequent memories use message count threshold (20 messages since last)
+  - Non-blocking operation - doesn't slow down chat response
+  - Updates conversation's `last_summarized_message_index` and `requires_summarization` flags
+  - Uses existing `generateConversationMemory()` from memory-service.ts
 - ✅ **Message Retry/Regenerate Feature**
   - Added ability to retry failed AI messages and regenerate any AI response
   - Created `/api/chat/regenerate` endpoint (POST) for message regeneration
@@ -1139,7 +1155,7 @@ When you add new Payload collections or modify existing ones:
 ---
 
 **Last Updated**: 2026-01-23
-**Version**: 3.15
+**Version**: 3.17
 **Total Tasks**: 180
-**Completed**: 171
-**Progress**: ~95% (multi-bot voice separation fix)
+**Completed**: 173
+**Progress**: ~96% (memory CRUD)

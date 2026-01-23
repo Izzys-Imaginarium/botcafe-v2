@@ -1,7 +1,7 @@
 # BotCafe v2 - Complete Sitemap
 
 **Last Updated**: 2026-01-23
-**Version**: 2.18
+**Version**: 2.19
 **Status**: ~95% Complete
 
 ---
@@ -145,7 +145,8 @@
 
 | Endpoint | Methods | Description |
 |----------|---------|-------------|
-| `/api/memories` | GET | List all memories with filtering |
+| `/api/memories` | GET, POST | List all memories, create new memory |
+| `/api/memories/[id]` | GET, PATCH, DELETE | Get, update, or delete a memory |
 | `/api/memories/import` | POST | Import external conversations |
 | `/api/memories/summarize` | POST | Summarize conversation |
 | `/api/memories/vectorize` | POST | Vectorize memory |
@@ -260,8 +261,8 @@
 | Help | 3 | 0 | 3 |
 | Chat | 0 | 2 | 2 |
 | **Frontend Total** | **33** | **2** | **35** |
-| API Endpoints | 50 | 0 | 50 |
-| **Grand Total** | **83** | **2** | **85** |
+| API Endpoints | 51 | 0 | 51 |
+| **Grand Total** | **84** | **2** | **86** |
 
 ---
 

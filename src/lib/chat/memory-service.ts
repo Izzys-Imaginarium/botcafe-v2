@@ -49,7 +49,7 @@ export async function checkMemoryTrigger(
   const totalMessages = conversation.conversation_metadata?.total_messages || 0
   const messagesSinceLast = totalMessages - lastSummarizedIndex
 
-  // Check message threshold
+  // Check message threshold (primary trigger for subsequent memories)
   if (messagesSinceLast >= mergedConfig.messageThreshold) {
     return {
       shouldGenerate: true,
@@ -58,9 +58,12 @@ export async function checkMemoryTrigger(
     }
   }
 
-  // Check token threshold
+  // Check token threshold only if we haven't summarized yet
+  // This ensures the first memory is created when hitting token limit
+  // Subsequent memories are triggered by message count to avoid duplicates
   const totalTokens = conversation.total_tokens || 0
-  if (totalTokens >= mergedConfig.tokenThreshold) {
+  const hasEverSummarized = lastSummarizedIndex > 0
+  if (!hasEverSummarized && totalTokens >= mergedConfig.tokenThreshold) {
     return {
       shouldGenerate: true,
       reason: 'token_threshold',

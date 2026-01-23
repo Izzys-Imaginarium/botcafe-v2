@@ -17,7 +17,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import {
   Brain,
   Upload,
-  Filter,
   Loader2,
   MessageSquare,
   Bot,
@@ -26,8 +25,13 @@ import {
   CheckCircle,
   ArrowUpCircle,
   Trash2,
-  Search
+  Search,
+  Pencil,
+  Plus,
+  AlertTriangle
 } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
+import { Slider } from '@/components/ui/slider'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
@@ -73,11 +77,48 @@ export const MemoryLibraryView = () => {
   const [knowledgeCollections, setKnowledgeCollections] = useState<any[]>([])
   const [selectedCollectionId, setSelectedCollectionId] = useState('')
 
+  // Edit dialog state
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [editingMemory, setEditingMemory] = useState<Memory | null>(null)
+  const [editEntry, setEditEntry] = useState('')
+  const [editType, setEditType] = useState<string>('short_term')
+  const [editImportance, setEditImportance] = useState(5)
+  const [editEmotionalContext, setEditEmotionalContext] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+
+  // Delete dialog state
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [deletingMemory, setDeletingMemory] = useState<Memory | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  // Create dialog state
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [createEntry, setCreateEntry] = useState('')
+  const [createType, setCreateType] = useState<string>('short_term')
+  const [createImportance, setCreateImportance] = useState(5)
+  const [createEmotionalContext, setCreateEmotionalContext] = useState('')
+  const [createBotId, setCreateBotId] = useState('')
+  const [isCreating, setIsCreating] = useState(false)
+  const [availableBots, setAvailableBots] = useState<{ id: string; name: string }[]>([])
+
   // Fetch memories on mount
   useEffect(() => {
     fetchMemories()
     fetchKnowledgeCollections()
+    fetchAvailableBots()
   }, [])
+
+  const fetchAvailableBots = async () => {
+    try {
+      const response = await fetch('/api/bots/my-bots')
+      const data = (await response.json()) as { success?: boolean; bots?: { id: string; name: string }[] }
+      if (data.success && data.bots) {
+        setAvailableBots(data.bots)
+      }
+    } catch (error) {
+      console.error('Error fetching bots:', error)
+    }
+  }
 
   // Apply filters when memories or filter state changes
   useEffect(() => {
@@ -215,6 +256,141 @@ export const MemoryLibraryView = () => {
     setIsConvertDialogOpen(true)
   }
 
+  // Edit handlers
+  const openEditDialog = (memory: Memory) => {
+    setEditingMemory(memory)
+    setEditEntry(memory.entry)
+    setEditType(memory.type)
+    setEditImportance(memory.importance || 5)
+    setEditEmotionalContext(memory.emotional_context || '')
+    setIsEditDialogOpen(true)
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingMemory || !editEntry.trim()) {
+      toast.error('Memory content is required')
+      return
+    }
+
+    setIsSaving(true)
+
+    try {
+      const response = await fetch(`/api/memories/${editingMemory.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entry: editEntry.trim(),
+          type: editType,
+          importance: editImportance,
+          emotional_context: editEmotionalContext || null,
+        }),
+      })
+
+      const data = (await response.json()) as { success?: boolean; message?: string }
+
+      if (data.success) {
+        toast.success('Memory updated successfully')
+        setIsEditDialogOpen(false)
+        setEditingMemory(null)
+        fetchMemories()
+      } else {
+        toast.error(data.message || 'Failed to update memory')
+      }
+    } catch (error) {
+      console.error('Edit error:', error)
+      toast.error('An error occurred while updating')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  // Delete handlers
+  const openDeleteDialog = (memory: Memory) => {
+    setDeletingMemory(memory)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const handleDelete = async () => {
+    if (!deletingMemory) return
+
+    setIsDeleting(true)
+
+    try {
+      const response = await fetch(`/api/memories/${deletingMemory.id}`, {
+        method: 'DELETE',
+      })
+
+      const data = (await response.json()) as { success?: boolean; message?: string }
+
+      if (data.success) {
+        toast.success('Memory deleted successfully')
+        setIsDeleteDialogOpen(false)
+        setDeletingMemory(null)
+        fetchMemories()
+      } else {
+        toast.error(data.message || 'Failed to delete memory')
+      }
+    } catch (error) {
+      console.error('Delete error:', error)
+      toast.error('An error occurred while deleting')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  // Create handlers
+  const openCreateDialog = () => {
+    setCreateEntry('')
+    setCreateType('short_term')
+    setCreateImportance(5)
+    setCreateEmotionalContext('')
+    setCreateBotId('')
+    setIsCreateDialogOpen(true)
+  }
+
+  const handleCreate = async () => {
+    if (!createEntry.trim()) {
+      toast.error('Memory content is required')
+      return
+    }
+
+    if (!createBotId) {
+      toast.error('Please select a bot')
+      return
+    }
+
+    setIsCreating(true)
+
+    try {
+      const response = await fetch('/api/memories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entry: createEntry.trim(),
+          botId: createBotId,
+          type: createType,
+          importance: createImportance,
+          emotional_context: createEmotionalContext || null,
+        }),
+      })
+
+      const data = (await response.json()) as { success?: boolean; message?: string }
+
+      if (data.success) {
+        toast.success('Memory created successfully')
+        setIsCreateDialogOpen(false)
+        fetchMemories()
+      } else {
+        toast.error(data.message || 'Failed to create memory')
+      }
+    } catch (error) {
+      console.error('Create error:', error)
+      toast.error('An error occurred while creating')
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
   const getMemoryTypeLabel = (type: string) => {
     switch (type) {
       case 'short_term':
@@ -252,12 +428,18 @@ export const MemoryLibraryView = () => {
               Browse and manage your conversation memories
             </p>
           </div>
-          <Link href="/memories/import">
-            <Button>
-              <Upload className="mr-2 h-4 w-4" />
-              Import Memories
+          <div className="flex gap-2">
+            <Button onClick={openCreateDialog}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Memory
             </Button>
-          </Link>
+            <Link href="/memories/import">
+              <Button variant="outline">
+                <Upload className="mr-2 h-4 w-4" />
+                Import
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Stats */}
@@ -454,7 +636,15 @@ export const MemoryLibraryView = () => {
                   {memory.entry}
                 </p>
               </CardContent>
-              <CardFooter className="flex gap-2">
+              <CardFooter className="flex gap-2 flex-wrap">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openEditDialog(memory)}
+                >
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit
+                </Button>
                 {!memory.converted_to_lore && (
                   <Button
                     variant="outline"
@@ -482,6 +672,14 @@ export const MemoryLibraryView = () => {
                     </Button>
                   </Link>
                 )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10 ml-auto"
+                  onClick={() => openDeleteDialog(memory)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </CardFooter>
             </Card>
           ))}
@@ -542,6 +740,238 @@ export const MemoryLibraryView = () => {
                 <>
                   <ArrowUpCircle className="mr-2 h-4 w-4" />
                   Convert to Lore
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Memory Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Memory</DialogTitle>
+            <DialogDescription>
+              Update the content and settings of this memory
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Memory Content</Label>
+              <Textarea
+                value={editEntry}
+                onChange={(e) => setEditEntry(e.target.value)}
+                placeholder="Enter memory content..."
+                className="min-h-[150px]"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <Select value={editType} onValueChange={setEditType}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="short_term">Short Term</SelectItem>
+                    <SelectItem value="long_term">Long Term</SelectItem>
+                    <SelectItem value="consolidated">Consolidated</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Importance ({editImportance}/10)</Label>
+                <Slider
+                  value={[editImportance]}
+                  onValueChange={(v) => setEditImportance(v[0])}
+                  min={1}
+                  max={10}
+                  step={1}
+                  className="py-4"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Emotional Context (optional)</Label>
+              <Input
+                value={editEmotionalContext}
+                onChange={(e) => setEditEmotionalContext(e.target.value)}
+                placeholder="e.g., happy, reflective, curious..."
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={!editEntry.trim() || isSaving}>
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Memory Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Delete Memory
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this memory? This action cannot be undone.
+              {deletingMemory?.is_vectorized && (
+                <span className="block mt-2 text-yellow-500">
+                  Note: Associated vector records will also be deleted.
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          {deletingMemory && (
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm whitespace-pre-wrap line-clamp-4">
+                {deletingMemory.entry}
+              </p>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Memory
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Memory Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create New Memory</DialogTitle>
+            <DialogDescription>
+              Add a new memory entry to your library
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Bot *</Label>
+              <Select value={createBotId} onValueChange={setCreateBotId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a bot..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableBots.map((bot) => (
+                    <SelectItem key={bot.id} value={bot.id}>
+                      {bot.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {availableBots.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  You need to create a bot first before adding memories.
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Memory Content *</Label>
+              <Textarea
+                value={createEntry}
+                onChange={(e) => setCreateEntry(e.target.value)}
+                placeholder="Enter memory content..."
+                className="min-h-[150px]"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <Select value={createType} onValueChange={setCreateType}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="short_term">Short Term</SelectItem>
+                    <SelectItem value="long_term">Long Term</SelectItem>
+                    <SelectItem value="consolidated">Consolidated</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Importance ({createImportance}/10)</Label>
+                <Slider
+                  value={[createImportance]}
+                  onValueChange={(v) => setCreateImportance(v[0])}
+                  min={1}
+                  max={10}
+                  step={1}
+                  className="py-4"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Emotional Context (optional)</Label>
+              <Input
+                value={createEmotionalContext}
+                onChange={(e) => setCreateEmotionalContext(e.target.value)}
+                placeholder="e.g., happy, reflective, curious..."
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreate}
+              disabled={!createEntry.trim() || !createBotId || isCreating}
+            >
+              {isCreating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Memory
                 </>
               )}
             </Button>

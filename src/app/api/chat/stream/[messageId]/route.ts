@@ -242,6 +242,10 @@ export async function GET(
             finishReason,
             usage: finalUsage,
           })
+
+          // Close the stream immediately after sending end event
+          // Database updates happen after, but client doesn't need to wait
+          controller.close()
         } catch (llmError: unknown) {
           const errorMessage = llmError instanceof Error ? llmError.message : 'LLM error'
           sendError(errorMessage, 'LLM_ERROR')
@@ -314,7 +318,7 @@ export async function GET(
           overrideAccess: true,
         }).catch(console.error)
 
-        controller.close()
+        // Note: controller.close() already called after sending 'end' event
       } catch (error: unknown) {
         console.error('Stream error:', error)
         sendError(

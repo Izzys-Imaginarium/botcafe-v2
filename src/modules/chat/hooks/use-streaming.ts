@@ -55,6 +55,9 @@ export function useStreaming(options: UseStreamingOptions = {}) {
 
     // Reset state
     contentRef.current = ''
+    let hasCompleted = false
+    let lastUsage: StreamingState['usage'] = null
+
     setState({
       isStreaming: true,
       content: '',
@@ -99,6 +102,8 @@ export function useStreaming(options: UseStreamingOptions = {}) {
             break
 
           case 'end':
+            hasCompleted = true
+            lastUsage = data.usage || null
             setState(prev => ({
               ...prev,
               isStreaming: false,
@@ -116,7 +121,11 @@ export function useStreaming(options: UseStreamingOptions = {}) {
 
     eventSource.onerror = () => {
       if (eventSource.readyState === EventSource.CLOSED) {
-        // Normal closure
+        // Normal closure - call onComplete if we haven't already
+        if (!hasCompleted && contentRef.current) {
+          hasCompleted = true
+          options.onComplete?.(contentRef.current, lastUsage)
+        }
         setState(prev => ({
           ...prev,
           isStreaming: false,

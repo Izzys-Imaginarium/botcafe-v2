@@ -38,6 +38,18 @@ export function useStreaming(options: UseStreamingOptions = {}) {
   const eventSourceRef = useRef<EventSource | null>(null)
   const contentRef = useRef('')
 
+  // Use refs to always call the latest callbacks (avoids stale closure issues)
+  const onChunkRef = useRef(options.onChunk)
+  const onCompleteRef = useRef(options.onComplete)
+  const onErrorRef = useRef(options.onError)
+
+  // Keep refs updated with latest callbacks
+  useEffect(() => {
+    onChunkRef.current = options.onChunk
+    onCompleteRef.current = options.onComplete
+    onErrorRef.current = options.onError
+  }, [options.onChunk, options.onComplete, options.onError])
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -80,7 +92,7 @@ export function useStreaming(options: UseStreamingOptions = {}) {
             isStreaming: false,
             error: data.message || 'Stream error',
           }))
-          options.onError?.(data.message || 'Stream error')
+          onErrorRef.current?.(data.message || 'Stream error')
           eventSource.close()
           return
         }
@@ -97,7 +109,7 @@ export function useStreaming(options: UseStreamingOptions = {}) {
                 ...prev,
                 content: contentRef.current,
               }))
-              options.onChunk?.(data.content)
+              onChunkRef.current?.(data.content)
             }
             break
 
@@ -110,7 +122,7 @@ export function useStreaming(options: UseStreamingOptions = {}) {
               finishReason: data.finishReason,
               usage: data.usage || null,
             }))
-            options.onComplete?.(contentRef.current, data.usage || null)
+            onCompleteRef.current?.(contentRef.current, data.usage || null)
             eventSource.close()
             break
         }
@@ -124,7 +136,7 @@ export function useStreaming(options: UseStreamingOptions = {}) {
         // Normal closure - call onComplete if we haven't already
         if (!hasCompleted && contentRef.current) {
           hasCompleted = true
-          options.onComplete?.(contentRef.current, lastUsage)
+          onCompleteRef.current?.(contentRef.current, lastUsage)
         }
         setState(prev => ({
           ...prev,
@@ -137,7 +149,7 @@ export function useStreaming(options: UseStreamingOptions = {}) {
           isStreaming: false,
           error: 'Connection error',
         }))
-        options.onError?.('Connection error')
+        onErrorRef.current?.('Connection error')
       }
       eventSource.close()
     }
@@ -145,7 +157,7 @@ export function useStreaming(options: UseStreamingOptions = {}) {
     return () => {
       eventSource.close()
     }
-  }, [options])
+  }, []) // No dependencies - uses refs for callbacks
 
   const stopStream = useCallback(() => {
     if (eventSourceRef.current) {

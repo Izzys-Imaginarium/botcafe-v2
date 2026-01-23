@@ -585,6 +585,22 @@ When you add new Payload collections or modify existing ones:
 
 ## 🔄 **Recent Changes**
 
+### **2026-01-23 Updates:**
+- ✅ **Message Retry/Regenerate Feature**
+  - Added ability to retry failed AI messages and regenerate any AI response
+  - Created `/api/chat/regenerate` endpoint (POST) for message regeneration
+  - Added `regenerateMessage()` function to `use-chat.ts` hook
+  - Added regenerate button to AI messages (visible on hover, always visible for failed messages)
+  - Retry deletes old message and streams a fresh response from the same bot
+  - Uses same bot from original message in multi-bot conversations
+- ✅ **Stream Completion Bug Fix (React State Batching)**
+  - Fixed messages not finishing (cursor staying, token count not showing)
+  - Root cause: React batches `setMessages` calls, so mapper function ran after `streamingMessageIdRef.current` was set to null
+  - Solution: Capture message ID in local variable before calling `setMessages`
+  - Added safety net `useEffect` that syncs `streaming.isStreaming` state to message state
+  - Added explicit `controller.close()` after all database updates in stream route
+  - Fixed stale closure issues in `use-streaming.ts` with callback refs
+
 ### **2026-01-22 Updates:**
 - ✅ **Token Count Display Fix**
   - Fixed token counts not showing for OpenAI, OpenRouter, and ElectronHub providers
@@ -1122,8 +1138,8 @@ When you add new Payload collections or modify existing ones:
 
 ---
 
-**Last Updated**: 2026-01-22
-**Version**: 3.14
+**Last Updated**: 2026-01-23
+**Version**: 3.15
 **Total Tasks**: 180
 **Completed**: 171
 **Progress**: ~95% (multi-bot voice separation fix)

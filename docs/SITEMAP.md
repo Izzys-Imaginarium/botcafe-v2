@@ -1,7 +1,7 @@
 # BotCafe v2 - Complete Sitemap
 
-**Last Updated**: 2026-01-22
-**Version**: 2.17
+**Last Updated**: 2026-01-23
+**Version**: 2.18
 **Status**: ~95% Complete
 
 ---
@@ -223,6 +223,7 @@
 | `/api/chat/conversations/[id]` | GET, PATCH, DELETE | Get, update (add/remove bots with access check), or delete |
 | `/api/chat/conversations/[id]/messages` | GET, DELETE | Get messages, clear chat history |
 | `/api/chat/send` | POST | Send message and trigger LLM response |
+| `/api/chat/regenerate` | POST | Regenerate/retry an AI message |
 | `/api/chat/stream/[messageId]` | GET | SSE endpoint for streaming LLM responses |
 
 ### API Keys
@@ -259,8 +260,8 @@
 | Help | 3 | 0 | 3 |
 | Chat | 0 | 2 | 2 |
 | **Frontend Total** | **33** | **2** | **35** |
-| API Endpoints | 49 | 0 | 49 |
-| **Grand Total** | **82** | **2** | **84** |
+| API Endpoints | 50 | 0 | 50 |
+| **Grand Total** | **83** | **2** | **85** |
 
 ---
 

@@ -1,7 +1,7 @@
 # BotCafe v2 - Database Schema
 
-**Last Updated**: 2026-01-22
-**Version**: 3.6
+**Last Updated**: 2026-01-23
+**Version**: 3.7
 **Database**: Cloudflare D1 (SQLite) via Payload CMS
 
 ---
@@ -494,30 +494,33 @@ Individual chat messages with full attribution and tracking.
 
 ### Memory
 
-Conversation memory storage.
+Conversation memory storage with full CRUD API support.
+
+> **API Endpoints**: Memories support full CRUD operations via `/api/memories` (GET, POST) and `/api/memories/[id]` (GET, PATCH, DELETE). Users can create, view, edit, and delete memories from the Memory Library UI.
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | string | Primary key |
-| `user` | relationship (Users) | Memory owner |
-| `bot` | relationship (Bot) | Associated bot |
+| `user` | relationship (Users) | Memory owner (required) |
+| `bot` | relationship (Bot) | Associated bot (required) |
 | `conversation` | relationship (Conversation) | Source conversation |
-| `lore_entry_id` | relationship (Knowledge) | Link to converted lore entry (ON DELETE SET NULL) |
-| `memory_type` | select | Type: short_term, long_term, episodic, semantic |
-| `content` | textarea | Raw memory content |
-| `entry` | textarea | Memory entry text |
-| `summary` | textarea | AI-generated summary |
-| `participants` | json | Bot/persona IDs involved |
-| `importance` | number | Importance score (0-10) |
-| `is_vectorized` | checkbox | Vectorization status |
-| `embedding_metadata` | json | Vector metadata |
-| `last_accessed` | date | Last retrieval |
-| `access_count` | number | Retrieval count |
-| `expires_at` | date | Expiration (for short-term) |
+| `entry` | textarea | Memory content text (required) |
+| `type` | select | Type: short_term, long_term, consolidated (default: short_term) |
+| `importance` | number | Importance score (1-10, default: 5) |
+| `emotional_context` | textarea | Mood/emotion tags and context |
+| `tokens` | number | Token count (default: 0) |
+| `participants` | json | Bot/persona IDs involved: `{ personas: string[], bots: string[] }` |
+| `is_vectorized` | checkbox | Vectorization status (default: false) |
+| `vector_records` | relationship[] (VectorRecords) | Links to vector chunks in Vectorize |
+| `converted_to_lore` | checkbox | Whether memory has been saved as lore (default: false) |
+| `lore_entry` | relationship (Knowledge) | Link to created lore entry (if converted) |
+| `converted_at` | date | When converted to lore |
+| `created_timestamp` | date | Creation timestamp (auto-generated) |
+| `modified_timestamp` | date | Modification timestamp (auto-generated) |
 | `createdAt` | date | Auto-generated |
 | `updatedAt` | date | Auto-generated |
 
-> **Foreign Key Note**: The `lore_entry_id` field has `ON DELETE SET NULL` constraint, allowing knowledge entries to be deleted without breaking memory records.
+> **Note**: The `type` field uses values `short_term`, `long_term`, and `consolidated` - not `episodic` or `semantic` as in some earlier designs.
 
 ---
 

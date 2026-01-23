@@ -118,6 +118,7 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
     setSelectedModel,
     sendMessage,
     stopStreaming,
+    regenerateMessage,
     addBot,
     removeBot,
     switchPersona,
@@ -191,6 +192,7 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
       timestamp: msg.createdAt,
       model: msg.model,
       tokens: msg.tokens,
+      status: msg.status,
     }))
   }, [messages])
 
@@ -500,6 +502,8 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
         userName={user?.firstName || user?.username || undefined}
         userAvatar={user?.imageUrl}
         className="flex-1 min-h-0 overflow-hidden"
+        onRegenerateMessage={regenerateMessage}
+        canRegenerate={!isSending && !isStreaming}
       />
 
       {/* Input */}

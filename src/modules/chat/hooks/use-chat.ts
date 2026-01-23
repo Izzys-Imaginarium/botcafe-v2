@@ -303,6 +303,67 @@ export function useChat(options: UseChatOptions) {
     }
   }, [streaming])
 
+  // Regenerate an AI message (retry failed or get new response)
+  const regenerateMessage = useCallback(async (messageId: number) => {
+    if (isSending || streaming.isStreaming) {
+      return
+    }
+
+    setIsSending(true)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/chat/regenerate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messageId,
+          apiKeyId: selectedApiKeyId,
+          model: selectedModel,
+        }),
+      })
+
+      const data = await response.json() as {
+        message?: string
+        botMessageId?: number
+        bot?: { id: number; name: string; picture?: { url: string } }
+        model?: string
+        streamUrl?: string
+      }
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to regenerate message')
+      }
+
+      // Remove old AI message from state
+      setMessages(prev => prev.filter(m => m.id !== messageId))
+
+      // Add new placeholder for regenerated message
+      const newBotMessage: ChatMessage = {
+        id: data.botMessageId!,
+        type: 'text',
+        content: '',
+        createdAt: new Date().toISOString(),
+        isAI: true,
+        bot: data.bot ? { id: data.bot.id, name: data.bot.name, avatar: data.bot.picture } : undefined,
+        model: data.model,
+        isStreaming: true,
+        status: 'sent',
+      }
+      setMessages(prev => [...prev, newBotMessage])
+      streamingMessageIdRef.current = data.botMessageId!
+
+      // Start streaming
+      streaming.startStream(data.streamUrl!)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      setError(errorMessage)
+      onError?.(errorMessage)
+    } finally {
+      setIsSending(false)
+    }
+  }, [isSending, streaming, selectedApiKeyId, selectedModel, onError])
+
   // Add a bot to the conversation
   const addBot = useCallback(async (botId: number) => {
     try {
@@ -444,6 +505,7 @@ export function useChat(options: UseChatOptions) {
     // Actions
     sendMessage,
     stopStreaming,
+    regenerateMessage,
     addBot,
     removeBot,
     switchPersona,

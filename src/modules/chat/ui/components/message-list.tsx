@@ -25,6 +25,9 @@ export interface MessageListProps {
   userName?: string
   userAvatar?: string
   className?: string
+  // Regenerate support
+  onRegenerateMessage?: (messageId: number) => void
+  canRegenerate?: boolean
 }
 
 export function MessageList({
@@ -35,6 +38,8 @@ export function MessageList({
   userName,
   userAvatar,
   className,
+  onRegenerateMessage,
+  canRegenerate = true,
 }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -120,6 +125,7 @@ export function MessageList({
           {messages.map((message) => (
             <ChatMessage
               key={message.id}
+              messageId={message.id}
               content={message.content}
               isAI={message.isAI}
               isStreaming={message.isStreaming}
@@ -130,6 +136,9 @@ export function MessageList({
               timestamp={message.timestamp}
               model={message.model}
               tokens={message.tokens}
+              status={message.status}
+              onRegenerate={onRegenerateMessage}
+              canRegenerate={canRegenerate && !message.isStreaming}
             />
           ))}
         </div>

@@ -9,7 +9,14 @@
 
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Loader2, Bot, User } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { Loader2, Bot, User, RefreshCw, AlertCircle } from 'lucide-react'
 import { DiscordMarkdown } from './discord-markdown'
 
 export interface ChatMessageProps {
@@ -28,6 +35,11 @@ export interface ChatMessageProps {
     total: number
   }
   className?: string
+  // Retry/regenerate support
+  messageId?: number
+  status?: string
+  onRegenerate?: (messageId: number) => void
+  canRegenerate?: boolean
 }
 
 export function ChatMessage({
@@ -42,6 +54,10 @@ export function ChatMessage({
   model,
   tokens,
   className,
+  messageId,
+  status,
+  onRegenerate,
+  canRegenerate = true,
 }: ChatMessageProps) {
   const formattedTime = timestamp
     ? new Date(timestamp).toLocaleTimeString([], {
@@ -50,11 +66,15 @@ export function ChatMessage({
       })
     : null
 
+  const isFailed = status === 'failed'
+  const showRegenerateButton = isAI && !isStreaming && onRegenerate && messageId && canRegenerate
+
   return (
     <div
       className={cn(
-        'flex gap-3 p-4',
+        'group flex gap-3 p-4 relative',
         isAI ? 'bg-background/30' : 'bg-transparent',
+        isFailed && 'border-l-2 border-destructive/50',
         className
       )}
     >
@@ -113,10 +133,49 @@ export function ChatMessage({
           )}
         </div>
 
-        {/* Token info (for AI messages) */}
-        {isAI && tokens && !isStreaming && (
-          <div className="text-xs text-muted-foreground mt-2">
-            {tokens.total.toLocaleString()} tokens
+        {/* Token info and actions row */}
+        {isAI && !isStreaming && (
+          <div className="flex items-center gap-2 mt-2">
+            {/* Token count */}
+            {tokens && (
+              <span className="text-xs text-muted-foreground">
+                {tokens.total.toLocaleString()} tokens
+              </span>
+            )}
+
+            {/* Failed indicator */}
+            {isFailed && (
+              <span className="text-xs text-destructive flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" />
+                Failed
+              </span>
+            )}
+
+            {/* Regenerate/Retry button - visible on hover or always for failed */}
+            {showRegenerateButton && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn(
+                        'h-6 w-6 transition-opacity',
+                        isFailed
+                          ? 'opacity-100'
+                          : 'opacity-0 group-hover:opacity-100'
+                      )}
+                      onClick={() => onRegenerate(messageId)}
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{isFailed ? 'Retry' : 'Regenerate response'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
         )}
       </div>

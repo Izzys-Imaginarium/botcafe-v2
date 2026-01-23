@@ -88,9 +88,11 @@ export function useChat(options: UseChatOptions) {
   const streaming = useStreaming({
     onChunk: (content) => {
       // Update the streaming message content
-      if (streamingMessageIdRef.current) {
+      // Capture message ID before setMessages - React batches updates so the mapper runs later
+      const messageId = streamingMessageIdRef.current
+      if (messageId) {
         setMessages(prev => prev.map(m =>
-          m.id === streamingMessageIdRef.current
+          m.id === messageId
             ? { ...m, content: m.content + content }
             : m
         ))
@@ -98,9 +100,12 @@ export function useChat(options: UseChatOptions) {
     },
     onComplete: (fullContent, usage) => {
       // Finalize the streaming message
-      if (streamingMessageIdRef.current) {
+      // IMPORTANT: Capture message ID before setMessages because React batches state updates.
+      // The mapper function runs later, and by then streamingMessageIdRef.current would be null.
+      const messageId = streamingMessageIdRef.current
+      if (messageId) {
         setMessages(prev => prev.map(m =>
-          m.id === streamingMessageIdRef.current
+          m.id === messageId
             ? {
                 ...m,
                 content: fullContent,
@@ -115,7 +120,7 @@ export function useChat(options: UseChatOptions) {
             : m
         ))
 
-        const finalMessage = messages.find(m => m.id === streamingMessageIdRef.current)
+        const finalMessage = messages.find(m => m.id === messageId)
         if (finalMessage) {
           onStreamComplete?.({ ...finalMessage, content: fullContent, isStreaming: false })
         }

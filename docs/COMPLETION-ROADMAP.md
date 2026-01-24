@@ -303,6 +303,7 @@ By building foundational systems first, we avoid rework and ensure chat has all 
   - [x] DeepSeek provider
   - [x] OpenRouter provider (multi-model gateway)
   - [x] ElectronHub provider (API URL fixed)
+  - [x] GLM (Zhipu AI) provider with 16 models (non-streaming due to CF Workers H2 issue)
 - [x] Implement SSE streaming for LLM responses
 - [x] Create `/api/chat/stream/[messageId]` SSE endpoint
 - [x] Create `/api/chat/send` message sending endpoint
@@ -339,6 +340,10 @@ By building foundational systems first, we avoid rework and ensure chat has all 
 - [ ] Add wellness gate checks before sending
 - [ ] Implement voice input capabilities
 - [ ] Add file sharing in chat
+- [ ] **GLM Streaming Investigation** (see [GLM-STREAMING-ISSUE.md](GLM-STREAMING-ISSUE.md))
+  - [ ] Test client-side pseudo-streaming for GLM
+  - [ ] Prototype streaming proxy Worker
+  - [ ] Monitor GLM/Cloudflare updates for H2 fix
 
 ### **PHASE 10: Polish & Integration** (Week 19)
 - [ ] Replace all remaining mock data with real queries
@@ -584,6 +589,27 @@ When you add new Payload collections or modify existing ones:
 ---
 
 ## 🔄 **Recent Changes**
+
+### **2026-01-24 Updates:**
+- ✅ **GLM (Zhipu AI) Provider Implementation**
+  - Added GLM as 7th LLM provider with 16 models (GLM-4.7, 4.6, 4.5 series)
+  - API endpoint: `https://api.z.ai/api/paas/v4/chat/completions`
+  - Uses OpenAI-compatible format
+  - **Non-streaming mode** due to Cloudflare Workers H2 compatibility issue
+  - Files modified:
+    - `src/lib/llm/providers/glm.ts` - New provider implementation
+    - `src/lib/llm/types.ts` - Added 'glm' to ProviderName union
+    - `src/lib/llm/index.ts` - Registered GLM provider
+    - `src/lib/llm/token-counter.ts` - Added GLM context windows (128k)
+    - `src/collections/ApiKey.ts` - Added GLM provider option
+    - `src/modules/chat/ui/components/model-selector.tsx` - Added GLM models
+    - `src/modules/chat/ui/components/api-key-selector.tsx` - Added GLM color
+- ✅ **GLM Streaming Issue Documentation**
+  - Created [GLM-STREAMING-ISSUE.md](GLM-STREAMING-ISSUE.md) documenting:
+    - Root cause: HTTP/2 protocol error with CF Workers and GLM SSE streaming
+    - Current workaround: Non-streaming mode (responses appear all at once)
+    - Potential solutions: proxy service, pseudo-streaming, WebSocket, monitoring for platform updates
+  - Added investigation items to roadmap for future streaming fixes
 
 ### **2026-01-23 Updates:**
 - ✅ **Memory CRUD Operations**
@@ -1154,8 +1180,8 @@ When you add new Payload collections or modify existing ones:
 
 ---
 
-**Last Updated**: 2026-01-23
-**Version**: 3.17
-**Total Tasks**: 180
-**Completed**: 173
-**Progress**: ~96% (memory CRUD)
+**Last Updated**: 2026-01-24
+**Version**: 3.18
+**Total Tasks**: 184
+**Completed**: 174
+**Progress**: ~95% (GLM provider added)

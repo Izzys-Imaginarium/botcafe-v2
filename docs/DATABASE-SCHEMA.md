@@ -1,7 +1,7 @@
 # BotCafe v2 - Database Schema
 
-**Last Updated**: 2026-01-23
-**Version**: 3.7
+**Last Updated**: 2026-01-24
+**Version**: 3.8
 **Database**: Cloudflare D1 (SQLite) via Payload CMS
 
 ---
@@ -565,7 +565,7 @@ Multi-provider API key management.
 |-------|------|-------------|
 | `id` | string | Primary key |
 | `user` | relationship (Users) | Owner |
-| `provider` | select | Provider: openai, anthropic, mistral, etc. |
+| `provider` | select | Provider: openai, anthropic, google, deepseek, openrouter, electronhub, glm |
 | `key_encrypted` | text | Encrypted API key |
 | `is_active` | checkbox | Active status |
 | `last_used` | date | Last usage |

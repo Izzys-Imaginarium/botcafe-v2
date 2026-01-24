@@ -6,7 +6,18 @@
  */
 
 import type { Payload } from 'payload'
+import { getPayload } from 'payload'
+import config from '@payload-config'
 import type { Conversation, Message, Memory } from '@/payload-types'
+
+/**
+ * Get a fresh Payload instance for background operations
+ * This ensures the instance isn't tied to request lifecycle
+ */
+async function getBackgroundPayload(): Promise<Payload> {
+  const payloadConfig = await config
+  return getPayload({ config: payloadConfig })
+}
 
 export interface MemoryTriggerConfig {
   messageThreshold: number // Generate every N messages
@@ -76,9 +87,11 @@ export async function checkMemoryTrigger(
 
 /**
  * Generate a memory from recent conversation messages
+ * Note: Creates its own Payload instance for background operations to avoid
+ * issues with request lifecycle terminating the connection
  */
 export async function generateConversationMemory(
-  payload: Payload,
+  _payload: Payload | null, // Ignored - we create our own instance for background safety
   conversationId: number,
   options: {
     forceGenerate?: boolean
@@ -93,6 +106,11 @@ export async function generateConversationMemory(
   console.log(`[Memory Service] generateConversationMemory called for conversation ${conversationId}, forceGenerate=${options.forceGenerate}`)
 
   try {
+    // Create our own Payload instance to avoid request lifecycle issues
+    console.log(`[Memory Service] Creating fresh Payload instance...`)
+    const payload = await getBackgroundPayload()
+    console.log(`[Memory Service] Payload instance ready`)
+
     // Check if generation is needed (unless forced)
     if (!options.forceGenerate) {
       const trigger = await checkMemoryTrigger(payload, conversationId, options.config)

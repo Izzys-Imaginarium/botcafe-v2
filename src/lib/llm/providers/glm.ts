@@ -11,9 +11,8 @@ import type {
   SendMessageParams,
   ProviderConfig,
   StreamChunk,
-  OpenAIStreamResponse,
 } from '../types'
-import { LLMError, parseSSELine } from '../types'
+import { LLMError } from '../types'
 import { estimateTokens } from '../token-counter'
 
 const GLM_API_URL = 'https://api.z.ai/api/paas/v4/chat/completions'
@@ -53,13 +52,14 @@ export const glmProvider: LLMProvider = {
 
     // GLM uses standard OpenAI-compatible format but may not support all fields
     // Remove 'name' field as GLM doesn't support it
+    // NOTE: Using non-streaming due to Cloudflare Workers H2 compatibility issues
     const body = {
       model: params.model || this.defaultModel,
       messages: params.messages.map((m) => ({
         role: m.role,
         content: m.content,
       })),
-      stream: true,
+      stream: false, // Disabled streaming due to CF Workers H2 issues
       ...(params.temperature !== undefined && { temperature: params.temperature }),
       ...(params.maxTokens && { max_tokens: params.maxTokens }),
       ...(params.topP !== undefined && { top_p: params.topP }),
@@ -69,6 +69,7 @@ export const glmProvider: LLMProvider = {
     console.log('[GLM] Request to:', url)
     console.log('[GLM] Model:', body.model)
     console.log('[GLM] Message count:', body.messages.length)
+    console.log('[GLM] Stream mode:', body.stream)
 
     let response: Response
 
@@ -129,83 +130,39 @@ export const glmProvider: LLMProvider = {
       )
     }
 
-    if (!response.body) {
-      throw new LLMError('No response body', 'STREAM_ERROR', 'glm')
+    // Non-streaming response handling
+    // (Streaming disabled due to Cloudflare Workers H2 compatibility issues with GLM)
+    const responseData = await response.json() as {
+      choices?: Array<{
+        message?: { content?: string; role?: string }
+        finish_reason?: string
+      }>
+      usage?: {
+        prompt_tokens: number
+        completion_tokens: number
+        total_tokens: number
+      }
     }
 
-    const reader = response.body.getReader()
-    const decoder = new TextDecoder()
-    let buffer = ''
-    let chunkCount = 0
+    console.log('[GLM] Response received, choices:', responseData.choices?.length)
 
-    console.log('[GLM] Starting stream read, status:', response.status)
-
-    try {
-      while (true) {
-        const { done, value } = await reader.read()
-
-        if (done) {
-          console.log('[GLM] Stream done, total chunks:', chunkCount)
-          break
-        }
-
-        const chunk = decoder.decode(value, { stream: true })
-        buffer += chunk
-
-        // Log first few chunks for debugging
-        if (chunkCount < 3) {
-          console.log(`[GLM] Raw chunk ${chunkCount}:`, chunk.substring(0, 200))
-        }
-        chunkCount++
-
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-
-        for (const line of lines) {
-          const trimmed = line.trim()
-          if (!trimmed) continue
-
-          const data = parseSSELine(trimmed)
-          if (data === null) {
-            yield { content: '', done: true }
-            return
-          }
-
-          if (data) {
-            try {
-              const parsed: OpenAIStreamResponse = JSON.parse(data)
-
-              const choice = parsed.choices?.[0]
-              if (choice) {
-                const content = choice.delta?.content || ''
-                const isDone = choice.finish_reason !== null
-
-                yield {
-                  content,
-                  done: isDone,
-                  finishReason: choice.finish_reason as StreamChunk['finishReason'],
-                  ...(parsed.usage && {
-                    usage: {
-                      inputTokens: parsed.usage.prompt_tokens,
-                      outputTokens: parsed.usage.completion_tokens,
-                      totalTokens: parsed.usage.total_tokens,
-                    },
-                  }),
-                }
-
-                if (isDone) {
-                  return
-                }
-              }
-            } catch (parseError) {
-              console.error('[GLM] Parse error for data:', data.substring(0, 200), parseError)
-              continue
-            }
-          }
-        }
+    const choice = responseData.choices?.[0]
+    if (choice?.message?.content) {
+      yield {
+        content: choice.message.content,
+        done: true,
+        finishReason: (choice.finish_reason as StreamChunk['finishReason']) || 'stop',
+        ...(responseData.usage && {
+          usage: {
+            inputTokens: responseData.usage.prompt_tokens,
+            outputTokens: responseData.usage.completion_tokens,
+            totalTokens: responseData.usage.total_tokens,
+          },
+        }),
       }
-    } finally {
-      reader.releaseLock()
+    } else {
+      console.error('[GLM] No content in response:', JSON.stringify(responseData).substring(0, 500))
+      throw new LLMError('No content in GLM response', 'PARSE_ERROR', 'glm')
     }
   },
 

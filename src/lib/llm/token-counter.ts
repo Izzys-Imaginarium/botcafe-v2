@@ -199,6 +199,10 @@ export function getContextWindow(model: string): number {
   if (modelLower.includes('deepseek-chat')) return 32768
   if (modelLower.includes('deepseek-coder')) return 16384
 
+  // GLM (Zhipu AI)
+  if (modelLower.includes('glm-4-long')) return 1000000
+  if (modelLower.includes('glm-4')) return 128000
+
   // Llama models (via OpenRouter, etc.)
   if (modelLower.includes('llama-3.1')) return 131072
   if (modelLower.includes('llama-3')) return 8192
@@ -226,6 +230,9 @@ export function getMaxOutputTokens(model: string): number {
 
   // Google models
   if (modelLower.includes('gemini')) return 8192
+
+  // GLM (Zhipu AI)
+  if (modelLower.includes('glm-4')) return 4096
 
   // Default
   return 4096

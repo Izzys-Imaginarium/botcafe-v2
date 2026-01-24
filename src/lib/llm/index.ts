@@ -23,6 +23,7 @@ import { googleProvider } from './providers/google'
 import { deepseekProvider } from './providers/deepseek'
 import { openrouterProvider } from './providers/openrouter'
 import { electronhubProvider } from './providers/electronhub'
+import { glmProvider } from './providers/glm'
 
 // Provider registry
 const providers: Record<ProviderName, LLMProvider> = {
@@ -32,6 +33,7 @@ const providers: Record<ProviderName, LLMProvider> = {
   deepseek: deepseekProvider,
   openrouter: openrouterProvider,
   electronhub: electronhubProvider,
+  glm: glmProvider,
 }
 
 /**

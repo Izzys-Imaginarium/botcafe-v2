@@ -107,6 +107,18 @@ const providerModels: Record<string, { models: string[]; default: string; displa
     default: '', // No default - user must enter custom model
     models: [], // No predefined models - custom input only
   },
+  glm: {
+    displayName: 'GLM (Zhipu AI)',
+    default: 'glm-4-flash',
+    models: [
+      'glm-4-plus',
+      'glm-4-long',
+      'glm-4-flashx',
+      'glm-4-flash',
+      'glm-4-alltools',
+      'glm-4.7',
+    ],
+  },
 }
 
 // Friendly model names for display
@@ -153,6 +165,13 @@ const modelDisplayNames: Record<string, string> = {
   // DeepSeek
   'deepseek-chat': 'DeepSeek Chat',
   'deepseek-reasoner': 'DeepSeek Reasoner',
+  // GLM (Zhipu AI)
+  'glm-4-plus': 'GLM-4 Plus',
+  'glm-4-long': 'GLM-4 Long',
+  'glm-4-flashx': 'GLM-4 FlashX',
+  'glm-4-flash': 'GLM-4 Flash',
+  'glm-4-alltools': 'GLM-4 AllTools',
+  'glm-4.7': 'GLM-4.7',
   // OpenRouter - Anthropic
   'anthropic/claude-opus-4.5': 'Claude Opus 4.5',
   'anthropic/claude-sonnet-4.5': 'Claude Sonnet 4.5',

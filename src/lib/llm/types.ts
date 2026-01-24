@@ -12,6 +12,7 @@ export type ProviderName =
   | 'deepseek'
   | 'openrouter'
   | 'electronhub'
+  | 'glm'
 
 // Chat message role
 export type MessageRole = 'system' | 'user' | 'assistant'

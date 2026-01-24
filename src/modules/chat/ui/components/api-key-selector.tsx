@@ -34,6 +34,7 @@ const providerInfo: Record<string, { name: string; color: string }> = {
   deepseek: { name: 'DeepSeek', color: 'text-purple-500' },
   openrouter: { name: 'OpenRouter', color: 'text-cyan-500' },
   electronhub: { name: 'ElectronHub', color: 'text-yellow-500' },
+  glm: { name: 'GLM (Zhipu AI)', color: 'text-rose-500' },
 }
 
 export interface ApiKeySelectorProps {

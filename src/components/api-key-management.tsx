@@ -53,6 +53,7 @@ const providerOptions = [
   { label: 'DeepSeek', value: 'deepseek' },
   { label: 'OpenRouter', value: 'openrouter' },
   { label: 'Electron Hub', value: 'electronhub' },
+  { label: 'GLM (Zhipu AI)', value: 'glm' },
 ]
 
 export const ApiKeyManagement = () => {

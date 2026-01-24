@@ -123,6 +123,7 @@ export async function GET(request: NextRequest) {
       page: Math.floor(offset / limit) + 1,
       sort: '-created_timestamp',
       depth: 2, // Include bot and lore_entry relationships
+      overrideAccess: true, // We use Clerk auth, not Payload auth
     })
 
     return NextResponse.json({

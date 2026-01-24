@@ -153,10 +153,24 @@ export async function generateConversationMemory(
       ? conversation.user.id
       : conversation.user
 
-    // Get first bot from participants
-    const botId = participants?.bots?.[0]
-      ? parseInt(participants.bots[0])
-      : null
+    // Get first bot from participants, fallback to bot_participation
+    let botId: number | null = null
+    if (participants?.bots?.[0]) {
+      botId = parseInt(participants.bots[0])
+    } else if (conversation.bot_participation && Array.isArray(conversation.bot_participation)) {
+      // Fallback to bot_participation array
+      const firstParticipation = conversation.bot_participation[0] as { bot_id?: number } | undefined
+      botId = firstParticipation?.bot_id || null
+    }
+
+    console.log(`[Memory Service] Participants:`, JSON.stringify(participants))
+    console.log(`[Memory Service] Bot participation:`, JSON.stringify(conversation.bot_participation))
+
+    // If still no bot, we can't create the memory (bot is required)
+    if (!botId) {
+      console.error(`[Memory Service] No bot found for conversation ${conversationId}`)
+      return { success: false, error: 'No bot found in conversation' }
+    }
 
     // Create memory
     console.log(`[Memory Service] Creating memory for user=${userId}, bot=${botId}, conversation=${conversationId}`)

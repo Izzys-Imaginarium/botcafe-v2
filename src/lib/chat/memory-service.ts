@@ -285,10 +285,10 @@ function buildSimpleSummary(messages: Message[]): string {
 }
 
 /**
- * Calculate importance score for a set of messages
+ * Calculate importance score for a set of messages (returns 1-10)
  */
 function calculateImportance(messages: Message[]): number {
-  let score = 0.5 // Base score
+  let score = 0.5 // Base score (0-1 scale internally)
 
   // More messages = more important
   if (messages.length > 10) score += 0.1
@@ -310,8 +310,9 @@ function calculateImportance(messages: Message[]): number {
   if (allText.includes('?')) score += 0.05
   if (allText.includes('!')) score += 0.03
 
-  // Cap at 1.0
-  return Math.min(score, 1.0)
+  // Cap at 1.0 and scale to 1-10 range
+  const normalized = Math.min(score, 1.0)
+  return Math.round(normalized * 9) + 1 // Maps 0-1 to 1-10
 }
 
 /**
@@ -342,10 +343,10 @@ export async function retrieveRelevantMemories(
   options: {
     personaId?: number
     limit?: number
-    minImportance?: number
+    minImportance?: number // 1-10 scale
   } = {}
 ): Promise<Memory[]> {
-  const { limit = 5, minImportance = 0.3 } = options
+  const { limit = 5, minImportance = 3 } = options // 3 = low threshold on 1-10 scale
 
   const where: Record<string, unknown> = {
     user: { equals: userId },

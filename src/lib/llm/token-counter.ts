@@ -200,7 +200,10 @@ export function getContextWindow(model: string): number {
   if (modelLower.includes('deepseek-coder')) return 16384
 
   // GLM (Zhipu AI)
-  if (modelLower.includes('glm-4-long')) return 1000000
+  if (modelLower.includes('glm-4-32b-0414-128k')) return 128000
+  if (modelLower.includes('glm-4.7')) return 128000
+  if (modelLower.includes('glm-4.6')) return 128000
+  if (modelLower.includes('glm-4.5')) return 128000
   if (modelLower.includes('glm-4')) return 128000
 
   // Llama models (via OpenRouter, etc.)

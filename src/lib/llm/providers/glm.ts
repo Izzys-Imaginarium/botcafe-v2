@@ -19,19 +19,31 @@ import { estimateTokens } from '../token-counter'
 const GLM_API_URL = 'https://api.z.ai/api/paas/v4/chat/completions'
 
 const SUPPORTED_MODELS = [
-  'glm-4-plus',
-  'glm-4-long',
-  'glm-4-flashx',
-  'glm-4-flash',
-  'glm-4-alltools',
+  // GLM-4.7 Series
   'glm-4.7',
+  'glm-4.7-flashx',
+  'glm-4.7-flash', // Free
+  // GLM-4.6 Series
+  'glm-4.6',
+  'glm-4.6v', // Vision
+  'glm-4.6v-flashx',
+  'glm-4.6v-flash', // Free
+  // GLM-4.5 Series
+  'glm-4.5',
+  'glm-4.5v', // Vision
+  'glm-4.5-x',
+  'glm-4.5-air',
+  'glm-4.5-airx',
+  'glm-4.5-flash', // Free
+  // Special
+  'glm-4-32b-0414-128k',
 ]
 
 export const glmProvider: LLMProvider = {
   name: 'glm',
   displayName: 'GLM (Zhipu AI)',
   supportedModels: SUPPORTED_MODELS,
-  defaultModel: 'glm-4-flash',
+  defaultModel: 'glm-4.7-flash',
 
   async *sendMessage(
     params: SendMessageParams,

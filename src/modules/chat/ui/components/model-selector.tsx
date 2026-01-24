@@ -109,14 +109,26 @@ const providerModels: Record<string, { models: string[]; default: string; displa
   },
   glm: {
     displayName: 'GLM (Zhipu AI)',
-    default: 'glm-4-flash',
+    default: 'glm-4.7-flash',
     models: [
-      'glm-4-plus',
-      'glm-4-long',
-      'glm-4-flashx',
-      'glm-4-flash',
-      'glm-4-alltools',
+      // GLM-4.7 Series
       'glm-4.7',
+      'glm-4.7-flashx',
+      'glm-4.7-flash',
+      // GLM-4.6 Series
+      'glm-4.6',
+      'glm-4.6v',
+      'glm-4.6v-flashx',
+      'glm-4.6v-flash',
+      // GLM-4.5 Series
+      'glm-4.5',
+      'glm-4.5v',
+      'glm-4.5-x',
+      'glm-4.5-air',
+      'glm-4.5-airx',
+      'glm-4.5-flash',
+      // Special
+      'glm-4-32b-0414-128k',
     ],
   },
 }
@@ -165,13 +177,24 @@ const modelDisplayNames: Record<string, string> = {
   // DeepSeek
   'deepseek-chat': 'DeepSeek Chat',
   'deepseek-reasoner': 'DeepSeek Reasoner',
-  // GLM (Zhipu AI)
-  'glm-4-plus': 'GLM-4 Plus',
-  'glm-4-long': 'GLM-4 Long',
-  'glm-4-flashx': 'GLM-4 FlashX',
-  'glm-4-flash': 'GLM-4 Flash',
-  'glm-4-alltools': 'GLM-4 AllTools',
+  // GLM (Zhipu AI) - 4.7 Series
   'glm-4.7': 'GLM-4.7',
+  'glm-4.7-flashx': 'GLM-4.7 FlashX',
+  'glm-4.7-flash': 'GLM-4.7 Flash (Free)',
+  // GLM - 4.6 Series
+  'glm-4.6': 'GLM-4.6',
+  'glm-4.6v': 'GLM-4.6V (Vision)',
+  'glm-4.6v-flashx': 'GLM-4.6V FlashX',
+  'glm-4.6v-flash': 'GLM-4.6V Flash (Free)',
+  // GLM - 4.5 Series
+  'glm-4.5': 'GLM-4.5',
+  'glm-4.5v': 'GLM-4.5V (Vision)',
+  'glm-4.5-x': 'GLM-4.5-X',
+  'glm-4.5-air': 'GLM-4.5 Air',
+  'glm-4.5-airx': 'GLM-4.5 AirX',
+  'glm-4.5-flash': 'GLM-4.5 Flash (Free)',
+  // GLM - Special
+  'glm-4-32b-0414-128k': 'GLM-4 32B 128K',
   // OpenRouter - Anthropic
   'anthropic/claude-opus-4.5': 'Claude Opus 4.5',
   'anthropic/claude-sonnet-4.5': 'Claude Sonnet 4.5',

@@ -90,10 +90,13 @@ export async function generateConversationMemory(
   summary?: string
   error?: string
 }> {
+  console.log(`[Memory Service] generateConversationMemory called for conversation ${conversationId}, forceGenerate=${options.forceGenerate}`)
+
   try {
     // Check if generation is needed (unless forced)
     if (!options.forceGenerate) {
       const trigger = await checkMemoryTrigger(payload, conversationId, options.config)
+      console.log(`[Memory Service] Trigger check result:`, trigger)
       if (!trigger.shouldGenerate) {
         return { success: false, error: 'Memory generation not needed yet' }
       }
@@ -113,6 +116,7 @@ export async function generateConversationMemory(
 
     // Get messages since last summarization
     const lastIndex = conversation.last_summarized_message_index || 0
+    console.log(`[Memory Service] Fetching messages for conversation ${conversationId}, lastIndex=${lastIndex}`)
 
     const messages = await payload.find({
       collection: 'message',
@@ -125,11 +129,14 @@ export async function generateConversationMemory(
       overrideAccess: true,
     })
 
+    console.log(`[Memory Service] Found ${messages.docs.length} total messages`)
+
     // Filter to messages after last summarization
     const newMessages = messages.docs.slice(lastIndex)
+    console.log(`[Memory Service] ${newMessages.length} new messages to summarize (after index ${lastIndex})`)
 
-    if (newMessages.length < 5) {
-      return { success: false, error: 'Not enough new messages to summarize' }
+    if (newMessages.length === 0) {
+      return { success: false, error: 'No new messages to summarize' }
     }
 
     // Build summary text (will be enhanced with AI summarization later)
@@ -152,6 +159,7 @@ export async function generateConversationMemory(
       : null
 
     // Create memory
+    console.log(`[Memory Service] Creating memory for user=${userId}, bot=${botId}, conversation=${conversationId}`)
     const memory = await payload.create({
       collection: 'memory',
       data: {
@@ -170,6 +178,7 @@ export async function generateConversationMemory(
       },
       overrideAccess: true,
     })
+    console.log(`[Memory Service] Memory created with ID: ${memory.id}`)
 
     // Update conversation
     await payload.update({

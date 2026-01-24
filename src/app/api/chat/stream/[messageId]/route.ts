@@ -308,16 +308,21 @@ export async function GET(
         const hasEverSummarized = (conversation.last_summarized_message_index || 0) > 0
         const shouldCheck = newTokens > 4000
 
+        console.log(`[Memory Trigger] Conversation ${conversation.id}: tokens=${newTokens}, threshold=4000, shouldCheck=${shouldCheck}, hasEverSummarized=${hasEverSummarized}`)
+
         if (shouldCheck) {
+          console.log(`[Memory Trigger] Attempting memory generation for conversation ${conversation.id}, forceGenerate=${!hasEverSummarized}`)
           generateConversationMemory(payload, conversation.id, {
             forceGenerate: !hasEverSummarized, // Force first memory, use checks for subsequent
           })
             .then(result => {
               if (result.success) {
-                console.log(`Memory auto-generated for conversation ${conversation.id}:`, result.memoryId)
+                console.log(`[Memory Trigger] SUCCESS - Memory auto-generated for conversation ${conversation.id}:`, result.memoryId)
+              } else {
+                console.log(`[Memory Trigger] SKIPPED - Conversation ${conversation.id}:`, result.error)
               }
             })
-            .catch(err => console.error('Memory auto-generation error:', err))
+            .catch(err => console.error('[Memory Trigger] ERROR:', err))
         }
 
         // Update API key usage (non-blocking)

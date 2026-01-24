@@ -51,12 +51,13 @@ export const glmProvider: LLMProvider = {
   ): AsyncGenerator<StreamChunk, void, unknown> {
     const url = config.baseUrl || GLM_API_URL
 
+    // GLM uses standard OpenAI-compatible format but may not support all fields
+    // Remove 'name' field as GLM doesn't support it
     const body = {
       model: params.model || this.defaultModel,
       messages: params.messages.map((m) => ({
         role: m.role,
         content: m.content,
-        ...(m.name && { name: m.name }),
       })),
       stream: true,
       ...(params.temperature !== undefined && { temperature: params.temperature }),
@@ -64,6 +65,10 @@ export const glmProvider: LLMProvider = {
       ...(params.topP !== undefined && { top_p: params.topP }),
       ...(params.stop && { stop: params.stop }),
     }
+
+    console.log('[GLM] Request to:', url)
+    console.log('[GLM] Model:', body.model)
+    console.log('[GLM] Message count:', body.messages.length)
 
     let response: Response
 
@@ -89,8 +94,16 @@ export const glmProvider: LLMProvider = {
     }
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({})) as { error?: { message?: string } }
-      const errorMessage = errorData.error?.message || `HTTP ${response.status}`
+      const errorText = await response.text().catch(() => '')
+      console.error('[GLM] Error response:', response.status, errorText)
+
+      let errorData: { error?: { message?: string; code?: string } } = {}
+      try {
+        errorData = JSON.parse(errorText)
+      } catch {
+        // Not JSON, use raw text
+      }
+      const errorMessage = errorData.error?.message || errorText || `HTTP ${response.status}`
 
       let errorCode: LLMError['code'] = 'UNKNOWN_ERROR'
       let retryable = false
@@ -123,16 +136,27 @@ export const glmProvider: LLMProvider = {
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
     let buffer = ''
+    let chunkCount = 0
+
+    console.log('[GLM] Starting stream read, status:', response.status)
 
     try {
       while (true) {
         const { done, value } = await reader.read()
 
         if (done) {
+          console.log('[GLM] Stream done, total chunks:', chunkCount)
           break
         }
 
-        buffer += decoder.decode(value, { stream: true })
+        const chunk = decoder.decode(value, { stream: true })
+        buffer += chunk
+
+        // Log first few chunks for debugging
+        if (chunkCount < 3) {
+          console.log(`[GLM] Raw chunk ${chunkCount}:`, chunk.substring(0, 200))
+        }
+        chunkCount++
 
         const lines = buffer.split('\n')
         buffer = lines.pop() || ''
@@ -173,7 +197,8 @@ export const glmProvider: LLMProvider = {
                   return
                 }
               }
-            } catch {
+            } catch (parseError) {
+              console.error('[GLM] Parse error for data:', data.substring(0, 200), parseError)
               continue
             }
           }

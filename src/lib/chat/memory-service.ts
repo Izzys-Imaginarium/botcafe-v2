@@ -124,13 +124,19 @@ export async function generateConversationMemory(
 
     // Fetch conversation with details
     console.log(`[Memory Service] Fetching conversation ${conversationId} from database...`)
-    const conversation = await payload.findByID({
-      collection: 'conversation',
-      id: conversationId,
-      depth: 2,
-      overrideAccess: true,
-    }) as Conversation | null
-    console.log(`[Memory Service] Conversation fetch complete: ${conversation ? `found (user: ${typeof conversation.user === 'object' ? conversation.user.id : conversation.user})` : 'NOT FOUND'}`)
+    let conversation: Conversation | null = null
+    try {
+      conversation = await payload.findByID({
+        collection: 'conversation',
+        id: conversationId,
+        depth: 2,
+        overrideAccess: true,
+      }) as Conversation | null
+      console.log(`[Memory Service] Conversation fetch complete: ${conversation ? `found (user: ${typeof conversation.user === 'object' ? conversation.user.id : conversation.user})` : 'NOT FOUND'}`)
+    } catch (fetchError) {
+      console.error(`[Memory Service] ERROR fetching conversation:`, fetchError)
+      return { success: false, error: `Failed to fetch conversation: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}` }
+    }
 
     if (!conversation) {
       console.log(`[Memory Service] ERROR: Conversation ${conversationId} not found in database`)

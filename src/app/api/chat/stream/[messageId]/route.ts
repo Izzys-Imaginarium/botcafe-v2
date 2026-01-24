@@ -302,7 +302,8 @@ export async function GET(
           overrideAccess: true,
         })
 
-        // Trigger memory auto-generation (non-blocking)
+        // Trigger memory auto-generation
+        // Must be awaited - fire-and-forget promises get terminated in Cloudflare Workers
         // First memory: Force generate when tokens first exceed threshold
         // Subsequent memories: Let the message count threshold (20 messages) decide
         const hasEverSummarized = (conversation.last_summarized_message_index || 0) > 0
@@ -312,31 +313,36 @@ export async function GET(
 
         if (shouldCheck) {
           console.log(`[Memory Trigger] Attempting memory generation for conversation ${conversation.id}, forceGenerate=${!hasEverSummarized}`)
-          generateConversationMemory(payload, conversation.id, {
-            forceGenerate: !hasEverSummarized, // Force first memory, use checks for subsequent
-          })
-            .then(result => {
-              if (result.success) {
-                console.log(`[Memory Trigger] SUCCESS - Memory auto-generated for conversation ${conversation.id}:`, result.memoryId)
-              } else {
-                console.log(`[Memory Trigger] SKIPPED - Conversation ${conversation.id}:`, result.error)
-              }
+          try {
+            const result = await generateConversationMemory(payload, conversation.id, {
+              forceGenerate: !hasEverSummarized, // Force first memory, use checks for subsequent
             })
-            .catch(err => console.error('[Memory Trigger] ERROR:', err))
+            if (result.success) {
+              console.log(`[Memory Trigger] SUCCESS - Memory auto-generated for conversation ${conversation.id}:`, result.memoryId)
+            } else {
+              console.log(`[Memory Trigger] SKIPPED - Conversation ${conversation.id}:`, result.error)
+            }
+          } catch (memoryError) {
+            console.error('[Memory Trigger] ERROR:', memoryError)
+          }
         }
 
-        // Update API key usage (non-blocking)
-        payload.update({
-          collection: 'api-key',
-          id: apiKey.id,
-          data: {
-            security_features: {
-              ...apiKey.security_features,
-              last_used: new Date().toISOString(),
+        // Update API key usage
+        try {
+          await payload.update({
+            collection: 'api-key',
+            id: apiKey.id,
+            data: {
+              security_features: {
+                ...apiKey.security_features,
+                last_used: new Date().toISOString(),
+              },
             },
-          },
-          overrideAccess: true,
-        }).catch(console.error)
+            overrideAccess: true,
+          })
+        } catch (apiKeyError) {
+          console.error('[API Key Update] ERROR:', apiKeyError)
+        }
 
         // Close the stream after all database updates complete
         controller.close()

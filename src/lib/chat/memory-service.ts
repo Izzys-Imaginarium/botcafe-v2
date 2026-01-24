@@ -100,17 +100,22 @@ export async function generateConversationMemory(
       if (!trigger.shouldGenerate) {
         return { success: false, error: 'Memory generation not needed yet' }
       }
+    } else {
+      console.log(`[Memory Service] Skipping trigger check (forceGenerate=true)`)
     }
 
     // Fetch conversation with details
+    console.log(`[Memory Service] Fetching conversation ${conversationId} from database...`)
     const conversation = await payload.findByID({
       collection: 'conversation',
       id: conversationId,
       depth: 2,
       overrideAccess: true,
     }) as Conversation | null
+    console.log(`[Memory Service] Conversation fetch complete: ${conversation ? `found (user: ${typeof conversation.user === 'object' ? conversation.user.id : conversation.user})` : 'NOT FOUND'}`)
 
     if (!conversation) {
+      console.log(`[Memory Service] ERROR: Conversation ${conversationId} not found in database`)
       return { success: false, error: 'Conversation not found' }
     }
 
@@ -216,7 +221,7 @@ export async function generateConversationMemory(
       summary,
     }
   } catch (error) {
-    console.error('Error generating memory:', error)
+    console.error('[Memory Service] ERROR - Exception in generateConversationMemory:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',

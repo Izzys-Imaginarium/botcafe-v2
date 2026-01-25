@@ -95,7 +95,6 @@ export interface Config {
     'user-agreements': UserAgreement;
     documentation: Documentation;
     tutorials: Tutorial;
-    'support-tickets': SupportTicket;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -130,7 +129,6 @@ export interface Config {
     'user-agreements': UserAgreementsSelect<false> | UserAgreementsSelect<true>;
     documentation: DocumentationSelect<false> | DocumentationSelect<true>;
     tutorials: TutorialsSelect<false> | TutorialsSelect<true>;
-    'support-tickets': SupportTicketsSelect<false> | SupportTicketsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -2489,146 +2487,6 @@ export interface Tutorial {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "support-tickets".
- */
-export interface SupportTicket {
-  id: number;
-  title: string;
-  description: string;
-  category:
-    | 'account-issues'
-    | 'bot-creation'
-    | 'bot-management'
-    | 'knowledge-base'
-    | 'payment-billing'
-    | 'technical-issues'
-    | 'feature-requests'
-    | 'bug-reports'
-    | 'api-support'
-    | 'integration-help'
-    | 'performance-issues'
-    | 'security-concerns'
-    | 'legal-compliance'
-    | 'general-inquiry';
-  priority: 'low' | 'medium' | 'high' | 'urgent' | 'critical';
-  status: 'open' | 'in-progress' | 'waiting-for-user' | 'resolved' | 'closed' | 'escalated';
-  creator?: (number | null) | User;
-  /**
-   * User who submitted the support ticket
-   */
-  user: number | User;
-  /**
-   * Support agent assigned to this ticket
-   */
-  assignedTo?: (number | null) | User;
-  createdAt: string;
-  updatedAt: string;
-  /**
-   * When the ticket was resolved
-   */
-  resolvedAt?: string | null;
-  /**
-   * Conversation messages between user and support
-   */
-  messages?:
-    | {
-        messageId: string;
-        sender: number | User;
-        content: {
-          root: {
-            type: string;
-            children: {
-              type: any;
-              version: number;
-              [k: string]: unknown;
-            }[];
-            direction: ('ltr' | 'rtl') | null;
-            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-            indent: number;
-            version: number;
-          };
-          [k: string]: unknown;
-        };
-        timestamp?: string | null;
-        /**
-         * Whether this is an internal note (not visible to user)
-         */
-        isInternal?: boolean | null;
-        attachments?: (number | Media)[] | null;
-        id?: string | null;
-      }[]
-    | null;
-  tags?:
-    | {
-        tag?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Browser information when ticket was created
-   */
-  userAgent?: string | null;
-  /**
-   * IP address when ticket was created
-   */
-  ipAddress?: string | null;
-  /**
-   * User satisfaction rating (1-5 stars)
-   */
-  satisfactionRating?: number | null;
-  /**
-   * User feedback after ticket resolution
-   */
-  feedback?: string | null;
-  /**
-   * Estimated time to resolution in hours
-   */
-  estimatedResolutionTime?: number | null;
-  /**
-   * Actual time to resolution in hours
-   */
-  actualResolutionTime?: number | null;
-  escalationLevel: '1' | '2' | '3' | '4';
-  /**
-   * Whether follow-up is required after resolution
-   */
-  followUpRequired?: boolean | null;
-  /**
-   * Date for scheduled follow-up
-   */
-  followUpDate?: string | null;
-  /**
-   * Resolution description provided to user
-   */
-  resolution?: string | null;
-  resolutionMethod?:
-    | (
-        | 'self-service'
-        | 'remote-assistance'
-        | 'email-response'
-        | 'phone-call'
-        | 'code-fix'
-        | 'configuration-change'
-        | 'feature-implementation'
-        | 'documentation-update'
-        | 'other'
-      )
-    | null;
-  /**
-   * Whether this ticket has been escalated
-   */
-  isEscalated?: boolean | null;
-  /**
-   * Reason for escalation
-   */
-  escalationReason?: string | null;
-  /**
-   * Internal notes for support team (not visible to users)
-   */
-  internalNotes?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -2745,10 +2603,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'tutorials';
         value: number | Tutorial;
-      } | null)
-    | ({
-        relationTo: 'support-tickets';
-        value: number | SupportTicket;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -4059,54 +3913,6 @@ export interface TutorialsSelect<T extends boolean = true> {
       };
   updatedAt?: T;
   createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "support-tickets_select".
- */
-export interface SupportTicketsSelect<T extends boolean = true> {
-  title?: T;
-  description?: T;
-  category?: T;
-  priority?: T;
-  status?: T;
-  creator?: T;
-  user?: T;
-  assignedTo?: T;
-  createdAt?: T;
-  updatedAt?: T;
-  resolvedAt?: T;
-  messages?:
-    | T
-    | {
-        messageId?: T;
-        sender?: T;
-        content?: T;
-        timestamp?: T;
-        isInternal?: T;
-        attachments?: T;
-        id?: T;
-      };
-  tags?:
-    | T
-    | {
-        tag?: T;
-        id?: T;
-      };
-  userAgent?: T;
-  ipAddress?: T;
-  satisfactionRating?: T;
-  feedback?: T;
-  estimatedResolutionTime?: T;
-  actualResolutionTime?: T;
-  escalationLevel?: T;
-  followUpRequired?: T;
-  followUpDate?: T;
-  resolution?: T;
-  resolutionMethod?: T;
-  isEscalated?: T;
-  escalationReason?: T;
-  internalNotes?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

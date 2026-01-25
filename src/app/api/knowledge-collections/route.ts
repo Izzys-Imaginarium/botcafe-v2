@@ -8,6 +8,9 @@ export const dynamic = 'force-dynamic'
 interface CollectionCreateRequest {
   name: string
   description?: string
+  collection_metadata?: {
+    collection_category?: 'lore' | 'memories' | 'general'
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -71,6 +74,9 @@ export async function POST(request: NextRequest) {
           last_updated: new Date().toISOString(),
           is_public: false,
         },
+        collection_metadata: body.collection_metadata ? {
+          collection_category: body.collection_metadata.collection_category || 'general',
+        } : undefined,
       },
       overrideAccess: true,
     })

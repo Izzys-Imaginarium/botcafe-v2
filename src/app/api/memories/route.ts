@@ -75,6 +75,7 @@ function normalizeKnowledgeToMemory(knowledge: Knowledge): Record<string, unknow
  * Query params:
  * - type?: 'short_term' | 'long_term' | 'consolidated'
  * - botId?: string
+ * - collectionId?: string - Filter by knowledge collection (memory tome)
  * - convertedToLore?: 'true' | 'false'
  * - source?: 'memory' | 'knowledge' | 'all' (default: 'all')
  * - limit?: number (default: 50)
@@ -129,6 +130,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type')
     const botId = searchParams.get('botId')
+    const collectionId = searchParams.get('collectionId')
     const convertedToLore = searchParams.get('convertedToLore')
     const source = searchParams.get('source') || 'all' // 'memory', 'knowledge', or 'all'
     const limit = parseInt(searchParams.get('limit') || '50', 10)
@@ -138,7 +140,8 @@ export async function GET(request: NextRequest) {
     let totalCount = 0
 
     // Fetch from Memory collection (unless source is 'knowledge' only)
-    if (source === 'all' || source === 'memory') {
+    // If collectionId is specified, skip Memory collection (it doesn't support collections)
+    if ((source === 'all' || source === 'memory') && !collectionId) {
       // Build where clause for Memory collection
       const memoryWhere: Record<string, unknown> = {
         user: { equals: payloadUser.id },
@@ -176,7 +179,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch from Knowledge collection (unless source is 'memory' only)
     // Only get entries where is_legacy_memory=true (auto-generated memories)
-    if (source === 'all' || source === 'knowledge') {
+    if (source === 'all' || source === 'knowledge' || collectionId) {
       // Build where clause for Knowledge collection
       const knowledgeWhere: Record<string, unknown> = {
         user: { equals: payloadUser.id },
@@ -185,6 +188,11 @@ export async function GET(request: NextRequest) {
 
       if (botId) {
         knowledgeWhere.applies_to_bots = { contains: parseInt(botId, 10) }
+      }
+
+      // Filter by knowledge collection if specified
+      if (collectionId) {
+        knowledgeWhere.knowledge_collection = { equals: parseInt(collectionId, 10) }
       }
 
       // For type filter, only show knowledge entries for 'long_term' or 'all'
@@ -252,7 +260,8 @@ export async function GET(request: NextRequest) {
  *
  * Body:
  * - entry: string (required) - Memory content
- * - botId: number (required) - Associated bot
+ * - botId: number (optional) - Associated bot
+ * - collectionId: string (optional) - Store in a specific memory tome (Knowledge collection)
  * - type?: 'short_term' | 'long_term' | 'consolidated' (default: 'short_term')
  * - importance?: number (1-10, default: 5)
  * - emotional_context?: string
@@ -282,8 +291,9 @@ export async function POST(request: NextRequest) {
       importance?: number
       emotional_context?: string
       conversationId?: string | number
+      collectionId?: string | number // Memory tome (Knowledge collection)
     }
-    const { entry, botId, botIds, personaIds, type, importance, emotional_context, conversationId } = body
+    const { entry, botId, botIds, personaIds, type, importance, emotional_context, conversationId, collectionId } = body
 
     // Validate required fields
     if (!entry || typeof entry !== 'string' || entry.trim().length === 0) {
@@ -302,9 +312,15 @@ export async function POST(request: NextRequest) {
       if (!isNaN(singleId)) botIdNums = [singleId]
     }
 
-    if (botIdNums.length === 0) {
+    // Parse collection ID (for memory tomes)
+    const collectionIdNum = collectionId
+      ? (typeof collectionId === 'number' ? collectionId : parseInt(String(collectionId), 10))
+      : null
+
+    // Bot is required unless storing in a collection (memory tome)
+    if (botIdNums.length === 0 && !collectionIdNum) {
       return NextResponse.json(
-        { success: false, message: 'At least one Bot ID is required' },
+        { success: false, message: 'At least one Bot ID is required (unless storing in a memory tome)' },
         { status: 400 }
       )
     }
@@ -338,6 +354,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Verify collection exists if specified
+    if (collectionIdNum) {
+      const collection = await payload.findByID({
+        collection: 'knowledgeCollections',
+        id: collectionIdNum,
+      })
+      if (!collection) {
+        return NextResponse.json(
+          { success: false, message: 'Memory tome not found' },
+          { status: 404 }
+        )
+      }
+    }
+
     // Validate type if provided
     const validTypes = ['short_term', 'long_term', 'consolidated'] as const
     type MemoryType = 'short_term' | 'long_term' | 'consolidated'
@@ -358,6 +388,82 @@ export async function POST(request: NextRequest) {
       ? (typeof conversationId === 'number' ? conversationId : parseInt(String(conversationId), 10))
       : null
 
+    // If collectionId is provided, create as Knowledge entry (for memory tomes)
+    if (collectionIdNum) {
+      // Build tags for importance and emotional context
+      const tags: { tag: string }[] = [
+        { tag: `importance-${memoryImportance}` },
+        { tag: `memory-type-${memoryType}` },
+      ]
+      if (emotional_context) {
+        tags.push({ tag: `mood-${emotional_context}` })
+      }
+
+      const knowledge = await payload.create({
+        collection: 'knowledge',
+        data: {
+          user: payloadUser.id,
+          knowledge_collection: collectionIdNum,
+          entry: entry.trim(),
+          type: 'text',
+          tags,
+          applies_to_bots: botIdNums.length > 0 ? botIdNums : undefined,
+          applies_to_personas: personaIdNums.length > 0 ? personaIdNums : undefined,
+          source_conversation_id: conversationIdNum,
+          is_legacy_memory: true, // Mark as a memory entry
+          created_timestamp: new Date().toISOString(),
+          modified_timestamp: new Date().toISOString(),
+          is_vectorized: false,
+          // Required fields with defaults
+          privacy_settings: {
+            privacy_level: 'private',
+          },
+          activation_settings: {
+            activation_mode: 'constant', // Memories are always active
+            vector_similarity_threshold: 0.7,
+            max_vector_results: 5,
+            probability: 100,
+            use_probability: false,
+            scan_depth: 2,
+            match_in_user_messages: true,
+            match_in_bot_messages: true,
+            match_in_system_prompts: false,
+          },
+          positioning: {
+            position: 'before_character',
+            depth: 0,
+            role: 'system',
+            order: 100,
+          },
+        },
+        depth: 2,
+      })
+
+      // Return normalized memory format
+      const normalizedMemory = {
+        id: `lore-${knowledge.id}`,
+        _sourceType: 'knowledge',
+        _knowledgeId: knowledge.id,
+        entry: knowledge.entry,
+        type: memoryType,
+        tokens: knowledge.tokens || 0,
+        created_timestamp: knowledge.created_timestamp || knowledge.createdAt,
+        is_vectorized: false,
+        converted_to_lore: true,
+        importance: memoryImportance,
+        emotional_context: emotional_context || null,
+        bot: knowledge.applies_to_bots,
+        knowledge_collection: knowledge.knowledge_collection,
+      }
+
+      return NextResponse.json({
+        success: true,
+        memory: normalizedMemory,
+        message: 'Memory created successfully',
+      })
+    }
+
+    // Otherwise, create as Memory entry (legacy behavior)
     const memory = await payload.create({
       collection: 'memory',
       data: {

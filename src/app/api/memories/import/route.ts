@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
       collection: 'memory',
       data: {
         user: payloadUser.id,
-        bot: botId ? parseInt(botId, 10) : undefined,
+        bot: botId ? [parseInt(botId, 10)] : [],
         conversation: undefined, // No associated conversation for imports
         entry: summary,
         tokens: tokenCount,

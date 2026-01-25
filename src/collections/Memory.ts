@@ -56,7 +56,20 @@ export const Memory: CollectionConfig = {
       name: 'bot',
       type: 'relationship',
       relationTo: 'bot',
+      hasMany: true,
       required: true,
+      admin: {
+        description: 'Bot(s) involved in this memory (supports multi-bot conversations)',
+      },
+    },
+    {
+      name: 'persona',
+      type: 'relationship',
+      relationTo: 'personas',
+      hasMany: true,
+      admin: {
+        description: 'User persona(s) used during this memory',
+      },
     },
     {
       name: 'conversation',

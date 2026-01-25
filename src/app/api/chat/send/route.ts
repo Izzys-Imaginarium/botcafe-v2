@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
       apiKeyId?: number
       model?: string
       targetBotId?: number
+      personaId?: number | null // Which persona is speaking (null = user themselves)
     }
     const {
       conversationId,
@@ -61,6 +62,7 @@ export async function POST(request: NextRequest) {
       apiKeyId,
       model,
       targetBotId, // For multi-bot - which bot should respond
+      personaId, // Which persona the user is acting as (null/undefined = themselves)
     } = body
 
     if (!conversationId || !content) {
@@ -94,6 +96,75 @@ export async function POST(request: NextRequest) {
         { message: 'Not authorized to send messages in this conversation' },
         { status: 403 }
       )
+    }
+
+    // Track persona changes - users can switch personas mid-conversation
+    const currentParticipants = (conversation.participants || {}) as {
+      personas?: string[]
+      bots?: string[]
+      primary_persona?: string
+      persona_changes?: Array<{ personaId: string; timestamp: string }>
+    }
+
+    let updatedParticipants = { ...currentParticipants }
+
+    if (personaId) {
+      // Verify persona exists and belongs to user
+      const persona = await payload.findByID({
+        collection: 'personas',
+        id: personaId,
+        overrideAccess: true,
+      })
+
+      if (!persona) {
+        return NextResponse.json(
+          { message: 'Persona not found' },
+          { status: 404 }
+        )
+      }
+
+      const personaUserId = typeof persona.user === 'object' ? persona.user.id : persona.user
+      if (personaUserId !== payloadUser.id) {
+        return NextResponse.json(
+          { message: 'Not authorized to use this persona' },
+          { status: 403 }
+        )
+      }
+
+      const personaIdStr = String(personaId)
+
+      // Add to personas array if not already present
+      if (!updatedParticipants.personas) {
+        updatedParticipants.personas = []
+      }
+      if (!updatedParticipants.personas.includes(personaIdStr)) {
+        updatedParticipants.personas = [...updatedParticipants.personas, personaIdStr]
+      }
+
+      // Track persona change if different from current primary
+      if (updatedParticipants.primary_persona !== personaIdStr) {
+        if (!updatedParticipants.persona_changes) {
+          updatedParticipants.persona_changes = []
+        }
+        updatedParticipants.persona_changes = [
+          ...updatedParticipants.persona_changes,
+          { personaId: personaIdStr, timestamp: new Date().toISOString() }
+        ]
+        updatedParticipants.primary_persona = personaIdStr
+      }
+    } else {
+      // User is speaking as themselves (no persona)
+      if (updatedParticipants.primary_persona) {
+        // Track the switch back to no persona
+        if (!updatedParticipants.persona_changes) {
+          updatedParticipants.persona_changes = []
+        }
+        updatedParticipants.persona_changes = [
+          ...updatedParticipants.persona_changes,
+          { personaId: 'self', timestamp: new Date().toISOString() }
+        ]
+        updatedParticipants.primary_persona = undefined
+      }
     }
 
     // Verify API key if provided
@@ -192,7 +263,7 @@ export async function POST(request: NextRequest) {
     // Estimate tokens for user message (rough estimate)
     const estimatedTokens = Math.ceil(content.length / 4)
 
-    // Create user message
+    // Create user message (with persona if acting as one)
     const userMessage = await payload.create({
       collection: 'message',
       data: {
@@ -202,6 +273,7 @@ export async function POST(request: NextRequest) {
         entry: content,
         message_attribution: {
           is_ai_generated: false,
+          persona_id: personaId || undefined, // Track which persona sent this message
         },
         token_tracking: {
           input_tokens: estimatedTokens,
@@ -243,13 +315,14 @@ export async function POST(request: NextRequest) {
       overrideAccess: true,
     })
 
-    // Update conversation metadata
+    // Update conversation metadata and participants
     const currentMessageCount = conversation.conversation_metadata?.total_messages || 0
     await payload.update({
       collection: 'conversation',
       id: conversationId,
       data: {
         modified_timestamp: new Date().toISOString(),
+        participants: updatedParticipants, // Updated with new persona if changed
         conversation_metadata: {
           ...conversation.conversation_metadata,
           total_messages: currentMessageCount + 2,

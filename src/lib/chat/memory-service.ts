@@ -182,32 +182,50 @@ export async function generateConversationMemory(
       ? conversation.user.id
       : conversation.user
 
-    // Get first bot from participants, fallback to bot_participation
-    let botId: number | null = null
-    if (participants?.bots?.[0]) {
-      botId = parseInt(participants.bots[0])
-    } else if (conversation.bot_participation && Array.isArray(conversation.bot_participation)) {
-      // Fallback to bot_participation array
-      const firstParticipation = conversation.bot_participation[0] as { bot_id?: number } | undefined
-      botId = firstParticipation?.bot_id || null
+    // Collect ALL bot IDs from participants (supports multi-bot conversations)
+    const botIds: number[] = []
+    if (participants?.bots?.length) {
+      for (const botIdStr of participants.bots) {
+        const parsed = parseInt(botIdStr)
+        if (!isNaN(parsed)) botIds.push(parsed)
+      }
+    }
+    // Fallback to bot_participation if no bots in participants
+    if (botIds.length === 0 && conversation.bot_participation && Array.isArray(conversation.bot_participation)) {
+      for (const participation of conversation.bot_participation) {
+        const botParticipation = participation as { bot_id?: number }
+        if (botParticipation.bot_id) botIds.push(botParticipation.bot_id)
+      }
+    }
+
+    // Collect ALL persona IDs from participants
+    const personaIds: number[] = []
+    if (participants?.personas?.length) {
+      for (const personaIdStr of participants.personas) {
+        const parsed = parseInt(personaIdStr)
+        if (!isNaN(parsed)) personaIds.push(parsed)
+      }
     }
 
     console.log(`[Memory Service] Participants:`, JSON.stringify(participants))
     console.log(`[Memory Service] Bot participation:`, JSON.stringify(conversation.bot_participation))
+    console.log(`[Memory Service] Collected bot IDs:`, botIds)
+    console.log(`[Memory Service] Collected persona IDs:`, personaIds)
 
-    // If still no bot, we can't create the memory (bot is required)
-    if (!botId) {
-      console.error(`[Memory Service] No bot found for conversation ${conversationId}`)
-      return { success: false, error: 'No bot found in conversation' }
+    // If no bots found, we can't create the memory (bot is required)
+    if (botIds.length === 0) {
+      console.error(`[Memory Service] No bots found for conversation ${conversationId}`)
+      return { success: false, error: 'No bots found in conversation' }
     }
 
-    // Create memory
-    console.log(`[Memory Service] Creating memory for user=${userId}, bot=${botId}, conversation=${conversationId}`)
+    // Create memory with all bots and personas
+    console.log(`[Memory Service] Creating memory for user=${userId}, bots=[${botIds.join(',')}], personas=[${personaIds.join(',')}], conversation=${conversationId}`)
     const memory = await payload.create({
       collection: 'memory',
       data: {
         user: userId,
-        bot: botId,
+        bot: botIds, // Now an array of bot IDs
+        persona: personaIds.length > 0 ? personaIds : undefined, // Array of persona IDs (optional)
         conversation: conversationId,
         type: 'short_term',
         entry: summary,
@@ -335,6 +353,7 @@ function extractEmotionalContext(messages: Message[]): string | null {
 
 /**
  * Retrieve relevant memories for a conversation
+ * Supports multi-bot memories - will find memories where botId is in the bot array
  */
 export async function retrieveRelevantMemories(
   payload: Payload,
@@ -346,11 +365,17 @@ export async function retrieveRelevantMemories(
     minImportance?: number // 1-10 scale
   } = {}
 ): Promise<Memory[]> {
-  const { limit = 5, minImportance = 3 } = options // 3 = low threshold on 1-10 scale
+  const { personaId, limit = 5, minImportance = 3 } = options // 3 = low threshold on 1-10 scale
 
   const where: Record<string, unknown> = {
     user: { equals: userId },
-    bot: { equals: botId },
+    // 'contains' works with hasMany relationships - finds memories where botId is in the array
+    bot: { contains: botId },
+  }
+
+  // Optionally filter by persona
+  if (personaId) {
+    where.persona = { contains: personaId }
   }
 
   if (minImportance > 0) {

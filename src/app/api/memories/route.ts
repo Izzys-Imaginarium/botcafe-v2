@@ -104,8 +104,9 @@ export async function GET(request: NextRequest) {
     }
 
     if (botId) {
+      // Use 'contains' for hasMany relationship - finds memories where botId is in the array
       where.bot = {
-        equals: parseInt(botId, 10),
+        contains: parseInt(botId, 10),
       }
     }
 
@@ -179,13 +180,15 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json() as {
       entry?: string
-      botId?: string | number
+      botId?: string | number // Single bot (backwards compatibility)
+      botIds?: (string | number)[] // Multiple bots (new)
+      personaIds?: (string | number)[] // Personas involved (new)
       type?: string
       importance?: number
       emotional_context?: string
       conversationId?: string | number
     }
-    const { entry, botId, type, importance, emotional_context, conversationId } = body
+    const { entry, botId, botIds, personaIds, type, importance, emotional_context, conversationId } = body
 
     // Validate required fields
     if (!entry || typeof entry !== 'string' || entry.trim().length === 0) {
@@ -195,12 +198,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const botIdNum = typeof botId === 'number' ? botId : parseInt(String(botId), 10)
-    if (!botId || isNaN(botIdNum)) {
+    // Support both single botId (backwards compat) and array of botIds
+    let botIdNums: number[] = []
+    if (botIds && Array.isArray(botIds) && botIds.length > 0) {
+      botIdNums = botIds.map(id => typeof id === 'number' ? id : parseInt(String(id), 10)).filter(id => !isNaN(id))
+    } else if (botId) {
+      const singleId = typeof botId === 'number' ? botId : parseInt(String(botId), 10)
+      if (!isNaN(singleId)) botIdNums = [singleId]
+    }
+
+    if (botIdNums.length === 0) {
       return NextResponse.json(
-        { success: false, message: 'Bot ID is required' },
+        { success: false, message: 'At least one Bot ID is required' },
         { status: 400 }
       )
+    }
+
+    // Parse persona IDs (optional)
+    let personaIdNums: number[] = []
+    if (personaIds && Array.isArray(personaIds) && personaIds.length > 0) {
+      personaIdNums = personaIds.map(id => typeof id === 'number' ? id : parseInt(String(id), 10)).filter(id => !isNaN(id))
     }
 
     const { payload, user: payloadUser } = await getPayloadUser(clerkUser)
@@ -212,17 +229,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify bot exists and user has access
-    const bot = await payload.findByID({
-      collection: 'bot',
-      id: botIdNum,
-    })
-
-    if (!bot) {
-      return NextResponse.json(
-        { success: false, message: 'Bot not found' },
-        { status: 404 }
-      )
+    // Verify all bots exist
+    for (const bId of botIdNums) {
+      const bot = await payload.findByID({
+        collection: 'bot',
+        id: bId,
+      })
+      if (!bot) {
+        return NextResponse.json(
+          { success: false, message: `Bot not found: ${bId}` },
+          { status: 404 }
+        )
+      }
     }
 
     // Validate type if provided
@@ -249,7 +267,8 @@ export async function POST(request: NextRequest) {
       collection: 'memory',
       data: {
         user: payloadUser.id,
-        bot: botIdNum,
+        bot: botIdNums, // Array of bot IDs
+        persona: personaIdNums.length > 0 ? personaIdNums : undefined, // Array of persona IDs (optional)
         entry: entry.trim(),
         type: memoryType,
         importance: memoryImportance,

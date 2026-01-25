@@ -103,10 +103,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get bot information for metadata
+    // Get bot information for metadata (use first bot from array)
     let botData = null
-    if (memory.bot) {
-      const botId = typeof memory.bot === 'object' ? memory.bot.id : memory.bot
+    if (memory.bot && Array.isArray(memory.bot) && memory.bot.length > 0) {
+      const firstBot = memory.bot[0]
+      const botId = typeof firstBot === 'object' ? firstBot.id : firstBot
       botData = await payload.findByID({
         collection: 'bot',
         id: botId,

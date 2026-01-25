@@ -90,6 +90,15 @@ export const Message: CollectionConfig = {
           required: false,
         },
         {
+          name: 'persona_id',
+          type: 'relationship',
+          relationTo: 'personas',
+          required: false,
+          admin: {
+            description: 'Which persona the user was acting as when sending this message (null = user themselves)',
+          },
+        },
+        {
           name: 'is_ai_generated',
           type: 'checkbox',
           defaultValue: false,

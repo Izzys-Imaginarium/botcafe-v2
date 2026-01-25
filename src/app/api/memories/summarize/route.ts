@@ -158,14 +158,23 @@ export async function POST(request: NextRequest) {
     // Extract participants from conversation
     const participants = conversation.participants || { personas: [], bots: [] }
 
+    // Collect all bot IDs from bot_participation (supports multi-bot)
+    const botIds: number[] = []
+    if (conversation.bot_participation && Array.isArray(conversation.bot_participation)) {
+      for (const participation of conversation.bot_participation) {
+        const botId = typeof participation.bot_id === 'object'
+          ? participation.bot_id?.id
+          : participation.bot_id
+        if (botId) botIds.push(botId)
+      }
+    }
+
     // Create memory entry
     const memory = await payload.create({
       collection: 'memory',
       data: {
         user: payloadUser.id,
-        bot: typeof conversation.bot_participation?.[0]?.bot_id === 'object'
-          ? conversation.bot_participation[0].bot_id.id
-          : conversation.bot_participation?.[0]?.bot_id,
+        bot: botIds.length > 0 ? botIds : [],
         conversation: parseInt(conversationId, 10),
         entry: summary,
         tokens: tokenCount,

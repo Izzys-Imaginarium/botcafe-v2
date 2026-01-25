@@ -599,7 +599,7 @@ export interface ApiKey {
   id: number;
   user: number | User;
   nickname: string;
-  provider: 'openai' | 'anthropic' | 'google' | 'deepseek' | 'openrouter' | 'electronhub';
+  provider: 'openai' | 'anthropic' | 'google' | 'deepseek' | 'openrouter' | 'electronhub' | 'glm';
   key: string;
   key_configuration?: {
     model_preferences?:
@@ -1026,7 +1026,14 @@ export interface Memory {
   user: number | User;
   created_timestamp?: string | null;
   modified_timestamp?: string | null;
-  bot: number | Bot;
+  /**
+   * Bot(s) involved in this memory (supports multi-bot conversations)
+   */
+  bot: (number | Bot)[];
+  /**
+   * User persona(s) used during this memory
+   */
+  persona?: (number | Persona)[] | null;
   conversation?: (number | null) | Conversation;
   tokens?: number | null;
   entry: string;
@@ -1074,6 +1081,79 @@ export interface Memory {
    * Mood/emotion tags and context
    */
   emotional_context?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * User personas for bot interactions - represents how the user wants to be seen by bots
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "personas".
+ */
+export interface Persona {
+  id: number;
+  user: number | User;
+  /**
+   * The name you want bots to call you
+   */
+  name: string;
+  /**
+   * A brief description of this persona for your reference
+   */
+  description: string;
+  /**
+   * Your gender identity for this persona
+   */
+  gender?: ('male' | 'female' | 'non-binary' | 'unspecified' | 'other') | null;
+  /**
+   * Age of this persona (optional)
+   */
+  age?: number | null;
+  /**
+   * Preferred pronouns for this persona
+   */
+  pronouns?: ('he-him' | 'she-her' | 'they-them' | 'he-they' | 'she-they' | 'any' | 'other') | null;
+  /**
+   * Custom pronouns if "Other" is selected
+   */
+  custom_pronouns?: string | null;
+  appearance?: {
+    avatar?: (number | null) | Media;
+  };
+  interaction_preferences?: {
+    /**
+     * Topics you enjoy discussing
+     */
+    preferred_topics?:
+      | {
+          topic?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Topics you prefer to avoid
+     */
+    avoid_topics?:
+      | {
+          topic?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  /**
+   * Set as default persona for new conversations
+   */
+  is_default?: boolean | null;
+  /**
+   * Number of times this persona has been used
+   */
+  usage_count?: number | null;
+  created_timestamp?: string | null;
+  modified_timestamp?: string | null;
+  /**
+   * Additional context or instructions for bots when using this persona
+   */
+  custom_instructions?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1237,79 +1317,6 @@ export interface VectorRecord {
   createdAt: string;
 }
 /**
- * User personas for bot interactions - represents how the user wants to be seen by bots
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "personas".
- */
-export interface Persona {
-  id: number;
-  user: number | User;
-  /**
-   * The name you want bots to call you
-   */
-  name: string;
-  /**
-   * A brief description of this persona for your reference
-   */
-  description: string;
-  /**
-   * Your gender identity for this persona
-   */
-  gender?: ('male' | 'female' | 'non-binary' | 'unspecified' | 'other') | null;
-  /**
-   * Age of this persona (optional)
-   */
-  age?: number | null;
-  /**
-   * Preferred pronouns for this persona
-   */
-  pronouns?: ('he-him' | 'she-her' | 'they-them' | 'he-they' | 'she-they' | 'any' | 'other') | null;
-  /**
-   * Custom pronouns if "Other" is selected
-   */
-  custom_pronouns?: string | null;
-  appearance?: {
-    avatar?: (number | null) | Media;
-  };
-  interaction_preferences?: {
-    /**
-     * Topics you enjoy discussing
-     */
-    preferred_topics?:
-      | {
-          topic?: string | null;
-          id?: string | null;
-        }[]
-      | null;
-    /**
-     * Topics you prefer to avoid
-     */
-    avoid_topics?:
-      | {
-          topic?: string | null;
-          id?: string | null;
-        }[]
-      | null;
-  };
-  /**
-   * Set as default persona for new conversations
-   */
-  is_default?: boolean | null;
-  /**
-   * Number of times this persona has been used
-   */
-  usage_count?: number | null;
-  created_timestamp?: string | null;
-  modified_timestamp?: string | null;
-  /**
-   * Additional context or instructions for bots when using this persona
-   */
-  custom_instructions?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
  * Tracks when and how knowledge entries are activated during conversations
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1389,6 +1396,10 @@ export interface Message {
   bot?: (number | null) | Bot;
   message_attribution?: {
     source_bot_id?: (number | null) | Bot;
+    /**
+     * Which persona the user was acting as when sending this message (null = user themselves)
+     */
+    persona_id?: (number | null) | Persona;
     is_ai_generated?: boolean | null;
     model_used?: string | null;
     confidence_score?: number | null;
@@ -3416,6 +3427,7 @@ export interface MessageSelect<T extends boolean = true> {
     | T
     | {
         source_bot_id?: T;
+        persona_id?: T;
         is_ai_generated?: T;
         model_used?: T;
         confidence_score?: T;
@@ -3486,6 +3498,7 @@ export interface MemorySelect<T extends boolean = true> {
   created_timestamp?: T;
   modified_timestamp?: T;
   bot?: T;
+  persona?: T;
   conversation?: T;
   tokens?: T;
   entry?: T;

@@ -1,7 +1,7 @@
 # BotCafe v2 - Database Schema
 
 **Last Updated**: 2026-01-25
-**Version**: 3.9
+**Version**: 3.10
 **Database**: Cloudflare D1 (SQLite) via Payload CMS
 
 ---
@@ -41,12 +41,19 @@ Primary user authentication collection (integrated with Clerk).
 | `bio` | textarea | User biography |
 | `avatar` | relationship (Media) | Profile image |
 | `location` | text | User location |
-| `role` | select | User role (admin, creator, user) |
+| `role` | select | User role (admin, moderator, user) |
+| `name` | text | Display name used when not using a persona |
+| `nickname` | text | What bots should call you (e.g., "Alex", "Captain") |
+| `pronouns` | select | Pronouns: he/him, she/her, they/them, other |
+| `custom_pronouns` | text | Custom pronouns if "other" selected |
+| `description` | textarea | Brief description about yourself for bots |
 | `subscriptionTier` | relationship | Current subscription |
 | `tokenBalance` | number | Current token balance |
 | `preferences` | json | User preferences |
 | `createdAt` | date | Auto-generated |
 | `updatedAt` | date | Auto-generated |
+
+> **Chat Preferences**: The `nickname`, `pronouns`, `custom_pronouns`, and `description` fields are used when chatting without a persona. These preferences help bots address the user properly and are managed via the Account Profile page.
 
 ### Media
 

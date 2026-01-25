@@ -201,6 +201,7 @@
 | Endpoint | Methods | Description |
 |----------|---------|-------------|
 | `/api/account/export` | GET | Export all user data (GDPR-compliant) |
+| `/api/user/preferences` | GET, PATCH | Get and update user chat preferences (nickname, pronouns, description) |
 
 ### Admin
 

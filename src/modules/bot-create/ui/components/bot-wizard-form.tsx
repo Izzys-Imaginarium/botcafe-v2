@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { Bot, Wand2, Image, MessageSquare, Settings, Sparkles, Sliders, Tag, Plus, X, BookMarked, Check, Loader2, Users, Globe, Lock, Share2 } from 'lucide-react'
+import { Bot, Wand2, Image, MessageSquare, Settings, Sparkles, Sliders, Tag, Plus, X, BookMarked, Check, Loader2, Users, Globe, Lock, Share2, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -146,6 +146,20 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
   }
   const [availableCollections, setAvailableCollections] = useState<KnowledgeCollection[]>([])
   const [isLoadingCollections, setIsLoadingCollections] = useState(false)
+  const [collectionSearchQuery, setCollectionSearchQuery] = useState('')
+
+  // Filter collections based on search query
+  const filteredCollections = useMemo(() => {
+    if (!collectionSearchQuery.trim()) {
+      return availableCollections
+    }
+    const query = collectionSearchQuery.toLowerCase()
+    return availableCollections.filter(
+      (collection) =>
+        collection.name.toLowerCase().includes(query) ||
+        (collection.description && collection.description.toLowerCase().includes(query))
+    )
+  }, [availableCollections, collectionSearchQuery])
 
   // Fetch available knowledge collections
   const fetchCollections = useCallback(async () => {
@@ -843,8 +857,27 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
                 </Button>
               </div>
             ) : (
-              <div className="space-y-3">
-                {availableCollections.map((collection) => (
+              <div className="space-y-4">
+                {/* Search input */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search tomes by name or description..."
+                    value={collectionSearchQuery}
+                    onChange={(e) => setCollectionSearchQuery(e.target.value)}
+                    className="pl-10 glass-rune"
+                  />
+                </div>
+
+                {/* Collection list */}
+                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                {filteredCollections.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>No tomes match "{collectionSearchQuery}"</p>
+                  </div>
+                ) : (
+                  filteredCollections.map((collection) => (
                   <div
                     key={collection.id}
                     onClick={() => toggleCollectionSelection(collection.id)}
@@ -880,7 +913,9 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
                       </div>
                     </div>
                   </div>
-                ))}
+                  ))
+                )}
+                </div>
 
                 {botData.knowledge_collections.length > 0 && (
                   <p className="text-sm text-forest mt-4">

@@ -68,7 +68,6 @@
 | `/wellbeing` | ↪️ Redirect | Redirects to `/account?tab=wellbeing` |
 | `/wellbeing/mood` | ✅ Complete | Mood journal with emoji selection and notes |
 | `/wellbeing/settings` | ✅ Complete | Self-moderation settings (limits, breaks, night mode) |
-| `/wellbeing/resources` | ✅ Complete | Crisis support resources directory |
 
 ### Analytics
 
@@ -178,7 +177,6 @@
 | `/api/wellbeing` | GET | Overall wellbeing dashboard data |
 | `/api/wellbeing/mood` | GET, POST | Mood entries |
 | `/api/wellbeing/settings` | GET, POST, PUT | Self-moderation settings |
-| `/api/wellbeing/crisis-support` | GET | Crisis support resources |
 
 ### Analytics
 
@@ -258,14 +256,14 @@
 | Lore | 3 | 0 | 3 |
 | Memories | 2 | 0 | 2 |
 | Personas | 3 | 0 | 3 |
-| Wellbeing | 3 | 1 | 4 |
+| Wellbeing | 2 | 1 | 3 |
 | Analytics | 2 | 1 | 3 |
 | Legal | 4 | 0 | 4 |
 | Help | 3 | 0 | 3 |
 | Chat | 2 | 0 | 2 |
-| **Frontend Total** | **35** | **2** | **37** |
-| API Endpoints | 51 | 0 | 51 |
-| **Grand Total** | **86** | **2** | **88** |
+| **Frontend Total** | **34** | **2** | **36** |
+| API Endpoints | 50 | 0 | 50 |
+| **Grand Total** | **84** | **2** | **86** |
 
 *Note: "Redirect" routes automatically redirect to the Account page with the appropriate tab.*
 
@@ -321,8 +319,7 @@ BotCafe
 │   └── Edit (/personas/edit/[id])
 ├── Wellbeing Sub-pages (main /wellbeing redirects to Account)
 │   ├── Mood (/wellbeing/mood)
-│   ├── Settings (/wellbeing/settings)
-│   └── Resources (/wellbeing/resources)
+│   └── Settings (/wellbeing/settings)
 ├── Analytics Sub-pages (main /analytics redirects to Account)
 │   ├── Bots (/analytics/bots)
 │   └── Usage (/analytics/usage)

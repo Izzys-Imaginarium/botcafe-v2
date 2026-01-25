@@ -120,7 +120,7 @@
 - API & Config: ApiKey
 - Billing: TokenGifts, SubscriptionPayments, SubscriptionTiers, TokenPackages
 - Creator Ecosystem: CreatorProfiles, CreatorPrograms, AccessControl
-- Mental Health: SelfModeration, CrisisSupport
+- Mental Health: SelfModeration
 - Analytics: UsageAnalytics, MemoryInsights, PersonaAnalytics
 - Legal: LegalDocuments, UserAgreements
 - Support: Documentation, Tutorials, SupportTickets

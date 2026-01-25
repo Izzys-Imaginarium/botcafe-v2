@@ -57,11 +57,6 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/wellbeing/resources" className="hover:text-gold-rich transition-colors">
-                  Crisis Support
-                </Link>
-              </li>
-              <li>
                 <Link href="/legal/responsible-ai" className="hover:text-gold-rich transition-colors">
                   Responsible AI
                 </Link>

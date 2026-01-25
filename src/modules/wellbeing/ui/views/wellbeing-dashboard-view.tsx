@@ -15,8 +15,6 @@ import {
   Minus,
   Sparkles,
   Shield,
-  Phone,
-  BookOpen,
   Target,
   Flame,
   RefreshCw,
@@ -146,7 +144,7 @@ export const WellbeingDashboardView = () => {
             Wellbeing Center
           </h1>
           <p className="text-muted-foreground mt-1">
-            Track your mood, manage usage, and access support resources
+            Track your mood and manage your usage limits
           </p>
         </div>
         <div className="flex gap-2 mt-4 md:mt-0">
@@ -164,7 +162,7 @@ export const WellbeingDashboardView = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 gap-4 mb-8">
         <Link href="/wellbeing/mood">
           <Card className="hover:border-purple-500/50 transition-colors cursor-pointer h-full">
             <CardContent className="pt-6 text-center">
@@ -181,26 +179,6 @@ export const WellbeingDashboardView = () => {
               <Shield className="h-8 w-8 mx-auto mb-2 text-blue-400" />
               <h3 className="font-semibold">Self-Moderation</h3>
               <p className="text-xs text-muted-foreground mt-1">Set usage limits</p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link href="/wellbeing/resources">
-          <Card className="hover:border-purple-500/50 transition-colors cursor-pointer h-full">
-            <CardContent className="pt-6 text-center">
-              <Phone className="h-8 w-8 mx-auto mb-2 text-green-400" />
-              <h3 className="font-semibold">Crisis Support</h3>
-              <p className="text-xs text-muted-foreground mt-1">Get help now</p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link href="/help">
-          <Card className="hover:border-purple-500/50 transition-colors cursor-pointer h-full">
-            <CardContent className="pt-6 text-center">
-              <BookOpen className="h-8 w-8 mx-auto mb-2 text-yellow-400" />
-              <h3 className="font-semibold">Resources</h3>
-              <p className="text-xs text-muted-foreground mt-1">Learn more</p>
             </CardContent>
           </Card>
         </Link>
@@ -358,26 +336,6 @@ export const WellbeingDashboardView = () => {
           </CardContent>
         </Card>
 
-        {/* Crisis Support Card */}
-        <Card className="border-red-500/20 bg-red-500/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-400">
-              <Phone className="h-5 w-5" />
-              Need Support?
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              If you're struggling, help is available 24/7. You're not alone.
-            </p>
-            <Link href="/wellbeing/resources">
-              <Button variant="destructive" className="w-full">
-                <Phone className="mr-2 h-4 w-4" />
-                View Crisis Resources
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
       </div>
     </div>
   )

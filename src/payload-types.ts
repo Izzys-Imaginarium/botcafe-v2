@@ -88,7 +88,6 @@ export interface Config {
     creatorProfiles: CreatorProfile;
     'access-control': AccessControl;
     'self-moderation': SelfModeration;
-    'crisis-support': CrisisSupport;
     'usage-analytics': UsageAnalytic;
     'memory-insights': MemoryInsight;
     'persona-analytics': PersonaAnalytic;
@@ -124,7 +123,6 @@ export interface Config {
     creatorProfiles: CreatorProfilesSelect<false> | CreatorProfilesSelect<true>;
     'access-control': AccessControlSelect<false> | AccessControlSelect<true>;
     'self-moderation': SelfModerationSelect<false> | SelfModerationSelect<true>;
-    'crisis-support': CrisisSupportSelect<false> | CrisisSupportSelect<true>;
     'usage-analytics': UsageAnalyticsSelect<false> | UsageAnalyticsSelect<true>;
     'memory-insights': MemoryInsightsSelect<false> | MemoryInsightsSelect<true>;
     'persona-analytics': PersonaAnalyticsSelect<false> | PersonaAnalyticsSelect<true>;
@@ -1736,117 +1734,6 @@ export interface SelfModeration {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "crisis-support".
- */
-export interface CrisisSupport {
-  id: number;
-  /**
-   * Name/title of the crisis support resource
-   */
-  title: string;
-  resource_type: 'hotline' | 'chat' | 'text' | 'online' | 'emergency' | 'apps' | 'groups' | 'professional';
-  resource_category:
-    | 'suicide-prevention'
-    | 'mental-health'
-    | 'domestic-violence'
-    | 'substance-abuse'
-    | 'lgbtq'
-    | 'youth'
-    | 'senior'
-    | 'general'
-    | 'financial'
-    | 'relationship';
-  /**
-   * Detailed description of the resource and what it offers
-   */
-  description: string;
-  contact_info: {
-    phone_number?: string | null;
-    text_number?: string | null;
-    website?: string | null;
-    email?: string | null;
-    chat_url?: string | null;
-    app_download_url?: string | null;
-  };
-  availability?: {
-    /**
-     * Available 24/7
-     */
-    is_24_7?: boolean | null;
-    operating_hours?: {
-      monday?: string | null;
-      tuesday?: string | null;
-      wednesday?: string | null;
-      thursday?: string | null;
-      friday?: string | null;
-      saturday?: string | null;
-      sunday?: string | null;
-    };
-    /**
-     * Operating timezone (e.g., EST, PST, UTC)
-     */
-    timezone?: string | null;
-  };
-  geographic_region:
-    | 'us-national'
-    | 'ca-national'
-    | 'uk'
-    | 'au'
-    | 'eu'
-    | 'worldwide'
-    | 'ca-state'
-    | 'ny-state'
-    | 'tx-state'
-    | 'fl-state'
-    | 'custom';
-  /**
-   * Support available in multiple languages
-   */
-  language_support?: boolean | null;
-  /**
-   * Comma-separated list of supported languages
-   */
-  languages_available?: string | null;
-  cost_information: 'free' | 'insurance' | 'sliding-scale' | 'low-cost' | 'paid';
-  specialized_features?: {
-    anonymous_support?: boolean | null;
-    peer_support?: boolean | null;
-    professional_counselors?: boolean | null;
-    volunteer_support?: boolean | null;
-    family_support?: boolean | null;
-    trauma_informed?: boolean | null;
-  };
-  /**
-   * Verification status of the resource
-   */
-  verification_status?: ('verified' | 'pending' | 'under-review' | 'expired' | 'needs-update') | null;
-  /**
-   * Last time this resource was verified
-   */
-  last_verified?: string | null;
-  /**
-   * Notes about verification process or status
-   */
-  verification_notes?: string | null;
-  /**
-   * Comma-separated tags for filtering
-   */
-  tags?: string | null;
-  /**
-   * Mark as emergency resource (high priority display)
-   */
-  is_emergency?: boolean | null;
-  /**
-   * Lower numbers display first (0 = highest priority)
-   */
-  display_order?: number | null;
-  is_active?: boolean | null;
-  created_by?: (number | null) | User;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "usage-analytics".
  */
 export interface UsageAnalytic {
@@ -2830,10 +2717,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'self-moderation';
         value: number | SelfModeration;
-      } | null)
-    | ({
-        relationTo: 'crisis-support';
-        value: number | CrisisSupport;
       } | null)
     | ({
         relationTo: 'usage-analytics';
@@ -3834,67 +3717,6 @@ export interface SelfModerationSelect<T extends boolean = true> {
       };
   last_checkin?: T;
   is_active?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "crisis-support_select".
- */
-export interface CrisisSupportSelect<T extends boolean = true> {
-  title?: T;
-  resource_type?: T;
-  resource_category?: T;
-  description?: T;
-  contact_info?:
-    | T
-    | {
-        phone_number?: T;
-        text_number?: T;
-        website?: T;
-        email?: T;
-        chat_url?: T;
-        app_download_url?: T;
-      };
-  availability?:
-    | T
-    | {
-        is_24_7?: T;
-        operating_hours?:
-          | T
-          | {
-              monday?: T;
-              tuesday?: T;
-              wednesday?: T;
-              thursday?: T;
-              friday?: T;
-              saturday?: T;
-              sunday?: T;
-            };
-        timezone?: T;
-      };
-  geographic_region?: T;
-  language_support?: T;
-  languages_available?: T;
-  cost_information?: T;
-  specialized_features?:
-    | T
-    | {
-        anonymous_support?: T;
-        peer_support?: T;
-        professional_counselors?: T;
-        volunteer_support?: T;
-        family_support?: T;
-        trauma_informed?: T;
-      };
-  verification_status?: T;
-  last_verified?: T;
-  verification_notes?: T;
-  tags?: T;
-  is_emergency?: T;
-  display_order?: T;
-  is_active?: T;
-  created_by?: T;
   updatedAt?: T;
   createdAt?: T;
 }

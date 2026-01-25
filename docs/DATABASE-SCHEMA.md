@@ -8,7 +8,7 @@
 
 ## Overview
 
-BotCafe v2 uses Payload CMS with 30 collections organized into functional groups:
+BotCafe v2 uses Payload CMS with 29 collections organized into functional groups:
 
 | Category | Collections | Count |
 |----------|-------------|-------|
@@ -19,7 +19,7 @@ BotCafe v2 uses Payload CMS with 30 collections organized into functional groups
 | User Features | Personas, ApiKey | 2 |
 | Creators | CreatorProfiles | 1 |
 | Monetization | TokenGifts, SubscriptionPayments, SubscriptionTiers, TokenPackages, AccessControl | 5 |
-| Wellbeing | Mood, SelfModeration, CrisisSupport | 3 |
+| Wellbeing | Mood, SelfModeration | 2 |
 | Analytics | UsageAnalytics, MemoryInsights, PersonaAnalytics | 3 |
 | Legal/Help | LegalDocuments, UserAgreements, Documentation, Tutorials, SupportTickets | 5 |
 
@@ -776,27 +776,6 @@ Usage limits and health tools.
 | `current_weekly_usage` | number | This week's usage |
 | `createdAt` | date | Auto-generated |
 | `updatedAt` | date | Auto-generated |
-
-### CrisisSupport
-
-Mental health resources.
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | string | Primary key |
-| `name` | text | Resource name |
-| `description` | textarea | Description |
-| `category` | select | Category: hotline, chat, text, app, organization |
-| `type` | select | Type: general, lgbtq, youth, veterans, etc. |
-| `contact_phone` | text | Phone number |
-| `contact_text` | text | Text number |
-| `contact_chat` | text | Chat URL |
-| `website` | text | Website URL |
-| `hours` | text | Availability hours |
-| `is_24_7` | checkbox | 24/7 availability |
-| `is_emergency` | checkbox | Emergency resource |
-| `region` | select | Region: global, us, uk, etc. |
-| `is_active` | checkbox | Active status |
 
 ---
 

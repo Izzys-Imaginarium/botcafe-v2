@@ -15,8 +15,6 @@ import {
   Minus,
   Sparkles,
   Shield,
-  Phone,
-  BookOpen,
   Target,
   Flame,
   RefreshCw,
@@ -141,7 +139,7 @@ export const AccountWellbeing = () => {
         <div>
           <h2 className="text-xl font-display text-parchment">Wellbeing Center</h2>
           <p className="text-sm text-parchment-dim font-lore">
-            Track your mood, manage usage, and access support resources
+            Track your mood and manage your usage limits
           </p>
         </div>
         <div className="flex gap-2">
@@ -158,7 +156,7 @@ export const AccountWellbeing = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <Link href="/wellbeing/mood">
           <Card className="glass-rune hover:border-pink-500/50 transition-colors cursor-pointer h-full">
             <CardContent className="pt-6 text-center">
@@ -179,25 +177,6 @@ export const AccountWellbeing = () => {
           </Card>
         </Link>
 
-        <Link href="/wellbeing/resources">
-          <Card className="glass-rune hover:border-green-500/50 transition-colors cursor-pointer h-full">
-            <CardContent className="pt-6 text-center">
-              <Phone className="h-8 w-8 mx-auto mb-2 text-green-400" />
-              <h3 className="font-display text-parchment">Crisis Support</h3>
-              <p className="text-xs text-parchment-dim font-lore mt-1">Get help now</p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link href="/help">
-          <Card className="glass-rune hover:border-gold-rich/50 transition-colors cursor-pointer h-full">
-            <CardContent className="pt-6 text-center">
-              <BookOpen className="h-8 w-8 mx-auto mb-2 text-gold-rich" />
-              <h3 className="font-display text-parchment">Resources</h3>
-              <p className="text-xs text-parchment-dim font-lore mt-1">Learn more</p>
-            </CardContent>
-          </Card>
-        </Link>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -361,26 +340,6 @@ export const AccountWellbeing = () => {
           </CardContent>
         </Card>
 
-        {/* Crisis Support Card */}
-        <Card className="glass-rune border-red-500/30 bg-red-500/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-400 font-display">
-              <Phone className="h-5 w-5" />
-              Need Support?
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-parchment-dim font-lore mb-4">
-              If you're struggling, help is available 24/7. You're not alone.
-            </p>
-            <Link href="/wellbeing/resources">
-              <Button variant="destructive" className="w-full">
-                <Phone className="mr-2 h-4 w-4" />
-                View Crisis Resources
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
       </div>
     </div>
   )

@@ -30,7 +30,6 @@ import { Personas } from './collections/Personas'
 import { CreatorProfiles } from './collections/CreatorProfiles'
 import { AccessControl } from './collections/AccessControl'
 import { SelfModeration } from './collections/SelfModeration'
-import { CrisisSupport } from './collections/CrisisSupport'
 import { UsageAnalytics } from './collections/UsageAnalytics'
 import { MemoryInsights } from './collections/MemoryInsights'
 import { PersonaAnalytics } from './collections/PersonaAnalytics'
@@ -84,7 +83,6 @@ export default buildConfig({
     AccessControl,
     // Mental Health & Wellbeing System (Phase 3)
     SelfModeration,
-    CrisisSupport,
     // Analytics & Insights System (Phase 4)
     UsageAnalytics,
     MemoryInsights,

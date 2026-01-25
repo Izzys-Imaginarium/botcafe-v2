@@ -7,7 +7,7 @@ Based on the sitemap, style guide, and database schema analysis, BotCafé v2 is 
 ### ✅ **CURRENT COMPLETION STATUS: ~80%**
 - **Fantasy UI/UX Foundation**: ✅ Beautiful theme system, homepage, basic navigation
 - **Authentication**: ✅ Clerk integration working with catch-all routes
-- **Database Architecture**: ✅ 30 comprehensive collections for multi-tenant SaaS (added BotInteraction, VectorRecord, KnowledgeActivationLog)
+- **Database Architecture**: ✅ 29 comprehensive collections for multi-tenant SaaS (added BotInteraction, VectorRecord, KnowledgeActivationLog)
 - **Core Infrastructure**: ✅ Next.js, Payload CMS, Cloudflare Workers
 - **Bot Creation Wizard**: ✅ Multi-step form wizard with validation, image upload, and fantasy theme
 - **Bot Editing**: ✅ Reusable form component for both create and edit workflows
@@ -24,7 +24,7 @@ Based on the sitemap, style guide, and database schema analysis, BotCafé v2 is 
 - **Creator Profiles**: ✅ Directory, profile pages, setup wizard, bot showcase gallery
 - **Legal Pages**: ✅ Legal hub, Terms of Service, Privacy Policy, Responsible AI pages
 - **Help Center**: ✅ Documentation hub, article viewer, category browsing, tutorials API
-- **Wellbeing System**: ✅ Mood journal, self-moderation settings, crisis support resources
+- **Wellbeing System**: ✅ Mood journal, self-moderation settings
 - **Analytics Dashboard**: ✅ Overview stats, bot performance metrics, usage statistics views
 
 ### ❌ **MAJOR MISSING SYSTEMS (~25% remaining)**
@@ -37,7 +37,7 @@ Based on the sitemap, style guide, and database schema analysis, BotCafé v2 is 
 5. **Bot Detail** ✅ - Individual bot pages with stats, info, and interactions
 6. **Creators** ✅ - Multi-tenant creator profiles & showcase (directory, profile pages, setup wizard)
 7. **Account** ✅ - My Bots dashboard with CRUD operations and profile display
-8. **Wellbeing** ✅ - Mood journal, self-moderation settings, crisis support resources
+8. **Wellbeing** ✅ - Mood journal, self-moderation settings
 9. **Memories** ✅ - Memory import, library browsing, and lore conversion (backend complete, chat integration pending)
 10. **Personas** ✅ - User persona/mask system (UI + CRUD complete, chat integration pending)
 11. **Analytics** ✅ - Usage insights & performance metrics (dashboard, bot analytics, usage stats)
@@ -266,8 +266,7 @@ By building foundational systems first, we avoid rework and ensure chat has all 
   - [x] Wellbeing dashboard with mood overview and usage stats
   - [x] Mood journal interface with streak tracking
   - [x] Self-moderation settings (usage limits, break reminders, night mode)
-  - [x] Crisis support resources directory with filtering
-  - [x] API endpoints for mood, settings, and crisis support
+  - [x] API endpoints for mood and settings
 - [x] Create `/analytics` usage insights dashboard ✅ **COMPLETED**
   - [x] Analytics dashboard with overview stats (bots, conversations, likes, favorites)
   - [x] Bot performance metrics with daily stats and sorting
@@ -387,7 +386,7 @@ By building foundational systems first, we avoid rework and ensure chat has all 
 ### **Completed:**
 - ✅ **Home Page**: Complete splash page with magical effects
 - ✅ **Authentication**: Clerk integration with catch-all routes
-- ✅ **Database Schema**: All 30 collections configured (added BotInteraction, VectorRecord, KnowledgeActivationLog)
+- ✅ **Database Schema**: All 29 collections configured (added BotInteraction, VectorRecord, KnowledgeActivationLog)
 - ✅ **UI/UX Theme**: Fantasy theme system implemented
 - ✅ **Create Page**: Bot creation wizard with multi-step form
 - ✅ **Edit Workflow**: Reusable form component for create/edit
@@ -454,15 +453,14 @@ By building foundational systems first, we avoid rework and ensure chat has all 
 19. **CreatorProfiles** - Multi-tenant creator showcase pages
 20. **AccessControl** - Fine-grained permissions
 21. **SelfModeration** - Usage limits and health tools
-22. **CrisisSupport** - Mental health resources
-23. **UsageAnalytics** - Comprehensive usage tracking
-24. **MemoryInsights** - Story progression analytics
-25. **PersonaAnalytics** - Persona effectiveness metrics
-26. **LegalDocuments** - Terms, privacy, compliance
-27. **UserAgreements** - Legal acceptance tracking
-28. **Documentation** - Help documentation
-29. **Tutorials** - Interactive tutorials
-30. **SupportTickets** - Help desk system
+22. **UsageAnalytics** - Comprehensive usage tracking
+23. **MemoryInsights** - Story progression analytics
+24. **PersonaAnalytics** - Persona effectiveness metrics
+25. **LegalDocuments** - Terms, privacy, compliance
+26. **UserAgreements** - Legal acceptance tracking
+27. **Documentation** - Help documentation
+28. **Tutorials** - Interactive tutorials
+29. **SupportTickets** - Help desk system
 
 ---
 
@@ -1142,21 +1140,14 @@ When you add new Payload collections or modify existing ones:
   - Break reminder intervals
   - Night mode hours configuration
   - Intervention triggers (limit exceeded, late night, mood decline)
-- ✅ Created crisis support resources page with filtering:
-  - Category, type, and region filters
-  - Emergency-only filter
-  - Contact buttons (call, text, chat, website)
-  - 24/7 availability badges
 - ✅ Created API endpoints:
   - `/api/wellbeing` - Overall dashboard data
   - `/api/wellbeing/mood` - GET entries, POST new mood
   - `/api/wellbeing/settings` - GET/POST settings, PUT usage tracking
-  - `/api/wellbeing/crisis-support` - GET resources with filtering
 - ✅ Created frontend pages:
   - `/wellbeing` - Main dashboard
   - `/wellbeing/mood` - Mood journal
   - `/wellbeing/settings` - Self-moderation settings
-  - `/wellbeing/resources` - Crisis support resources
 - ✅ Updated completion status to ~75%
 
 ### **2026-01-04 Updates (Late Evening):**

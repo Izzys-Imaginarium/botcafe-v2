@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { MessageSquare, Heart, Star, Edit, User, Calendar, Sparkles } from 'lucide-react'
+import { MessageSquare, Heart, Star, Edit, User, Calendar, Sparkles, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface BotDetailViewProps {
@@ -166,9 +166,32 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
     }
   }
 
-  const handleStartChat = () => {
-    toast.info('Chat functionality coming soon!')
-    // router.push(`/chat/new?bot=${bot?.id}`)
+  const [isStartingChat, setIsStartingChat] = useState(false)
+
+  const handleStartChat = async () => {
+    if (!bot) return
+
+    setIsStartingChat(true)
+    try {
+      const response = await fetch('/api/chat/conversations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          botId: bot.id,
+        }),
+      })
+
+      const data = await response.json() as { message?: string; conversation?: { id: number } }
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create conversation')
+      }
+
+      router.push(`/chat/${data.conversation!.id}`)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to start chat')
+      setIsStartingChat(false)
+    }
   }
 
   const handleEdit = () => {
@@ -302,9 +325,14 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
                   onClick={handleStartChat}
                   className="bg-forest hover:bg-forest/90 text-white"
                   size="lg"
+                  disabled={isStartingChat}
                 >
-                  <MessageSquare className="mr-2 h-5 w-5" />
-                  Start Chat
+                  {isStartingChat ? (
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  ) : (
+                    <MessageSquare className="mr-2 h-5 w-5" />
+                  )}
+                  {isStartingChat ? 'Starting...' : 'Start Chat'}
                 </Button>
 
                 <Button

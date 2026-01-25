@@ -1,10 +1,10 @@
 import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-d1-sqlite'
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
-  await db.run(sql`DROP TABLE \`support_tickets_messages\`;`)
-  await db.run(sql`DROP TABLE \`support_tickets_tags\`;`)
-  await db.run(sql`DROP TABLE \`support_tickets\`;`)
-  await db.run(sql`DROP TABLE \`support_tickets_rels\`;`)
+  await db.run(sql`DROP TABLE IF EXISTS \`support_tickets_messages\`;`)
+  await db.run(sql`DROP TABLE IF EXISTS \`support_tickets_tags\`;`)
+  await db.run(sql`DROP TABLE IF EXISTS \`support_tickets\`;`)
+  await db.run(sql`DROP TABLE IF EXISTS \`support_tickets_rels\`;`)
   await db.run(sql`PRAGMA foreign_keys=OFF;`)
   await db.run(sql`CREATE TABLE \`__new_payload_locked_documents_rels\` (
   	\`id\` integer PRIMARY KEY NOT NULL,
@@ -105,6 +105,8 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.run(sql`CREATE INDEX \`payload_locked_documents_rels_user_agreements_id_idx\` ON \`payload_locked_documents_rels\` (\`user_agreements_id\`);`)
   await db.run(sql`CREATE INDEX \`payload_locked_documents_rels_documentation_id_idx\` ON \`payload_locked_documents_rels\` (\`documentation_id\`);`)
   await db.run(sql`CREATE INDEX \`payload_locked_documents_rels_tutorials_id_idx\` ON \`payload_locked_documents_rels\` (\`tutorials_id\`);`)
+  // Drop crisis_support table (removed collection)
+  await db.run(sql`DROP TABLE IF EXISTS \`crisis_support\`;`)
 }
 
 export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {

@@ -1,7 +1,6 @@
 import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-d1-sqlite'
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
-  await db.run(sql`DROP TABLE \`crisis_support\`;`)
   await db.run(sql`PRAGMA foreign_keys=OFF;`)
   await db.run(sql`CREATE TABLE \`__new_memory\` (
   	\`id\` integer PRIMARY KEY NOT NULL,
@@ -68,7 +67,6 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	\`user_agreements_id\` integer,
   	\`documentation_id\` integer,
   	\`tutorials_id\` integer,
-  	\`support_tickets_id\` integer,
   	FOREIGN KEY (\`parent_id\`) REFERENCES \`payload_locked_documents\`(\`id\`) ON UPDATE no action ON DELETE cascade,
   	FOREIGN KEY (\`users_id\`) REFERENCES \`users\`(\`id\`) ON UPDATE no action ON DELETE cascade,
   	FOREIGN KEY (\`media_id\`) REFERENCES \`media\`(\`id\`) ON UPDATE no action ON DELETE cascade,
@@ -97,11 +95,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	FOREIGN KEY (\`legal_documents_id\`) REFERENCES \`legal_documents\`(\`id\`) ON UPDATE no action ON DELETE cascade,
   	FOREIGN KEY (\`user_agreements_id\`) REFERENCES \`user_agreements\`(\`id\`) ON UPDATE no action ON DELETE cascade,
   	FOREIGN KEY (\`documentation_id\`) REFERENCES \`documentation\`(\`id\`) ON UPDATE no action ON DELETE cascade,
-  	FOREIGN KEY (\`tutorials_id\`) REFERENCES \`tutorials\`(\`id\`) ON UPDATE no action ON DELETE cascade,
-  	FOREIGN KEY (\`support_tickets_id\`) REFERENCES \`support_tickets\`(\`id\`) ON UPDATE no action ON DELETE cascade
+  	FOREIGN KEY (\`tutorials_id\`) REFERENCES \`tutorials\`(\`id\`) ON UPDATE no action ON DELETE cascade
   );
   `)
-  await db.run(sql`INSERT INTO \`__new_payload_locked_documents_rels\`("id", "order", "parent_id", "path", "users_id", "media_id", "bot_id", "bot_interactions_id", "api_key_id", "mood_id", "knowledge_id", "knowledge_collections_id", "knowledge_activation_log_id", "conversation_id", "message_id", "memory_id", "vector_records_id", "token_gifts_id", "subscription_payments_id", "subscription_tiers_id", "token_packages_id", "personas_id", "creator_profiles_id", "access_control_id", "self_moderation_id", "usage_analytics_id", "memory_insights_id", "persona_analytics_id", "legal_documents_id", "user_agreements_id", "documentation_id", "tutorials_id", "support_tickets_id") SELECT "id", "order", "parent_id", "path", "users_id", "media_id", "bot_id", "bot_interactions_id", "api_key_id", "mood_id", "knowledge_id", "knowledge_collections_id", "knowledge_activation_log_id", "conversation_id", "message_id", "memory_id", "vector_records_id", "token_gifts_id", "subscription_payments_id", "subscription_tiers_id", "token_packages_id", "personas_id", "creator_profiles_id", "access_control_id", "self_moderation_id", "usage_analytics_id", "memory_insights_id", "persona_analytics_id", "legal_documents_id", "user_agreements_id", "documentation_id", "tutorials_id", "support_tickets_id" FROM \`payload_locked_documents_rels\`;`)
+  await db.run(sql`INSERT INTO \`__new_payload_locked_documents_rels\`("id", "order", "parent_id", "path", "users_id", "media_id", "bot_id", "bot_interactions_id", "api_key_id", "mood_id", "knowledge_id", "knowledge_collections_id", "knowledge_activation_log_id", "conversation_id", "message_id", "memory_id", "vector_records_id", "token_gifts_id", "subscription_payments_id", "subscription_tiers_id", "token_packages_id", "personas_id", "creator_profiles_id", "access_control_id", "self_moderation_id", "usage_analytics_id", "memory_insights_id", "persona_analytics_id", "legal_documents_id", "user_agreements_id", "documentation_id", "tutorials_id") SELECT "id", "order", "parent_id", "path", "users_id", "media_id", "bot_id", "bot_interactions_id", "api_key_id", "mood_id", "knowledge_id", "knowledge_collections_id", "knowledge_activation_log_id", "conversation_id", "message_id", "memory_id", "vector_records_id", "token_gifts_id", "subscription_payments_id", "subscription_tiers_id", "token_packages_id", "personas_id", "creator_profiles_id", "access_control_id", "self_moderation_id", "usage_analytics_id", "memory_insights_id", "persona_analytics_id", "legal_documents_id", "user_agreements_id", "documentation_id", "tutorials_id" FROM \`payload_locked_documents_rels\`;`)
   await db.run(sql`DROP TABLE \`payload_locked_documents_rels\`;`)
   await db.run(sql`ALTER TABLE \`__new_payload_locked_documents_rels\` RENAME TO \`payload_locked_documents_rels\`;`)
   await db.run(sql`CREATE INDEX \`payload_locked_documents_rels_order_idx\` ON \`payload_locked_documents_rels\` (\`order\`);`)
@@ -135,7 +132,6 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.run(sql`CREATE INDEX \`payload_locked_documents_rels_user_agreements_id_idx\` ON \`payload_locked_documents_rels\` (\`user_agreements_id\`);`)
   await db.run(sql`CREATE INDEX \`payload_locked_documents_rels_documentation_id_idx\` ON \`payload_locked_documents_rels\` (\`documentation_id\`);`)
   await db.run(sql`CREATE INDEX \`payload_locked_documents_rels_tutorials_id_idx\` ON \`payload_locked_documents_rels\` (\`tutorials_id\`);`)
-  await db.run(sql`CREATE INDEX \`payload_locked_documents_rels_support_tickets_id_idx\` ON \`payload_locked_documents_rels\` (\`support_tickets_id\`);`)
   await db.run(sql`ALTER TABLE \`users\` ADD \`role\` text DEFAULT 'user' NOT NULL;`)
   await db.run(sql`ALTER TABLE \`users\` ADD \`nickname\` text;`)
   await db.run(sql`ALTER TABLE \`users\` ADD \`pronouns\` text;`)

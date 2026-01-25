@@ -518,8 +518,9 @@ src/
 ├── app/(frontend)/          # Public pages
 │   ├── (home)/             # Landing page
 │   ├── explore/            # Bot discovery
-│   ├── bot/[slug]/         # Bot detail pages (NEXT)
-│   ├── account/            # User account
+│   ├── bot/[slug]/         # Bot detail pages
+│   ├── account/            # Account settings (profile, security, API keys)
+│   ├── dashboard/          # Creator's Workshop (My Bots, Lore, Memories, Personas)
 │   ├── sign-in/[[...sign-in]]/  # Authentication (catch-all)
 │   ├── sign-up/[[...sign-up]]/
 │   └── create/             # Bot creation wizard
@@ -591,6 +592,24 @@ When you add new Payload collections or modify existing ones:
 ## 🔄 **Recent Changes**
 
 ### **2026-01-25 Updates:**
+- ✅ **Content Dashboard Separation**
+  - Created new `/dashboard` page ("Creator's Workshop") with 4 tabs:
+    - My Bots (moved from Account)
+    - Lore (embedded lore-panel.tsx)
+    - Memories (embedded memory-panel.tsx)
+    - Personas (embedded persona-panel.tsx)
+  - Supports URL tab navigation: `/dashboard?tab=lore`, `/dashboard?tab=memories`, `/dashboard?tab=personas`
+  - `/account` page now focuses on account settings only (Overview, Profile, Security, API Keys, Data)
+  - Updated navigation menus (navbar.tsx, navbar-sidebar.tsx) to link to dashboard tabs
+  - Updated quick actions in account overview to link to dashboard
+  - New components:
+    - `src/modules/content/ui/views/content-dashboard.tsx`
+    - `src/modules/content/ui/components/lore-panel.tsx`
+    - `src/modules/content/ui/components/memory-panel.tsx`
+    - `src/modules/content/ui/components/persona-panel.tsx`
+- ✅ **Creator Profile Editing**
+  - Added `/creators/[username]/edit` page for editing creator profiles
+  - Social links updated to: Website, X (Twitter), Instagram, YouTube, Discord, Ko-fi, Patreon
 - ✅ **Memory Tome Separation from Regular Tomes**
   - Memory tomes (auto-generated from conversations) are now hidden from the main Tomes/Lore section
   - KnowledgeCollections with `collection_metadata.collection_category: 'memories'` are treated as memory tomes

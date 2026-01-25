@@ -59,10 +59,10 @@ const navbarItems = [
 
 const userMenuItems = [
   { href: '/chat', children: 'Chat', icon: MessageSquare },
-  { href: '/account', children: 'My Bots', icon: User },
-  { href: '/lore', children: 'Lore', icon: BookOpen },
-  { href: '/memories/library', children: 'Memories', icon: Brain },
-  { href: '/personas', children: 'Personas', icon: Users },
+  { href: '/dashboard', children: 'My Bots', icon: User },
+  { href: '/dashboard?tab=lore', children: 'Lore', icon: BookOpen },
+  { href: '/dashboard?tab=memories', children: 'Memories', icon: Brain },
+  { href: '/dashboard?tab=personas', children: 'Personas', icon: Users },
   { href: '/analytics', children: 'Analytics', icon: BarChart3 },
   { href: '/wellbeing', children: 'Wellbeing', icon: Heart },
 ]

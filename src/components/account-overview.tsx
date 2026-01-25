@@ -103,24 +103,35 @@ export const AccountOverview = () => {
           <CardTitle className="text-parchment font-display">Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Link href="/create" className="block">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Link href="/dashboard" className="block">
               <div className="p-4 rounded-lg bg-[#0a140a]/20 hover:bg-[#0a140a]/40 transition-colors border border-gold-ancient/20 group">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Bot className="w-5 h-5 text-gold-rich" />
-                    <span className="text-parchment font-lore">Create New Bot</span>
+                    <span className="text-parchment font-lore">My Bots</span>
                   </div>
                   <ArrowRight className="w-4 h-4 text-parchment-dim group-hover:text-parchment transition-colors" />
                 </div>
               </div>
             </Link>
-            <Link href="/lore" className="block">
+            <Link href="/create" className="block">
+              <div className="p-4 rounded-lg bg-[#0a140a]/20 hover:bg-[#0a140a]/40 transition-colors border border-gold-ancient/20 group">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Bot className="w-5 h-5 text-forest-light" />
+                    <span className="text-parchment font-lore">Create Bot</span>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-parchment-dim group-hover:text-parchment transition-colors" />
+                </div>
+              </div>
+            </Link>
+            <Link href="/dashboard?tab=lore" className="block">
               <div className="p-4 rounded-lg bg-[#0a140a]/20 hover:bg-[#0a140a]/40 transition-colors border border-gold-ancient/20 group">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <BookOpen className="w-5 h-5 text-magic-teal" />
-                    <span className="text-parchment font-lore">Browse Lore</span>
+                    <span className="text-parchment font-lore">Lore Library</span>
                   </div>
                   <ArrowRight className="w-4 h-4 text-parchment-dim group-hover:text-parchment transition-colors" />
                 </div>

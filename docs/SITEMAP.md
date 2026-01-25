@@ -1,7 +1,7 @@
 # BotCafe v2 - Complete Sitemap
 
 **Last Updated**: 2026-01-25
-**Version**: 2.21
+**Version**: 2.22
 **Status**: ~95% Complete
 
 ---
@@ -35,7 +35,8 @@
 
 | Route | Status | Description |
 |-------|--------|-------------|
-| `/account` | ✅ Complete | User dashboard with My Bots, stats, and profile |
+| `/account` | ✅ Complete | Account settings (profile, security, API keys, data) |
+| `/dashboard` | ✅ Complete | Creator's Workshop - My Bots, Lore, Memories, Personas |
 
 ### Knowledge System (Lore)
 

@@ -54,7 +54,7 @@ const navbarItems = [
   { href: '/', children: 'Home' },
   { href: '/explore', children: 'Explore' },
   { href: '/creators', children: 'Creators' },
-  { href: '/create', children: 'Create' },
+  { href: '/dashboard', children: 'Create' },
 ]
 
 const userMenuItems = [

@@ -1,23 +1,13 @@
-import { MagicalBackground } from '@/modules/home/ui/components/magical-background'
-import { WellbeingDashboardView } from '@/modules/wellbeing/ui/views/wellbeing-dashboard-view'
+import { redirect } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Wellbeing Center | BotCafé',
+  title: 'Wellbeing | BotCafé',
   description: 'Track your mood, manage usage limits, and access mental health support resources.',
 }
 
 export default function WellbeingPage() {
-  return (
-    <>
-      {/* Magical background effects */}
-      <MagicalBackground />
-
-      {/* Wellbeing dashboard */}
-      <div className="relative z-10 pt-24">
-        <WellbeingDashboardView />
-      </div>
-    </>
-  )
+  // Wellbeing is now integrated into the Account page
+  redirect('/account?tab=wellbeing')
 }

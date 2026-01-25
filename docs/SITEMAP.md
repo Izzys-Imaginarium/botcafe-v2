@@ -35,7 +35,7 @@
 
 | Route | Status | Description |
 |-------|--------|-------------|
-| `/account` | ✅ Complete | Account Sanctuary - 6 tabs: Overview (analytics), Wellbeing, Profile, Security, API Keys, Data |
+| `/account` | ✅ Complete | Account settings - 6 tabs: Overview (analytics), Wellbeing, Profile, Security, API Keys, Data |
 | `/dashboard` | ✅ Complete | Creator's Workshop - My Bots, Lore, Memories, Personas |
 
 ### Knowledge System (Lore)
@@ -65,7 +65,7 @@
 
 | Route | Status | Description |
 |-------|--------|-------------|
-| `/wellbeing` | ⚠️ Integrated | Now accessible via Account page Wellbeing tab |
+| `/wellbeing` | ↪️ Redirect | Redirects to `/account?tab=wellbeing` |
 | `/wellbeing/mood` | ✅ Complete | Mood journal with emoji selection and notes |
 | `/wellbeing/settings` | ✅ Complete | Self-moderation settings (limits, breaks, night mode) |
 | `/wellbeing/resources` | ✅ Complete | Crisis support resources directory |
@@ -74,7 +74,7 @@
 
 | Route | Status | Description |
 |-------|--------|-------------|
-| `/analytics` | ⚠️ Integrated | Now accessible via Account page Overview tab |
+| `/analytics` | ↪️ Redirect | Redirects to `/account?tab=overview` |
 | `/analytics/bots` | ✅ Complete | Bot performance metrics |
 | `/analytics/usage` | ✅ Complete | Usage statistics and content breakdown |
 
@@ -250,8 +250,8 @@
 
 ## Route Summary
 
-| Category | Complete | Integrated | Total |
-|----------|----------|------------|-------|
+| Category | Complete | Redirect | Total |
+|----------|----------|----------|-------|
 | Public Pages | 9 | 0 | 9 |
 | Authentication | 2 | 0 | 2 |
 | Account & Dashboard | 2 | 0 | 2 |
@@ -267,7 +267,7 @@
 | API Endpoints | 51 | 0 | 51 |
 | **Grand Total** | **86** | **2** | **88** |
 
-*Note: "Integrated" routes are now accessed via tabs on the Account page instead of standalone pages.*
+*Note: "Redirect" routes automatically redirect to the Account page with the appropriate tab.*
 
 ---
 
@@ -303,7 +303,7 @@ BotCafe
 │   ├── Lore (/dashboard?tab=lore)
 │   ├── Memories (/dashboard?tab=memories)
 │   └── Personas (/dashboard?tab=personas)
-├── Account (/account) - Account Sanctuary
+├── Account (/account)
 │   ├── Overview (analytics dashboard)
 │   ├── Wellbeing (mood, usage tracking)
 │   ├── Profile (user settings)
@@ -319,10 +319,13 @@ BotCafe
 ├── Personas (/personas) - Standalone access
 │   ├── Create (/personas/create)
 │   └── Edit (/personas/edit/[id])
-├── Wellbeing - Sub-pages still accessible
+├── Wellbeing Sub-pages (main /wellbeing redirects to Account)
 │   ├── Mood (/wellbeing/mood)
 │   ├── Settings (/wellbeing/settings)
 │   └── Resources (/wellbeing/resources)
+├── Analytics Sub-pages (main /analytics redirects to Account)
+│   ├── Bots (/analytics/bots)
+│   └── Usage (/analytics/usage)
 ├── Help (/help)
 │   ├── Article (/help/[slug])
 │   └── Category (/help/category/[category])

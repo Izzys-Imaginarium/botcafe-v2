@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ProfileSidebar } from '@/components/profile-sidebar'
@@ -12,8 +13,20 @@ import { DataManagement } from '@/components/data-management'
 import { AccountWellbeing } from '@/components/account-wellbeing'
 import { User, Shield, Key, Database, Activity, Heart } from 'lucide-react'
 
+const validTabs = ['overview', 'wellbeing', 'profile', 'security', 'api-keys', 'data']
+
 export const AccountDashboard = () => {
-  const [activeTab, setActiveTab] = useState('overview')
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get('tab')
+  const initialTab = tabParam && validTabs.includes(tabParam) ? tabParam : 'overview'
+  const [activeTab, setActiveTab] = useState(initialTab)
+
+  // Update active tab when URL parameter changes
+  useEffect(() => {
+    if (tabParam && validTabs.includes(tabParam)) {
+      setActiveTab(tabParam)
+    }
+  }, [tabParam])
 
   return (
     <div className="px-4 lg:px-12 py-8 flex flex-col gap-6">

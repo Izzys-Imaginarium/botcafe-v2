@@ -6,19 +6,16 @@
  */
 
 import type { Payload } from 'payload'
-import { getPayload } from 'payload'
-import config from '@payload-config'
 import type { Conversation, Message, Memory, Knowledge, KnowledgeCollection } from '@/payload-types'
 import { sendMessage, type ProviderName } from '@/lib/llm'
 
 /**
- * Get a fresh Payload instance for background operations
- * This ensures the instance isn't tied to request lifecycle
+ * Cloudflare Workers Note:
+ * Previously we created a fresh Payload instance for background operations,
+ * but this causes issues in Cloudflare Workers where creating a new instance
+ * in a background context can fail and trigger process.exit(1).
+ * Instead, we now use the Payload instance passed to us.
  */
-async function getBackgroundPayload(): Promise<Payload> {
-  const payloadConfig = await config
-  return getPayload({ config: payloadConfig })
-}
 
 export interface MemoryTriggerConfig {
   messageThreshold: number // Generate every N messages
@@ -252,8 +249,9 @@ async function findOrCreateMemoryTome(
 /**
  * Generate a memory from recent conversation messages
  * Saves as a lore entry in the conversation's memory tome
- * Note: Creates its own Payload instance for background operations to avoid
- * issues with request lifecycle terminating the connection
+ *
+ * Note: Uses the passed Payload instance directly. In Cloudflare Workers,
+ * creating a new instance in background contexts can trigger process.exit(1).
  */
 export interface SummarizationConfig {
   apiKey: string
@@ -262,7 +260,7 @@ export interface SummarizationConfig {
 }
 
 export async function generateConversationMemory(
-  _payload: Payload | null, // Ignored - we create our own instance for background safety
+  payloadInstance: Payload,
   conversationId: number,
   options: {
     forceGenerate?: boolean
@@ -277,11 +275,15 @@ export async function generateConversationMemory(
 }> {
   console.log(`[Memory Service] generateConversationMemory called for conversation ${conversationId}, forceGenerate=${options.forceGenerate}`)
 
+  // Validate we have a Payload instance
+  if (!payloadInstance) {
+    console.error(`[Memory Service] ERROR: No Payload instance provided`)
+    return { success: false, error: 'No Payload instance provided' }
+  }
+
+  const payload = payloadInstance
+
   try {
-    // Create our own Payload instance to avoid request lifecycle issues
-    console.log(`[Memory Service] Creating fresh Payload instance...`)
-    const payload = await getBackgroundPayload()
-    console.log(`[Memory Service] Payload instance ready`)
 
     // Check if generation is needed (unless forced)
     if (!options.forceGenerate) {

@@ -304,8 +304,7 @@ export async function GET(
           overrideAccess: true,
         })
 
-        // Trigger memory auto-generation
-        // Must be awaited - fire-and-forget promises get terminated in Cloudflare Workers
+        // Trigger memory auto-generation with timeout protection for Cloudflare Workers
         // First memory: Force generate when tokens first exceed threshold
         // Subsequent memories: Let the message count threshold (20 messages) decide
         const hasEverSummarized = (conversation.last_summarized_message_index || 0) > 0
@@ -315,22 +314,36 @@ export async function GET(
 
         if (shouldCheck) {
           console.log(`[Memory Trigger] Attempting memory generation for conversation ${conversation.id}, forceGenerate=${!hasEverSummarized}`)
+
+          // Create a timeout wrapper to prevent waitUntil() timeouts in Cloudflare Workers
+          // Memory generation can involve LLM calls which may take too long
+          const MEMORY_TIMEOUT_MS = 15000 // 15 seconds max
+
+          const memoryPromise = generateConversationMemory(payload, conversation.id, {
+            forceGenerate: !hasEverSummarized, // Force first memory, use checks for subsequent
+            summarization: {
+              apiKey: apiKey.key,
+              provider: provider,
+              model: model, // Use same model as chat for consistency
+            },
+          })
+
+          const timeoutPromise = new Promise<{ success: false; error: string }>((resolve) => {
+            setTimeout(() => {
+              resolve({ success: false, error: 'Memory generation timed out' })
+            }, MEMORY_TIMEOUT_MS)
+          })
+
           try {
-            const result = await generateConversationMemory(payload, conversation.id, {
-              forceGenerate: !hasEverSummarized, // Force first memory, use checks for subsequent
-              summarization: {
-                apiKey: apiKey.key,
-                provider: provider,
-                model: model, // Use same model as chat for consistency
-              },
-            })
+            const result = await Promise.race([memoryPromise, timeoutPromise])
             if (result.success) {
               console.log(`[Memory Trigger] SUCCESS - Memory auto-generated for conversation ${conversation.id}:`, result.memoryId)
             } else {
               console.log(`[Memory Trigger] SKIPPED - Conversation ${conversation.id}:`, result.error)
             }
           } catch (memoryError) {
-            console.error('[Memory Trigger] ERROR:', memoryError)
+            // Log but don't propagate - this prevents any process.exit from bubbling up
+            console.error('[Memory Trigger] ERROR (caught and contained):', memoryError instanceof Error ? memoryError.message : 'Unknown error')
           }
         }
 

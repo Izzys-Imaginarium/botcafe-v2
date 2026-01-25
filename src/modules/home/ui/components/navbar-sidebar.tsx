@@ -11,7 +11,6 @@ import {
   BookOpen,
   Brain,
   Users,
-  Heart,
   HelpCircle,
 } from 'lucide-react'
 
@@ -27,7 +26,6 @@ const userMenuItems = [
   { href: '/dashboard?tab=lore', children: 'Lore', icon: BookOpen },
   { href: '/dashboard?tab=memories', children: 'Memories', icon: Brain },
   { href: '/dashboard?tab=personas', children: 'Personas', icon: Users },
-  { href: '/wellbeing', children: 'Wellbeing', icon: Heart },
   { href: '/help', children: 'Help', icon: HelpCircle },
 ]
 

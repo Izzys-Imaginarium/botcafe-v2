@@ -9,7 +9,8 @@ import { AccountProfile } from '@/components/account-profile'
 import { AccountSecurity } from '@/components/account-security'
 import { ApiKeyManagement } from '@/components/api-key-management'
 import { DataManagement } from '@/components/data-management'
-import { User, Shield, Key, Database, Activity } from 'lucide-react'
+import { AccountWellbeing } from '@/components/account-wellbeing'
+import { User, Shield, Key, Database, Activity, Heart } from 'lucide-react'
 
 export const AccountDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview')
@@ -33,10 +34,14 @@ export const AccountDashboard = () => {
 
         <div className="lg:col-span-3">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 glass-rune border-gold-ancient/30">
+            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 glass-rune border-gold-ancient/30">
               <TabsTrigger value="overview" className="text-xs lg:text-sm">
                 <Activity className="w-4 h-4 mr-2" />
                 Overview
+              </TabsTrigger>
+              <TabsTrigger value="wellbeing" className="text-xs lg:text-sm">
+                <Heart className="w-4 h-4 mr-2" />
+                Wellbeing
               </TabsTrigger>
               <TabsTrigger value="profile" className="text-xs lg:text-sm">
                 <User className="w-4 h-4 mr-2" />
@@ -59,6 +64,10 @@ export const AccountDashboard = () => {
             <div className="mt-6">
               <TabsContent value="overview">
                 <AccountOverview />
+              </TabsContent>
+
+              <TabsContent value="wellbeing">
+                <AccountWellbeing />
               </TabsContent>
 
               <TabsContent value="profile">

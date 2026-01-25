@@ -4,6 +4,34 @@ export const Users: CollectionConfig = {
   slug: 'users',
   admin: {
     useAsTitle: 'email',
+    // Only show users in admin panel to admins
+    hidden: ({ user }) => user?.role !== 'admin',
+  },
+  access: {
+    // Only admins can access the admin panel
+    admin: ({ req: { user } }) => {
+      return user?.role === 'admin'
+    },
+    // Users can read their own data
+    read: ({ req: { user } }) => {
+      if (!user) return false
+      if (user.role === 'admin') return true
+      return { id: { equals: user.id } }
+    },
+    // Users can update their own data (except role)
+    update: ({ req: { user } }) => {
+      if (!user) return false
+      if (user.role === 'admin') return true
+      return { id: { equals: user.id } }
+    },
+    // Only admins can create users directly (Clerk handles user creation)
+    create: ({ req: { user } }) => {
+      return user?.role === 'admin'
+    },
+    // Only admins can delete users
+    delete: ({ req: { user } }) => {
+      return user?.role === 'admin'
+    },
   },
   auth: {
     // Enable forgot password functionality
@@ -119,6 +147,25 @@ export const Users: CollectionConfig = {
   fields: [
     // Email added by default
     {
+      name: 'role',
+      type: 'select',
+      defaultValue: 'user',
+      required: true,
+      options: [
+        { label: 'User', value: 'user' },
+        { label: 'Moderator', value: 'moderator' },
+        { label: 'Admin', value: 'admin' },
+      ],
+      access: {
+        // Only admins can change roles
+        update: ({ req: { user } }) => user?.role === 'admin',
+      },
+      admin: {
+        description: 'User role - only admins can access the Payload admin panel',
+        position: 'sidebar',
+      },
+    },
+    {
       name: 'avatar',
       type: 'upload',
       relationTo: 'media',
@@ -128,6 +175,58 @@ export const Users: CollectionConfig = {
       name: 'name',
       type: 'text',
       required: false,
+      admin: {
+        description: 'Display name used when not using a persona',
+      },
+    },
+    {
+      type: 'collapsible',
+      label: 'Chat Preferences',
+      admin: {
+        initCollapsed: false,
+        description: 'These preferences are used when chatting without a persona',
+      },
+      fields: [
+        {
+          name: 'nickname',
+          type: 'text',
+          required: false,
+          admin: {
+            description: 'What bots should call you (e.g., "Alex", "Captain", "Boss")',
+          },
+        },
+        {
+          name: 'pronouns',
+          type: 'select',
+          options: [
+            { label: 'He/Him', value: 'he/him' },
+            { label: 'She/Her', value: 'she/her' },
+            { label: 'They/Them', value: 'they/them' },
+            { label: 'Other', value: 'other' },
+          ],
+          required: false,
+          admin: {
+            description: 'Your preferred pronouns',
+          },
+        },
+        {
+          name: 'custom_pronouns',
+          type: 'text',
+          required: false,
+          admin: {
+            description: 'Custom pronouns (if "Other" selected)',
+            condition: (data) => data.pronouns === 'other',
+          },
+        },
+        {
+          name: 'description',
+          type: 'textarea',
+          required: false,
+          admin: {
+            description: 'A brief description about yourself that bots will know',
+          },
+        },
+      ],
     },
   ],
   hooks: {

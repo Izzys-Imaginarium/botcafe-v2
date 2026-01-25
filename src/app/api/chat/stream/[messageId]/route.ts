@@ -180,12 +180,14 @@ export async function GET(
         })
 
         // Build context with knowledge activation
+        // Pass user for profile context when no persona is selected
         const context = await buildChatContext({
           payload,
           userId: payloadUser.id,
           conversation,
           bot,
           persona,
+          user: persona ? null : payloadUser, // Only use user profile when no persona
           recentMessages: recentMessages.docs.reverse(), // Oldest first
         })
 

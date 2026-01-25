@@ -175,8 +175,31 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: number;
+  /**
+   * User role - only admins can access the Payload admin panel
+   */
+  role: 'user' | 'moderator' | 'admin';
   avatar?: (number | null) | Media;
+  /**
+   * Display name used when not using a persona
+   */
   name?: string | null;
+  /**
+   * What bots should call you (e.g., "Alex", "Captain", "Boss")
+   */
+  nickname?: string | null;
+  /**
+   * Your preferred pronouns
+   */
+  pronouns?: ('he/him' | 'she/her' | 'they/them' | 'other') | null;
+  /**
+   * Custom pronouns (if "Other" selected)
+   */
+  custom_pronouns?: string | null;
+  /**
+   * A brief description about yourself that bots will know
+   */
+  description?: string | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -2887,8 +2910,13 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  role?: T;
   avatar?: T;
   name?: T;
+  nickname?: T;
+  pronouns?: T;
+  custom_pronouns?: T;
+  description?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;

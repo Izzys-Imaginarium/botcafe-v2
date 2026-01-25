@@ -10,7 +10,7 @@
  */
 
 import type { Payload } from 'payload'
-import type { Bot, Persona, Conversation, Message } from '@/payload-types'
+import type { Bot, Persona, Conversation, Message, User } from '@/payload-types'
 import type { ChatMessage } from '@/lib/llm'
 import { ActivationEngine } from '@/lib/knowledge-activation/activation-engine'
 import { PromptBuilder } from '@/lib/knowledge-activation/prompt-builder'
@@ -21,6 +21,8 @@ export interface BuildContextParams {
   conversation: Conversation
   bot: Bot
   persona: Persona | null
+  /** User profile - used when no persona is selected */
+  user?: User | null
   recentMessages: Message[]
   /** Additional bots in multi-bot conversations */
   additionalBots?: Bot[]
@@ -41,10 +43,10 @@ export interface ChatContext {
  * Build the complete chat context for an LLM call
  */
 export async function buildChatContext(params: BuildContextParams): Promise<ChatContext> {
-  const { payload, userId, conversation, bot, persona, recentMessages, additionalBots, env } = params
+  const { payload, userId, conversation, bot, persona, user, recentMessages, additionalBots, env } = params
 
-  // Build base system prompt from bot
-  let systemPrompt = buildBotSystemPrompt(bot, persona, additionalBots)
+  // Build base system prompt from bot (includes user/persona context)
+  let systemPrompt = buildBotSystemPrompt(bot, persona, user, additionalBots)
 
   // Try to activate knowledge entries
   let activatedLoreCount = 0
@@ -168,10 +170,10 @@ export async function buildChatContext(params: BuildContextParams): Promise<Chat
 }
 
 /**
- * Build the base system prompt from bot and persona
+ * Build the base system prompt from bot and persona/user
  * Incorporates proven prompt structure from original BotCafé
  */
-function buildBotSystemPrompt(bot: Bot, persona: Persona | null, additionalBots?: Bot[]): string {
+function buildBotSystemPrompt(bot: Bot, persona: Persona | null, user?: User | null, additionalBots?: Bot[]): string {
   const parts: string[] = []
 
   // === ROLEPLAY INSTRUCTIONS (from original BotCafé) ===
@@ -251,8 +253,9 @@ function buildBotSystemPrompt(bot: Bot, persona: Persona | null, additionalBots?
     parts.push(`\nWhen greeting someone, ${bot.name} might say something like: "${bot.greeting}"`)
   }
 
-  // === USER PERSONA CONTEXT (from original BotCafé) ===
+  // === USER CONTEXT (persona or user profile) ===
   if (persona) {
+    // User is acting as a persona
     parts.push(`\n\n--- User Context ---`)
     parts.push(`The user's name is ${persona.name}.`)
 
@@ -289,6 +292,33 @@ function buildBotSystemPrompt(bot: Bot, persona: Persona | null, additionalBots?
           .filter(Boolean)
           .join(', ')
         if (topics) parts.push(`Topics to avoid with this user: ${topics}`)
+      }
+    }
+  } else if (user) {
+    // User is speaking as themselves (no persona) - use profile info
+    const hasUserInfo = user.nickname || user.name || user.pronouns || user.description
+    if (hasUserInfo) {
+      parts.push(`\n\n--- User Context ---`)
+
+      // Prefer nickname for addressing the user, fall back to name
+      if (user.nickname) {
+        parts.push(`The user should be called ${user.nickname}.`)
+        if (user.name && user.name !== user.nickname) {
+          parts.push(`Their full name is ${user.name}.`)
+        }
+      } else if (user.name) {
+        parts.push(`The user's name is ${user.name}.`)
+      }
+
+      if (user.pronouns) {
+        const pronounText = user.pronouns === 'other'
+          ? user.custom_pronouns || 'they/them'
+          : user.pronouns
+        parts.push(`Their pronouns are ${pronounText}.`)
+      }
+
+      if (user.description) {
+        parts.push(`\nAbout the user: ${user.description}`)
       }
     }
   }

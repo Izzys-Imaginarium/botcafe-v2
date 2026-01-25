@@ -8,7 +8,6 @@
 
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -90,7 +89,7 @@ export function ConversationList({
   }
 
   return (
-    <div className={cn('flex flex-col h-full', className)}>
+    <div className={cn('flex flex-col', className)}>
       {/* Header - optional, hidden when page already has one */}
       {showHeader && (
         <div className="p-4 border-b border-border/50">
@@ -107,7 +106,7 @@ export function ConversationList({
       )}
 
       {/* List */}
-      <ScrollArea className="flex-1">
+      <div className="flex-1">
         <div className="p-2 space-y-1">
           {isLoading && conversations.length === 0 && (
             <div className="py-8 text-center text-muted-foreground">
@@ -230,7 +229,7 @@ export function ConversationList({
             )
           })}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   )
 }

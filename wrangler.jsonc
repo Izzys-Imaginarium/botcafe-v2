@@ -63,6 +63,9 @@
       "binding": "D1",
       "database_id": "7908e1d3-6b00-4a21-bed3-9ca9aebfe8e3",
       "database_name": "botcafe-v2",
+      // Set to true for deployment/migrations against remote, false for local dev
+      // Deploy scripts override this via WRANGLER_REMOTE=true
+      "remote": false,
     },
   ],
 
@@ -83,6 +86,100 @@
       "index_name": "botcafe-embeddings",
     },
   ],
+
+  // Environment configurations
+  "env": {
+    "development": {
+      "name": "botcafe-v2-dev",
+      "vars": {
+        "NEXT_PUBLIC_SITE_URL": "http://localhost:3000",
+        "NEXT_PUBLIC_CLERK_SIGN_IN_URL": "/sign-in",
+        "NEXT_PUBLIC_CLERK_SIGN_UP_URL": "/sign-up",
+        "NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL": "/account",
+        "NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL": "/account",
+        "FROM_EMAIL": "noreply@botcafe.ai",
+        "FROM_NAME": "BotCafe Dev",
+        "CLOUDFLARE_ENV": "development",
+      },
+      "d1_databases": [
+        {
+          "binding": "D1",
+          "database_id": "7908e1d3-6b00-4a21-bed3-9ca9aebfe8e3",
+          "database_name": "botcafe-v2-dev",
+          "remote": false,
+        },
+      ],
+      "services": [
+        {
+          "binding": "WORKER_SELF_REFERENCE",
+          "service": "botcafe-v2-dev",
+        },
+      ],
+      "r2_buckets": [
+        {
+          "binding": "R2",
+          "bucket_name": "botcafe-v2-dev",
+        },
+      ],
+      "images": {
+        "binding": "IMAGES",
+      },
+      "ai": {
+        "binding": "AI",
+      },
+      "vectorize": [
+        {
+          "binding": "VECTORIZE",
+          "index_name": "botcafe-embeddings",
+        },
+      ],
+    },
+    "production": {
+      "name": "botcafe-v2",
+      "vars": {
+        "NEXT_PUBLIC_SITE_URL": "https://dev.botcafe.ai",
+        "NEXT_PUBLIC_CLERK_SIGN_IN_URL": "/sign-in",
+        "NEXT_PUBLIC_CLERK_SIGN_UP_URL": "/sign-up",
+        "NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL": "/account",
+        "NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL": "/account",
+        "FROM_EMAIL": "noreply@botcafe.ai",
+        "FROM_NAME": "BotCafe Admin",
+        "CLOUDFLARE_ENV": "production",
+      },
+      "d1_databases": [
+        {
+          "binding": "D1",
+          "database_id": "7908e1d3-6b00-4a21-bed3-9ca9aebfe8e3",
+          "database_name": "botcafe-v2",
+          "remote": true,
+        },
+      ],
+      "services": [
+        {
+          "binding": "WORKER_SELF_REFERENCE",
+          "service": "botcafe-v2",
+        },
+      ],
+      "r2_buckets": [
+        {
+          "binding": "R2",
+          "bucket_name": "botcafe-v2",
+        },
+      ],
+      "images": {
+        "binding": "IMAGES",
+      },
+      "ai": {
+        "binding": "AI",
+      },
+      "vectorize": [
+        {
+          "binding": "VECTORIZE",
+          "index_name": "botcafe-embeddings",
+        },
+      ],
+    },
+  },
 }
 
 /*

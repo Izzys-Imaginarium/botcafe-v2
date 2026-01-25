@@ -1451,6 +1451,7 @@ export async function POST() {
           name: clerkUser.firstName
             ? `${clerkUser.firstName} ${clerkUser.lastName || ''}`
             : clerkUser.username || 'Admin',
+          role: 'admin',
         },
       })
       payloadUserId = newUser.id

@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
           name: clerkUser.firstName && clerkUser.lastName
             ? `${clerkUser.firstName} ${clerkUser.lastName}`
             : clerkUser.username || clerkUser.emailAddresses[0]?.emailAddress || 'User',
-          // Add any other user fields as needed
+          role: 'user',
         },
         overrideAccess: true,
       })

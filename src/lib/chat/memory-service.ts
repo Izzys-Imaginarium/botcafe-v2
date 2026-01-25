@@ -8,7 +8,7 @@
 import type { Payload } from 'payload'
 import { getPayload } from 'payload'
 import config from '@payload-config'
-import type { Conversation, Message, Memory } from '@/payload-types'
+import type { Conversation, Message, Memory, Knowledge, KnowledgeCollection } from '@/payload-types'
 
 /**
  * Get a fresh Payload instance for background operations
@@ -86,7 +86,77 @@ export async function checkMemoryTrigger(
 }
 
 /**
+ * Find or create a memory tome (KnowledgeCollection) for a conversation
+ * The tome is named after the conversation title
+ */
+async function findOrCreateMemoryTome(
+  payload: Payload,
+  conversation: Conversation,
+  userId: number,
+  botIds: number[]
+): Promise<KnowledgeCollection> {
+  // Check if conversation already has a linked tome
+  const existingTomeId = typeof conversation.memory_tome === 'object'
+    ? conversation.memory_tome?.id
+    : conversation.memory_tome
+
+  if (existingTomeId) {
+    const existingTome = await payload.findByID({
+      collection: 'knowledgeCollections',
+      id: existingTomeId,
+      overrideAccess: true,
+    })
+    if (existingTome) {
+      console.log(`[Memory Service] Using existing tome: ${existingTome.name} (ID: ${existingTome.id})`)
+      return existingTome as KnowledgeCollection
+    }
+  }
+
+  // Generate tome name from conversation title or create default
+  const tomeName = conversation.title || `Memories from Conversation #${conversation.id}`
+
+  console.log(`[Memory Service] Creating new tome: "${tomeName}"`)
+
+  // Create new tome for this conversation
+  const newTome = await payload.create({
+    collection: 'knowledgeCollections',
+    data: {
+      name: tomeName,
+      user: userId,
+      bot: botIds,
+      description: `Auto-generated memory collection from conversation "${tomeName}"`,
+      sharing_settings: {
+        sharing_level: 'private',
+        allow_collaboration: false,
+        allow_fork: false,
+        knowledge_count: 0,
+        is_public: false,
+      },
+      collection_metadata: {
+        collection_category: 'memories',
+        tags: [{ tag: 'auto-generated' }, { tag: 'conversation-memory' }],
+      },
+    },
+    overrideAccess: true,
+  })
+
+  // Link the tome to the conversation
+  await payload.update({
+    collection: 'conversation',
+    id: conversation.id,
+    data: {
+      memory_tome: newTome.id,
+    },
+    overrideAccess: true,
+  })
+
+  console.log(`[Memory Service] Created and linked new tome: ${newTome.name} (ID: ${newTome.id})`)
+  return newTome as KnowledgeCollection
+}
+
+/**
  * Generate a memory from recent conversation messages
+ * Saves as a lore entry in the conversation's memory tome
  * Note: Creates its own Payload instance for background operations to avoid
  * issues with request lifecycle terminating the connection
  */
@@ -218,28 +288,79 @@ export async function generateConversationMemory(
       return { success: false, error: 'No bots found in conversation' }
     }
 
-    // Create memory with all bots and personas
-    console.log(`[Memory Service] Creating memory for user=${userId}, bots=[${botIds.join(',')}], personas=[${personaIds.join(',')}], conversation=${conversationId}`)
-    const memory = await payload.create({
-      collection: 'memory',
+    // Find or create the memory tome for this conversation
+    const memoryTome = await findOrCreateMemoryTome(payload, conversation, userId, botIds)
+
+    // Calculate importance and emotional context for tagging
+    const importance = calculateImportance(newMessages)
+    const emotionalContext = extractEmotionalContext(newMessages)
+
+    // Build tags array
+    const tags: Array<{ tag: string }> = [
+      { tag: 'auto-generated' },
+      { tag: `importance-${importance}` },
+    ]
+    if (emotionalContext) {
+      emotionalContext.split(', ').forEach(emotion => {
+        tags.push({ tag: `mood-${emotion}` })
+      })
+    }
+
+    // Create lore entry in the tome
+    console.log(`[Memory Service] Creating lore entry in tome "${memoryTome.name}" for conversation=${conversationId}`)
+    const loreEntry = await payload.create({
+      collection: 'knowledge',
       data: {
         user: userId,
-        bot: botIds, // Now an array of bot IDs
-        persona: personaIds.length > 0 ? personaIds : undefined, // Array of persona IDs (optional)
-        conversation: conversationId,
-        type: 'short_term',
+        knowledge_collection: memoryTome.id,
+        type: 'legacy_memory',
         entry: summary,
-        participants: {
+        tags,
+        is_legacy_memory: true,
+        source_conversation_id: conversationId,
+        original_participants: {
           personas: participants?.personas || [],
           bots: participants?.bots || [],
         },
-        importance: calculateImportance(newMessages),
-        emotional_context: extractEmotionalContext(newMessages),
-        is_vectorized: false,
+        memory_date_range: {
+          start: newMessages[0]?.createdAt || new Date().toISOString(),
+          end: newMessages[newMessages.length - 1]?.createdAt || new Date().toISOString(),
+        },
+        applies_to_bots: botIds,
+        applies_to_personas: personaIds.length > 0 ? personaIds : undefined,
+        tokens: Math.ceil(summary.length / 4), // Rough estimate
+        activation_settings: {
+          activation_mode: 'vector', // Semantic search for memories
+          vector_similarity_threshold: 0.6,
+          max_vector_results: 5,
+          probability: 100,
+        },
+        positioning: {
+          position: 'after_character',
+          order: 50, // Medium priority
+        },
+        privacy_settings: {
+          privacy_level: 'private',
+        },
       },
       overrideAccess: true,
     })
-    console.log(`[Memory Service] Memory created with ID: ${memory.id}`)
+    console.log(`[Memory Service] Lore entry created with ID: ${loreEntry.id}`)
+
+    // Update tome's knowledge count
+    const currentCount = memoryTome.sharing_settings?.knowledge_count || 0
+    await payload.update({
+      collection: 'knowledgeCollections',
+      id: memoryTome.id,
+      data: {
+        sharing_settings: {
+          ...memoryTome.sharing_settings,
+          knowledge_count: currentCount + 1,
+          last_updated: new Date().toISOString(),
+        },
+      },
+      overrideAccess: true,
+    })
 
     // Update conversation
     await payload.update({
@@ -259,7 +380,7 @@ export async function generateConversationMemory(
 
     return {
       success: true,
-      memoryId: memory.id,
+      memoryId: loreEntry.id, // Now returns the lore entry ID
       summary,
     }
   } catch (error) {

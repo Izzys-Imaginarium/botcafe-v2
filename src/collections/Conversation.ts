@@ -144,6 +144,14 @@ export const Conversation: CollectionConfig = {
       },
     },
     {
+      name: 'memory_tome',
+      type: 'relationship',
+      relationTo: 'knowledgeCollections',
+      admin: {
+        description: 'Knowledge collection (tome) where memories from this conversation are stored',
+      },
+    },
+    {
       name: 'conversation_metadata',
       type: 'group',
       fields: [

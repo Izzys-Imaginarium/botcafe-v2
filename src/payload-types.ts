@@ -1231,6 +1231,10 @@ export interface Conversation {
    * Flag when token threshold reached
    */
   requires_summarization?: boolean | null;
+  /**
+   * Knowledge collection (tome) where memories from this conversation are stored
+   */
+  memory_tome?: (number | null) | KnowledgeCollection;
   conversation_metadata?: {
     total_messages?: number | null;
     participant_count?: number | null;
@@ -3412,6 +3416,7 @@ export interface ConversationSelect<T extends boolean = true> {
   last_summarized_at?: T;
   last_summarized_message_index?: T;
   requires_summarization?: T;
+  memory_tome?: T;
   conversation_metadata?:
     | T
     | {

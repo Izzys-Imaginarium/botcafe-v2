@@ -1,7 +1,7 @@
 # BotCafe v2 - Complete Sitemap
 
-**Last Updated**: 2026-01-23
-**Version**: 2.19
+**Last Updated**: 2026-01-25
+**Version**: 2.20
 **Status**: ~95% Complete
 
 ---
@@ -120,9 +120,9 @@
 
 | Endpoint | Methods | Description |
 |----------|---------|-------------|
-| `/api/knowledge` | GET, POST | List and create knowledge entries |
+| `/api/knowledge` | GET, POST | List and create knowledge entries. Query params: `collection`, `page`, `limit`, `includeMemories` (default: false - excludes legacy memory entries) |
 | `/api/knowledge/[id]` | GET, PATCH, DELETE | Get, update, or delete knowledge entry |
-| `/api/knowledge-collections` | GET, POST | List and create collections |
+| `/api/knowledge-collections` | GET, POST | List and create collections. Query params: `includeMemoryTomes` (default: false), `onlyMemoryTomes` (default: false) |
 | `/api/knowledge-collections/[id]` | GET, PATCH, DELETE | Get, update, or delete collection |
 
 ### Sharing & Permissions
@@ -145,7 +145,7 @@
 
 | Endpoint | Methods | Description |
 |----------|---------|-------------|
-| `/api/memories` | GET, POST | List all memories, create new memory |
+| `/api/memories` | GET, POST | List all memories (includes both Memory collection AND Knowledge entries where `is_legacy_memory=true`), create new memory. Query params: `type`, `botId`, `convertedToLore`, `source` ('memory', 'knowledge', 'all' - default: 'all'), `limit`, `offset` |
 | `/api/memories/[id]` | GET, PATCH, DELETE | Get, update, or delete a memory |
 | `/api/memories/import` | POST | Import external conversations |
 | `/api/memories/summarize` | POST | Summarize conversation |

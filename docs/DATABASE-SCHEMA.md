@@ -1,7 +1,7 @@
 # BotCafe v2 - Database Schema
 
-**Last Updated**: 2026-01-24
-**Version**: 3.8
+**Last Updated**: 2026-01-25
+**Version**: 3.9
 **Database**: Cloudflare D1 (SQLite) via Payload CMS
 
 ---
@@ -278,7 +278,7 @@ Grouped knowledge for organization with sharing and collaboration features.
 | `description` | textarea | Collection description |
 | `sharing_settings` | group | Sharing level, collaboration, expiration (see below) |
 | `collaborators` | group | **Deprecated** - Use AccessControl collection for managing collaborators |
-| `collection_metadata` | group | Size, category, tags, difficulty level |
+| `collection_metadata` | group | Size, category, tags, difficulty level (see below) |
 | `usage_analytics` | group | View count, fork count, rating |
 | `created_timestamp` | date | Creation timestamp |
 | `modified_timestamp` | date | Modification timestamp |
@@ -300,6 +300,21 @@ Grouped knowledge for organization with sharing and collaboration features.
 | `is_public` | checkbox | Public visibility |
 
 > **Important**: Lore books (KnowledgeCollections) can only be made public from the Payload admin backend, NOT from the main UI. The API blocks attempts to set `sharing_level: 'public'` from frontend requests.
+
+#### KnowledgeCollections Metadata (group)
+
+| Field | Type | Options/Description |
+|-------|------|---------------------|
+| `collection_category` | select | Category: **general** (default), **memories**, **reference**, **worldbuilding** |
+| `size_estimate` | number | Total size estimate in bytes |
+| `tags` | array | Array of `{ tag: string }` for categorization |
+| `difficulty_level` | select | Content difficulty: beginner, intermediate, advanced |
+
+> **Memory Tomes vs Regular Tomes**: Collections with `collection_category: 'memories'` are "Memory Tomes" - auto-generated collections that store conversation memories. These are:
+> - Hidden from the main Tomes/Lore section by default (use `includeMemoryTomes=true` query param to include)
+> - Displayed in the Memories section instead
+> - Automatically created and linked when conversations generate memories
+> - Named after the conversation they're associated with (e.g., "Memories: Adventure with Aria")
 
 ### VectorRecord
 
@@ -378,6 +393,7 @@ Chat conversation records supporting single-bot and multi-bot conversations.
 | `last_summarized_at` | date | When conversation was last summarized |
 | `last_summarized_message_index` | number | Last message included in summary |
 | `requires_summarization` | checkbox | Flag when token threshold reached |
+| `memory_tome` | relationship (KnowledgeCollections) | Knowledge collection (tome) where auto-generated memories from this conversation are stored |
 | `conversation_metadata` | group | Metadata (see below) |
 | `status` | select | Status: active, archived, muted, pinned |
 | `conversation_settings` | group | Settings (see below) |

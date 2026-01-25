@@ -590,6 +590,27 @@ When you add new Payload collections or modify existing ones:
 
 ## 🔄 **Recent Changes**
 
+### **2026-01-25 Updates:**
+- ✅ **Memory Tome Separation from Regular Tomes**
+  - Memory tomes (auto-generated from conversations) are now hidden from the main Tomes/Lore section
+  - KnowledgeCollections with `collection_metadata.collection_category: 'memories'` are treated as memory tomes
+  - Updated `/api/knowledge-collections` with `includeMemoryTomes` and `onlyMemoryTomes` query params
+  - Memory tomes are displayed in the Memories section instead of Lore section
+- ✅ **Unified Memory Display**
+  - Updated `/api/memories` to fetch from both Memory collection AND Knowledge collection (where `is_legacy_memory=true`)
+  - Added `normalizeKnowledgeToMemory()` helper to convert Knowledge entries to Memory format for consistent UI
+  - Memory library now shows both manual memories and auto-generated memories (with source filter)
+  - Added `_sourceType` field marker ('memory' or 'knowledge') to identify source collection
+  - Added `source` query param to `/api/memories`: 'memory', 'knowledge', or 'all' (default)
+- ✅ **Knowledge Entry Filtering**
+  - Updated `/api/knowledge` with `includeMemories` query param (default: false)
+  - By default, legacy memory entries (`is_legacy_memory=true`) are excluded from regular knowledge views
+  - This keeps the Lore/Knowledge section focused on user-created lore entries
+- ✅ **Conversation-Tome Link**
+  - Added `memory_tome` relationship field on Conversation collection
+  - Conversations now link to their associated memory tome where auto-generated memories are stored
+  - `findOrCreateMemoryTome()` function creates memory tomes automatically named after conversations
+
 ### **2026-01-24 Updates:**
 - ✅ **GLM (Zhipu AI) Provider Implementation**
   - Added GLM as 7th LLM provider with 16 models (GLM-4.7, 4.6, 4.5 series)
@@ -1180,8 +1201,8 @@ When you add new Payload collections or modify existing ones:
 
 ---
 
-**Last Updated**: 2026-01-24
-**Version**: 3.18
+**Last Updated**: 2026-01-25
+**Version**: 3.19
 **Total Tasks**: 184
 **Completed**: 174
 **Progress**: ~95% (GLM provider added)

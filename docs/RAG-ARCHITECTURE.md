@@ -1,7 +1,7 @@
 # BotCafé RAG Architecture
 
-**Last Updated**: 2026-01-15
-**Version**: 2.2 (Added auto-vectorization on save, embedding storage in D1)
+**Last Updated**: 2026-01-25
+**Version**: 2.3 (Added unified memory display, memory tome separation)
 
 ## Overview
 
@@ -183,6 +183,65 @@ User selects memory from archive
 - Applied to the original participants (personas/bots)
 - Applied to new personas/bots that continue the story
 - Searched semantically across user's knowledge base
+
+---
+
+## Unified Memory Display 🆕
+
+The `/api/memories` endpoint provides a unified view of memories from two sources:
+
+### Source Collections
+
+1. **Memory Collection** - Traditional memory entries created manually or via `POST /api/memories`
+2. **Knowledge Collection** (where `is_legacy_memory=true`) - Auto-generated memories stored as lore entries
+
+### Normalization
+
+The `normalizeKnowledgeToMemory()` function converts Knowledge entries to the Memory format:
+
+```typescript
+function normalizeKnowledgeToMemory(knowledge: Knowledge): Record<string, unknown> {
+  return {
+    id: `lore-${knowledge.id}`,  // Prefixed to distinguish from Memory IDs
+    _sourceType: 'knowledge',     // Internal marker for source collection
+    _knowledgeId: knowledge.id,   // Original Knowledge ID for updates
+    entry: knowledge.entry,
+    type: 'long_term',           // Auto-generated memories are long-term
+    tokens: knowledge.tokens,
+    created_timestamp: knowledge.created_timestamp,
+    is_vectorized: knowledge.is_vectorized,
+    converted_to_lore: true,     // Already in lore format
+    importance: extractImportanceFromTags(knowledge.tags),  // From "importance-N" tags
+    emotional_context: extractMoodFromTags(knowledge.tags), // From "mood-X" tags
+    bot: knowledge.applies_to_bots,
+    persona: knowledge.applies_to_personas,
+    conversation: knowledge.source_conversation_id,
+    lore_entry: { id: knowledge.id },
+    knowledge_collection: knowledge.knowledge_collection,
+    participants: knowledge.original_participants,
+  }
+}
+```
+
+### API Query Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `source` | string | 'all' | Filter by source: 'memory' (Memory collection only), 'knowledge' (Knowledge entries only), 'all' (both combined) |
+| `type` | string | null | Filter by memory type: 'short_term', 'long_term', 'consolidated' |
+| `botId` | string | null | Filter by associated bot |
+| `convertedToLore` | string | null | Filter by lore conversion status: 'true' or 'false' |
+| `limit` | number | 50 | Results per page |
+| `offset` | number | 0 | Pagination offset |
+
+### Memory Tome Separation
+
+Memory tomes (KnowledgeCollections with `collection_metadata.collection_category: 'memories'`) are hidden from the main Lore section by default:
+
+- `/api/knowledge-collections` excludes memory tomes unless `includeMemoryTomes=true`
+- Use `onlyMemoryTomes=true` to fetch only memory tomes
+- Memory tomes are displayed in the Memories section, not Lore
+- Auto-generated tomes are linked to conversations via the `memory_tome` relationship field
 
 ---
 

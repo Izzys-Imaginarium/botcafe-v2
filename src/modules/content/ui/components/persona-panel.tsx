@@ -191,55 +191,6 @@ export const PersonaPanel = () => {
         </Link>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="glass-rune">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-purple-500/20">
-                <User className="w-5 h-5 text-purple-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-display text-parchment">{personas.length}</p>
-                <p className="text-xs text-parchment-dim">Total Personas</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-rune">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-gold-ancient/20">
-                <Star className="w-5 h-5 text-gold-rich" />
-              </div>
-              <div>
-                <p className="text-lg font-display text-parchment truncate max-w-[150px]">
-                  {personas.find(p => p.is_default)?.name || 'None set'}
-                </p>
-                <p className="text-xs text-parchment-dim">Default Persona</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-rune">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-magic-teal/20">
-                <User className="w-5 h-5 text-magic-teal" />
-              </div>
-              <div>
-                <p className="text-2xl font-display text-parchment">
-                  {personas.reduce((sum, p) => sum + (p.usage_count || 0), 0)}
-                </p>
-                <p className="text-xs text-parchment-dim">Total Uses</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Search */}
       <Card className="glass-rune">
         <CardContent className="p-4">

@@ -3,14 +3,75 @@
 import { useEffect, useState } from 'react'
 import { useUser } from '@clerk/nextjs'
 import Link from 'next/link'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Bot, MessageCircle, Clock, BookOpen, Heart, ArrowRight } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Bot,
+  MessageCircle,
+  BookOpen,
+  Heart,
+  Star,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  RefreshCw,
+  Brain,
+  Users,
+  Zap,
+  Activity,
+  BarChart3,
+  Loader2,
+} from 'lucide-react'
 
-// Mock user stats - will be replaced with real data later
-const mockStats = {
-  conversations: 847,
-  memoryEntries: 234,
-  totalPlaytime: '142h 30m',
+interface OverviewStats {
+  totalBots: number
+  publicBots: number
+  totalConversations: number
+  totalPersonas: number
+  totalKnowledge: number
+  totalMemories: number
+  totalLikes: number
+  totalFavorites: number
+}
+
+interface BotStat {
+  id: string
+  name: string
+  avatar: string | null
+  is_public: boolean
+  conversationCount: number
+  likes: number
+  favorites: number
+  rating: number
+  createdAt: string
+}
+
+interface Trends {
+  conversationsThisWeek: number
+  conversationTrend: number
+  botsCreatedThisWeek: number
+  knowledgeAddedThisWeek: number
+}
+
+interface ActivityItem {
+  type: 'bot_created' | 'conversation'
+  name: string
+  date: string
+}
+
+interface AnalyticsData {
+  overview: OverviewStats
+  botStats: BotStat[]
+  recentActivity: ActivityItem[]
+  trends: Trends
 }
 
 // Helper components
@@ -18,181 +79,354 @@ const StatCard = ({
   icon,
   label,
   value,
+  subtext,
   color,
+  trend,
 }: {
   icon: React.ReactNode
   label: string
   value: string
+  subtext?: string
   color: string
-}) => (
-  <Card className="glass-rune">
-    <CardContent className="p-6">
-      <div className="flex items-center gap-4">
-        <div
-          className={`w-10 h-10 rounded-full flex items-center justify-center bg-[#0a140a]/50 ${color}`}
-        >
-          {icon}
+  trend?: number
+}) => {
+  const getTrendIcon = (value: number) => {
+    if (value > 0) return <TrendingUp className="h-3 w-3 text-green-400" />
+    if (value < 0) return <TrendingDown className="h-3 w-3 text-red-400" />
+    return <Minus className="h-3 w-3 text-parchment/40" />
+  }
+
+  return (
+    <Card className="glass-rune">
+      <CardContent className="p-6">
+        <div className="flex items-center gap-4">
+          <div
+            className={`w-10 h-10 rounded-full flex items-center justify-center bg-[#0a140a]/50 ${color}`}
+          >
+            {icon}
+          </div>
+          <div className="flex-1">
+            <p className="text-2xl font-display text-parchment">{value}</p>
+            <p className="text-xs text-parchment-dim font-lore">{label}</p>
+            {(subtext || trend !== undefined) && (
+              <div className="flex items-center gap-1 mt-1">
+                {trend !== undefined && getTrendIcon(trend)}
+                <span className="text-xs text-parchment/50">
+                  {subtext || `${trend}% vs last week`}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
-        <div>
-          <p className="text-2xl font-display text-parchment">{value}</p>
-          <p className="text-xs text-parchment-dim font-lore">{label}</p>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-)
+      </CardContent>
+    </Card>
+  )
+}
 
 export const AccountOverview = () => {
   const { user } = useUser()
-  const [botCount, setBotCount] = useState(0)
+  const [data, setData] = useState<AnalyticsData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [period, setPeriod] = useState('30')
+
+  const fetchAnalytics = async () => {
+    if (!user) return
+
+    try {
+      setIsLoading(true)
+      const response = await fetch(`/api/analytics?period=${period}`)
+      if (response.ok) {
+        const result = (await response.json()) as AnalyticsData
+        setData(result)
+      }
+    } catch (error) {
+      console.error('Error fetching analytics:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const fetchBotCount = async () => {
-      if (!user) return
+    fetchAnalytics()
+  }, [user, period])
 
-      try {
-        const response = await fetch('/api/bots/my-bots')
-        if (response.ok) {
-          const data = (await response.json()) as { bots: any[]; total: number }
-          setBotCount(data.total || data.bots?.length || 0)
-        }
-      } catch (error) {
-        console.error('Error fetching bot count:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    })
+  }
 
-    fetchBotCount()
-  }, [user])
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-gold-rich" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
+      {/* Header with period selector */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-display text-parchment">Analytics Overview</h2>
+          <p className="text-sm text-parchment-dim font-lore">Track your activity and engagement</p>
+        </div>
+        <div className="flex gap-2">
+          <Select value={period} onValueChange={setPeriod}>
+            <SelectTrigger className="w-32 glass-rune border-gold-ancient/30 text-parchment">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="glass-rune border-gold-ancient/30">
+              <SelectItem value="7">Last 7 days</SelectItem>
+              <SelectItem value="30">Last 30 days</SelectItem>
+              <SelectItem value="90">Last 90 days</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            onClick={fetchAnalytics}
+            variant="outline"
+            size="icon"
+            className="ornate-border"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          icon={<Bot className="w-5 h-5" />}
-          label="Bots Created"
-          value={isLoading ? '...' : botCount.toString()}
-          color="text-gold-rich"
-        />
-        <StatCard
           icon={<MessageCircle className="w-5 h-5" />}
           label="Conversations"
-          value={mockStats.conversations.toString()}
+          value={(data?.overview.totalConversations || 0).toString()}
           color="text-magic-glow"
+          trend={data?.trends.conversationTrend}
+        />
+        <StatCard
+          icon={<Heart className="w-5 h-5" />}
+          label="Engagement"
+          value={((data?.overview.totalLikes || 0) + (data?.overview.totalFavorites || 0)).toString()}
+          subtext={`${data?.overview.totalLikes || 0} likes, ${data?.overview.totalFavorites || 0} favorites`}
+          color="text-pink-400"
         />
         <StatCard
           icon={<BookOpen className="w-5 h-5" />}
-          label="Memory Entries"
-          value={mockStats.memoryEntries.toString()}
+          label="Knowledge Entries"
+          value={(data?.overview.totalKnowledge || 0).toString()}
+          subtext={`+${data?.trends.knowledgeAddedThisWeek || 0} this week`}
           color="text-magic-teal"
         />
         <StatCard
-          icon={<Clock className="w-5 h-5" />}
-          label="Total Playtime"
-          value={mockStats.totalPlaytime}
+          icon={<Brain className="w-5 h-5" />}
+          label="Memories"
+          value={(data?.overview.totalMemories || 0).toString()}
           color="text-purple-400"
         />
       </div>
 
-      {/* Quick Actions */}
-      <Card className="glass-rune">
-        <CardHeader>
-          <CardTitle className="text-parchment font-display">Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link href="/dashboard" className="block">
-              <div className="p-4 rounded-lg bg-[#0a140a]/20 hover:bg-[#0a140a]/40 transition-colors border border-gold-ancient/20 group">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Bot className="w-5 h-5 text-gold-rich" />
-                    <span className="text-parchment font-lore">My Bots</span>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-parchment-dim group-hover:text-parchment transition-colors" />
-                </div>
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Bot Performance */}
+        <Card className="glass-rune lg:col-span-2">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-parchment font-display">
+                  <BarChart3 className="h-5 w-5 text-gold-rich" />
+                  Top Performing Bots
+                </CardTitle>
+                <CardDescription className="text-parchment-dim font-lore">
+                  Your most popular creations
+                </CardDescription>
               </div>
-            </Link>
-            <Link href="/create" className="block">
-              <div className="p-4 rounded-lg bg-[#0a140a]/20 hover:bg-[#0a140a]/40 transition-colors border border-gold-ancient/20 group">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Bot className="w-5 h-5 text-forest-light" />
-                    <span className="text-parchment font-lore">Create Bot</span>
+              <Link href="/dashboard">
+                <Button variant="ghost" size="sm" className="text-gold-rich hover:text-gold-ancient">
+                  View All
+                </Button>
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {data?.botStats && data.botStats.length > 0 ? (
+              <div className="space-y-3">
+                {data.botStats.slice(0, 5).map((bot, index) => (
+                  <div
+                    key={bot.id}
+                    className="flex items-center gap-4 p-3 rounded-lg bg-[#0a140a]/20 hover:bg-[#0a140a]/30 transition-colors"
+                  >
+                    <span className="text-lg font-bold text-parchment/50 w-6">
+                      #{index + 1}
+                    </span>
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gold-rich to-gold-ancient flex items-center justify-center text-[#0a140a] font-bold">
+                      {bot.avatar ? (
+                        <img
+                          src={bot.avatar}
+                          alt={bot.name}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        bot.name?.charAt(0) || 'B'
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold text-parchment truncate">{bot.name}</h4>
+                        {bot.is_public && (
+                          <Badge variant="outline" className="text-xs border-green-500/30 text-green-400">
+                            Public
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-parchment-dim">
+                        <span className="flex items-center gap-1">
+                          <MessageCircle className="h-3 w-3" />
+                          {bot.conversationCount}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Heart className="h-3 w-3" />
+                          {bot.likes}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Star className="h-3 w-3" />
+                          {bot.favorites}
+                        </span>
+                      </div>
+                    </div>
+                    {bot.rating > 0 && (
+                      <div className="flex items-center gap-1 text-gold-rich">
+                        <Star className="h-4 w-4 fill-current" />
+                        <span className="text-sm font-semibold">{bot.rating.toFixed(1)}</span>
+                      </div>
+                    )}
                   </div>
-                  <ArrowRight className="w-4 h-4 text-parchment-dim group-hover:text-parchment transition-colors" />
-                </div>
+                ))}
               </div>
-            </Link>
-            <Link href="/dashboard?tab=lore" className="block">
-              <div className="p-4 rounded-lg bg-[#0a140a]/20 hover:bg-[#0a140a]/40 transition-colors border border-gold-ancient/20 group">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <BookOpen className="w-5 h-5 text-magic-teal" />
-                    <span className="text-parchment font-lore">Lore Library</span>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-parchment-dim group-hover:text-parchment transition-colors" />
-                </div>
+            ) : (
+              <div className="text-center py-8">
+                <Bot className="h-12 w-12 mx-auto mb-4 text-parchment/30" />
+                <p className="text-parchment-dim font-lore">No bots created yet</p>
+                <Link href="/dashboard">
+                  <Button className="mt-4 bg-gold-rich hover:bg-gold-rich/90 text-[#0a140a]">
+                    <Zap className="mr-2 h-4 w-4" />
+                    Create Your First Bot
+                  </Button>
+                </Link>
               </div>
-            </Link>
-            <Link href="/explore" className="block">
-              <div className="p-4 rounded-lg bg-[#0a140a]/20 hover:bg-[#0a140a]/40 transition-colors border border-gold-ancient/20 group">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Heart className="w-5 h-5 text-pink-400" />
-                    <span className="text-parchment font-lore">Explore Bots</span>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-parchment-dim group-hover:text-parchment transition-colors" />
-                </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* This Week Stats */}
+        <Card className="glass-rune">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-parchment font-display">
+              <Zap className="h-5 w-5 text-gold-rich" />
+              This Week
+            </CardTitle>
+            <CardDescription className="text-parchment-dim font-lore">
+              Quick overview of your activity
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a140a]/20">
+              <div className="flex items-center gap-2">
+                <MessageCircle className="h-5 w-5 text-magic-glow" />
+                <span className="text-sm text-parchment font-lore">Conversations</span>
               </div>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
+              <span className="font-bold text-parchment">{data?.trends.conversationsThisWeek || 0}</span>
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a140a]/20">
+              <div className="flex items-center gap-2">
+                <Bot className="h-5 w-5 text-gold-rich" />
+                <span className="text-sm text-parchment font-lore">New Bots</span>
+              </div>
+              <span className="font-bold text-parchment">{data?.trends.botsCreatedThisWeek || 0}</span>
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a140a]/20">
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-magic-teal" />
+                <span className="text-sm text-parchment font-lore">Knowledge Added</span>
+              </div>
+              <span className="font-bold text-parchment">{data?.trends.knowledgeAddedThisWeek || 0}</span>
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a140a]/20">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-pink-400" />
+                <span className="text-sm text-parchment font-lore">Personas</span>
+              </div>
+              <span className="font-bold text-parchment">{data?.overview.totalPersonas || 0}</span>
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a140a]/20">
+              <div className="flex items-center gap-2">
+                <Bot className="h-5 w-5 text-forest-light" />
+                <span className="text-sm text-parchment font-lore">Total Bots</span>
+              </div>
+              <span className="font-bold text-parchment">
+                {data?.overview.totalBots || 0}
+                <span className="text-xs text-parchment/50 ml-1">
+                  ({data?.overview.publicBots || 0} public)
+                </span>
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Recent Activity */}
       <Card className="glass-rune">
         <CardHeader>
-          <CardTitle className="text-parchment font-display">Recent Activity</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-parchment font-display">
+            <Activity className="h-5 w-5 text-forest-light" />
+            Recent Activity
+          </CardTitle>
+          <CardDescription className="text-parchment-dim font-lore">
+            Latest actions on your account
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center gap-4 p-3 rounded-lg bg-[#0a140a]/20">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center bg-[#0a140a]/50 text-gold-rich">
-                <Bot className="w-4 h-4" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm text-parchment font-lore">
-                  Created new bot 'Forest Guardian'
-                </p>
-                <p className="text-xs text-parchment-dim">2 hours ago</p>
-              </div>
+          {data?.recentActivity && data.recentActivity.length > 0 ? (
+            <div className="space-y-3">
+              {data.recentActivity.slice(0, 10).map((activity, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-4 p-3 rounded-lg bg-[#0a140a]/20 hover:bg-[#0a140a]/30 transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-[#0a140a]/50">
+                    {activity.type === 'bot_created' ? (
+                      <Bot className="w-4 h-4 text-gold-rich" />
+                    ) : (
+                      <MessageCircle className="w-4 h-4 text-magic-glow" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-parchment font-lore">
+                      {activity.type === 'bot_created' ? (
+                        <>
+                          Created bot <span className="font-semibold text-gold-rich">{activity.name}</span>
+                        </>
+                      ) : (
+                        <>
+                          Conversation with <span className="font-semibold text-magic-glow">{activity.name}</span>
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  <span className="text-xs text-parchment-dim">{formatDate(activity.date)}</span>
+                </div>
+              ))}
             </div>
-            <div className="flex items-center gap-4 p-3 rounded-lg bg-[#0a140a]/20">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center bg-[#0a140a]/50 text-magic-glow">
-                <MessageCircle className="w-4 h-4" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm text-parchment font-lore">
-                  Started conversation with Mystic Sage
-                </p>
-                <p className="text-xs text-parchment-dim">1 day ago</p>
-              </div>
+          ) : (
+            <div className="text-center py-8">
+              <Activity className="h-12 w-12 mx-auto mb-4 text-parchment/30" />
+              <p className="text-parchment-dim font-lore">No recent activity</p>
             </div>
-            <div className="flex items-center gap-4 p-3 rounded-lg bg-[#0a140a]/20">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center bg-[#0a140a]/50 text-magic-teal">
-                <BookOpen className="w-4 h-4" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm text-parchment font-lore">
-                  Added new lore entry 'Ancient Spells'
-                </p>
-                <p className="text-xs text-parchment-dim">3 days ago</p>
-              </div>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>

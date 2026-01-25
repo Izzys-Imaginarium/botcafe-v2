@@ -20,7 +20,6 @@ import {
   BookOpen,
   Brain,
   Users,
-  BarChart3,
   Heart,
   HelpCircle,
   ChevronDown,
@@ -63,7 +62,6 @@ const userMenuItems = [
   { href: '/dashboard?tab=lore', children: 'Lore', icon: BookOpen },
   { href: '/dashboard?tab=memories', children: 'Memories', icon: Brain },
   { href: '/dashboard?tab=personas', children: 'Personas', icon: Users },
-  { href: '/analytics', children: 'Analytics', icon: BarChart3 },
   { href: '/wellbeing', children: 'Wellbeing', icon: Heart },
 ]
 

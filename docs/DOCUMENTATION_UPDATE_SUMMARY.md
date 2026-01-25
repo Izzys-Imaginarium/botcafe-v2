@@ -123,7 +123,7 @@
 - Mental Health: SelfModeration
 - Analytics: UsageAnalytics, MemoryInsights, PersonaAnalytics
 - Legal: LegalDocuments, UserAgreements
-- Support: Documentation, Tutorials, SupportTickets
+- Support: Documentation, Tutorials
 
 ---
 

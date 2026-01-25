@@ -468,7 +468,6 @@ By building foundational systems first, we avoid rework and ensure chat has all 
 26. **UserAgreements** - Legal acceptance tracking
 27. **Documentation** - Help documentation
 28. **Tutorials** - Interactive tutorials
-29. **SupportTickets** - Help desk system
 
 ---
 

@@ -37,7 +37,6 @@ import { LegalDocuments } from './collections/LegalDocuments'
 import { UserAgreements } from './collections/UserAgreements'
 import { Documentation } from './collections/Documentation'
 import { Tutorials } from './collections/Tutorials'
-import { SupportTickets } from './collections/SupportTickets'
 import { migrations } from './migrations'
 
 const filename = fileURLToPath(import.meta.url)
@@ -93,7 +92,6 @@ export default buildConfig({
     // Help & Support System (Phase 6)
     Documentation,
     Tutorials,
-    SupportTickets,
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

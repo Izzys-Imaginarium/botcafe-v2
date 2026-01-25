@@ -8,7 +8,7 @@
 
 ## Overview
 
-BotCafe v2 uses Payload CMS with 29 collections organized into functional groups:
+BotCafe v2 uses Payload CMS with 28 collections organized into functional groups:
 
 | Category | Collections | Count |
 |----------|-------------|-------|
@@ -21,7 +21,7 @@ BotCafe v2 uses Payload CMS with 29 collections organized into functional groups
 | Monetization | TokenGifts, SubscriptionPayments, SubscriptionTiers, TokenPackages, AccessControl | 5 |
 | Wellbeing | Mood, SelfModeration | 2 |
 | Analytics | UsageAnalytics, MemoryInsights, PersonaAnalytics | 3 |
-| Legal/Help | LegalDocuments, UserAgreements, Documentation, Tutorials, SupportTickets | 5 |
+| Legal/Help | LegalDocuments, UserAgreements, Documentation, Tutorials | 4 |
 
 ---
 
@@ -894,24 +894,6 @@ Interactive tutorials.
 | `is_published` | checkbox | Published status |
 | `createdAt` | date | Auto-generated |
 
-### SupportTickets
-
-Help desk system.
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | string | Primary key |
-| `user` | relationship (Users) | Submitter |
-| `subject` | text | Ticket subject |
-| `description` | textarea | Issue description |
-| `category` | select | Category: bug, feature, billing, etc. |
-| `priority` | select | Priority: low, normal, high, urgent |
-| `status` | select | Status: open, in_progress, resolved, closed |
-| `assigned_to` | relationship (Users) | Assignee |
-| `resolution` | textarea | Resolution notes |
-| `createdAt` | date | Auto-generated |
-| `updatedAt` | date | Auto-generated |
-
 ---
 
 ## Relationships Diagram
@@ -930,8 +912,7 @@ Users
 ├── TokenGifts (sender/recipient)
 ├── SubscriptionPayments (user)
 ├── AccessControl (user)
-├── UserAgreements (user)
-└── SupportTickets (user)
+└── UserAgreements (user)
 
 Bot
 ├── BotInteraction (bot)

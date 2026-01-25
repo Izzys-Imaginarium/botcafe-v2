@@ -302,7 +302,7 @@ export const HelpHubView = () => {
         </div>
       )}
 
-      {/* Contact Support */}
+      {/* Join Discord */}
       <Card className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/20">
         <CardContent className="py-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
@@ -313,13 +313,15 @@ export const HelpHubView = () => {
               <div>
                 <h3 className="font-semibold text-lg">Can't find what you're looking for?</h3>
                 <p className="text-muted-foreground">
-                  Our support team is ready to help you with any questions.
+                  Join our Discord community for help and support.
                 </p>
               </div>
             </div>
-            <Button>
-              Contact Support
-              <ArrowRight className="ml-2 h-4 w-4" />
+            <Button asChild>
+              <Link href="https://discord.gg/botcafe" target="_blank" rel="noopener noreferrer">
+                Join Discord
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
             </Button>
           </div>
         </CardContent>

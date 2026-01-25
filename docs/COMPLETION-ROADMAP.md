@@ -677,6 +677,11 @@ When you add new Payload collections or modify existing ones:
   - Added `memory_tome` relationship field on Conversation collection
   - Conversations now link to their associated memory tome where auto-generated memories are stored
   - `findOrCreateMemoryTome()` function creates memory tomes automatically named after conversations
+- ✅ **Discord Integration & Support System Removal**
+  - Added Discord link to "My Studio" dropdown (navbar.tsx, navbar-sidebar.tsx)
+  - Updated Help Center to direct users to Discord instead of support tickets
+  - Removed `SupportTickets` collection from Payload CMS (support now handled via Discord)
+  - Reduced collection count from 29 to 28
 
 ### **2026-01-24 Updates:**
 - ✅ **GLM (Zhipu AI) Provider Implementation**

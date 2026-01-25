@@ -279,7 +279,7 @@ Home | Explore | Creators | Chat* | Create*
 
 ### My Studio Dropdown (authenticated users)
 ```
-Chat | My Bots | Lore | Memories | Personas | Account
+Chat | My Bots | Lore | Memories | Personas | Account | Help | Discord (external)
 ```
 
 ### Full Site Structure

@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 
 interface NavbarSidebarProps {
-  items: { href: string; children: string }[]
+  items: { href: string; children: string; requiresAuth?: boolean }[]
   open: boolean
   onOpenChange: (open: boolean) => void
   user?: { email: string } | null
@@ -49,20 +49,39 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: NavbarSidebarProps)
           <span className="text-xs uppercase tracking-widest text-gold-ancient/50 px-3 mb-2">
             Navigation
           </span>
-          {items.map((item) => (
-            <Button
-              key={item.href}
-              asChild
-              variant="ghost"
-              className={cn(
-                'justify-start font-lore italic text-parchment hover:text-gold-rich hover:bg-gold-rich/10',
-                pathname === item.href && 'text-gold-rich bg-gold-rich/10',
-              )}
-              onClick={() => onOpenChange(false)}
-            >
-              <Link href={item.href}>{item.children}</Link>
-            </Button>
-          ))}
+          {items.map((item) => {
+            const buttonClasses = cn(
+              'justify-start font-lore italic text-parchment hover:text-gold-rich hover:bg-gold-rich/10',
+              pathname === item.href && 'text-gold-rich bg-gold-rich/10',
+            )
+
+            // For protected routes when not signed in, use Clerk's SignInButton
+            if (item.requiresAuth && !isSignedIn) {
+              return (
+                <SignInButton key={item.href} mode="redirect" forceRedirectUrl={item.href}>
+                  <Button
+                    variant="ghost"
+                    className={buttonClasses}
+                    onClick={() => onOpenChange(false)}
+                  >
+                    {item.children}
+                  </Button>
+                </SignInButton>
+              )
+            }
+
+            return (
+              <Button
+                key={item.href}
+                asChild
+                variant="ghost"
+                className={buttonClasses}
+                onClick={() => onOpenChange(false)}
+              >
+                <Link href={item.href}>{item.children}</Link>
+              </Button>
+            )
+          })}
         </nav>
 
         {/* User Menu (when signed in) */}

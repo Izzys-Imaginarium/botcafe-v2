@@ -32,16 +32,32 @@ interface NavbarItemProps {
   href: string
   children: React.ReactNode
   isActive?: boolean
+  requiresAuth?: boolean
+  isSignedIn?: boolean
 }
 
-const NavbarItem = ({ href, children, isActive }: NavbarItemProps) => {
+const NavbarItem = ({ href, children, isActive, requiresAuth, isSignedIn }: NavbarItemProps) => {
+  const linkClasses = cn(
+    'text-base font-lore italic text-parchment hover:text-gold-rich transition-colors duration-200 relative group py-2 px-3 rounded-sm',
+    isActive && 'text-gold-rich',
+  )
+
+  // For protected routes when not signed in, use Clerk's SignInButton
+  if (requiresAuth && !isSignedIn) {
+    return (
+      <SignInButton mode="redirect" forceRedirectUrl={href}>
+        <button className={linkClasses}>
+          {children}
+          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-gold-rich transition-all group-hover:w-full"></span>
+        </button>
+      </SignInButton>
+    )
+  }
+
   return (
     <Link
       href={href}
-      className={cn(
-        'text-base font-lore italic text-parchment hover:text-gold-rich transition-colors duration-200 relative group py-2 px-3 rounded-sm',
-        isActive && 'text-gold-rich',
-      )}
+      className={linkClasses}
     >
       {children}
       <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-gold-rich transition-all group-hover:w-full"></span>
@@ -50,11 +66,11 @@ const NavbarItem = ({ href, children, isActive }: NavbarItemProps) => {
 }
 
 const navbarItems = [
-  { href: '/', children: 'Home' },
-  { href: '/explore', children: 'Explore' },
-  { href: '/creators', children: 'Creators' },
-  { href: '/chat', children: 'Chat' },
-  { href: '/dashboard', children: 'Create' },
+  { href: '/', children: 'Home', requiresAuth: false },
+  { href: '/explore', children: 'Explore', requiresAuth: false },
+  { href: '/creators', children: 'Creators', requiresAuth: false },
+  { href: '/chat', children: 'Chat', requiresAuth: true },
+  { href: '/dashboard', children: 'Create', requiresAuth: true },
 ]
 
 const userMenuItems = [
@@ -97,7 +113,13 @@ export const Navbar = ({ user }: NavbarProps) => {
           <nav className="hidden lg:flex items-center gap-8">
             <div className="flex items-center gap-4 px-6 py-3 bg-[#0a140a]/30 rounded-full border border-gold-ancient/20 backdrop-blur-sm">
               {navbarItems.map((item) => (
-                <NavbarItem key={item.href} href={item.href} isActive={pathname === item.href}>
+                <NavbarItem
+                  key={item.href}
+                  href={item.href}
+                  isActive={pathname === item.href}
+                  requiresAuth={item.requiresAuth}
+                  isSignedIn={isSignedIn}
+                >
                   {item.children}
                 </NavbarItem>
               ))}

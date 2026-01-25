@@ -12,6 +12,7 @@ import {
   Brain,
   Users,
   HelpCircle,
+  Settings,
 } from 'lucide-react'
 
 interface NavbarSidebarProps {
@@ -26,6 +27,7 @@ const userMenuItems = [
   { href: '/dashboard?tab=lore', children: 'Lore', icon: BookOpen },
   { href: '/dashboard?tab=memories', children: 'Memories', icon: Brain },
   { href: '/dashboard?tab=personas', children: 'Personas', icon: Users },
+  { href: '/account', children: 'Account', icon: Settings },
   { href: '/help', children: 'Help', icon: HelpCircle },
 ]
 

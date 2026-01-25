@@ -23,6 +23,7 @@ import {
   HelpCircle,
   ChevronDown,
   MessageSquare,
+  Settings,
 } from 'lucide-react'
 import { NavbarSidebar } from './navbar-sidebar'
 import { useUser, UserButton, SignInButton } from '@clerk/nextjs'
@@ -61,6 +62,7 @@ const userMenuItems = [
   { href: '/dashboard?tab=lore', children: 'Lore', icon: BookOpen },
   { href: '/dashboard?tab=memories', children: 'Memories', icon: Brain },
   { href: '/dashboard?tab=personas', children: 'Personas', icon: Users },
+  { href: '/account', children: 'Account', icon: Settings },
 ]
 
 interface NavbarProps {

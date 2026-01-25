@@ -607,6 +607,24 @@ When you add new Payload collections or modify existing ones:
     - `src/modules/content/ui/components/lore-panel.tsx`
     - `src/modules/content/ui/components/memory-panel.tsx`
     - `src/modules/content/ui/components/persona-panel.tsx`
+- ✅ **Analytics Integration into Account Overview**
+  - Removed standalone `/analytics` from navigation menus
+  - Analytics data now displayed in Account page Overview tab
+  - Account Overview fetches from `/api/analytics` endpoint
+  - Shows: Conversations, Engagement, Knowledge, Memories stats
+  - Includes: Top Performing Bots, This Week stats, Recent Activity
+  - Period selector (7/30/90 days) with refresh button
+- ✅ **Wellbeing Integration into Account Page**
+  - Added Wellbeing as second tab on Account page (6 tabs total)
+  - Created `src/components/account-wellbeing.tsx` with fantasy theme styling
+  - Removed standalone `/wellbeing` from navigation menus
+  - Wellbeing sub-pages still accessible (`/wellbeing/mood`, `/wellbeing/settings`, `/wellbeing/resources`)
+- ✅ **Navigation Menu Updates**
+  - Main nav bar: Home | Explore | Creators | Chat | Create
+  - Chat and Create links require auth via Clerk's SignInButton
+  - My Studio dropdown: Chat, My Bots, Lore, Memories, Personas, Account
+  - Removed Analytics and Wellbeing from navigation (now in Account)
+  - Added Account link to menus
 - ✅ **Creator Profile Editing**
   - Added `/creators/[username]/edit` page for editing creator profiles
   - Social links updated to: Website, X (Twitter), Instagram, YouTube, Discord, Ko-fi, Patreon
@@ -1221,7 +1239,7 @@ When you add new Payload collections or modify existing ones:
 ---
 
 **Last Updated**: 2026-01-25
-**Version**: 3.19
+**Version**: 3.20
 **Total Tasks**: 184
-**Completed**: 174
-**Progress**: ~95% (GLM provider added)
+**Completed**: 178
+**Progress**: ~97% (Navigation consolidation complete)

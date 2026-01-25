@@ -1,8 +1,8 @@
 # BotCafe v2 - Complete Sitemap
 
 **Last Updated**: 2026-01-25
-**Version**: 2.22
-**Status**: ~95% Complete
+**Version**: 2.23
+**Status**: ~98% Complete
 
 ---
 
@@ -35,7 +35,7 @@
 
 | Route | Status | Description |
 |-------|--------|-------------|
-| `/account` | ✅ Complete | Account settings (profile, security, API keys, data) |
+| `/account` | ✅ Complete | Account Sanctuary - 6 tabs: Overview (analytics), Wellbeing, Profile, Security, API Keys, Data |
 | `/dashboard` | ✅ Complete | Creator's Workshop - My Bots, Lore, Memories, Personas |
 
 ### Knowledge System (Lore)
@@ -65,7 +65,7 @@
 
 | Route | Status | Description |
 |-------|--------|-------------|
-| `/wellbeing` | ✅ Complete | Wellbeing dashboard with mood overview |
+| `/wellbeing` | ⚠️ Integrated | Now accessible via Account page Wellbeing tab |
 | `/wellbeing/mood` | ✅ Complete | Mood journal with emoji selection and notes |
 | `/wellbeing/settings` | ✅ Complete | Self-moderation settings (limits, breaks, night mode) |
 | `/wellbeing/resources` | ✅ Complete | Crisis support resources directory |
@@ -74,7 +74,7 @@
 
 | Route | Status | Description |
 |-------|--------|-------------|
-| `/analytics` | ✅ Complete | Analytics dashboard with overview stats |
+| `/analytics` | ⚠️ Integrated | Now accessible via Account page Overview tab |
 | `/analytics/bots` | ✅ Complete | Bot performance metrics |
 | `/analytics/usage` | ✅ Complete | Usage statistics and content breakdown |
 
@@ -95,12 +95,12 @@
 | `/help/[slug]` | ✅ Complete | Individual help article viewer |
 | `/help/category/[category]` | ✅ Complete | Category browsing page |
 
-### Chat (In Progress)
+### Chat
 
 | Route | Status | Description |
 |-------|--------|-------------|
-| `/chat` | ⏳ In Progress | Chat interface hub |
-| `/chat/[conversationId]` | ⏳ In Progress | Real-time conversation interface |
+| `/chat` | ✅ Complete | Chat interface hub (requires auth) |
+| `/chat/[conversationId]` | ✅ Complete | Real-time conversation interface |
 
 ---
 
@@ -250,55 +250,79 @@
 
 ## Route Summary
 
-| Category | Complete | Pending | Total |
-|----------|----------|---------|-------|
+| Category | Complete | Integrated | Total |
+|----------|----------|------------|-------|
 | Public Pages | 9 | 0 | 9 |
 | Authentication | 2 | 0 | 2 |
-| Account | 1 | 0 | 1 |
+| Account & Dashboard | 2 | 0 | 2 |
 | Lore | 3 | 0 | 3 |
 | Memories | 2 | 0 | 2 |
 | Personas | 3 | 0 | 3 |
-| Wellbeing | 4 | 0 | 4 |
-| Analytics | 3 | 0 | 3 |
+| Wellbeing | 3 | 1 | 4 |
+| Analytics | 2 | 1 | 3 |
 | Legal | 4 | 0 | 4 |
 | Help | 3 | 0 | 3 |
-| Chat | 0 | 2 | 2 |
-| **Frontend Total** | **34** | **2** | **36** |
+| Chat | 2 | 0 | 2 |
+| **Frontend Total** | **35** | **2** | **37** |
 | API Endpoints | 51 | 0 | 51 |
-| **Grand Total** | **85** | **2** | **87** |
+| **Grand Total** | **86** | **2** | **88** |
+
+*Note: "Integrated" routes are now accessed via tabs on the Account page instead of standalone pages.*
 
 ---
 
 ## Navigation Structure
 
+### Main Navigation Bar
+```
+Home | Explore | Creators | Chat* | Create*
+(* requires authentication via Clerk)
+```
+
+### My Studio Dropdown (authenticated users)
+```
+Chat | My Bots | Lore | Memories | Personas | Account
+```
+
+### Full Site Structure
 ```
 BotCafe
 ├── Home (/)
 ├── Explore (/explore)
 │   └── Bot Detail (/<username>/<bot-slug>)
 │       └── Edit (/<username>/<bot-slug>/edit)
-├── Create (/create)
+├── Chat (/chat) [requires auth]
+│   └── Conversation (/chat/[conversationId])
+├── Create (/create → /dashboard) [requires auth]
 ├── Creators (/creators)
 │   ├── Profile (/creators/[username])
 │   │   └── Edit (/creators/[username]/edit)
 │   └── Setup (/creators/setup)
-├── Account (/account)
-├── Lore (/lore)
+├── Dashboard (/dashboard) - Creator's Workshop
+│   ├── My Bots (default tab)
+│   ├── Lore (/dashboard?tab=lore)
+│   ├── Memories (/dashboard?tab=memories)
+│   └── Personas (/dashboard?tab=personas)
+├── Account (/account) - Account Sanctuary
+│   ├── Overview (analytics dashboard)
+│   ├── Wellbeing (mood, usage tracking)
+│   ├── Profile (user settings)
+│   ├── Security (password, 2FA)
+│   ├── API Keys (provider keys)
+│   └── Data (export, delete)
+├── Lore (/lore) - Standalone access
 │   ├── Entries (/lore/entries)
 │   └── Collections (/lore/collections)
-├── Memories
+├── Memories - Standalone access
 │   ├── Import (/memories/import)
 │   └── Library (/memories/library)
-├── Personas (/personas)
+├── Personas (/personas) - Standalone access
 │   ├── Create (/personas/create)
 │   └── Edit (/personas/edit/[id])
-├── Wellbeing (/wellbeing)
+├── Wellbeing - Sub-pages still accessible
 │   ├── Mood (/wellbeing/mood)
 │   ├── Settings (/wellbeing/settings)
 │   └── Resources (/wellbeing/resources)
-├── Analytics (/analytics)
-│   ├── Bots (/analytics/bots)
-│   └── Usage (/analytics/usage)
 ├── Help (/help)
 │   ├── Article (/help/[slug])
 │   └── Category (/help/category/[category])
@@ -306,8 +330,6 @@ BotCafe
 │   ├── Terms (/legal/terms)
 │   ├── Privacy (/legal/privacy)
 │   └── Responsible AI (/legal/responsible-ai)
-├── Chat (/chat) [IN PROGRESS]
-│   └── Conversation (/chat/[conversationId]) [IN PROGRESS]
 └── Auth
     ├── Sign In (/sign-in)
     └── Sign Up (/sign-up)

@@ -50,7 +50,10 @@ export const AccountProfile = () => {
       try {
         const response = await fetch('/api/user/preferences')
         if (response.ok) {
-          const data = await response.json()
+          const data = (await response.json()) as {
+            success?: boolean
+            preferences?: UserPreferences
+          }
           if (data.success && data.preferences) {
             setPreferences(data.preferences)
             setOriginalPreferences(data.preferences)
@@ -90,8 +93,11 @@ export const AccountProfile = () => {
       })
 
       if (response.ok) {
-        const data = await response.json()
-        if (data.success) {
+        const data = (await response.json()) as {
+          success?: boolean
+          preferences?: UserPreferences
+        }
+        if (data.success && data.preferences) {
           setOriginalPreferences(data.preferences)
           setPreferences(data.preferences)
           toast.success('Chat preferences saved successfully!')

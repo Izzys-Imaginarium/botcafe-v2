@@ -1,7 +1,7 @@
 # BotCafe v2 - Complete Sitemap
 
 **Last Updated**: 2026-01-25
-**Version**: 2.20
+**Version**: 2.21
 **Status**: ~95% Complete
 
 ---
@@ -21,6 +21,7 @@
 | `/create` | ✅ Complete | Multi-step bot creation wizard |
 | `/creators` | ✅ Complete | Creator directory with filtering and search |
 | `/creators/[username]` | ✅ Complete | Individual creator profile page |
+| `/creators/[username]/edit` | ✅ Complete | Edit creator profile (owner only) |
 | `/creators/setup` | ✅ Complete | Creator profile setup wizard |
 
 ### Authentication
@@ -250,7 +251,7 @@
 
 | Category | Complete | Pending | Total |
 |----------|----------|---------|-------|
-| Public Pages | 8 | 0 | 8 |
+| Public Pages | 9 | 0 | 9 |
 | Authentication | 2 | 0 | 2 |
 | Account | 1 | 0 | 1 |
 | Lore | 3 | 0 | 3 |
@@ -261,9 +262,9 @@
 | Legal | 4 | 0 | 4 |
 | Help | 3 | 0 | 3 |
 | Chat | 0 | 2 | 2 |
-| **Frontend Total** | **33** | **2** | **35** |
+| **Frontend Total** | **34** | **2** | **36** |
 | API Endpoints | 51 | 0 | 51 |
-| **Grand Total** | **84** | **2** | **86** |
+| **Grand Total** | **85** | **2** | **87** |
 
 ---
 
@@ -278,6 +279,7 @@ BotCafe
 ├── Create (/create)
 ├── Creators (/creators)
 │   ├── Profile (/creators/[username])
+│   │   └── Edit (/creators/[username]/edit)
 │   └── Setup (/creators/setup)
 ├── Account (/account)
 ├── Lore (/lore)

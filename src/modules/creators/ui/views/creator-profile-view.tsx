@@ -17,13 +17,14 @@ import {
   Crown,
   MapPin,
   ExternalLink,
-  Github,
   Twitter,
-  Linkedin,
+  Instagram,
   Youtube,
   Heart,
   Calendar,
   Settings,
+  Coffee,
+  CircleDollarSign,
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -40,11 +41,12 @@ interface CreatorProfile {
   }
   social_links?: {
     website?: string
-    github?: string
     twitter?: string
-    linkedin?: string
+    instagram?: string
     discord?: string
     youtube?: string
+    kofi?: string
+    patreon?: string
     other_links?: Array<{ platform: string; url: string }>
   }
   creator_info?: {
@@ -246,10 +248,10 @@ export const CreatorProfileView = ({ username }: CreatorProfileViewProps) => {
             {/* Actions */}
             <div className="flex gap-2 md:mt-4">
               {isOwner ? (
-                <Link href="/account">
+                <Link href={`/creators/${creator.username}/edit`}>
                   <Button>
                     <Settings className="mr-2 h-4 w-4" />
-                    Manage Profile
+                    Edit Profile
                   </Button>
                 </Link>
               ) : (
@@ -480,18 +482,6 @@ export const CreatorProfileView = ({ username }: CreatorProfileViewProps) => {
                     <ExternalLink className="h-4 w-4 text-muted-foreground" />
                   </a>
                 )}
-                {creator.social_links?.github && (
-                  <a
-                    href={creator.social_links.github}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors"
-                  >
-                    <Github className="h-5 w-5" />
-                    <span className="flex-1">GitHub</span>
-                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                  </a>
-                )}
                 {creator.social_links?.twitter && (
                   <a
                     href={creator.social_links.twitter}
@@ -500,19 +490,19 @@ export const CreatorProfileView = ({ username }: CreatorProfileViewProps) => {
                     className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors"
                   >
                     <Twitter className="h-5 w-5" />
-                    <span className="flex-1">Twitter/X</span>
+                    <span className="flex-1">X (Twitter)</span>
                     <ExternalLink className="h-4 w-4 text-muted-foreground" />
                   </a>
                 )}
-                {creator.social_links?.linkedin && (
+                {creator.social_links?.instagram && (
                   <a
-                    href={creator.social_links.linkedin}
+                    href={creator.social_links.instagram}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors"
                   >
-                    <Linkedin className="h-5 w-5" />
-                    <span className="flex-1">LinkedIn</span>
+                    <Instagram className="h-5 w-5" />
+                    <span className="flex-1">Instagram</span>
                     <ExternalLink className="h-4 w-4 text-muted-foreground" />
                   </a>
                 )}
@@ -525,6 +515,42 @@ export const CreatorProfileView = ({ username }: CreatorProfileViewProps) => {
                   >
                     <Youtube className="h-5 w-5" />
                     <span className="flex-1">YouTube</span>
+                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                  </a>
+                )}
+                {creator.social_links?.discord && (
+                  <a
+                    href={creator.social_links.discord}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors"
+                  >
+                    <MessageSquare className="h-5 w-5" />
+                    <span className="flex-1">Discord</span>
+                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                  </a>
+                )}
+                {creator.social_links?.kofi && (
+                  <a
+                    href={creator.social_links.kofi}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors"
+                  >
+                    <Coffee className="h-5 w-5" />
+                    <span className="flex-1">Ko-fi</span>
+                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                  </a>
+                )}
+                {creator.social_links?.patreon && (
+                  <a
+                    href={creator.social_links.patreon}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors"
+                  >
+                    <CircleDollarSign className="h-5 w-5" />
+                    <span className="flex-1">Patreon</span>
                     <ExternalLink className="h-4 w-4 text-muted-foreground" />
                   </a>
                 )}
@@ -544,10 +570,12 @@ export const CreatorProfileView = ({ username }: CreatorProfileViewProps) => {
               </div>
 
               {!creator.social_links?.website &&
-                !creator.social_links?.github &&
                 !creator.social_links?.twitter &&
-                !creator.social_links?.linkedin &&
+                !creator.social_links?.instagram &&
                 !creator.social_links?.youtube &&
+                !creator.social_links?.discord &&
+                !creator.social_links?.kofi &&
+                !creator.social_links?.patreon &&
                 (!creator.social_links?.other_links || creator.social_links.other_links.length === 0) && (
                   <div className="text-center py-8 text-muted-foreground">
                     <Globe className="h-12 w-12 mx-auto mb-4 opacity-50" />

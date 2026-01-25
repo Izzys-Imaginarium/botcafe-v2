@@ -41,11 +41,12 @@ interface CreatorFormData {
   }
   social_links: {
     website: string
-    github: string
     twitter: string
-    linkedin: string
+    instagram: string
     discord: string
     youtube: string
+    kofi: string
+    patreon: string
   }
   profile_settings: {
     profile_visibility: string
@@ -105,11 +106,12 @@ export const CreatorSetupForm = () => {
     },
     social_links: {
       website: '',
-      github: '',
       twitter: '',
-      linkedin: '',
+      instagram: '',
       discord: '',
       youtube: '',
+      kofi: '',
+      patreon: '',
     },
     profile_settings: {
       profile_visibility: 'public',
@@ -499,38 +501,26 @@ export const CreatorSetupForm = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="github">GitHub</Label>
-              <Input
-                id="github"
-                value={formData.social_links.github}
-                onChange={(e) =>
-                  updateNestedFormData('social_links', 'github', e.target.value)
-                }
-                placeholder="https://github.com/username"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="twitter">Twitter/X</Label>
+              <Label htmlFor="twitter">X (Twitter)</Label>
               <Input
                 id="twitter"
                 value={formData.social_links.twitter}
                 onChange={(e) =>
                   updateNestedFormData('social_links', 'twitter', e.target.value)
                 }
-                placeholder="https://twitter.com/username"
+                placeholder="https://x.com/username"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="linkedin">LinkedIn</Label>
+              <Label htmlFor="instagram">Instagram</Label>
               <Input
-                id="linkedin"
-                value={formData.social_links.linkedin}
+                id="instagram"
+                value={formData.social_links.instagram}
                 onChange={(e) =>
-                  updateNestedFormData('social_links', 'linkedin', e.target.value)
+                  updateNestedFormData('social_links', 'instagram', e.target.value)
                 }
-                placeholder="https://linkedin.com/in/username"
+                placeholder="https://instagram.com/username"
               />
             </div>
 
@@ -554,7 +544,31 @@ export const CreatorSetupForm = () => {
                 onChange={(e) =>
                   updateNestedFormData('social_links', 'discord', e.target.value)
                 }
-                placeholder="username#1234 or server invite"
+                placeholder="https://discord.gg/invite or username"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="kofi">Ko-fi</Label>
+              <Input
+                id="kofi"
+                value={formData.social_links.kofi}
+                onChange={(e) =>
+                  updateNestedFormData('social_links', 'kofi', e.target.value)
+                }
+                placeholder="https://ko-fi.com/username"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="patreon">Patreon</Label>
+              <Input
+                id="patreon"
+                value={formData.social_links.patreon}
+                onChange={(e) =>
+                  updateNestedFormData('social_links', 'patreon', e.target.value)
+                }
+                placeholder="https://patreon.com/username"
               />
             </div>
           </CardContent>

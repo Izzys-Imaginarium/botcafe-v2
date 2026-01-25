@@ -24,6 +24,7 @@ import {
   ChevronDown,
   MessageSquare,
   Settings,
+  ExternalLink,
 } from 'lucide-react'
 import { NavbarSidebar } from './navbar-sidebar'
 import { useUser, UserButton, SignInButton } from '@clerk/nextjs'
@@ -169,6 +170,17 @@ export const Navbar = ({ user }: NavbarProps) => {
                       >
                         <HelpCircle className="h-4 w-4" />
                         <span className="font-lore">Help</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="https://discord.gg/botcafe"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-parchment hover:text-gold-rich cursor-pointer"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        <span className="font-lore">Discord</span>
                       </Link>
                     </DropdownMenuItem>
                   </DropdownMenuContent>

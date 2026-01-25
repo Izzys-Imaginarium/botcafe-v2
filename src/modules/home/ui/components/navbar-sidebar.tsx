@@ -13,6 +13,7 @@ import {
   Users,
   HelpCircle,
   Settings,
+  ExternalLink,
 } from 'lucide-react'
 
 interface NavbarSidebarProps {
@@ -107,6 +108,22 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: NavbarSidebarProps)
                 </Link>
               </Button>
             ))}
+            <Button
+              asChild
+              variant="ghost"
+              className="justify-start font-lore text-parchment hover:text-gold-rich hover:bg-gold-rich/10"
+              onClick={() => onOpenChange(false)}
+            >
+              <Link
+                href="https://discord.gg/botcafe"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Discord
+              </Link>
+            </Button>
           </nav>
         )}
 

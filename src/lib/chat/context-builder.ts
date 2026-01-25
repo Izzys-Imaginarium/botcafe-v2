@@ -14,6 +14,7 @@ import type { Bot, Persona, Conversation, Message, User } from '@/payload-types'
 import type { ChatMessage } from '@/lib/llm'
 import { ActivationEngine } from '@/lib/knowledge-activation/activation-engine'
 import { PromptBuilder } from '@/lib/knowledge-activation/prompt-builder'
+import { retrieveRelevantMemories } from '@/lib/chat/memory-service'
 
 export interface BuildContextParams {
   payload: Payload
@@ -36,6 +37,7 @@ export interface ChatContext {
   messages: ChatMessage[]
   systemPrompt: string
   activatedLoreCount: number
+  retrievedMemoriesCount: number
   totalTokensEstimate: number
 }
 
@@ -97,6 +99,41 @@ export async function buildChatContext(params: BuildContextParams): Promise<Chat
   } catch (error) {
     console.error('Knowledge activation error:', error)
     // Continue without lore - don't fail the chat
+  }
+
+  // Retrieve relevant memories for this bot/user/persona combination
+  let retrievedMemoriesCount = 0
+  try {
+    const memories = await retrieveRelevantMemories(payload, userId, bot.id, {
+      personaId: persona?.id,
+      limit: 5, // Get top 5 most relevant memories
+      minImportance: 3, // Only memories with importance >= 3
+    })
+
+    if (memories.length > 0) {
+      retrievedMemoriesCount = memories.length
+      console.log(`[Context Builder] Retrieved ${memories.length} memories for bot ${bot.id}`)
+
+      // Format memories for injection into prompt
+      const memorySection = formatMemoriesForPrompt(memories)
+
+      // Inject memories into the system prompt before the roleplay guidelines
+      const guidelinesMarker = '--- Roleplay Guidelines ---'
+      const guidelinesIndex = systemPrompt.indexOf(guidelinesMarker)
+
+      if (guidelinesIndex !== -1) {
+        systemPrompt =
+          systemPrompt.slice(0, guidelinesIndex) +
+          memorySection + '\n\n' +
+          systemPrompt.slice(guidelinesIndex)
+      } else {
+        // Fallback: append to end if marker not found
+        systemPrompt += '\n\n' + memorySection
+      }
+    }
+  } catch (error) {
+    console.error('Memory retrieval error:', error)
+    // Continue without memories - don't fail the chat
   }
 
   // Build message array
@@ -165,6 +202,7 @@ export async function buildChatContext(params: BuildContextParams): Promise<Chat
     messages,
     systemPrompt,
     activatedLoreCount,
+    retrievedMemoriesCount,
     totalTokensEstimate,
   }
 }
@@ -377,4 +415,34 @@ export function buildGreeting(bot: Bot, persona: Persona | null): string {
 
   // Default greeting
   return `Hello! I'm ${bot.name}. How can I help you today?`
+}
+
+/**
+ * Format retrieved memories for injection into the system prompt
+ */
+function formatMemoriesForPrompt(memories: Awaited<ReturnType<typeof retrieveRelevantMemories>>): string {
+  const parts: string[] = []
+
+  parts.push('--- Memories ---')
+  parts.push('These are memories from past conversations that may be relevant:')
+
+  for (const memory of memories) {
+    // Memory uses 'entry' field for content (from Payload CMS schema)
+    const content = memory.entry
+    if (!content) continue
+
+    let memoryText = `• ${content}`
+
+    // Add emotional context if available
+    if (memory.emotional_context) {
+      memoryText += ` (mood: ${memory.emotional_context})`
+    }
+
+    parts.push(memoryText)
+  }
+
+  parts.push('')
+  parts.push('Use these memories naturally in conversation when relevant. Do not explicitly mention "according to my memories" - just recall the information as if it were your own recollection.')
+
+  return parts.join('\n')
 }

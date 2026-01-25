@@ -9,6 +9,7 @@ import type { Payload } from 'payload'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import type { Conversation, Message, Memory, Knowledge, KnowledgeCollection } from '@/payload-types'
+import { sendMessage, type ProviderName } from '@/lib/llm'
 
 /**
  * Get a fresh Payload instance for background operations
@@ -86,6 +87,100 @@ export async function checkMemoryTrigger(
 }
 
 /**
+ * Check if a memory with similar content already exists
+ * Uses text similarity based on keyword overlap
+ */
+async function checkForDuplicateMemory(
+  payload: Payload,
+  userId: number,
+  conversationId: number,
+  newSummary: string,
+  similarityThreshold: number = 0.6
+): Promise<{ isDuplicate: boolean; existingMemoryId?: number }> {
+  try {
+    // Get existing memories for this conversation from Knowledge collection
+    const existingMemories = await payload.find({
+      collection: 'knowledge',
+      where: {
+        user: { equals: userId },
+        source_conversation_id: { equals: conversationId },
+        is_legacy_memory: { equals: true },
+      },
+      limit: 10,
+      sort: '-createdAt',
+      overrideAccess: true,
+    })
+
+    if (existingMemories.docs.length === 0) {
+      return { isDuplicate: false }
+    }
+
+    // Calculate similarity with each existing memory
+    const newKeywords = extractKeywords(newSummary)
+
+    for (const existing of existingMemories.docs) {
+      const existingKeywords = extractKeywords(existing.entry || '')
+      const similarity = calculateKeywordSimilarity(newKeywords, existingKeywords)
+
+      if (similarity >= similarityThreshold) {
+        console.log(`[Memory Service] Found similar memory (ID: ${existing.id}, similarity: ${similarity.toFixed(2)})`)
+        return { isDuplicate: true, existingMemoryId: existing.id }
+      }
+    }
+
+    return { isDuplicate: false }
+  } catch (error) {
+    console.error('[Memory Service] Error checking for duplicates:', error)
+    return { isDuplicate: false } // Proceed with creation on error
+  }
+}
+
+/**
+ * Extract significant keywords from text for similarity comparison
+ */
+function extractKeywords(text: string): Set<string> {
+  // Common stop words to filter out
+  const stopWords = new Set([
+    'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+    'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been',
+    'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
+    'should', 'may', 'might', 'must', 'shall', 'can', 'need', 'dare', 'ought',
+    'used', 'it', 'its', 'this', 'that', 'these', 'those', 'i', 'you', 'he',
+    'she', 'we', 'they', 'me', 'him', 'her', 'us', 'them', 'my', 'your',
+    'his', 'her', 'our', 'their', 'what', 'which', 'who', 'whom', 'whose',
+    'where', 'when', 'why', 'how', 'all', 'each', 'every', 'both', 'few',
+    'more', 'most', 'other', 'some', 'such', 'no', 'not', 'only', 'same',
+    'so', 'than', 'too', 'very', 'just', 'also', 'now', 'here', 'there',
+    'then', 'once', 'if', 'about', 'after', 'before', 'between', 'into',
+    'through', 'during', 'above', 'below', 'up', 'down', 'out', 'off', 'over',
+    'under', 'again', 'further', 'conversation', 'messages', 'user', 'bot',
+    'sent', 'responded', 'times', 'discussing', 'discussed', 'recently',
+    'started', 'message', 'total',
+  ])
+
+  // Extract words, filter stop words, and normalize
+  const words = text.toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter(word => word.length > 2 && !stopWords.has(word))
+
+  return new Set(words)
+}
+
+/**
+ * Calculate Jaccard similarity between two keyword sets
+ */
+function calculateKeywordSimilarity(set1: Set<string>, set2: Set<string>): number {
+  if (set1.size === 0 && set2.size === 0) return 1
+  if (set1.size === 0 || set2.size === 0) return 0
+
+  const intersection = new Set([...set1].filter(x => set2.has(x)))
+  const union = new Set([...set1, ...set2])
+
+  return intersection.size / union.size
+}
+
+/**
  * Find or create a memory tome (KnowledgeCollection) for a conversation
  * The tome is named after the conversation title
  */
@@ -160,12 +255,19 @@ async function findOrCreateMemoryTome(
  * Note: Creates its own Payload instance for background operations to avoid
  * issues with request lifecycle terminating the connection
  */
+export interface SummarizationConfig {
+  apiKey: string
+  provider: ProviderName
+  model?: string
+}
+
 export async function generateConversationMemory(
   _payload: Payload | null, // Ignored - we create our own instance for background safety
   conversationId: number,
   options: {
     forceGenerate?: boolean
     config?: Partial<MemoryTriggerConfig>
+    summarization?: SummarizationConfig // Optional AI summarization config
   } = {}
 ): Promise<{
   success: boolean
@@ -238,8 +340,22 @@ export async function generateConversationMemory(
       return { success: false, error: 'No new messages to summarize' }
     }
 
-    // Build summary text (will be enhanced with AI summarization later)
-    const summary = buildSimpleSummary(newMessages)
+    // Build summary text - try AI summarization if config provided, fall back to simple
+    let summary: string
+    if (options.summarization) {
+      console.log(`[Memory Service] Attempting AI summarization with ${options.summarization.provider}`)
+      const aiSummary = await buildAISummary(newMessages, options.summarization)
+      if (aiSummary) {
+        summary = aiSummary
+        console.log(`[Memory Service] AI summarization successful`)
+      } else {
+        console.log(`[Memory Service] AI summarization failed, using simple summary`)
+        summary = buildSimpleSummary(newMessages)
+      }
+    } else {
+      console.log(`[Memory Service] No API key provided, using simple summary`)
+      summary = buildSimpleSummary(newMessages)
+    }
 
     // Get participants
     const participants = conversation.participants as {
@@ -304,6 +420,22 @@ export async function generateConversationMemory(
       emotionalContext.split(', ').forEach(emotion => {
         tags.push({ tag: `mood-${emotion}` })
       })
+    }
+
+    // Check for duplicate memories before creating
+    const duplicateCheck = await checkForDuplicateMemory(
+      payload,
+      userId,
+      conversationId,
+      summary
+    )
+
+    if (duplicateCheck.isDuplicate) {
+      console.log(`[Memory Service] Skipping duplicate memory for conversation ${conversationId}`)
+      return {
+        success: false,
+        error: `Similar memory already exists (ID: ${duplicateCheck.existingMemoryId})`,
+      }
     }
 
     // Create lore entry in the tome
@@ -393,6 +525,60 @@ export async function generateConversationMemory(
 }
 
 /**
+ * Build an AI-powered summary from messages
+ * Returns null if AI call fails (caller should fall back to simple summary)
+ */
+async function buildAISummary(
+  messages: Message[],
+  config: SummarizationConfig
+): Promise<string | null> {
+  try {
+    // Format messages for the summarization prompt
+    const formattedMessages = messages.map(m => {
+      const isBot = m.message_attribution?.is_ai_generated
+      const speaker = isBot ? 'Bot' : 'User'
+      return `${speaker}: ${m.entry || ''}`
+    }).join('\n')
+
+    // Build the summarization prompt
+    const prompt = `You are a memory summarizer for a roleplay chat application. Summarize the following conversation into a concise memory that captures:
+- Key topics discussed
+- Important information shared
+- Emotional tone of the conversation
+- Any promises, plans, or significant moments
+
+Keep the summary under 200 words. Write in third person, as if describing what happened in the conversation. Focus on what would be useful to remember for future conversations.
+
+CONVERSATION:
+${formattedMessages}
+
+SUMMARY:`
+
+    const response = await sendMessage(
+      config.provider,
+      {
+        messages: [
+          { role: 'user', content: prompt }
+        ],
+        model: config.model || 'gpt-4o-mini', // Use fast model for summarization
+        temperature: 0.3, // Low temperature for consistent summaries
+        maxTokens: 500,
+      },
+      { apiKey: config.apiKey }
+    )
+
+    if (response.content && response.content.trim().length > 0) {
+      return response.content.trim()
+    }
+
+    return null
+  } catch (error) {
+    console.error('[Memory Service] AI summarization error:', error)
+    return null
+  }
+}
+
+/**
  * Build a simple summary from messages (fallback when AI not available)
  */
 function buildSimpleSummary(messages: Message[]): string {
@@ -424,52 +610,571 @@ function buildSimpleSummary(messages: Message[]): string {
 }
 
 /**
+ * Importance signal patterns - things that indicate a conversation is significant
+ */
+const IMPORTANCE_SIGNALS = {
+  // Personal revelations and self-disclosure
+  personal: {
+    patterns: [
+      /\b(my (name|birthday|favorite|secret|fear|dream|hope|wish|story))\b/i,
+      /\b(i('m| am) (from|born|raised|living))\b/i,
+      /\b(tell you (something|about|a secret))\b/i,
+      /\b(never told anyone|first time (i'?ve?|telling))\b/i,
+      /\b(confession|confess|admit)\b/i,
+      /\b(personal|private|intimate)\b/i,
+    ],
+    weight: 0.15,
+  },
+  // Commitments and promises
+  commitments: {
+    patterns: [
+      /\b(promise[ds]?|swear|vow|pledge|commit)\b/i,
+      /\b(i will (always|never)|i won't (ever|forget))\b/i,
+      /\b(remember this|don't forget|keep this)\b/i,
+      /\b(our secret|between us|just us)\b/i,
+    ],
+    weight: 0.12,
+  },
+  // Emotional intensity
+  emotional: {
+    patterns: [
+      /\b(love|hate|adore|despise|cherish)\b/i,
+      /\b(amazing|incredible|terrible|horrible|wonderful|awful)\b/i,
+      /\b(best|worst) (day|moment|thing|time) (ever|of my life)\b/i,
+      /\b(so (happy|sad|angry|scared|excited))\b/i,
+      /\b(can't stop (thinking|feeling|crying|laughing))\b/i,
+    ],
+    weight: 0.1,
+  },
+  // Significant life events
+  lifeEvents: {
+    patterns: [
+      /\b(married|engaged|pregnant|baby|child|born|died|passed away)\b/i,
+      /\b(graduated|promotion|fired|hired|new job|retired)\b/i,
+      /\b(moved|moving|new (home|house|apartment|place))\b/i,
+      /\b(anniversary|birthday|holiday|celebration)\b/i,
+      /\b(first (time|date|kiss|love))\b/i,
+    ],
+    weight: 0.15,
+  },
+  // Narrative and storytelling
+  narrative: {
+    patterns: [
+      /\b(once upon a time|let me tell you|story|tale)\b/i,
+      /\b(happened (to me|when)|this one time)\b/i,
+      /\b(remember when|back when|years ago)\b/i,
+      /\b(beginning|middle|end|finally|eventually)\b/i,
+    ],
+    weight: 0.08,
+  },
+  // Questions seeking deep engagement
+  deepQuestions: {
+    patterns: [
+      /\b(what do you (think|feel|believe))\b/i,
+      /\b(why do you|how do you|what made you)\b/i,
+      /\b(what('s| is) (your|the meaning))\b/i,
+      /\b(tell me (more|about yourself|everything))\b/i,
+    ],
+    weight: 0.08,
+  },
+  // Plans and future intentions
+  plans: {
+    patterns: [
+      /\b(going to|gonna|will|planning to|want to)\b/i,
+      /\b(tomorrow|next (week|month|year)|someday|eventually)\b/i,
+      /\b(goal[s]?|dream[s]?|aspir(e|ation)|ambition)\b/i,
+    ],
+    weight: 0.06,
+  },
+}
+
+/**
  * Calculate importance score for a set of messages (returns 1-10)
+ * Uses multiple signals to determine how significant/memorable a conversation is
  */
 function calculateImportance(messages: Message[]): number {
-  let score = 0.5 // Base score (0-1 scale internally)
+  let score = 0.3 // Base score (0-1 scale internally)
 
-  // More messages = more important
-  if (messages.length > 10) score += 0.1
-  if (messages.length > 20) score += 0.1
+  const allText = messages.map(m => m.entry || '').join(' ')
+  const textLower = allText.toLowerCase()
 
-  // Check for emotional content (simple heuristic)
-  const allText = messages.map(m => m.entry || '').join(' ').toLowerCase()
+  // Factor 1: Conversation length and engagement
+  const msgCount = messages.length
+  if (msgCount >= 5) score += 0.05
+  if (msgCount >= 10) score += 0.05
+  if (msgCount >= 20) score += 0.05
+  if (msgCount >= 30) score += 0.05
 
-  const emotionalKeywords = [
-    'love', 'hate', 'amazing', 'terrible', 'wonderful', 'horrible',
-    'important', 'crucial', 'remember', 'never forget', 'always',
-    'promise', 'secret', 'confession', 'truth', 'revelation',
-  ]
+  // Factor 2: Average message length (longer messages = more engagement)
+  const avgLength = allText.length / Math.max(msgCount, 1)
+  if (avgLength > 100) score += 0.05
+  if (avgLength > 200) score += 0.05
 
-  const emotionalMatches = emotionalKeywords.filter(k => allText.includes(k))
-  score += emotionalMatches.length * 0.05
+  // Factor 3: Back-and-forth engagement (both parties contributing)
+  const userMsgs = messages.filter(m => !m.message_attribution?.is_ai_generated).length
+  const botMsgs = messages.filter(m => m.message_attribution?.is_ai_generated).length
+  const engagementRatio = Math.min(userMsgs, botMsgs) / Math.max(userMsgs, botMsgs, 1)
+  if (engagementRatio > 0.5) score += 0.05 // Balanced conversation
 
-  // Check for questions and revelations
-  if (allText.includes('?')) score += 0.05
-  if (allText.includes('!')) score += 0.03
+  // Factor 4: Check importance signals
+  for (const [, config] of Object.entries(IMPORTANCE_SIGNALS)) {
+    let signalMatches = 0
+    for (const pattern of config.patterns) {
+      const matches = allText.match(new RegExp(pattern.source, 'gi'))
+      if (matches) {
+        signalMatches += matches.length
+      }
+    }
+    // Add weighted score (diminishing returns for many matches)
+    if (signalMatches > 0) {
+      score += config.weight * Math.min(signalMatches, 3) / 3
+    }
+  }
+
+  // Factor 5: Punctuation indicating emotional engagement
+  const exclamations = (allText.match(/!/g) || []).length
+  const questions = (allText.match(/\?/g) || []).length
+  score += Math.min(exclamations * 0.01, 0.05)
+  score += Math.min(questions * 0.01, 0.05)
+
+  // Factor 6: Presence of names (personalization)
+  const namePatterns = /\b[A-Z][a-z]+\b/g
+  const possibleNames = allText.match(namePatterns) || []
+  const uniqueNames = new Set(possibleNames.filter(n =>
+    !['The', 'This', 'That', 'What', 'When', 'Where', 'How', 'Why', 'But', 'And', 'Yes', 'No'].includes(n)
+  ))
+  if (uniqueNames.size > 0) score += 0.05
+
+  // Factor 7: Emoji usage (emotional expression)
+  const emojiPattern = /[\u{1F300}-\u{1F9FF}]/gu
+  const emojis = allText.match(emojiPattern) || []
+  if (emojis.length > 0) score += Math.min(emojis.length * 0.02, 0.08)
+
+  // Factor 8: Check for detected emotions (reuse emotion patterns)
+  let emotionCount = 0
+  for (const [, config] of Object.entries(EMOTION_PATTERNS)) {
+    for (const pattern of config.patterns) {
+      if (pattern.test(allText)) {
+        emotionCount++
+        break // Count each emotion category once
+      }
+    }
+  }
+  score += Math.min(emotionCount * 0.03, 0.15)
 
   // Cap at 1.0 and scale to 1-10 range
-  const normalized = Math.min(score, 1.0)
+  const normalized = Math.min(Math.max(score, 0), 1.0)
   return Math.round(normalized * 9) + 1 // Maps 0-1 to 1-10
 }
 
 /**
- * Extract emotional context from messages
+ * Emotion detection configuration
+ * Each emotion has a list of trigger words/phrases and a weight
+ */
+const EMOTION_PATTERNS: Record<string, { patterns: RegExp[], weight: number }> = {
+  joyful: {
+    patterns: [
+      /\b(happy|joy(ful)?|excited|thrilled|delighted|elated|ecstatic|overjoyed|blissful|gleeful)\b/i,
+      /\b(wonderful|amazing|fantastic|incredible|awesome|brilliant|marvelous)\b/i,
+      /\b(laugh(ing|ed)?|smile[ds]?|grin(ning|ned)?|beam(ing|ed)?)\b/i,
+      /\b(yay|woohoo|hurray|hooray)\b/i,
+      /[😊😃😄😁🎉🥳]/,
+    ],
+    weight: 1,
+  },
+  melancholic: {
+    patterns: [
+      /\b(sad|unhappy|depressed|down|blue|gloomy|sorrowful|heartbroken|grief|mourning)\b/i,
+      /\b(disappointed|let down|disheartened|dejected|crestfallen|despondent)\b/i,
+      /\b(cry(ing)?|cried|tears?|weep(ing)?|sob(bing)?)\b/i,
+      /\b(miss(ing)?|missed|long(ing)?|yearn(ing)?|nostalgic)\b/i,
+      /\b(lonely|alone|isolated|abandoned)\b/i,
+      /[😢😭💔😞😔]/,
+    ],
+    weight: 1,
+  },
+  tense: {
+    patterns: [
+      /\b(angry|furious|enraged|livid|irate|outraged|seething)\b/i,
+      /\b(frustrated|annoyed|irritated|aggravated|exasperated)\b/i,
+      /\b(hate|despise|loathe|detest|resent)\b/i,
+      /\b(argue[ds]?|arguing|fight(ing)?|fought|conflict|clash)\b/i,
+      /\b(yell(ing|ed)?|shout(ing|ed)?|scream(ing|ed)?)\b/i,
+      /[😠😡🤬💢]/,
+    ],
+    weight: 1,
+  },
+  romantic: {
+    patterns: [
+      /\b(love[ds]?|loving|adore[ds]?|cherish(es)?|devoted)\b/i,
+      /\b(affection(ate)?|tender(ness)?|fond(ness)?|caring)\b/i,
+      /\b(kiss(ed|ing)?|embrace[ds]?|hug(ged|ging)?|cuddle[ds]?)\b/i,
+      /\b(darling|sweetheart|beloved|dear|honey)\b/i,
+      /\b(romance|romantic|passion(ate)?|intimate|flirt(ing)?)\b/i,
+      /[❤️💕💗💖😍🥰💋]/,
+    ],
+    weight: 1,
+  },
+  anxious: {
+    patterns: [
+      /\b(scared|afraid|frightened|terrified|fearful|petrified)\b/i,
+      /\b(worried|anxious|nervous|uneasy|apprehensive|dread(ing)?)\b/i,
+      /\b(panic(king)?|panicked|stress(ed)?|tense|on edge)\b/i,
+      /\b(uncertain|unsure|doubt(ful)?|hesitant)\b/i,
+      /[😰😨😱😟😧]/,
+    ],
+    weight: 1,
+  },
+  curious: {
+    patterns: [
+      /\b(curious|intrigued|fascinated|interested|wondering)\b/i,
+      /\b(wonder(ing)?|ponder(ing)?|contemplate|muse[ds]?)\b/i,
+      /\b(what if|how come|why would|tell me (more|about))\b/i,
+      /\b(explore|discover|investigate|learn(ing)?)\b/i,
+      /[🤔🧐❓]/,
+    ],
+    weight: 1,
+  },
+  playful: {
+    patterns: [
+      /\b(funny|hilarious|amusing|comical|humorous)\b/i,
+      /\b(joke[ds]?|joking|tease[ds]?|teasing|banter)\b/i,
+      /\b(silly|goofy|playful|mischievous|whimsical)\b/i,
+      /\b(lol|lmao|haha|hehe|rofl)\b/i,
+      /[😂🤣😜😝😛🤪]/,
+    ],
+    weight: 1,
+  },
+  surprised: {
+    patterns: [
+      /\b(surprised|shocked|astonished|amazed|stunned|startled)\b/i,
+      /\b(unexpected|unbelievable|wow|whoa|omg|no way)\b/i,
+      /\b(can't believe|didn't expect|out of nowhere)\b/i,
+      /[😮😲🤯😳]/,
+    ],
+    weight: 1,
+  },
+  grateful: {
+    patterns: [
+      /\b(thank(s|ful|ing)?|grateful|appreciat(e|ive|ion))\b/i,
+      /\b(blessed|fortunate|lucky)\b/i,
+      /[🙏💝🤗]/,
+    ],
+    weight: 1,
+  },
+  reflective: {
+    patterns: [
+      /\b(remember(ing)?|recall(ing)?|reminisce|reflect(ing)?)\b/i,
+      /\b(thought(s)?|thinking|ponder(ing)?|consider(ing)?)\b/i,
+      /\b(realize[ds]?|understand|insight|perspective)\b/i,
+      /\b(meaningful|significant|important to me)\b/i,
+    ],
+    weight: 1,
+  },
+}
+
+/**
+ * Extract emotional context from messages using enhanced pattern matching
+ * Returns a comma-separated string of detected emotions, prioritized by frequency
  */
 function extractEmotionalContext(messages: Message[]): string | null {
-  const allText = messages.map(m => m.entry || '').join(' ').toLowerCase()
+  const allText = messages.map(m => m.entry || '').join(' ')
 
-  const emotions: string[] = []
+  // Count matches for each emotion
+  const emotionScores: Record<string, number> = {}
 
-  if (/happy|joy|excited|wonderful|great/i.test(allText)) emotions.push('positive')
-  if (/sad|upset|disappointed|hurt/i.test(allText)) emotions.push('melancholic')
-  if (/angry|frustrated|annoyed/i.test(allText)) emotions.push('tense')
-  if (/love|care|affection/i.test(allText)) emotions.push('romantic')
-  if (/scared|afraid|worried/i.test(allText)) emotions.push('anxious')
-  if (/curious|interested|wonder/i.test(allText)) emotions.push('curious')
+  for (const [emotion, config] of Object.entries(EMOTION_PATTERNS)) {
+    let score = 0
+    for (const pattern of config.patterns) {
+      const matches = allText.match(new RegExp(pattern.source, 'gi'))
+      if (matches) {
+        score += matches.length * config.weight
+      }
+    }
+    if (score > 0) {
+      emotionScores[emotion] = score
+    }
+  }
 
-  return emotions.length > 0 ? emotions.join(', ') : null
+  // Sort emotions by score and take top 3
+  const sortedEmotions = Object.entries(emotionScores)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([emotion]) => emotion)
+
+  return sortedEmotions.length > 0 ? sortedEmotions.join(', ') : null
+}
+
+/**
+ * Consolidate related memories for a user/bot combination
+ * Finds memories with similar content and merges them into consolidated entries
+ *
+ * @param payload - Payload CMS instance
+ * @param userId - User ID to consolidate memories for
+ * @param options - Consolidation options
+ * @returns Result with count of memories consolidated
+ */
+export async function consolidateMemories(
+  payload: Payload,
+  userId: number,
+  options: {
+    botId?: number
+    collectionId?: number
+    similarityThreshold?: number
+    maxMemoriesToProcess?: number
+    summarization?: SummarizationConfig
+  } = {}
+): Promise<{
+  success: boolean
+  consolidated: number
+  grouped: number
+  error?: string
+}> {
+  const {
+    botId,
+    collectionId,
+    similarityThreshold = 0.5,
+    maxMemoriesToProcess = 100,
+    summarization,
+  } = options
+
+  try {
+    console.log(`[Memory Service] Starting memory consolidation for user ${userId}`)
+
+    // Build query for memories to consolidate
+    const whereClause: Record<string, unknown> = {
+      user: { equals: userId },
+      is_legacy_memory: { equals: true },
+    }
+
+    if (botId) {
+      whereClause.applies_to_bots = { contains: botId }
+    }
+
+    if (collectionId) {
+      whereClause.knowledge_collection = { equals: collectionId }
+    }
+
+    // Fetch memories sorted by creation date
+    const memories = await payload.find({
+      collection: 'knowledge',
+      where: whereClause,
+      limit: maxMemoriesToProcess,
+      sort: 'createdAt',
+      overrideAccess: true,
+    })
+
+    if (memories.docs.length < 2) {
+      return { success: true, consolidated: 0, grouped: 0, error: 'Not enough memories to consolidate' }
+    }
+
+    console.log(`[Memory Service] Found ${memories.docs.length} memories to analyze`)
+
+    // Group memories by similarity
+    const groups: Array<typeof memories.docs> = []
+    const processed = new Set<number>()
+
+    for (const memory of memories.docs) {
+      if (processed.has(memory.id)) continue
+
+      const group = [memory]
+      processed.add(memory.id)
+
+      const memoryKeywords = extractKeywords(memory.entry || '')
+
+      // Find similar memories
+      for (const otherMemory of memories.docs) {
+        if (processed.has(otherMemory.id)) continue
+        if (memory.id === otherMemory.id) continue
+
+        const otherKeywords = extractKeywords(otherMemory.entry || '')
+        const similarity = calculateKeywordSimilarity(memoryKeywords, otherKeywords)
+
+        if (similarity >= similarityThreshold) {
+          group.push(otherMemory)
+          processed.add(otherMemory.id)
+        }
+      }
+
+      // Only create groups with multiple memories
+      if (group.length > 1) {
+        groups.push(group)
+      }
+    }
+
+    console.log(`[Memory Service] Found ${groups.length} groups of similar memories`)
+
+    if (groups.length === 0) {
+      return { success: true, consolidated: 0, grouped: 0, error: 'No similar memories found to consolidate' }
+    }
+
+    let consolidatedCount = 0
+
+    // Merge each group into a single consolidated memory
+    for (const group of groups) {
+      try {
+        // Combine entries from all memories in the group
+        const combinedEntries = group.map(m => m.entry || '').join('\n\n---\n\n')
+
+        // Generate consolidated summary
+        let consolidatedSummary: string
+        if (summarization) {
+          // Use AI to create a cohesive summary
+          const aiSummary = await createConsolidatedSummary(combinedEntries, summarization)
+          consolidatedSummary = aiSummary || `Consolidated memory from ${group.length} related entries:\n${combinedEntries.slice(0, 500)}...`
+        } else {
+          // Simple concatenation with header
+          consolidatedSummary = `Consolidated memory from ${group.length} related entries:\n${combinedEntries}`
+        }
+
+        // Get the collection from the first memory
+        const firstMemory = group[0]
+        const collId = typeof firstMemory.knowledge_collection === 'object'
+          ? firstMemory.knowledge_collection?.id
+          : firstMemory.knowledge_collection
+
+        // Calculate max importance from group
+        let maxImportance = 5
+        for (const mem of group) {
+          const tags = mem.tags || []
+          const importanceTag = tags.find(t => t.tag?.startsWith('importance-'))
+          if (importanceTag?.tag) {
+            const parsed = parseInt(importanceTag.tag.replace('importance-', ''), 10)
+            if (!isNaN(parsed) && parsed > maxImportance) {
+              maxImportance = parsed
+            }
+          }
+        }
+
+        // Collect all emotional contexts
+        const allEmotions = new Set<string>()
+        for (const mem of group) {
+          const tags = mem.tags || []
+          for (const tag of tags) {
+            if (tag.tag?.startsWith('mood-')) {
+              allEmotions.add(tag.tag.replace('mood-', ''))
+            }
+          }
+        }
+
+        // Build tags for consolidated memory
+        const consolidatedTags: { tag: string }[] = [
+          { tag: 'consolidated' },
+          { tag: `importance-${maxImportance}` },
+          { tag: `merged-from-${group.length}` },
+        ]
+        allEmotions.forEach(emotion => {
+          consolidatedTags.push({ tag: `mood-${emotion}` })
+        })
+
+        // Collect all bot IDs
+        const allBotIds = new Set<number>()
+        for (const mem of group) {
+          const botIds = mem.applies_to_bots || []
+          for (const bid of botIds) {
+            const id = typeof bid === 'object' ? bid.id : bid
+            if (id) allBotIds.add(id)
+          }
+        }
+
+        // Create consolidated memory entry
+        await payload.create({
+          collection: 'knowledge',
+          data: {
+            user: userId,
+            knowledge_collection: collId,
+            type: 'legacy_memory',
+            entry: consolidatedSummary,
+            tags: consolidatedTags,
+            is_legacy_memory: true,
+            applies_to_bots: Array.from(allBotIds),
+            tokens: Math.ceil(consolidatedSummary.length / 4),
+            activation_settings: {
+              activation_mode: 'vector',
+              vector_similarity_threshold: 0.6,
+              max_vector_results: 5,
+              probability: 100,
+            },
+            positioning: {
+              position: 'after_character',
+              order: 50,
+            },
+            privacy_settings: {
+              privacy_level: 'private',
+            },
+          },
+          overrideAccess: true,
+        })
+
+        // Delete the original memories that were consolidated
+        for (const mem of group) {
+          await payload.delete({
+            collection: 'knowledge',
+            id: mem.id,
+            overrideAccess: true,
+          })
+        }
+
+        consolidatedCount++
+        console.log(`[Memory Service] Consolidated group of ${group.length} memories`)
+      } catch (groupError) {
+        console.error('[Memory Service] Error consolidating group:', groupError)
+      }
+    }
+
+    return {
+      success: true,
+      consolidated: consolidatedCount,
+      grouped: groups.reduce((sum, g) => sum + g.length, 0),
+    }
+  } catch (error) {
+    console.error('[Memory Service] Consolidation error:', error)
+    return {
+      success: false,
+      consolidated: 0,
+      grouped: 0,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }
+  }
+}
+
+/**
+ * Create a consolidated summary from multiple memory entries using AI
+ */
+async function createConsolidatedSummary(
+  combinedEntries: string,
+  config: SummarizationConfig
+): Promise<string | null> {
+  try {
+    const prompt = `You are a memory consolidation assistant. Multiple related memories have been identified that should be merged into a single, cohesive summary.
+
+Combine these related memory entries into one clear, concise summary that:
+- Preserves all important information
+- Eliminates redundancy
+- Maintains a coherent narrative
+- Keeps the summary under 300 words
+
+MEMORY ENTRIES TO CONSOLIDATE:
+${combinedEntries}
+
+CONSOLIDATED SUMMARY:`
+
+    const response = await sendMessage(
+      config.provider,
+      {
+        messages: [{ role: 'user', content: prompt }],
+        model: config.model || 'gpt-4o-mini',
+        temperature: 0.3,
+        maxTokens: 600,
+      },
+      { apiKey: config.apiKey }
+    )
+
+    return response.content?.trim() || null
+  } catch (error) {
+    console.error('[Memory Service] AI consolidation error:', error)
+    return null
+  }
 }
 
 /**

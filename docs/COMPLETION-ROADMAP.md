@@ -336,6 +336,14 @@ By building foundational systems first, we avoid rework and ensure chat has all 
   - [x] Delete conversation with confirmation dialog
   - [x] Created DELETE endpoint for `/api/chat/conversations/[id]/messages`
 - [x] Implement memory auto-generation during chat
+- [x] **Memory System Enhancements (2026-01-25)**:
+  - [x] Wire up memory retrieval into chat context (critical fix - memories were created but never used)
+  - [x] Implement AI-powered conversation summarization (replaces basic placeholder)
+  - [x] Fix API binding access in memory search endpoint (use getCloudflareContext)
+  - [x] Enhanced emotion detection (10 categories: joyful, melancholic, tense, romantic, anxious, curious, playful, surprised, grateful, reflective)
+  - [x] Enhanced importance scoring (7 signal categories: personal revelations, commitments, emotional intensity, life events, narrative, deep questions, plans)
+  - [x] Add memory deduplication logic (Jaccard similarity on keywords)
+  - [x] Add memory consolidation API (merge related memories with AI summarization)
 - [ ] Add wellness gate checks before sending
 - [ ] Implement voice input capabilities
 - [ ] Add file sharing in chat
@@ -590,6 +598,31 @@ When you add new Payload collections or modify existing ones:
 ## 🔄 **Recent Changes**
 
 ### **2026-01-25 Updates:**
+- ✅ **Memory System Enhancements**
+  - Wired up memory retrieval into chat context (`context-builder.ts`)
+    - Memories are now actually used in conversations (critical fix)
+    - Retrieves top 5 memories by importance for current bot/user/persona
+    - Injects memories into system prompt before roleplay guidelines
+  - Implemented AI-powered conversation summarization (`memory-service.ts`)
+    - Uses user's API key to generate intelligent summaries
+    - Falls back to simple summary if AI unavailable
+    - Configured via `SummarizationConfig` interface
+  - Fixed API binding access in memory search endpoint
+    - Changed from incorrect `process.env.AI` to `getCloudflareContext()`
+  - Enhanced emotion detection with 10 categories
+    - joyful, melancholic, tense, romantic, anxious, curious, playful, surprised, grateful, reflective
+    - Comprehensive keyword patterns with emoji support
+    - Frequency-based scoring (more matches = stronger emotion)
+  - Enhanced importance scoring with 7 signal categories
+    - Personal revelations, commitments, emotional intensity, life events, narrative, deep questions, plans
+    - Factors in conversation engagement metrics and emotional expression
+  - Added memory deduplication logic
+    - Uses Jaccard similarity on extracted keywords
+    - Prevents duplicate memories with >60% similarity
+  - Added memory consolidation API
+    - `consolidateMemories()` function to merge related memories
+    - AI-powered consolidated summary creation
+    - Preserves max importance and combines emotional contexts
 - ✅ **Content Dashboard Separation**
   - Created new `/dashboard` page ("Creator's Workshop") with 4 tabs:
     - My Bots (moved from Account)

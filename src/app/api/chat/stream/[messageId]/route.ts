@@ -318,6 +318,11 @@ export async function GET(
           try {
             const result = await generateConversationMemory(payload, conversation.id, {
               forceGenerate: !hasEverSummarized, // Force first memory, use checks for subsequent
+              summarization: {
+                apiKey: apiKey.key,
+                provider: provider,
+                model: model, // Use same model as chat for consistency
+              },
             })
             if (result.success) {
               console.log(`[Memory Trigger] SUCCESS - Memory auto-generated for conversation ${conversation.id}:`, result.memoryId)

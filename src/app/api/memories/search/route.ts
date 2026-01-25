@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
+import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { generateEmbedding } from '@/lib/vectorization/embeddings'
 
 export const dynamic = 'force-dynamic'
@@ -85,8 +86,16 @@ export async function POST(request: NextRequest) {
 
     const payloadUser = users.docs[0]
 
-    // Get AI binding for embedding generation
-    const ai = (process.env as any).AI
+    // Get Cloudflare bindings for AI and Vectorize
+    let ai: any
+    let vectorize: any
+    try {
+      const { env } = await getCloudflareContext()
+      ai = env.AI
+      vectorize = env.VECTORIZE
+    } catch (e) {
+      console.warn('Failed to get Cloudflare context:', e)
+    }
 
     if (!ai) {
       console.warn('AI binding not available, cannot perform semantic search')
@@ -102,7 +111,7 @@ export async function POST(request: NextRequest) {
     // Build metadata filter for Vectorize
     const metadataFilter: any = {
       source_type: 'memory',
-      tenant_id: clerkUser.id,
+      tenant_id: String(payloadUser.id), // Use Payload user ID for tenant isolation
     }
 
     if (botId) {
@@ -114,8 +123,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Search Vectorize
-    const vectorize = (process.env as any).VECTORIZE_INDEX
-
     let vectorResults: any[] = []
 
     if (vectorize) {

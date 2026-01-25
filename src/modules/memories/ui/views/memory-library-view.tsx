@@ -28,7 +28,9 @@ import {
   Search,
   Pencil,
   Plus,
-  AlertTriangle
+  AlertTriangle,
+  Zap,
+  BookOpen
 } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { Slider } from '@/components/ui/slider'
@@ -49,7 +51,7 @@ interface Memory {
   bot?: {
     id: string
     name: string
-  }
+  } | Array<{ id: string; name: string }> // Can be array for multi-bot memories
   lore_entry?: {
     id: string
   }
@@ -57,6 +59,13 @@ interface Memory {
     personas?: string[]
     bots?: string[]
   }
+  // New fields for unified memory display
+  _sourceType?: 'memory' | 'knowledge' // Source collection type
+  _knowledgeId?: number // Original knowledge ID if from knowledge collection
+  knowledge_collection?: {
+    id: number
+    name: string
+  } | number // Linked tome for auto-generated memories
 }
 
 export const MemoryLibraryView = () => {
@@ -68,6 +77,7 @@ export const MemoryLibraryView = () => {
   // Filter state
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [sourceFilter, setSourceFilter] = useState<string>('all') // 'all', 'manual', 'auto'
   const [searchQuery, setSearchQuery] = useState('')
 
   // Conversion dialog state
@@ -123,7 +133,7 @@ export const MemoryLibraryView = () => {
   // Apply filters when memories or filter state changes
   useEffect(() => {
     applyFilters()
-  }, [memories, typeFilter, statusFilter, searchQuery])
+  }, [memories, typeFilter, statusFilter, sourceFilter, searchQuery])
 
   const fetchMemories = async () => {
     setIsLoading(true)
@@ -174,13 +184,24 @@ export const MemoryLibraryView = () => {
       filtered = filtered.filter(m => m.is_vectorized)
     }
 
-    // Search filter
+    // Source filter (manual/imported vs auto-generated)
+    if (sourceFilter === 'manual') {
+      filtered = filtered.filter(m => m._sourceType !== 'knowledge')
+    } else if (sourceFilter === 'auto') {
+      filtered = filtered.filter(m => m._sourceType === 'knowledge')
+    }
+
+    // Search filter - handle bot being either object or array
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(m =>
-        m.entry.toLowerCase().includes(query) ||
-        m.bot?.name.toLowerCase().includes(query)
-      )
+      filtered = filtered.filter(m => {
+        if (m.entry.toLowerCase().includes(query)) return true
+        // Handle bot as single object or array
+        if (Array.isArray(m.bot)) {
+          return m.bot.some(b => b.name?.toLowerCase().includes(query))
+        }
+        return m.bot?.name?.toLowerCase().includes(query)
+      })
     }
 
     setFilteredMemories(filtered)
@@ -443,7 +464,7 @@ export const MemoryLibraryView = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -452,6 +473,20 @@ export const MemoryLibraryView = () => {
                   <p className="text-2xl font-bold">{memories.length}</p>
                 </div>
                 <Brain className="h-8 w-8 text-purple-400" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Auto-generated</p>
+                  <p className="text-2xl font-bold">
+                    {memories.filter(m => m._sourceType === 'knowledge').length}
+                  </p>
+                </div>
+                <Zap className="h-8 w-8 text-orange-400" />
               </div>
             </CardContent>
           </Card>
@@ -546,19 +581,32 @@ export const MemoryLibraryView = () => {
                 </Select>
               </div>
 
-              <div className="flex items-end">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setTypeFilter('all')
-                    setStatusFilter('all')
-                    setSearchQuery('')
-                  }}
-                  className="w-full"
-                >
-                  Clear Filters
-                </Button>
+              <div className="space-y-2">
+                <Label>Source</Label>
+                <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Sources</SelectItem>
+                    <SelectItem value="manual">Manual / Imported</SelectItem>
+                    <SelectItem value="auto">Auto-generated</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setTypeFilter('all')
+                  setStatusFilter('all')
+                  setSourceFilter('all')
+                  setSearchQuery('')
+                }}
+              >
+                Clear Filters
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -591,98 +639,140 @@ export const MemoryLibraryView = () => {
         </Card>
       ) : (
         <div className="space-y-4">
-          {filteredMemories.map((memory) => (
-            <Card key={memory.id}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant={getMemoryTypeBadgeVariant(memory.type)}>
-                        {getMemoryTypeLabel(memory.type)}
-                      </Badge>
-                      {memory.converted_to_lore && (
-                        <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-500">
-                          <Sparkles className="mr-1 h-3 w-3" />
-                          Converted to Lore
+          {filteredMemories.map((memory) => {
+            const isAutoGenerated = memory._sourceType === 'knowledge'
+            // Get bot name(s) - handle both single bot and array
+            const botNames = Array.isArray(memory.bot)
+              ? memory.bot.map(b => b.name).filter(Boolean).join(', ')
+              : memory.bot?.name
+            // Get tome name for auto-generated memories
+            const tomeName = typeof memory.knowledge_collection === 'object'
+              ? memory.knowledge_collection?.name
+              : undefined
+
+            return (
+              <Card key={memory.id}>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant={getMemoryTypeBadgeVariant(memory.type)}>
+                          {getMemoryTypeLabel(memory.type)}
                         </Badge>
-                      )}
-                      {memory.is_vectorized && (
-                        <Badge variant="secondary" className="bg-green-500/10 text-green-500">
-                          <CheckCircle className="mr-1 h-3 w-3" />
-                          Vectorized
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      {memory.bot && (
-                        <div className="flex items-center gap-1">
-                          <Bot className="h-3 w-3" />
-                          {memory.bot.name}
-                        </div>
-                      )}
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {new Date(memory.created_timestamp).toLocaleDateString()}
+                        {isAutoGenerated && (
+                          <Badge variant="secondary" className="bg-orange-500/10 text-orange-500">
+                            <Zap className="mr-1 h-3 w-3" />
+                            Auto-generated
+                          </Badge>
+                        )}
+                        {memory.converted_to_lore && !isAutoGenerated && (
+                          <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-500">
+                            <Sparkles className="mr-1 h-3 w-3" />
+                            Converted to Lore
+                          </Badge>
+                        )}
+                        {memory.is_vectorized && (
+                          <Badge variant="secondary" className="bg-green-500/10 text-green-500">
+                            <CheckCircle className="mr-1 h-3 w-3" />
+                            Vectorized
+                          </Badge>
+                        )}
                       </div>
-                      <div className="flex items-center gap-1">
-                        {memory.tokens} tokens
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                        {botNames && (
+                          <div className="flex items-center gap-1">
+                            <Bot className="h-3 w-3" />
+                            {botNames}
+                          </div>
+                        )}
+                        {tomeName && (
+                          <div className="flex items-center gap-1">
+                            <BookOpen className="h-3 w-3" />
+                            {tomeName}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {new Date(memory.created_timestamp).toLocaleDateString()}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {memory.tokens} tokens
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm whitespace-pre-wrap line-clamp-4">
-                  {memory.entry}
-                </p>
-              </CardContent>
-              <CardFooter className="flex gap-2 flex-wrap">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => openEditDialog(memory)}
-                >
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Edit
-                </Button>
-                {!memory.converted_to_lore && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openConvertDialog(memory)}
-                  >
-                    <ArrowUpCircle className="mr-2 h-4 w-4" />
-                    Convert to Lore
-                  </Button>
-                )}
-                {!memory.is_vectorized && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleVectorize(memory.id)}
-                  >
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Vectorize
-                  </Button>
-                )}
-                {memory.converted_to_lore && memory.lore_entry && (
-                  <Link href={`/lore/entries?id=${memory.lore_entry.id}`}>
-                    <Button variant="outline" size="sm">
-                      View Lore Entry
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm whitespace-pre-wrap line-clamp-4">
+                    {memory.entry}
+                  </p>
+                </CardContent>
+                <CardFooter className="flex gap-2 flex-wrap">
+                  {/* Auto-generated memories are managed via tomes, not edited here */}
+                  {!isAutoGenerated && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openEditDialog(memory)}
+                      >
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Edit
+                      </Button>
+                      {!memory.converted_to_lore && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openConvertDialog(memory)}
+                        >
+                          <ArrowUpCircle className="mr-2 h-4 w-4" />
+                          Convert to Lore
+                        </Button>
+                      )}
+                      {!memory.is_vectorized && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleVectorize(memory.id)}
+                        >
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          Vectorize
+                        </Button>
+                      )}
+                    </>
+                  )}
+                  {/* View in tome for auto-generated memories */}
+                  {isAutoGenerated && memory._knowledgeId && (
+                    <Link href={`/lore/entries?id=${memory._knowledgeId}`}>
+                      <Button variant="outline" size="sm">
+                        <BookOpen className="mr-2 h-4 w-4" />
+                        View in Tome
+                      </Button>
+                    </Link>
+                  )}
+                  {/* View lore entry for manually converted memories */}
+                  {memory.converted_to_lore && memory.lore_entry && !isAutoGenerated && (
+                    <Link href={`/lore/entries?id=${memory.lore_entry.id}`}>
+                      <Button variant="outline" size="sm">
+                        View Lore Entry
+                      </Button>
+                    </Link>
+                  )}
+                  {/* Only show delete for non-auto-generated memories */}
+                  {!isAutoGenerated && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10 ml-auto"
+                      onClick={() => openDeleteDialog(memory)}
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </Button>
-                  </Link>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10 ml-auto"
-                  onClick={() => openDeleteDialog(memory)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
+                  )}
+                </CardFooter>
+              </Card>
+            )
+          })}
         </div>
       )}
 

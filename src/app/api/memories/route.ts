@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
+import type { Knowledge } from '@/payload-types'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,21 +26,63 @@ async function getPayloadUser(clerkUser: NonNullable<Awaited<ReturnType<typeof c
 }
 
 /**
+ * Normalize a Knowledge entry (lore-based memory) to match Memory interface
+ * This allows the frontend to display both types consistently
+ */
+function normalizeKnowledgeToMemory(knowledge: Knowledge): Record<string, unknown> {
+  // Extract importance from tags (format: "importance-N")
+  let importance = 5
+  if (knowledge.tags) {
+    const importanceTag = knowledge.tags.find(t => t.tag?.startsWith('importance-'))
+    if (importanceTag?.tag) {
+      const parsed = parseInt(importanceTag.tag.replace('importance-', ''), 10)
+      if (!isNaN(parsed)) importance = parsed
+    }
+  }
+
+  // Extract emotional context from tags (format: "mood-X")
+  const moodTags = knowledge.tags?.filter(t => t.tag?.startsWith('mood-')) || []
+  const emotionalContext = moodTags.map(t => t.tag?.replace('mood-', '')).filter(Boolean).join(', ')
+
+  return {
+    id: `lore-${knowledge.id}`, // Prefix to distinguish from Memory IDs
+    _sourceType: 'knowledge', // Internal marker for source type
+    _knowledgeId: knowledge.id, // Original knowledge ID
+    entry: knowledge.entry,
+    type: 'long_term', // Auto-generated memories are long-term
+    tokens: knowledge.tokens || 0,
+    created_timestamp: knowledge.created_timestamp || knowledge.createdAt,
+    is_vectorized: knowledge.is_vectorized || false,
+    converted_to_lore: true, // Already in lore format
+    importance,
+    emotional_context: emotionalContext || null,
+    bot: knowledge.applies_to_bots, // Already an array
+    persona: knowledge.applies_to_personas,
+    conversation: knowledge.source_conversation_id,
+    lore_entry: { id: knowledge.id }, // Self-reference since it IS a lore entry
+    knowledge_collection: knowledge.knowledge_collection,
+    participants: knowledge.original_participants,
+  }
+}
+
+/**
  * GET /api/memories
  *
  * Fetch all memory entries for the current user.
- * Supports filtering by type, bot, and conversion status.
+ * Includes both legacy Memory collection entries AND auto-generated
+ * memories stored as Knowledge entries (is_legacy_memory=true).
  *
  * Query params:
  * - type?: 'short_term' | 'long_term' | 'consolidated'
  * - botId?: string
  * - convertedToLore?: 'true' | 'false'
+ * - source?: 'memory' | 'knowledge' | 'all' (default: 'all')
  * - limit?: number (default: 50)
  * - offset?: number (default: 0)
  *
  * Response:
  * - success: boolean
- * - memories: Memory[]
+ * - memories: Memory[] (unified format, includes _sourceType field)
  * - total: number
  * - message?: string
  */
@@ -87,56 +130,108 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type')
     const botId = searchParams.get('botId')
     const convertedToLore = searchParams.get('convertedToLore')
+    const source = searchParams.get('source') || 'all' // 'memory', 'knowledge', or 'all'
     const limit = parseInt(searchParams.get('limit') || '50', 10)
     const offset = parseInt(searchParams.get('offset') || '0', 10)
 
-    // Build where clause
-    const where: any = {
-      user: {
-        equals: payloadUser.id,
-      },
+    const allMemories: Record<string, unknown>[] = []
+    let totalCount = 0
+
+    // Fetch from Memory collection (unless source is 'knowledge' only)
+    if (source === 'all' || source === 'memory') {
+      // Build where clause for Memory collection
+      const memoryWhere: Record<string, unknown> = {
+        user: { equals: payloadUser.id },
+      }
+
+      if (type) {
+        memoryWhere.type = { equals: type }
+      }
+
+      if (botId) {
+        memoryWhere.bot = { contains: parseInt(botId, 10) }
+      }
+
+      if (convertedToLore !== null) {
+        memoryWhere.converted_to_lore = { equals: convertedToLore === 'true' }
+      }
+
+      const memoriesResult = await payload.find({
+        collection: 'memory',
+        where: memoryWhere,
+        limit: source === 'all' ? 1000 : limit, // Fetch more if combining
+        sort: '-created_timestamp',
+        depth: 2,
+        overrideAccess: true,
+      })
+
+      // Add source type marker to each memory
+      const markedMemories = memoriesResult.docs.map(m => ({
+        ...m,
+        _sourceType: 'memory',
+      }))
+      allMemories.push(...markedMemories)
+      totalCount += memoriesResult.totalDocs
     }
 
-    if (type) {
-      where.type = {
-        equals: type,
+    // Fetch from Knowledge collection (unless source is 'memory' only)
+    // Only get entries where is_legacy_memory=true (auto-generated memories)
+    if (source === 'all' || source === 'knowledge') {
+      // Build where clause for Knowledge collection
+      const knowledgeWhere: Record<string, unknown> = {
+        user: { equals: payloadUser.id },
+        is_legacy_memory: { equals: true },
+      }
+
+      if (botId) {
+        knowledgeWhere.applies_to_bots = { contains: parseInt(botId, 10) }
+      }
+
+      // For type filter, only show knowledge entries for 'long_term' or 'all'
+      // (auto-generated memories are effectively long-term)
+      if (type && type !== 'long_term') {
+        // Skip knowledge entries if filtering for short_term or consolidated
+        // (knowledge-based memories are always long_term)
+      } else {
+        const knowledgeResult = await payload.find({
+          collection: 'knowledge',
+          where: knowledgeWhere,
+          limit: source === 'all' ? 1000 : limit,
+          sort: '-created_timestamp',
+          depth: 2,
+          overrideAccess: true,
+        })
+
+        // Normalize knowledge entries to memory format
+        const normalizedKnowledge = knowledgeResult.docs.map(k =>
+          normalizeKnowledgeToMemory(k as Knowledge)
+        )
+        allMemories.push(...normalizedKnowledge)
+        totalCount += knowledgeResult.totalDocs
       }
     }
 
-    if (botId) {
-      // Use 'contains' for hasMany relationship - finds memories where botId is in the array
-      where.bot = {
-        contains: parseInt(botId, 10),
-      }
-    }
-
-    if (convertedToLore !== null) {
-      where.converted_to_lore = {
-        equals: convertedToLore === 'true',
-      }
-    }
-
-    // Fetch memories
-    const memoriesResult = await payload.find({
-      collection: 'memory',
-      where,
-      limit,
-      page: Math.floor(offset / limit) + 1,
-      sort: '-created_timestamp',
-      depth: 2, // Include bot and lore_entry relationships
-      overrideAccess: true, // We use Clerk auth, not Payload auth
+    // Sort combined results by created_timestamp descending
+    allMemories.sort((a, b) => {
+      const dateA = new Date(a.created_timestamp as string).getTime()
+      const dateB = new Date(b.created_timestamp as string).getTime()
+      return dateB - dateA
     })
+
+    // Apply pagination to combined results
+    const paginatedMemories = allMemories.slice(offset, offset + limit)
+    const hasMore = offset + limit < allMemories.length
 
     return NextResponse.json({
       success: true,
-      memories: memoriesResult.docs,
-      total: memoriesResult.totalDocs,
-      hasMore: memoriesResult.hasNextPage,
-      page: memoriesResult.page,
-      totalPages: memoriesResult.totalPages,
+      memories: paginatedMemories,
+      total: totalCount,
+      hasMore,
+      page: Math.floor(offset / limit) + 1,
+      totalPages: Math.ceil(allMemories.length / limit),
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Fetch memories error:', error)
     // Return empty results instead of error for better UX
     return NextResponse.json({

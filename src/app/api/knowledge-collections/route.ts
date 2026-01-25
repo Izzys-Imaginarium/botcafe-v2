@@ -124,14 +124,29 @@ export async function GET(request: NextRequest) {
 
     const payloadUser = payloadUsers.docs[0]
 
+    // Get query parameters
+    const searchParams = request.nextUrl.searchParams
+    const includeMemoryTomes = searchParams.get('includeMemoryTomes') === 'true'
+    const onlyMemoryTomes = searchParams.get('onlyMemoryTomes') === 'true'
+
+    // Build where clause for owned collections
+    const ownedWhere: Record<string, unknown> = {
+      user: { equals: payloadUser.id },
+    }
+
+    // By default, exclude memory tomes from the main tome list
+    // Memory tomes are managed in the Memories section
+    // Use includeMemoryTomes=true to include them, or onlyMemoryTomes=true to only show memory tomes
+    if (onlyMemoryTomes) {
+      ownedWhere['collection_metadata.collection_category'] = { equals: 'memories' }
+    } else if (!includeMemoryTomes) {
+      ownedWhere['collection_metadata.collection_category'] = { not_equals: 'memories' }
+    }
+
     // Fetch owned knowledge collections
     const ownedCollections = await payload.find({
       collection: 'knowledgeCollections',
-      where: {
-        user: {
-          equals: payloadUser.id,
-        },
-      },
+      where: ownedWhere,
       sort: '-createdAt',
       limit: 100,
       overrideAccess: true,
@@ -164,11 +179,20 @@ export async function GET(request: NextRequest) {
         .filter((id: number) => !isNaN(id))
 
       if (numericIds.length > 0) {
+        // Build where clause for shared collections with same memory tome filter
+        const sharedWhere: Record<string, unknown> = {
+          id: { in: numericIds },
+        }
+
+        if (onlyMemoryTomes) {
+          sharedWhere['collection_metadata.collection_category'] = { equals: 'memories' }
+        } else if (!includeMemoryTomes) {
+          sharedWhere['collection_metadata.collection_category'] = { not_equals: 'memories' }
+        }
+
         const sharedCollectionsResult = await payload.find({
           collection: 'knowledgeCollections',
-          where: {
-            id: { in: numericIds },
-          },
+          where: sharedWhere,
           overrideAccess: true,
         })
         sharedCollections = sharedCollectionsResult.docs

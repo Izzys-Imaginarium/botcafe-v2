@@ -389,12 +389,22 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
     const collectionId = searchParams.get('collection')
+    const includeMemories = searchParams.get('includeMemories') === 'true'
 
     // Build where clause
     const whereClause: any = {
       user: {
         equals: payloadUser.id,
       },
+    }
+
+    // By default, exclude legacy memory entries from knowledge views
+    // They are displayed in the memories section instead
+    // Pass includeMemories=true to include them (e.g., when viewing a memory tome)
+    if (!includeMemories) {
+      whereClause.is_legacy_memory = {
+        not_equals: true,
+      }
     }
 
     if (collectionId) {

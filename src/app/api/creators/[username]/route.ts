@@ -137,6 +137,44 @@ export async function GET(
       realTotalLikes = interactions.totalDocs
     }
 
+    // Get real follower count
+    const followers = await payload.find({
+      collection: 'creatorFollows',
+      where: {
+        following: { equals: creator.id },
+      },
+      limit: 0,
+      overrideAccess: true,
+    })
+    const realFollowerCount = followers.totalDocs
+
+    // Get real following count (how many creators this user follows)
+    const following = await payload.find({
+      collection: 'creatorFollows',
+      where: {
+        follower: { equals: creatorUserId },
+      },
+      limit: 0,
+      overrideAccess: true,
+    })
+    const realFollowingCount = following.totalDocs
+
+    // Check if current user is following this creator
+    let isFollowing = false
+    if (payloadUserId && !isOwner) {
+      const userFollow = await payload.find({
+        collection: 'creatorFollows',
+        where: {
+          and: [
+            { follower: { equals: payloadUserId } },
+            { following: { equals: creator.id } },
+          ],
+        },
+        overrideAccess: true,
+      })
+      isFollowing = userFollow.docs.length > 0
+    }
+
     // Merge computed stats into the creator object
     const creatorWithRealStats = {
       ...creator,
@@ -148,7 +186,8 @@ export async function GET(
       community_stats: {
         ...creator.community_stats,
         total_likes: realTotalLikes,
-        // follower_count and following_count would need a separate follow system
+        follower_count: realFollowerCount,
+        following_count: realFollowingCount,
       },
     }
 
@@ -156,6 +195,7 @@ export async function GET(
       success: true,
       creator: creatorWithRealStats,
       isOwner,
+      isFollowing,
     })
   } catch (error: any) {
     console.error('Fetch creator profile error:', error)

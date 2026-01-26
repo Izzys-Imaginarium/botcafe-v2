@@ -119,6 +119,7 @@ export const CreatorProfileView = ({ username }: CreatorProfileViewProps) => {
   const [creator, setCreator] = useState<CreatorProfile | null>(null)
   const [isOwner, setIsOwner] = useState(false)
   const [isFollowing, setIsFollowing] = useState(false)
+  const [isFollowLoading, setIsFollowLoading] = useState(false)
 
   useEffect(() => {
     fetchCreatorProfile()
@@ -132,12 +133,14 @@ export const CreatorProfileView = ({ username }: CreatorProfileViewProps) => {
         success?: boolean
         creator?: CreatorProfile
         isOwner?: boolean
+        isFollowing?: boolean
         message?: string
       }
 
       if (data.success && data.creator) {
         setCreator(data.creator)
         setIsOwner(data.isOwner || false)
+        setIsFollowing(data.isFollowing || false)
       } else {
         toast.error(data.message || 'Creator not found')
         router.push('/creators')
@@ -152,8 +155,40 @@ export const CreatorProfileView = ({ username }: CreatorProfileViewProps) => {
   }
 
   const handleFollow = async () => {
-    // TODO: Implement follow functionality
-    toast.info('Follow functionality coming soon!')
+    if (isFollowLoading || !creator) return
+
+    setIsFollowLoading(true)
+    try {
+      const response = await fetch(`/api/creators/${username}/follow`, {
+        method: 'POST',
+      })
+      const data = (await response.json()) as {
+        success: boolean
+        following: boolean
+        followerCount: number
+        message?: string
+      }
+
+      if (data.success) {
+        setIsFollowing(data.following)
+        // Update the follower count in the creator object
+        setCreator((prev) => prev ? {
+          ...prev,
+          community_stats: {
+            ...prev.community_stats,
+            follower_count: data.followerCount,
+          },
+        } : null)
+        toast.success(data.message || (data.following ? 'Now following!' : 'Unfollowed'))
+      } else {
+        toast.error(data.message || 'Failed to update follow status')
+      }
+    } catch (error) {
+      console.error('Error following creator:', error)
+      toast.error('Failed to update follow status')
+    } finally {
+      setIsFollowLoading(false)
+    }
   }
 
   if (isLoading) {
@@ -256,8 +291,17 @@ export const CreatorProfileView = ({ username }: CreatorProfileViewProps) => {
                 </Link>
               ) : (
                 <>
-                  <Button variant="outline" onClick={handleFollow}>
-                    {isFollowing ? (
+                  <Button
+                    variant={isFollowing ? "default" : "outline"}
+                    onClick={handleFollow}
+                    disabled={isFollowLoading}
+                  >
+                    {isFollowLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {isFollowing ? 'Unfollowing...' : 'Following...'}
+                      </>
+                    ) : isFollowing ? (
                       <>
                         <Users className="mr-2 h-4 w-4" />
                         Following

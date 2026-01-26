@@ -1,14 +1,14 @@
 # BotCafe v2 - Database Schema
 
 **Last Updated**: 2026-01-25
-**Version**: 3.10
+**Version**: 3.11
 **Database**: Cloudflare D1 (SQLite) via Payload CMS
 
 ---
 
 ## Overview
 
-BotCafe v2 uses Payload CMS with 28 collections organized into functional groups:
+BotCafe v2 uses Payload CMS with 29 collections organized into functional groups:
 
 | Category | Collections | Count |
 |----------|-------------|-------|
@@ -17,7 +17,7 @@ BotCafe v2 uses Payload CMS with 28 collections organized into functional groups
 | Knowledge/RAG | Knowledge, KnowledgeCollections, KnowledgeActivationLog, VectorRecord | 4 |
 | Conversation | Conversation, Message, Memory | 3 |
 | User Features | Personas, ApiKey | 2 |
-| Creators | CreatorProfiles | 1 |
+| Creators | CreatorProfiles, CreatorFollows | 2 |
 | Monetization | TokenGifts, SubscriptionPayments, SubscriptionTiers, TokenPackages, AccessControl | 5 |
 | Wellbeing | Mood, SelfModeration | 2 |
 | Analytics | UsageAnalytics, MemoryInsights, PersonaAnalytics | 3 |
@@ -646,6 +646,23 @@ Creator showcase and profile management. Each creator has a public page at `/<us
 | `total_conversations` | number | Total conversations across all bots (read-only) |
 | `average_rating` | number | Average rating of creator's bots |
 
+### CreatorFollows
+
+Tracks follow relationships between users and creator profiles.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Primary key |
+| `follower` | relationship (Users) | User who is following (required, indexed) |
+| `following` | relationship (CreatorProfiles) | Creator profile being followed (required, indexed) |
+| `created_timestamp` | date | When the follow relationship was created |
+| `createdAt` | date | Auto-generated |
+| `updatedAt` | date | Auto-generated |
+
+**Unique Constraint**: `follower` + `following` (a user can only follow a creator once)
+
+> **Note**: The `community_stats.follower_count` and `community_stats.following_count` in CreatorProfiles are computed in real-time from this collection, not stored values.
+
 ---
 
 ## Monetization
@@ -905,6 +922,7 @@ Users
 ├── Memories (user)
 ├── Personas (user)
 ├── CreatorProfiles (user)
+├── CreatorFollows (follower)
 ├── Mood (user)
 ├── SelfModeration (user)
 ├── UsageAnalytics (user)
@@ -913,6 +931,9 @@ Users
 ├── SubscriptionPayments (user)
 ├── AccessControl (user)
 └── UserAgreements (user)
+
+CreatorProfiles
+└── CreatorFollows (following)
 
 Bot
 ├── BotInteraction (bot)
@@ -947,6 +968,7 @@ Personas
 | Bot | `slug` |
 | BotInteraction | `user` + `bot` + `interaction_type` |
 | CreatorProfiles | `username` |
+| CreatorFollows | `follower` + `following` |
 | Documentation | `slug` |
 
 ### Common Query Patterns

@@ -1,7 +1,7 @@
 # BotCafe v2 - Complete Sitemap
 
 **Last Updated**: 2026-01-25
-**Version**: 2.23
+**Version**: 2.24
 **Status**: ~98% Complete
 
 ---
@@ -169,6 +169,7 @@
 | `/api/creators` | GET, POST | List creators, create profile |
 | `/api/creators/me` | GET | Get current user's profile |
 | `/api/creators/[username]` | GET, PUT, DELETE | Creator profile operations |
+| `/api/creators/[username]/follow` | GET, POST | Check follow status, toggle follow/unfollow |
 
 ### Wellbeing
 
@@ -262,8 +263,8 @@
 | Help | 3 | 0 | 3 |
 | Chat | 2 | 0 | 2 |
 | **Frontend Total** | **34** | **2** | **36** |
-| API Endpoints | 50 | 0 | 50 |
-| **Grand Total** | **84** | **2** | **86** |
+| API Endpoints | 51 | 0 | 51 |
+| **Grand Total** | **85** | **2** | **87** |
 
 *Note: "Redirect" routes automatically redirect to the Account page with the appropriate tab.*
 

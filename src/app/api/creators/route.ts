@@ -144,6 +144,23 @@ export async function GET(request: NextRequest) {
       allLikes = likesResult.docs
     }
 
+    // Get all creator IDs for follower count lookup
+    const creatorIds = creators.docs.map((creator) => creator.id)
+
+    // Batch fetch all follower counts for these creators
+    let allFollows: any[] = []
+    if (creatorIds.length > 0) {
+      const followsResult = await payload.find({
+        collection: 'creatorFollows',
+        where: {
+          following: { in: creatorIds },
+        },
+        limit: 5000,
+        overrideAccess: true,
+      })
+      allFollows = followsResult.docs
+    }
+
     // Map stats to each creator
     const creatorsWithRealStats = creators.docs.map((creator) => {
       const creatorUserId = typeof creator.user === 'object' && creator.user !== null
@@ -173,6 +190,14 @@ export async function GET(request: NextRequest) {
         return creatorBotIds.includes(likeBotId)
       }).length
 
+      // Calculate follower count
+      const realFollowerCount = allFollows.filter((follow) => {
+        const followingId = typeof follow.following === 'object' && follow.following !== null
+          ? follow.following.id
+          : follow.following
+        return String(followingId) === String(creator.id)
+      }).length
+
       return {
         ...creator,
         portfolio: {
@@ -182,6 +207,7 @@ export async function GET(request: NextRequest) {
         },
         community_stats: {
           ...creator.community_stats,
+          follower_count: realFollowerCount,
           total_likes: realTotalLikes,
         },
       }

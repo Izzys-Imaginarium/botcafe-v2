@@ -169,7 +169,7 @@ export const AccountOverview = () => {
   return (
     <div className="space-y-6">
       {/* Header with period selector */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-display text-parchment">Analytics Overview</h2>
           <p className="text-sm text-parchment-dim font-lore">Track your activity and engagement</p>

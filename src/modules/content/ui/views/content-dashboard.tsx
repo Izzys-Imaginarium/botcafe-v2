@@ -27,7 +27,7 @@ export const ContentDashboard = () => {
   }, [tabFromUrl])
 
   return (
-    <div className="px-4 lg:px-12 py-8 flex flex-col gap-6">
+    <div className="px-5 sm:px-6 lg:px-12 py-8 flex flex-col gap-6">
       <div className="flex flex-col lg:flex-row lg:items-center gap-y-2 lg:gap-y-0 justify-between">
         <h1 className="text-4xl font-display font-bold text-gold-rich">Creator's Workshop</h1>
         <Badge

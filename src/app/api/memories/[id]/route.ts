@@ -6,8 +6,24 @@ import config from '@/payload.config'
 export const dynamic = 'force-dynamic'
 
 /**
+ * Helper to parse memory ID - supports both numeric IDs (Memory collection)
+ * and lore-XXX IDs (Knowledge collection for memories in tomes)
+ */
+function parseMemoryId(id: string): { collection: 'memory' | 'knowledge'; numericId: number } | null {
+  if (id.startsWith('lore-')) {
+    const numericId = parseInt(id.replace('lore-', ''), 10)
+    if (isNaN(numericId)) return null
+    return { collection: 'knowledge', numericId }
+  }
+  const numericId = parseInt(id, 10)
+  if (isNaN(numericId)) return null
+  return { collection: 'memory', numericId }
+}
+
+/**
  * GET /api/memories/[id]
  * Fetch a single memory by ID
+ * Supports both Memory collection IDs and lore-XXX Knowledge IDs
  */
 export async function GET(
   request: NextRequest,
@@ -23,8 +39,8 @@ export async function GET(
     }
 
     const { id } = await params
-    const memoryId = parseInt(id, 10)
-    if (isNaN(memoryId)) {
+    const parsed = parseMemoryId(id)
+    if (!parsed) {
       return NextResponse.json(
         { success: false, message: 'Invalid memory ID' },
         { status: 400 }
@@ -51,10 +67,10 @@ export async function GET(
 
     const payloadUser = users.docs[0]
 
-    // Fetch memory
+    // Fetch from appropriate collection
     const memory = await payload.findByID({
-      collection: 'memory',
-      id: memoryId,
+      collection: parsed.collection,
+      id: parsed.numericId,
       depth: 2,
     })
 
@@ -87,6 +103,7 @@ export async function GET(
 /**
  * PATCH /api/memories/[id]
  * Update a memory
+ * Supports both Memory collection IDs and lore-XXX Knowledge IDs
  *
  * Body:
  * - entry?: string - Memory content
@@ -108,8 +125,8 @@ export async function PATCH(
     }
 
     const { id } = await params
-    const memoryId = parseInt(id, 10)
-    if (isNaN(memoryId)) {
+    const parsed = parseMemoryId(id)
+    if (!parsed) {
       return NextResponse.json(
         { success: false, message: 'Invalid memory ID' },
         { status: 400 }
@@ -146,8 +163,8 @@ export async function PATCH(
 
     // Fetch existing memory to verify ownership
     const existingMemory = await payload.findByID({
-      collection: 'memory',
-      id: memoryId,
+      collection: parsed.collection,
+      id: parsed.numericId,
     })
 
     if (!existingMemory) {
@@ -168,7 +185,70 @@ export async function PATCH(
       )
     }
 
-    // Build update data
+    // Handle Knowledge collection (memories in tomes)
+    if (parsed.collection === 'knowledge') {
+      const updateData: Record<string, unknown> = {
+        modified_timestamp: new Date().toISOString(),
+      }
+
+      if (entry !== undefined) {
+        updateData.entry = entry
+      }
+
+      // For Knowledge entries, update tags for importance/type/emotional_context
+      if (importance !== undefined || type !== undefined || emotional_context !== undefined) {
+        // Get existing tags and filter out the ones we're updating
+        const existingTags = (existingMemory as any).tags || []
+        const filteredTags = existingTags.filter((t: { tag?: string }) => {
+          if (!t.tag) return true
+          if (importance !== undefined && t.tag.startsWith('importance-')) return false
+          if (type !== undefined && t.tag.startsWith('memory-type-')) return false
+          if (emotional_context !== undefined && t.tag.startsWith('mood-')) return false
+          return true
+        })
+
+        // Add new tags
+        const newTags = [...filteredTags]
+        if (importance !== undefined) {
+          if (typeof importance !== 'number' || importance < 1 || importance > 10) {
+            return NextResponse.json(
+              { success: false, message: 'Importance must be between 1 and 10' },
+              { status: 400 }
+            )
+          }
+          newTags.push({ tag: `importance-${importance}` })
+        }
+        if (type !== undefined) {
+          if (!['short_term', 'long_term', 'consolidated'].includes(type)) {
+            return NextResponse.json(
+              { success: false, message: 'Invalid memory type' },
+              { status: 400 }
+            )
+          }
+          newTags.push({ tag: `memory-type-${type}` })
+        }
+        if (emotional_context !== undefined && emotional_context) {
+          newTags.push({ tag: `mood-${emotional_context}` })
+        }
+
+        updateData.tags = newTags
+      }
+
+      const updatedKnowledge = await payload.update({
+        collection: 'knowledge',
+        id: parsed.numericId,
+        data: updateData,
+        depth: 2,
+      })
+
+      return NextResponse.json({
+        success: true,
+        memory: updatedKnowledge,
+        message: 'Memory updated successfully',
+      })
+    }
+
+    // Handle Memory collection (legacy)
     const updateData: Record<string, unknown> = {
       modified_timestamp: new Date().toISOString(),
     }
@@ -204,7 +284,7 @@ export async function PATCH(
     // Update memory
     const updatedMemory = await payload.update({
       collection: 'memory',
-      id: memoryId,
+      id: parsed.numericId,
       data: updateData,
       depth: 2,
     })
@@ -226,6 +306,7 @@ export async function PATCH(
 /**
  * DELETE /api/memories/[id]
  * Delete a memory and its associated vector records
+ * Supports both Memory collection IDs and lore-XXX Knowledge IDs
  */
 export async function DELETE(
   request: NextRequest,
@@ -241,8 +322,8 @@ export async function DELETE(
     }
 
     const { id } = await params
-    const memoryId = parseInt(id, 10)
-    if (isNaN(memoryId)) {
+    const parsed = parseMemoryId(id)
+    if (!parsed) {
       return NextResponse.json(
         { success: false, message: 'Invalid memory ID' },
         { status: 400 }
@@ -271,8 +352,8 @@ export async function DELETE(
 
     // Fetch existing memory to verify ownership
     const existingMemory = await payload.findByID({
-      collection: 'memory',
-      id: memoryId,
+      collection: parsed.collection,
+      id: parsed.numericId,
       depth: 1,
     })
 
@@ -295,9 +376,11 @@ export async function DELETE(
     }
 
     // Delete associated vector records if any
-    if (existingMemory.is_vectorized && existingMemory.vector_records) {
-      const vectorRecordIds = Array.isArray(existingMemory.vector_records)
-        ? existingMemory.vector_records.map((vr: { id: number } | number) =>
+    const vectorRecords = (existingMemory as any).vector_records
+    const isVectorized = (existingMemory as any).is_vectorized
+    if (isVectorized && vectorRecords) {
+      const vectorRecordIds = Array.isArray(vectorRecords)
+        ? vectorRecords.map((vr: { id: number } | number) =>
             typeof vr === 'object' ? vr.id : vr
           )
         : []
@@ -314,10 +397,10 @@ export async function DELETE(
       }
     }
 
-    // Delete the memory
+    // Delete the memory from appropriate collection
     await payload.delete({
-      collection: 'memory',
-      id: memoryId,
+      collection: parsed.collection,
+      id: parsed.numericId,
     })
 
     return NextResponse.json({

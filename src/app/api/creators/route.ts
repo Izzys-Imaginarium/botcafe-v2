@@ -102,9 +102,94 @@ export async function GET(request: NextRequest) {
       overrideAccess: true,
     })
 
+    // Compute real stats for each creator
+    // Get all user IDs from creators for efficient batch lookup
+    const userIds = creators.docs.map((creator) => {
+      return typeof creator.user === 'object' && creator.user !== null
+        ? creator.user.id
+        : creator.user
+    }).filter(Boolean)
+
+    // Batch fetch all bots created by these users
+    let allBots: any[] = []
+    if (userIds.length > 0) {
+      const botsResult = await payload.find({
+        collection: 'bot',
+        where: {
+          createdBy: { in: userIds },
+        },
+        limit: 1000,
+        overrideAccess: true,
+      })
+      allBots = botsResult.docs
+    }
+
+    // Get all bot IDs for interaction lookup
+    const allBotIds = allBots.map((bot) => bot.id)
+
+    // Batch fetch all likes on these bots
+    let allLikes: any[] = []
+    if (allBotIds.length > 0) {
+      const likesResult = await payload.find({
+        collection: 'botInteractions',
+        where: {
+          and: [
+            { bot: { in: allBotIds } },
+            { interaction_type: { equals: 'like' } },
+          ],
+        },
+        limit: 5000,
+        overrideAccess: true,
+      })
+      allLikes = likesResult.docs
+    }
+
+    // Map stats to each creator
+    const creatorsWithRealStats = creators.docs.map((creator) => {
+      const creatorUserId = typeof creator.user === 'object' && creator.user !== null
+        ? creator.user.id
+        : creator.user
+
+      // Find bots belonging to this creator
+      const creatorBots = allBots.filter((bot) => {
+        const botCreatorId = typeof bot.createdBy === 'object' && bot.createdBy !== null
+          ? bot.createdBy.id
+          : bot.createdBy
+        return String(botCreatorId) === String(creatorUserId)
+      })
+
+      const creatorBotIds = creatorBots.map((bot) => bot.id)
+
+      // Calculate stats
+      const realBotCount = creatorBots.length
+      const realTotalConversations = creatorBots.reduce(
+        (sum, bot) => sum + (bot.conversation_count || 0),
+        0
+      )
+      const realTotalLikes = allLikes.filter((like) => {
+        const likeBotId = typeof like.bot === 'object' && like.bot !== null
+          ? like.bot.id
+          : like.bot
+        return creatorBotIds.includes(likeBotId)
+      }).length
+
+      return {
+        ...creator,
+        portfolio: {
+          ...creator.portfolio,
+          bot_count: realBotCount,
+          total_conversations: realTotalConversations,
+        },
+        community_stats: {
+          ...creator.community_stats,
+          total_likes: realTotalLikes,
+        },
+      }
+    })
+
     return NextResponse.json({
       success: true,
-      creators: creators.docs,
+      creators: creatorsWithRealStats,
       pagination: {
         page: creators.page,
         limit: creators.limit,

@@ -95,9 +95,66 @@ export async function GET(
       })
     }
 
+    // Compute real portfolio stats from actual data
+    const creatorUserId = typeof creator.user === 'object' && creator.user !== null
+      ? creator.user.id
+      : creator.user
+
+    // Get all bots created by this user
+    const userBots = await payload.find({
+      collection: 'bot',
+      where: {
+        createdBy: { equals: creatorUserId },
+      },
+      limit: 500,
+      overrideAccess: true,
+    })
+
+    // Calculate real bot count and total conversations
+    const realBotCount = userBots.totalDocs
+    const realTotalConversations = userBots.docs.reduce(
+      (sum, bot) => sum + ((bot as any).conversation_count || 0),
+      0
+    )
+
+    // Get bot IDs for interaction lookup
+    const botIds = userBots.docs.map((bot) => bot.id)
+
+    // Get all likes/favorites on the creator's bots
+    let realTotalLikes = 0
+    if (botIds.length > 0) {
+      const interactions = await payload.find({
+        collection: 'botInteractions',
+        where: {
+          and: [
+            { bot: { in: botIds } },
+            { interaction_type: { equals: 'like' } },
+          ],
+        },
+        limit: 0, // Just get count
+        overrideAccess: true,
+      })
+      realTotalLikes = interactions.totalDocs
+    }
+
+    // Merge computed stats into the creator object
+    const creatorWithRealStats = {
+      ...creator,
+      portfolio: {
+        ...creator.portfolio,
+        bot_count: realBotCount,
+        total_conversations: realTotalConversations,
+      },
+      community_stats: {
+        ...creator.community_stats,
+        total_likes: realTotalLikes,
+        // follower_count and following_count would need a separate follow system
+      },
+    }
+
     return NextResponse.json({
       success: true,
-      creator,
+      creator: creatorWithRealStats,
       isOwner,
     })
   } catch (error: any) {

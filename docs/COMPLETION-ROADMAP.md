@@ -26,6 +26,7 @@ Based on the sitemap, style guide, and database schema analysis, BotCafé v2 is 
 - **Help Center**: ✅ Documentation hub, article viewer, category browsing, tutorials API
 - **Mood Journal**: ✅ Mood tracking with emoji selection and notes (self-moderation planned as future enhancement)
 - **Analytics Dashboard**: ✅ Overview stats, bot performance metrics, usage statistics views
+- **Discord Integration**: 🆕 BotCafe Barista Discord bot with account linking
 
 ### ❌ **REMAINING WORK (~3%)**
 
@@ -778,6 +779,27 @@ When you add new Payload collections or modify existing ones:
 - ✅ **Build Fix**
   - Fixed `/api/account/export` import path (`@/payload.config` → `@payload-config`)
 
+### **2026-01-26 Updates:**
+- 🆕 **Discord Integration - BotCafe Barista Bot**
+  - **Separate Repo**: `botcafe-barista-v2` - Cloudflare Worker using Discord Interactions API
+  - **Architecture**: Serverless webhook-based bot (no persistent connection needed)
+  - **Shared Resources**: Uses same D1 database, R2 storage, Vectorize, and Clerk as main web app
+  - **Account Linking**: Users connect Discord via Clerk OAuth in Account → Security tab
+  - **Web App Changes**:
+    - Created `ConnectedAccounts` component for Discord OAuth linking
+    - Added to Security tab in Account dashboard
+    - Users see connected Discord username with connect/disconnect buttons
+  - **Bot Features** (in progress):
+    - `/chat` - Chat with selected bot
+    - `/bot list|select|info` - Bot management
+    - `/persona list|set|clear` - Persona management
+    - `/settings view|default-bot` - Server settings
+  - **Remaining Work**:
+    - [ ] Implement user API key retrieval from database (users provide own keys via BotCafe website)
+    - [ ] Add `/settings apikey` command for key selection
+    - [ ] Full LLM integration using user's stored API keys
+    - [ ] Bot access permission checks (ownership, shared, public)
+
 ### **2026-01-21 Updates:**
 - ✅ **Selected Access for Bots (Bot Sharing Enforcement)**
   - Updated `/api/bots/explore` to include bots shared with the current user
@@ -1271,8 +1293,8 @@ When you add new Payload collections or modify existing ones:
 
 ---
 
-**Last Updated**: 2026-01-25
-**Version**: 3.21
+**Last Updated**: 2026-01-26
+**Version**: 3.22
 **Total Tasks**: 184
 **Completed**: 178
 **Progress**: ~97% (Memory edit/delete for tomes complete)

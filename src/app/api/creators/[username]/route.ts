@@ -128,7 +128,7 @@ export async function GET(
         where: {
           and: [
             { bot: { in: botIds } },
-            { interaction_type: { equals: 'like' } },
+            { liked: { equals: true } },
           ],
         },
         limit: 0, // Just get count

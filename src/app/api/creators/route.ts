@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
         where: {
           and: [
             { bot: { in: allBotIds } },
-            { interaction_type: { equals: 'like' } },
+            { liked: { equals: true } },
           ],
         },
         limit: 5000,

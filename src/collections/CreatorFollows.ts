@@ -50,7 +50,6 @@ export const CreatorFollows: CollectionConfig = {
   ],
   indexes: [
     {
-      name: 'follower_following_unique',
       fields: ['follower', 'following'],
       unique: true,
     },

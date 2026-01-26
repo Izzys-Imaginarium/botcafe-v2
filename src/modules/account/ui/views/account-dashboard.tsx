@@ -9,11 +9,10 @@ import { AccountOverview } from '@/components/account-overview'
 import { AccountProfile } from '@/components/account-profile'
 import { AccountSecurity } from '@/components/account-security'
 import { ApiKeyManagement } from '@/components/api-key-management'
-import { DataManagement } from '@/components/data-management'
 import { MoodJournalView } from '@/modules/wellbeing/ui/views/mood-journal-view'
-import { User, Shield, Key, Database, Activity, Heart } from 'lucide-react'
+import { User, Shield, Key, Activity, Heart } from 'lucide-react'
 
-const validTabs = ['overview', 'mood', 'profile', 'security', 'api-keys', 'data']
+const validTabs = ['overview', 'mood', 'profile', 'security', 'api-keys']
 
 export const AccountDashboard = () => {
   const searchParams = useSearchParams()
@@ -47,7 +46,7 @@ export const AccountDashboard = () => {
 
         <div className="lg:col-span-3">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 glass-rune border-gold-ancient/30">
+            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 glass-rune border-gold-ancient/30">
               <TabsTrigger value="overview" className="text-xs lg:text-sm">
                 <Activity className="w-4 h-4 mr-2" />
                 Overview
@@ -67,10 +66,6 @@ export const AccountDashboard = () => {
               <TabsTrigger value="api-keys" className="text-xs lg:text-sm">
                 <Key className="w-4 h-4 mr-2" />
                 API Keys
-              </TabsTrigger>
-              <TabsTrigger value="data" className="text-xs lg:text-sm">
-                <Database className="w-4 h-4 mr-2" />
-                Data
               </TabsTrigger>
             </TabsList>
 
@@ -93,10 +88,6 @@ export const AccountDashboard = () => {
 
               <TabsContent value="api-keys">
                 <ApiKeyManagement />
-              </TabsContent>
-
-              <TabsContent value="data">
-                <DataManagement />
               </TabsContent>
             </div>
           </Tabs>

@@ -110,15 +110,25 @@ export async function GET(
       overrideAccess: true,
     })
 
-    // Calculate real bot count and total conversations
+    // Calculate real bot count
     const realBotCount = userBots.totalDocs
-    const realTotalConversations = userBots.docs.reduce(
-      (sum, bot) => sum + ((bot as any).conversation_count || 0),
-      0
-    )
 
-    // Get bot IDs for interaction lookup
+    // Get bot IDs for interaction and conversation lookup
     const botIds = userBots.docs.map((bot) => bot.id)
+
+    // Count actual conversations that include these bots
+    let realTotalConversations = 0
+    if (botIds.length > 0) {
+      const conversations = await payload.find({
+        collection: 'conversation',
+        where: {
+          'bot_participation.bot_id': { in: botIds },
+        },
+        limit: 0, // Just get count
+        overrideAccess: true,
+      })
+      realTotalConversations = conversations.totalDocs
+    }
 
     // Get all likes/favorites on the creator's bots
     let realTotalLikes = 0

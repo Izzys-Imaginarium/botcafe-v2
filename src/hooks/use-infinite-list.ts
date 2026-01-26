@@ -121,12 +121,13 @@ export function useInfiniteList<T extends { id: string | number }>(
           setItems(itemsArray)
         }
 
-        // Handle pagination metadata
-        const currentPage = data.currentPage || data.page || pageNum
-        const totalDocs = data.totalDocs || data.total || 0
-        const totalPages = data.totalPages || Math.ceil(totalDocs / limit)
+        // Handle pagination metadata (check both root level and nested pagination object)
+        const pagination = (data.pagination || data) as PaginatedResponse
+        const currentPage = pagination.currentPage || pagination.page || data.page || pageNum
+        const totalDocs = pagination.totalDocs || pagination.total || data.totalDocs || data.total || 0
+        const totalPages = pagination.totalPages || data.totalPages || Math.ceil(totalDocs / limit)
         const nextPageExists =
-          data.hasNextPage ?? data.hasMore ?? currentPage < totalPages
+          pagination.hasNextPage ?? pagination.hasMore ?? data.hasNextPage ?? data.hasMore ?? currentPage < totalPages
 
         setPage(currentPage)
         setHasMore(nextPageExists)

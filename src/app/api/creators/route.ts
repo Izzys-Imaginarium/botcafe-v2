@@ -161,6 +161,21 @@ export async function GET(request: NextRequest) {
       allFollows = followsResult.docs
     }
 
+    // Batch fetch conversations that involve these bots
+    // Count conversations per bot by looking at bot_participation
+    let allConversations: any[] = []
+    if (allBotIds.length > 0) {
+      const conversationsResult = await payload.find({
+        collection: 'conversation',
+        where: {
+          'bot_participation.bot_id': { in: allBotIds },
+        },
+        limit: 5000,
+        overrideAccess: true,
+      })
+      allConversations = conversationsResult.docs
+    }
+
     // Map stats to each creator
     const creatorsWithRealStats = creators.docs.map((creator) => {
       const creatorUserId = typeof creator.user === 'object' && creator.user !== null
@@ -175,19 +190,27 @@ export async function GET(request: NextRequest) {
         return String(botCreatorId) === String(creatorUserId)
       })
 
-      const creatorBotIds = creatorBots.map((bot) => bot.id)
+      const creatorBotIds = creatorBots.map((bot) => String(bot.id))
 
       // Calculate stats
       const realBotCount = creatorBots.length
-      const realTotalConversations = creatorBots.reduce(
-        (sum, bot) => sum + (bot.conversation_count || 0),
-        0
-      )
+
+      // Count conversations that include any of this creator's bots
+      const realTotalConversations = allConversations.filter((conv) => {
+        const botParticipation = conv.bot_participation || []
+        return botParticipation.some((bp: any) => {
+          const botId = typeof bp.bot_id === 'object' && bp.bot_id !== null
+            ? bp.bot_id.id
+            : bp.bot_id
+          return creatorBotIds.includes(String(botId))
+        })
+      }).length
+
       const realTotalLikes = allLikes.filter((like) => {
         const likeBotId = typeof like.bot === 'object' && like.bot !== null
           ? like.bot.id
           : like.bot
-        return creatorBotIds.includes(likeBotId)
+        return creatorBotIds.includes(String(likeBotId))
       }).length
 
       // Calculate follower count

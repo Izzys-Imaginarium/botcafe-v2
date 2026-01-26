@@ -104,7 +104,7 @@ export async function GET(
     const userBots = await payload.find({
       collection: 'bot',
       where: {
-        createdBy: { equals: creatorUserId },
+        user: { equals: creatorUserId },
       },
       limit: 500,
       overrideAccess: true,

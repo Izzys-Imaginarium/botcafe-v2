@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
       const botsResult = await payload.find({
         collection: 'bot',
         where: {
-          createdBy: { in: userIds },
+          user: { in: userIds },
         },
         limit: 1000,
         overrideAccess: true,
@@ -169,9 +169,9 @@ export async function GET(request: NextRequest) {
 
       // Find bots belonging to this creator
       const creatorBots = allBots.filter((bot) => {
-        const botCreatorId = typeof bot.createdBy === 'object' && bot.createdBy !== null
-          ? bot.createdBy.id
-          : bot.createdBy
+        const botCreatorId = typeof bot.user === 'object' && bot.user !== null
+          ? bot.user.id
+          : bot.user
         return String(botCreatorId) === String(creatorUserId)
       })
 

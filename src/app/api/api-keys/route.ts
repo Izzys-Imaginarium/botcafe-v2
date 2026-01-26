@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Database connection error' }, { status: 500 })
     }
 
-    // Find the Payload user by email
+    // Find or create the Payload user by email
     const payloadUsers = await payload.find({
       collection: 'users',
       where: {
@@ -116,11 +116,25 @@ export async function POST(request: NextRequest) {
       overrideAccess: true,
     })
 
+    let payloadUser
     if (payloadUsers.docs.length === 0) {
-      return NextResponse.json({ message: 'User not found' }, { status: 404 })
+      // Create new Payload user (password required by Payload auth but unused since Clerk handles auth)
+      const randomPassword = crypto.randomUUID() + crypto.randomUUID()
+      payloadUser = await payload.create({
+        collection: 'users',
+        data: {
+          email: clerkUser.emailAddresses[0]?.emailAddress || '',
+          password: randomPassword,
+          name: clerkUser.firstName && clerkUser.lastName
+            ? `${clerkUser.firstName} ${clerkUser.lastName}`
+            : clerkUser.username || clerkUser.emailAddresses[0]?.emailAddress || 'User',
+          role: 'user',
+        },
+        overrideAccess: true,
+      })
+    } else {
+      payloadUser = payloadUsers.docs[0]
     }
-
-    const payloadUser = payloadUsers.docs[0]
 
     // Create the API key
     const newKey = await payload.create({

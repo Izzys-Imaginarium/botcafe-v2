@@ -155,11 +155,15 @@ export async function POST(request: NextRequest) {
 
     let payloadUser
     if (users.docs.length === 0) {
+      // Password required by Payload auth but unused since Clerk handles auth
+      const randomPassword = crypto.randomUUID() + crypto.randomUUID()
       payloadUser = await payload.create({
         collection: 'users',
         data: {
           email: user.emailAddresses[0]?.emailAddress || '',
+          password: randomPassword,
           name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
+          role: 'user',
         } as any,
         overrideAccess: true,
       })

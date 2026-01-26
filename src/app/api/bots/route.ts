@@ -132,11 +132,13 @@ export async function POST(request: NextRequest) {
       // User exists
       payloadUserId = existingUsers.docs[0].id
     } else {
-      // Create new Payload user
+      // Create new Payload user (password required by Payload auth but unused since Clerk handles auth)
+      const randomPassword = crypto.randomUUID() + crypto.randomUUID()
       const newUser = await payload.create({
         collection: 'users',
         data: {
           email: clerkUser.emailAddresses[0]?.emailAddress || '',
+          password: randomPassword,
           name: clerkUser.firstName && clerkUser.lastName
             ? `${clerkUser.firstName} ${clerkUser.lastName}`
             : clerkUser.username || clerkUser.emailAddresses[0]?.emailAddress || 'User',

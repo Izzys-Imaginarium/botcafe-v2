@@ -10,7 +10,7 @@ interface SplashHeroProps {
 
 export const SplashHero = ({ user }: SplashHeroProps) => {
   return (
-    <main className="flex-grow flex flex-col items-center justify-center text-center px-4 relative z-10 pt-32 sm:pt-24 min-h-screen">
+    <main className="flex-grow flex flex-col items-center justify-center text-center px-4 relative z-10 pt-40 sm:pt-44 min-h-screen">
       {/* Background decorative elements */}
       <div className="absolute top-[20%] left-[5%] w-px h-64 bg-gradient-to-b from-transparent via-gold-ancient/40 to-transparent hidden xl:block"></div>
       <div className="absolute top-[20%] right-[5%] w-px h-64 bg-gradient-to-b from-transparent via-gold-ancient/40 to-transparent hidden xl:block"></div>

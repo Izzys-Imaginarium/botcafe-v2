@@ -851,7 +851,7 @@ export interface Knowledge {
   usage_analytics?: {
     view_count?: number | null;
     search_count?: number | null;
-    引用_count?: number | null;
+    citation_count?: number | null;
     last_searched?: string | null;
     popularity_score?: number | null;
   };
@@ -2969,7 +2969,7 @@ export interface KnowledgeSelect<T extends boolean = true> {
     | {
         view_count?: T;
         search_count?: T;
-        引用_count?: T;
+        citation_count?: T;
         last_searched?: T;
         popularity_score?: T;
       };

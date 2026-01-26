@@ -343,7 +343,7 @@ export const Knowledge: CollectionConfig = {
           defaultValue: 0,
         },
         {
-          name: '引用_count',
+          name: 'citation_count',
           type: 'number',
           defaultValue: 0,
         },

@@ -214,7 +214,7 @@ export async function POST(request: NextRequest) {
         usage_analytics: {
           view_count: 0,
           search_count: 0,
-          引用_count: 0,
+          citation_count: 0,
           popularity_score: 0,
         },
         // Hybrid activation system settings

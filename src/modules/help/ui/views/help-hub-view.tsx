@@ -151,7 +151,7 @@ export const HelpHubView = () => {
           Help Center
         </h1>
         <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
-          Find guides, tutorials, and answers to help you get the most out of BotCafé.
+          Find guides, tutorials, and answers to help you get the most out of BotCafe.
         </p>
 
         {/* Search Bar */}

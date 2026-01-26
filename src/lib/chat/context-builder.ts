@@ -209,12 +209,12 @@ export async function buildChatContext(params: BuildContextParams): Promise<Chat
 
 /**
  * Build the base system prompt from bot and persona/user
- * Incorporates proven prompt structure from original BotCafé
+ * Incorporates proven prompt structure from original BotCafe
  */
 function buildBotSystemPrompt(bot: Bot, persona: Persona | null, user?: User | null, additionalBots?: Bot[]): string {
   const parts: string[] = []
 
-  // === ROLEPLAY INSTRUCTIONS (from original BotCafé) ===
+  // === ROLEPLAY INSTRUCTIONS (from original BotCafe) ===
   parts.push(`You are roleplaying as ${bot.name}. Stay in character at all times and respond as ${bot.name} would.`)
 
   // Bot description/backstory
@@ -361,7 +361,7 @@ function buildBotSystemPrompt(bot: Bot, persona: Persona | null, user?: User | n
     }
   }
 
-  // === MULTI-BOT CONTEXT (from original BotCafé) ===
+  // === MULTI-BOT CONTEXT (from original BotCafe) ===
   if (additionalBots && additionalBots.length > 0) {
     parts.push(`\n\n--- Other Characters ---`)
     parts.push(`This is a group conversation. Other characters present:`)
@@ -371,7 +371,7 @@ function buildBotSystemPrompt(bot: Bot, persona: Persona | null, user?: User | n
     parts.push(`\nWhen responding, only speak as ${bot.name}. Do not speak for the other characters or the user.`)
   }
 
-  // === KNOWLEDGE INSTRUCTIONS (from original BotCafé) ===
+  // === KNOWLEDGE INSTRUCTIONS (from original BotCafe) ===
   parts.push(`\n\n--- Knowledge & Context ---`)
   parts.push(`You have access to different types of knowledge that may be provided:
 - Memories: Specific memories or past interactions - prioritize these when relevant

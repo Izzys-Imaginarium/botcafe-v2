@@ -76,7 +76,7 @@ export const openrouterProvider: LLMProvider = {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${config.apiKey}`,
           'HTTP-Referer': 'https://botcafe.ai', // Required by OpenRouter
-          'X-Title': 'BotCafé',
+          'X-Title': 'BotCafe',
           ...config.headers,
         },
         body: JSON.stringify(body),

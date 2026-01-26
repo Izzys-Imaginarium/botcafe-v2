@@ -15,7 +15,7 @@ const termsOfServiceContent = {
         children: [
           {
             type: 'text',
-            text: 'Welcome to BotCafé! These Terms of Service ("Terms") govern your access to and use of the BotCafé platform, including our website, services, and applications (collectively, the "Service"). By accessing or using the Service, you agree to be bound by these Terms.',
+            text: 'Welcome to BotCafe! These Terms of Service ("Terms") govern your access to and use of the BotCafe platform, including our website, services, and applications (collectively, the "Service"). By accessing or using the Service, you agree to be bound by these Terms.',
           },
         ],
       },
@@ -43,7 +43,7 @@ const termsOfServiceContent = {
         children: [
           {
             type: 'text',
-            text: 'BotCafé is a platform that enables users to create, customize, and interact with AI-powered chatbots and companions. The Service includes:',
+            text: 'BotCafe is a platform that enables users to create, customize, and interact with AI-powered chatbots and companions. The Service includes:',
           },
         ],
       },
@@ -153,7 +153,7 @@ const termsOfServiceContent = {
         children: [
           {
             type: 'text',
-            text: 'You retain ownership of content you create on the Service ("User Content"). By posting User Content, you grant BotCafé a worldwide, non-exclusive, royalty-free license to use, display, and distribute your content as necessary to provide the Service.',
+            text: 'You retain ownership of content you create on the Service ("User Content"). By posting User Content, you grant BotCafe a worldwide, non-exclusive, royalty-free license to use, display, and distribute your content as necessary to provide the Service.',
           },
         ],
       },
@@ -263,7 +263,7 @@ const termsOfServiceContent = {
             children: [
               {
                 type: 'text',
-                text: 'BotCafé does not guarantee the accuracy or reliability of AI outputs',
+                text: 'BotCafe does not guarantee the accuracy or reliability of AI outputs',
               },
             ],
           },
@@ -279,7 +279,7 @@ const termsOfServiceContent = {
         children: [
           {
             type: 'text',
-            text: 'The Service, including its design, features, and content (excluding User Content), is owned by BotCafé and protected by intellectual property laws. You may not copy, modify, distribute, or create derivative works from the Service without our express permission.',
+            text: 'The Service, including its design, features, and content (excluding User Content), is owned by BotCafe and protected by intellectual property laws. You may not copy, modify, distribute, or create derivative works from the Service without our express permission.',
           },
         ],
       },
@@ -380,7 +380,7 @@ const privacyPolicyContent = {
         children: [
           {
             type: 'text',
-            text: 'At BotCafé, we are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Service.',
+            text: 'At BotCafe, we are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Service.',
           },
         ],
       },
@@ -556,7 +556,7 @@ const privacyPolicyContent = {
         children: [
           {
             type: 'text',
-            text: 'When you interact with AI companions on BotCafé:',
+            text: 'When you interact with AI companions on BotCafe:',
           },
         ],
       },
@@ -880,7 +880,7 @@ const responsibleAIContent = {
         children: [
           {
             type: 'text',
-            text: 'BotCafé is committed to the responsible and ethical use of artificial intelligence. This policy outlines our principles and your responsibilities when using AI-powered features on our platform.',
+            text: 'BotCafe is committed to the responsible and ethical use of artificial intelligence. This policy outlines our principles and your responsibilities when using AI-powered features on our platform.',
           },
         ],
       },
@@ -892,7 +892,7 @@ const responsibleAIContent = {
       {
         type: 'paragraph',
         children: [
-          { type: 'text', text: 'BotCafé is built on the following principles:' },
+          { type: 'text', text: 'BotCafe is built on the following principles:' },
         ],
       },
       {
@@ -951,7 +951,7 @@ const responsibleAIContent = {
         children: [
           {
             type: 'text',
-            text: 'AI companions on BotCafé are designed for entertainment, creative expression, and companionship. It is important to understand that:',
+            text: 'AI companions on BotCafe are designed for entertainment, creative expression, and companionship. It is important to understand that:',
           },
         ],
       },
@@ -1005,7 +1005,7 @@ const responsibleAIContent = {
       {
         type: 'paragraph',
         children: [
-          { type: 'text', text: 'When using BotCafé, you agree to use the Service responsibly. ', format: 0 },
+          { type: 'text', text: 'When using BotCafe, you agree to use the Service responsibly. ', format: 0 },
           { type: 'text', text: 'You MAY:', format: 1 },
         ],
       },
@@ -1070,7 +1070,7 @@ const responsibleAIContent = {
         children: [
           { type: 'text', text: 'You ', format: 0 },
           { type: 'text', text: 'MAY NOT', format: 1 },
-          { type: 'text', text: ' use BotCafé to:', format: 0 },
+          { type: 'text', text: ' use BotCafe to:', format: 0 },
         ],
       },
       {
@@ -1224,7 +1224,7 @@ const responsibleAIContent = {
       {
         type: 'paragraph',
         children: [
-          { type: 'text', text: 'If you create and share bots on BotCafé, you are responsible for:' },
+          { type: 'text', text: 'If you create and share bots on BotCafe, you are responsible for:' },
         ],
       },
       {
@@ -1479,7 +1479,7 @@ export async function POST() {
           status: 'active',
           createdBy: payloadUserId,
           summary:
-            'These Terms of Service govern your use of BotCafé. By using our platform, you agree to these terms.',
+            'These Terms of Service govern your use of BotCafe. By using our platform, you agree to these terms.',
           isGlobal: true,
           consentRequired: true,
           tags: [{ tag: 'legal' }, { tag: 'terms' }, { tag: 'agreement' }],
@@ -1509,7 +1509,7 @@ export async function POST() {
           status: 'active',
           createdBy: payloadUserId,
           summary:
-            'This Privacy Policy explains how BotCafé collects, uses, and protects your personal information.',
+            'This Privacy Policy explains how BotCafe collects, uses, and protects your personal information.',
           isGlobal: true,
           consentRequired: true,
           tags: [{ tag: 'legal' }, { tag: 'privacy' }, { tag: 'data' }],
@@ -1539,7 +1539,7 @@ export async function POST() {
           status: 'active',
           createdBy: payloadUserId,
           summary:
-            'Guidelines for ethical and responsible use of AI companions on BotCafé.',
+            'Guidelines for ethical and responsible use of AI companions on BotCafe.',
           isGlobal: true,
           consentRequired: false,
           tags: [{ tag: 'legal' }, { tag: 'ai' }, { tag: 'responsible-use' }, { tag: 'guidelines' }],

@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Analytics | BotCafé',
+  title: 'Analytics | BotCafe',
   description: 'Track your bot performance, usage statistics, and engagement metrics.',
 }
 

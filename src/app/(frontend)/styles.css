@@ -3,7 +3,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* BotCafé Fantasy Theme - Based on Google Stitch splash page */
+/* BotCafe Fantasy Theme - Based on Google Stitch splash page */
 :root {
   /* Light mode - parchment theme */
   --radius: 0.375rem;

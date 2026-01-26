@@ -4,8 +4,8 @@ import { LegalDocumentView } from '@/modules/legal/ui/views/legal-document-view'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Terms of Service | BotCafé',
-  description: 'Terms of Service for using the BotCafé platform.',
+  title: 'Terms of Service | BotCafe',
+  description: 'Terms of Service for using the BotCafe platform.',
 }
 
 export default function TermsPage() {

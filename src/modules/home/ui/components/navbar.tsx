@@ -105,7 +105,7 @@ export const Navbar = ({ user }: NavbarProps) => {
             </div>
             <div className="flex flex-col">
               <span className="font-display font-bold text-2xl text-parchment tracking-wider text-glow-gold">
-                Bot<span className="text-gold-rich">Café</span>
+                Bot<span className="text-gold-rich">Cafe</span>
               </span>
             </div>
           </Link>

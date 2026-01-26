@@ -25,8 +25,8 @@ const crimsonText = Crimson_Text({
 })
 
 export const metadata = {
-  description: 'BotCafé - The Enchanted Sanctuary for AI Companions',
-  title: 'BotCafé',
+  description: 'BotCafe - The Enchanted Sanctuary for AI Companions',
+  title: 'BotCafe',
   icons: {
     icon: '/favicon.svg',
   },

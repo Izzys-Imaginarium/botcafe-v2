@@ -4,7 +4,7 @@ import { BotAnalyticsView } from '@/modules/analytics/ui/views/bot-analytics-vie
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Bot Analytics | BotCafé',
+  title: 'Bot Analytics | BotCafe',
   description: 'Detailed performance metrics and statistics for your bots.',
 }
 

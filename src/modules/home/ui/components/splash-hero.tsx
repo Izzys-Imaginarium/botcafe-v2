@@ -37,7 +37,7 @@ export const SplashHero = ({ user }: SplashHeroProps) => {
 
         {/* Main title */}
         <h1 className="font-display font-bold text-5xl sm:text-7xl md:text-8xl lg:text-9xl xl:text-[10rem] 2xl:text-[12rem] mb-8 text-transparent bg-clip-text bg-gradient-to-br from-gold-rich via-parchment to-gold-ancient tracking-normal drop-shadow-lg pb-12 px-12 md:px-16 relative leading-[1.1] sm:leading-tight overflow-visible">
-          BotCafé
+          BotCafe
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-gold-rich/50 to-transparent"></div>
         </h1>
 

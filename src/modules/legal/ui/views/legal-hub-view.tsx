@@ -36,7 +36,7 @@ const documentIcons: Record<string, React.ReactNode> = {
 }
 
 const documentDescriptions: Record<string, string> = {
-  'terms-of-service': 'The rules and guidelines for using BotCafé platform.',
+  'terms-of-service': 'The rules and guidelines for using BotCafe platform.',
   'privacy-policy': 'How we collect, use, and protect your personal data.',
   'cookie-policy': 'Information about cookies and tracking technologies.',
   'acceptable-use-policy': 'Guidelines for responsible and ethical use of our AI services.',
@@ -96,7 +96,7 @@ export const LegalHubView = () => {
     {
       type: 'terms-of-service',
       title: 'Terms of Service',
-      description: 'The rules and guidelines for using BotCafé platform.',
+      description: 'The rules and guidelines for using BotCafe platform.',
       url: '/legal/terms',
     },
     {
@@ -122,7 +122,7 @@ export const LegalHubView = () => {
         </h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
           Transparency is important to us. Here you'll find all our legal documents,
-          policies, and guidelines for using BotCafé.
+          policies, and guidelines for using BotCafe.
         </p>
       </div>
 

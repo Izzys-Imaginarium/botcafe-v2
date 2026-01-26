@@ -4,7 +4,7 @@ import { UsageAnalyticsView } from '@/modules/analytics/ui/views/usage-analytics
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Usage Statistics | BotCafé',
+  title: 'Usage Statistics | BotCafe',
   description: 'Track your platform usage, content breakdown, and engagement metrics.',
 }
 

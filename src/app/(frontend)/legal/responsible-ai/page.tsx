@@ -4,8 +4,8 @@ import { LegalDocumentView } from '@/modules/legal/ui/views/legal-document-view'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Responsible AI Use | BotCafé',
-  description: 'Guidelines for ethical and responsible use of AI services on BotCafé.',
+  title: 'Responsible AI Use | BotCafe',
+  description: 'Guidelines for ethical and responsible use of AI services on BotCafe.',
 }
 
 export default function ResponsibleAIPage() {

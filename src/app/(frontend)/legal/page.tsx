@@ -4,8 +4,8 @@ import { LegalHubView } from '@/modules/legal/ui/views/legal-hub-view'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Legal & Policies | BotCafé',
-  description: 'Terms of Service, Privacy Policy, and other legal documents for BotCafé platform.',
+  title: 'Legal & Policies | BotCafe',
+  description: 'Terms of Service, Privacy Policy, and other legal documents for BotCafe platform.',
 }
 
 export default function LegalPage() {

@@ -4,8 +4,8 @@ import { HelpHubView } from '@/modules/help/ui/views/help-hub-view'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Help Center | BotCafé',
-  description: 'Find guides, tutorials, and answers to help you get the most out of BotCafé.',
+  title: 'Help Center | BotCafe',
+  description: 'Find guides, tutorials, and answers to help you get the most out of BotCafe.',
 }
 
 export default function HelpPage() {

@@ -66,7 +66,7 @@ export async function GET() {
       [
         payload.find({
           collection: 'bot',
-          where: { createdBy: { equals: payloadUser.id } },
+          where: { user: { equals: payloadUser.id } },
           limit: 1000,
           depth: 1,
           overrideAccess: true,
@@ -94,7 +94,7 @@ export async function GET() {
         }),
         payload.find({
           collection: 'knowledge',
-          where: { createdBy: { equals: payloadUser.id } },
+          where: { user: { equals: payloadUser.id } },
           limit: 1000,
           depth: 1,
           overrideAccess: true,

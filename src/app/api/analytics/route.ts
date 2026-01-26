@@ -40,7 +40,7 @@ export async function GET() {
     const bots = await payload.find({
       collection: 'bot',
       where: {
-        createdBy: { equals: payloadUser.id },
+        user: { equals: payloadUser.id },
       },
       limit: 100,
       overrideAccess: true,
@@ -80,7 +80,7 @@ export async function GET() {
     const knowledge = await payload.find({
       collection: 'knowledge',
       where: {
-        createdBy: { equals: payloadUser.id },
+        user: { equals: payloadUser.id },
       },
       overrideAccess: true,
     })
@@ -102,8 +102,8 @@ export async function GET() {
       totalPersonas: personas.totalDocs,
       totalKnowledge: knowledge.totalDocs,
       totalMemories: memories.totalDocs,
-      totalLikes: interactions.docs.filter((i) => (i as any).interaction_type === 'like').length,
-      totalFavorites: interactions.docs.filter((i) => (i as any).interaction_type === 'favorite').length,
+      totalLikes: interactions.docs.filter((i) => (i as any).liked === true).length,
+      totalFavorites: interactions.docs.filter((i) => (i as any).favorited === true).length,
     }
 
     // Calculate bot statistics
@@ -117,8 +117,8 @@ export async function GET() {
         avatar: ((bot as any).avatar as any)?.url || null,
         is_public: bot.is_public,
         conversationCount: (bot as any).conversation_count || 0,
-        likes: botInteractions.filter((i) => (i as any).interaction_type === 'like').length,
-        favorites: botInteractions.filter((i) => (i as any).interaction_type === 'favorite').length,
+        likes: botInteractions.filter((i) => (i as any).liked === true).length,
+        favorites: botInteractions.filter((i) => (i as any).favorited === true).length,
         rating: (bot as any).rating || 0,
         createdAt: bot.createdAt,
       }

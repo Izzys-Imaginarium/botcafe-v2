@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     const [bots, conversations, personas, knowledge, memories, moods] = await Promise.all([
       payload.find({
         collection: 'bot',
-        where: { createdBy: { equals: payloadUser.id } },
+        where: { user: { equals: payloadUser.id } },
       }),
       payload.find({
         collection: 'conversation',
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       }),
       payload.find({
         collection: 'knowledge',
-        where: { createdBy: { equals: payloadUser.id } },
+        where: { user: { equals: payloadUser.id } },
       }),
       payload.find({
         collection: 'memory',

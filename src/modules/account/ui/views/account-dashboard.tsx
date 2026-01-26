@@ -46,24 +46,24 @@ export const AccountDashboard = () => {
 
         <div className="lg:col-span-3">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 glass-rune border-gold-ancient/30">
-              <TabsTrigger value="overview" className="text-xs lg:text-sm">
+            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 gap-1 h-auto lg:h-9 glass-rune border-gold-ancient/30">
+              <TabsTrigger value="overview" className="text-xs lg:text-sm py-2 lg:py-1">
                 <Activity className="w-4 h-4 mr-2" />
                 Overview
               </TabsTrigger>
-              <TabsTrigger value="mood" className="text-xs lg:text-sm">
+              <TabsTrigger value="mood" className="text-xs lg:text-sm py-2 lg:py-1">
                 <Heart className="w-4 h-4 mr-2" />
                 Mood
               </TabsTrigger>
-              <TabsTrigger value="profile" className="text-xs lg:text-sm">
+              <TabsTrigger value="profile" className="text-xs lg:text-sm py-2 lg:py-1">
                 <User className="w-4 h-4 mr-2" />
                 Profile
               </TabsTrigger>
-              <TabsTrigger value="security" className="text-xs lg:text-sm">
+              <TabsTrigger value="security" className="text-xs lg:text-sm py-2 lg:py-1">
                 <Shield className="w-4 h-4 mr-2" />
                 Security
               </TabsTrigger>
-              <TabsTrigger value="api-keys" className="text-xs lg:text-sm">
+              <TabsTrigger value="api-keys" className="text-xs lg:text-sm py-2 lg:py-1">
                 <Key className="w-4 h-4 mr-2" />
                 API Keys
               </TabsTrigger>

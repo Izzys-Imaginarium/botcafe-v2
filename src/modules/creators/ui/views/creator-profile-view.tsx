@@ -354,11 +354,11 @@ export const CreatorProfileView = ({ username }: CreatorProfileViewProps) => {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="bots" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="bots">Bots</TabsTrigger>
-          <TabsTrigger value="about">About</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
-          <TabsTrigger value="links">Links</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1 h-auto sm:h-9">
+          <TabsTrigger value="bots" className="py-2 sm:py-1">Bots</TabsTrigger>
+          <TabsTrigger value="about" className="py-2 sm:py-1">About</TabsTrigger>
+          <TabsTrigger value="activity" className="py-2 sm:py-1">Activity</TabsTrigger>
+          <TabsTrigger value="links" className="py-2 sm:py-1">Links</TabsTrigger>
         </TabsList>
 
         {/* Bots Tab */}

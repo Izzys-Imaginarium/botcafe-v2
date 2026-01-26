@@ -39,20 +39,20 @@ export const ContentDashboard = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 glass-rune border-gold-ancient/30">
-          <TabsTrigger value="my-bots" className="text-xs lg:text-sm">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 gap-1 h-auto lg:h-9 glass-rune border-gold-ancient/30">
+          <TabsTrigger value="my-bots" className="text-xs lg:text-sm py-2 lg:py-1">
             <Bot className="w-4 h-4 mr-2" />
             My Bots
           </TabsTrigger>
-          <TabsTrigger value="lore" className="text-xs lg:text-sm">
+          <TabsTrigger value="lore" className="text-xs lg:text-sm py-2 lg:py-1">
             <BookOpen className="w-4 h-4 mr-2" />
             Lore
           </TabsTrigger>
-          <TabsTrigger value="memories" className="text-xs lg:text-sm">
+          <TabsTrigger value="memories" className="text-xs lg:text-sm py-2 lg:py-1">
             <Brain className="w-4 h-4 mr-2" />
             Memories
           </TabsTrigger>
-          <TabsTrigger value="personas" className="text-xs lg:text-sm">
+          <TabsTrigger value="personas" className="text-xs lg:text-sm py-2 lg:py-1">
             <User className="w-4 h-4 mr-2" />
             Personas
           </TabsTrigger>

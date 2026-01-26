@@ -158,14 +158,23 @@ export async function PATCH(
         .map((ex: string) => ({ example: ex }))
     }
 
-    // Handle personality_traits group
+    // Handle personality_traits group - filter out empty strings
     if (body.personality_traits !== undefined) {
-      updateData.personality_traits = body.personality_traits
+      const cleanPersonalityTraits: Record<string, string | undefined> = {}
+      if (body.personality_traits.tone) cleanPersonalityTraits.tone = body.personality_traits.tone
+      if (body.personality_traits.formality_level) cleanPersonalityTraits.formality_level = body.personality_traits.formality_level
+      if (body.personality_traits.humor_style) cleanPersonalityTraits.humor_style = body.personality_traits.humor_style
+      if (body.personality_traits.communication_style) cleanPersonalityTraits.communication_style = body.personality_traits.communication_style
+      updateData.personality_traits = Object.keys(cleanPersonalityTraits).length > 0 ? cleanPersonalityTraits : undefined
     }
 
-    // Handle behavior_settings group
+    // Handle behavior_settings group - filter out empty strings
     if (body.behavior_settings !== undefined) {
-      updateData.behavior_settings = body.behavior_settings
+      const cleanBehaviorSettings: Record<string, string | undefined> = {}
+      if (body.behavior_settings.response_length) cleanBehaviorSettings.response_length = body.behavior_settings.response_length
+      if (body.behavior_settings.creativity_level) cleanBehaviorSettings.creativity_level = body.behavior_settings.creativity_level
+      if (body.behavior_settings.knowledge_sharing) cleanBehaviorSettings.knowledge_sharing = body.behavior_settings.knowledge_sharing
+      updateData.behavior_settings = Object.keys(cleanBehaviorSettings).length > 0 ? cleanBehaviorSettings : undefined
     }
 
     // Transform signature_phrases array format if provided

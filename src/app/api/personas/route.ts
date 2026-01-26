@@ -242,16 +242,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create persona
+    // Create persona - filter out empty strings for select fields (Payload doesn't accept empty strings)
     const persona = await payload.create({
       collection: 'personas',
       data: {
         user: payloadUser.id,
         name: body.name,
         description: body.description,
-        gender: body.gender,
+        gender: body.gender || undefined,
         age: body.age,
-        pronouns: body.pronouns,
+        pronouns: body.pronouns || undefined,
         custom_pronouns: body.custom_pronouns,
         appearance: body.appearance || {},
         interaction_preferences: body.interaction_preferences || {

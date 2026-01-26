@@ -216,6 +216,23 @@ export async function POST(request: NextRequest) {
           .map((tag: string) => ({ tag }))
       : []
 
+    // Clean personality_traits - remove empty strings (Payload select fields don't accept empty strings)
+    const cleanPersonalityTraits: Record<string, string | undefined> = {}
+    if (body.personality_traits) {
+      if (body.personality_traits.tone) cleanPersonalityTraits.tone = body.personality_traits.tone
+      if (body.personality_traits.formality_level) cleanPersonalityTraits.formality_level = body.personality_traits.formality_level
+      if (body.personality_traits.humor_style) cleanPersonalityTraits.humor_style = body.personality_traits.humor_style
+      if (body.personality_traits.communication_style) cleanPersonalityTraits.communication_style = body.personality_traits.communication_style
+    }
+
+    // Clean behavior_settings - remove empty strings
+    const cleanBehaviorSettings: Record<string, string | undefined> = {}
+    if (body.behavior_settings) {
+      if (body.behavior_settings.response_length) cleanBehaviorSettings.response_length = body.behavior_settings.response_length
+      if (body.behavior_settings.creativity_level) cleanBehaviorSettings.creativity_level = body.behavior_settings.creativity_level
+      if (body.behavior_settings.knowledge_sharing) cleanBehaviorSettings.knowledge_sharing = body.behavior_settings.knowledge_sharing
+    }
+
     // Create the bot
     const newBot = await payload.create({
       collection: 'bot',
@@ -232,8 +249,8 @@ export async function POST(request: NextRequest) {
         age: body.age ? parseInt(body.age.toString()) : undefined,
         is_public: body.is_public || false,
         speech_examples: transformedSpeechExamples,
-        personality_traits: body.personality_traits || {},
-        behavior_settings: body.behavior_settings || {},
+        personality_traits: Object.keys(cleanPersonalityTraits).length > 0 ? cleanPersonalityTraits : undefined,
+        behavior_settings: Object.keys(cleanBehaviorSettings).length > 0 ? cleanBehaviorSettings : undefined,
         signature_phrases: transformedSignaturePhrases,
         tags: transformedTags,
         knowledge_collections: (body.knowledge_collections || []) as number[],

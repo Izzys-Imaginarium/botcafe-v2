@@ -207,11 +207,18 @@ export async function PUT(
       }
     }
 
+    // Clean up body - filter empty strings for select fields (Payload doesn't accept empty strings)
+    const cleanedBody = {
+      ...body,
+      gender: body.gender || undefined,
+      pronouns: body.pronouns || undefined,
+    }
+
     // Update persona
     const updatedPersona = await payload.update({
       collection: 'personas',
       id,
-      data: body,
+      data: cleanedBody,
       overrideAccess: true,
     })
 

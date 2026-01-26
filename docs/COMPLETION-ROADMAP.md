@@ -1190,7 +1190,7 @@ When you add new Payload collections or modify existing ones:
   - `/wellbeing/mood` - Mood journal
   - `/wellbeing/settings` - Self-moderation settings
 - ✅ Updated completion status to ~75%
-- ⚠️ **Note (2026-01-25):** Self-moderation features were later removed and marked as future enhancement. Only mood journal remains at `/mood`.
+- ⚠️ **Note (2026-01-25):** Self-moderation features were later removed and marked as future enhancement. Mood journal now accessible as tab in Account page (`/account?tab=mood`).
 
 ### **2026-01-04 Updates (Late Evening):**
 - ✅ **Phase 8 Complete: Legal & Documentation System**

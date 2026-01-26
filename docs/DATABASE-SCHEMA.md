@@ -1,7 +1,7 @@
 # BotCafe v2 - Database Schema
 
 **Last Updated**: 2026-01-25
-**Version**: 3.12
+**Version**: 3.13
 **Database**: Cloudflare D1 (SQLite) via Payload CMS
 
 ---
@@ -762,9 +762,11 @@ Fine-grained permissions for sharing bots and knowledge collections.
 
 ## Wellbeing System
 
+> **Note**: The Mood collection is actively used via the Account page Mood tab. The SelfModeration collection schema is preserved but the UI/API features (usage limits, break reminders, night mode) are planned as a future enhancement.
+
 ### Mood
 
-Mental health tracking.
+Mental health tracking (accessed via Account page Mood tab).
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -778,7 +780,7 @@ Mental health tracking.
 
 ### SelfModeration
 
-Usage limits and health tools.
+Usage limits and health tools. **Schema preserved for future implementation - UI/API not currently active.**
 
 | Field | Type | Description |
 |-------|------|-------------|

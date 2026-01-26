@@ -1,7 +1,7 @@
 # BotCafe v2 - Style Guide
 
-**Last Updated**: 2026-01-06
-**Version**: 2.7
+**Last Updated**: 2026-01-25
+**Version**: 2.8
 
 ---
 
@@ -250,6 +250,59 @@ BotCafe uses **shadcn/ui** components with custom styling. All components are lo
 | Progress | `/components/ui/progress` | Progress bars |
 | Avatar | `/components/ui/avatar` | User/bot avatars |
 | Tooltip | `/components/ui/tooltip` | Hover tooltips |
+| ScrollArea | `/components/ui/scroll-area` | Scrollable containers |
+
+### ScrollArea Usage Caution
+
+The `ScrollArea` component (from Radix UI) uses `overflow-hidden` internally. This can cause **clipping issues** when:
+
+1. The ScrollArea is inside a flex container without an explicit height
+2. Child elements have content that extends outside bounds (dropdowns, tooltips)
+3. The parent chain doesn't have defined height constraints
+
+**Problematic Pattern:**
+```tsx
+// ❌ Can cause clipping - flex container with no explicit height
+<div className="flex flex-col h-full">
+  <ScrollArea className="flex-1">
+    <div className="space-y-2">
+      {items.map(item => (
+        <ItemWithDropdown key={item.id} /> // Dropdown gets clipped!
+      ))}
+    </div>
+  </ScrollArea>
+</div>
+```
+
+**Recommended Alternatives:**
+
+```tsx
+// ✅ Option 1: Use a regular div with overflow-y-auto
+<div className="flex flex-col">
+  <div className="flex-1 overflow-y-auto">
+    <div className="space-y-2">
+      {items.map(item => <ItemWithDropdown key={item.id} />)}
+    </div>
+  </div>
+</div>
+
+// ✅ Option 2: Use ScrollArea only when you have explicit height
+<ScrollArea className="h-[400px]">
+  <div className="space-y-2">
+    {items.map(item => <ItemWithDropdown key={item.id} />)}
+  </div>
+</ScrollArea>
+```
+
+**When to use ScrollArea:**
+- Fixed height containers where you want styled scrollbars
+- Modal/dialog content with known max heights
+- Sidebars with explicit height constraints
+
+**When to use regular overflow:**
+- Dynamic height flex layouts
+- Lists with interactive elements (dropdowns, menus)
+- When content extends beyond container bounds
 
 ### Button Variants
 

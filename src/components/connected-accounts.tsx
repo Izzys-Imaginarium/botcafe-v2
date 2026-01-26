@@ -86,18 +86,18 @@ export const ConnectedAccounts = () => {
         </p>
 
         {/* Discord Connection */}
-        <div className="flex items-center justify-between p-4 bg-[#0a140a]/30 rounded-lg border border-gold-ancient/20">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-[#0a140a]/30 rounded-lg border border-gold-ancient/20">
           <div className="flex items-center gap-3">
             <div
-              className="w-10 h-10 rounded-full flex items-center justify-center"
+              className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
               style={{ backgroundColor: DISCORD_COLOR }}
             >
               <DiscordIcon className="w-6 h-6 text-white" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="font-medium text-parchment">Discord</p>
               {discordAccount ? (
-                <p className="text-sm text-parchment-dim">
+                <p className="text-sm text-parchment-dim truncate">
                   Connected as {discordAccount.username || discordAccount.providerUserId}
                 </p>
               ) : (
@@ -109,7 +109,7 @@ export const ConnectedAccounts = () => {
           </div>
 
           {discordAccount ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 sm:gap-2">
               <span className="flex items-center gap-1 text-sm text-emerald-400">
                 <Check className="w-4 h-4" />
                 Connected
@@ -132,7 +132,7 @@ export const ConnectedAccounts = () => {
             <Button
               onClick={handleConnectDiscord}
               disabled={isConnecting}
-              className="text-white hover:opacity-90"
+              className="text-white hover:opacity-90 w-full sm:w-auto"
               style={{ backgroundColor: DISCORD_COLOR }}
             >
               {isConnecting ? (

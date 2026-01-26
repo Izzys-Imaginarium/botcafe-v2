@@ -1,7 +1,7 @@
 # BotCafe v2 - Database Schema
 
 **Last Updated**: 2026-01-25
-**Version**: 3.11
+**Version**: 3.12
 **Database**: Cloudflare D1 (SQLite) via Payload CMS
 
 ---
@@ -142,10 +142,12 @@ User interactions with bots (likes, favorites).
 | `id` | string | Primary key |
 | `user` | relationship (Users) | User who interacted |
 | `bot` | relationship (Bot) | Bot interacted with |
-| `interaction_type` | select | Type: like, favorite, share, report |
-| `createdAt` | date | When interaction occurred |
+| `liked` | checkbox | Whether user has liked the bot |
+| `favorited` | checkbox | Whether user has favorited the bot |
+| `created_date` | date | When interaction was created |
+| `updated_date` | date | When interaction was last updated |
 
-**Unique Constraint**: `user` + `bot` + `interaction_type`
+**Unique Constraint**: `user` + `bot` (one interaction record per user-bot pair)
 
 ---
 
@@ -917,7 +919,7 @@ Interactive tutorials.
 
 ```
 Users
-├── Bots (createdBy)
+├── Bots (user)
 ├── Conversations (user)
 ├── Memories (user)
 ├── Personas (user)
@@ -966,7 +968,7 @@ Personas
 |------------|--------|
 | Users | `email` |
 | Bot | `slug` |
-| BotInteraction | `user` + `bot` + `interaction_type` |
+| BotInteraction | `user` + `bot` |
 | CreatorProfiles | `username` |
 | CreatorFollows | `follower` + `following` |
 | Documentation | `slug` |
@@ -988,7 +990,7 @@ const payloadUser = payloadUsers.docs[0]
 // Find user's bots
 payload.find({
   collection: 'bot',
-  where: { createdBy: { equals: userId } }
+  where: { user: { equals: userId } }
 })
 
 // Find public bots with pagination

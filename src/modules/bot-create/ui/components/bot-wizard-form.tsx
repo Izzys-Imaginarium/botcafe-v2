@@ -1166,7 +1166,22 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
 
         {/* Progress Steps */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+          {/* Mobile: Simplified progress bar with current step info */}
+          <div className="md:hidden mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-muted-foreground">Step {currentStep + 1} of {steps.length}</span>
+              <span className="text-sm font-medium">{steps[currentStep].title}</span>
+            </div>
+            <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-forest transition-all duration-300"
+                style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Desktop: Full step indicator */}
+          <div className="hidden md:flex items-center justify-between mb-4">
             {steps.map((step, index) => (
               <React.Fragment key={step.id}>
                 <div className={`flex items-center ${
@@ -1185,11 +1200,11 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
                       <step.icon className="h-5 w-5" />
                     )}
                   </div>
-                  <span className="text-sm font-medium ml-2">{step.title}</span>
+                  <span className="text-sm font-medium ml-2 lg:inline hidden">{step.title}</span>
                 </div>
                 {index < steps.length - 1 && (
                   <div
-                    className={`flex-1 h-0.5 mx-4 ${
+                    className={`flex-1 h-0.5 mx-2 lg:mx-4 ${
                       index < currentStep ? 'bg-forest' : 'bg-muted'
                     }`}
                   />

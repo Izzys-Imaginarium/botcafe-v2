@@ -86,6 +86,7 @@ export interface Config {
     tokenPackages: TokenPackage;
     personas: Persona;
     creatorProfiles: CreatorProfile;
+    creatorFollows: CreatorFollow;
     'access-control': AccessControl;
     'self-moderation': SelfModeration;
     'usage-analytics': UsageAnalytic;
@@ -120,6 +121,7 @@ export interface Config {
     tokenPackages: TokenPackagesSelect<false> | TokenPackagesSelect<true>;
     personas: PersonasSelect<false> | PersonasSelect<true>;
     creatorProfiles: CreatorProfilesSelect<false> | CreatorProfilesSelect<true>;
+    creatorFollows: CreatorFollowsSelect<false> | CreatorFollowsSelect<true>;
     'access-control': AccessControlSelect<false> | AccessControlSelect<true>;
     'self-moderation': SelfModerationSelect<false> | SelfModerationSelect<true>;
     'usage-analytics': UsageAnalyticsSelect<false> | UsageAnalyticsSelect<true>;
@@ -1562,6 +1564,29 @@ export interface TokenPackage {
   createdAt: string;
 }
 /**
+ * Tracks user follows on creator profiles
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "creatorFollows".
+ */
+export interface CreatorFollow {
+  id: number;
+  /**
+   * The user who is following
+   */
+  follower: number | User;
+  /**
+   * The creator profile being followed
+   */
+  following: number | CreatorProfile;
+  /**
+   * When the follow relationship was created
+   */
+  created_timestamp?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Fine-grained permissions management for all resources
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2569,6 +2594,10 @@ export interface PayloadLockedDocument {
         value: number | CreatorProfile;
       } | null)
     | ({
+        relationTo: 'creatorFollows';
+        value: number | CreatorFollow;
+      } | null)
+    | ({
         relationTo: 'access-control';
         value: number | AccessControl;
       } | null)
@@ -3491,6 +3520,17 @@ export interface CreatorProfilesSelect<T extends boolean = true> {
         tag?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "creatorFollows_select".
+ */
+export interface CreatorFollowsSelect<T extends boolean = true> {
+  follower?: T;
+  following?: T;
+  created_timestamp?: T;
   updatedAt?: T;
   createdAt?: T;
 }

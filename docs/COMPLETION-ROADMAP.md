@@ -459,15 +459,16 @@ By building foundational systems first, we avoid rework and ensure chat has all 
 17. **TokenPackages** - Token purchasing options
 18. **Personas** - User personas/masks system
 19. **CreatorProfiles** - Multi-tenant creator showcase pages
-20. **AccessControl** - Fine-grained permissions
-21. **SelfModeration** - Usage limits and health tools
-22. **UsageAnalytics** - Comprehensive usage tracking
-23. **MemoryInsights** - Story progression analytics
-24. **PersonaAnalytics** - Persona effectiveness metrics
-25. **LegalDocuments** - Terms, privacy, compliance
-26. **UserAgreements** - Legal acceptance tracking
-27. **Documentation** - Help documentation
-28. **Tutorials** - Interactive tutorials
+20. **CreatorFollows** - Follow relationships between users and creators
+21. **AccessControl** - Fine-grained permissions
+22. **SelfModeration** - Usage limits and health tools
+23. **UsageAnalytics** - Comprehensive usage tracking
+24. **MemoryInsights** - Story progression analytics
+25. **PersonaAnalytics** - Persona effectiveness metrics
+26. **LegalDocuments** - Terms, privacy, compliance
+27. **UserAgreements** - Legal acceptance tracking
+28. **Documentation** - Help documentation
+29. **Tutorials** - Interactive tutorials
 
 ---
 

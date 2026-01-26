@@ -40,7 +40,7 @@ export const ConnectedAccounts = () => {
 
   // Find Discord external account
   const discordAccount = user.externalAccounts?.find(
-    (account) => account.provider === 'oauth_discord'
+    (account) => account.provider === 'discord'
   )
 
   const handleConnectDiscord = async () => {
@@ -98,7 +98,7 @@ export const ConnectedAccounts = () => {
               <p className="font-medium text-parchment">Discord</p>
               {discordAccount ? (
                 <p className="text-sm text-parchment-dim">
-                  Connected as {discordAccount.username || discordAccount.externalId}
+                  Connected as {discordAccount.username || discordAccount.providerUserId}
                 </p>
               ) : (
                 <p className="text-sm text-parchment-dim">

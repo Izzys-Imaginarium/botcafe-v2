@@ -1,7 +1,7 @@
 # BotCafe v2 - Complete Sitemap
 
-**Last Updated**: 2026-01-25
-**Version**: 2.26
+**Last Updated**: 2026-01-26
+**Version**: 2.27
 **Status**: ~98% Complete
 
 ---
@@ -306,7 +306,7 @@ BotCafe
 │   ├── Overview (analytics dashboard)
 │   ├── Mood (mood journal)
 │   ├── Profile (user settings)
-│   ├── Security (password, 2FA)
+│   ├── Security (Connected Accounts, password, 2FA via Clerk)
 │   ├── API Keys (provider keys)
 │   └── Data (export, delete)
 ├── Lore (/lore) - Standalone access

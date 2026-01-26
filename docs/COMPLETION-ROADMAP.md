@@ -780,6 +780,28 @@ When you add new Payload collections or modify existing ones:
   - Fixed `/api/account/export` import path (`@/payload.config` → `@payload-config`)
 
 ### **2026-01-26 Updates:**
+- ✅ **Mobile Responsiveness Improvements**
+  - Fixed tab grid overflow in dashboard and account pages
+    - Added `h-auto lg:h-9` and `gap-1` to prevent tab overlap on mobile
+    - Updated: content-dashboard.tsx, account-dashboard.tsx, creator-profile-view.tsx
+  - Fixed navbar hamburger menu spacing
+    - Increased container padding from `px-4` to `px-5` on mobile
+    - Added margins to mobile menu button for breathing room
+  - Fixed bot wizard step indicator overflow
+    - Mobile now shows simplified progress bar with "Step X of Y"
+    - Desktop retains full step indicator with icons
+  - Fixed account overview overflow
+    - Added `overflow-x-hidden` to dashboard containers
+    - Added `min-w-0` to grid columns for proper shrinking
+    - Added `flex-wrap` to stat rows
+  - Fixed Connected Accounts mobile layout
+    - Discord connection card now stacks vertically on mobile
+    - Connect/Disconnect buttons full-width on mobile
+  - Fixed type errors in connected-accounts.tsx
+    - Changed provider check from `'oauth_discord'` to `'discord'`
+    - Changed `externalId` to `providerUserId`
+  - Updated STYLE-GUIDE.md v3.0 with mobile responsiveness patterns
+
 - 🆕 **Discord Integration - BotCafe Barista Bot**
   - **Separate Repo**: `botcafe-barista-v2` - Cloudflare Worker using Discord Interactions API
   - **Architecture**: Serverless webhook-based bot (no persistent connection needed)
@@ -1294,7 +1316,7 @@ When you add new Payload collections or modify existing ones:
 ---
 
 **Last Updated**: 2026-01-26
-**Version**: 3.22
+**Version**: 3.23
 **Total Tasks**: 184
 **Completed**: 178
 **Progress**: ~97% (Memory edit/delete for tomes complete)

@@ -1,7 +1,7 @@
 # BotCafe v2 - Style Guide
 
-**Last Updated**: 2026-01-25
-**Version**: 2.9
+**Last Updated**: 2026-01-26
+**Version**: 3.0
 
 ---
 
@@ -495,6 +495,98 @@ export default function Page() {
 // Visibility
 <div className="hidden md:block">Desktop only</div>
 <div className="md:hidden">Mobile only</div>
+```
+
+### Mobile Overflow Prevention
+
+When content can exceed viewport width on mobile, use these patterns:
+
+```tsx
+// Dashboard containers - prevent horizontal scroll
+<div className="px-5 sm:px-6 lg:px-12 py-8 flex flex-col gap-6 overflow-x-hidden">
+
+// Grid columns that need to shrink properly
+<div className="lg:col-span-3 min-w-0">
+
+// Flex containers with content that might overflow
+<div className="flex items-center gap-2 min-w-0">
+  <Icon className="shrink-0" />
+  <span className="truncate">Long text that should truncate</span>
+</div>
+```
+
+### Tab Grid Pattern (Mobile-Responsive)
+
+When using grid-based tabs that wrap to multiple rows on mobile:
+
+```tsx
+// ❌ Fixed height causes overlap with multiple rows
+<TabsList className="grid grid-cols-2 lg:grid-cols-4 h-9">
+
+// ✅ Auto height on mobile, fixed on desktop
+<TabsList className="grid grid-cols-2 lg:grid-cols-4 gap-1 h-auto lg:h-9">
+  <TabsTrigger className="text-xs lg:text-sm py-2 lg:py-1">
+    Tab 1
+  </TabsTrigger>
+</TabsList>
+```
+
+### Flex Stack Pattern (Mobile-Responsive)
+
+For layouts that should be horizontal on desktop but stack on mobile:
+
+```tsx
+// Header with title and controls
+<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+  <div>
+    <h2>Title</h2>
+    <p>Description</p>
+  </div>
+  <div className="flex gap-2">
+    {/* Controls */}
+  </div>
+</div>
+
+// Card with info and actions
+<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4">
+  <div className="flex items-center gap-3">
+    <Avatar />
+    <div className="min-w-0">
+      <p className="font-medium">Title</p>
+      <p className="text-sm truncate">Subtitle</p>
+    </div>
+  </div>
+  <div className="flex items-center gap-2">
+    <Button className="w-full sm:w-auto">Action</Button>
+  </div>
+</div>
+```
+
+### Mobile Progress Indicator Pattern
+
+For multi-step wizards, show simplified progress on mobile:
+
+```tsx
+{/* Mobile: Simplified progress bar */}
+<div className="md:hidden mb-4">
+  <div className="flex items-center justify-between mb-2">
+    <span className="text-sm text-muted-foreground">Step {current + 1} of {total}</span>
+    <span className="text-sm font-medium">{steps[current].title}</span>
+  </div>
+  <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+    <div
+      className="h-full bg-forest transition-all duration-300"
+      style={{ width: `${((current + 1) / total) * 100}%` }}
+    />
+  </div>
+</div>
+
+{/* Desktop: Full step indicator */}
+<div className="hidden md:flex items-center justify-between mb-4">
+  {steps.map((step, index) => (
+    // Full step icons with titles
+  ))}
+</div>
 ```
 
 ---

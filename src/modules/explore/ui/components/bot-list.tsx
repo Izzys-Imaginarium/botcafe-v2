@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useInfiniteList } from '@/hooks/use-infinite-list'
+import { InfiniteScrollTrigger } from '@/components/ui/infinite-scroll-trigger'
 
 interface BotData {
   id: string | number
@@ -24,67 +26,40 @@ interface BotData {
   creator_username: string
 }
 
-interface BotListResponse {
-  bots: BotData[]
-  totalPages: number
-  currentPage: number
-  totalDocs: number
-  hasNextPage: boolean
-  hasPrevPage: boolean
-}
-
 export const BotList = () => {
   const searchParams = useSearchParams()
-  const [bots, setBots] = useState<BotData[]>([])
-  const [isInitialLoad, setIsInitialLoad] = useState(true)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
 
+  // Build initial params from URL
+  const getInitialParams = useCallback(() => {
+    const params: Record<string, string> = {}
+    const sort = searchParams.get('sort')
+    const search = searchParams.get('search')
+    if (sort) params.sort = sort
+    if (search) params.search = search
+    return params
+  }, [searchParams])
+
+  const {
+    items: bots,
+    isLoading,
+    isLoadingMore,
+    error,
+    hasMore,
+    loadMore,
+    setParams,
+  } = useInfiniteList<BotData>({
+    endpoint: '/api/bots/explore',
+    limit: 12,
+    initialParams: getInitialParams(),
+    itemsKey: 'bots',
+  })
+
+  // Update params when URL search params change
   useEffect(() => {
-    const fetchBots = async () => {
-      // Only show full loading state on initial load, not during search/filter
-      if (bots.length === 0) {
-        setIsInitialLoad(true)
-      } else {
-        setIsRefreshing(true)
-      }
-      setError(null)
+    setParams(getInitialParams())
+  }, [searchParams, setParams, getInitialParams])
 
-      try {
-        const params = new URLSearchParams()
-        params.set('page', currentPage.toString())
-        params.set('limit', '12')
-
-        const sort = searchParams.get('sort')
-        const search = searchParams.get('search')
-
-        if (sort) params.set('sort', sort)
-        if (search) params.set('search', search)
-
-        const response = await fetch(`/api/bots/explore?${params.toString()}`)
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch bots')
-        }
-
-        const data: BotListResponse = await response.json()
-        setBots(data.bots)
-        setTotalPages(data.totalPages)
-      } catch (err: any) {
-        console.error('Error fetching bots:', err)
-        setError(err.message || 'Failed to load bots')
-      } finally {
-        setIsInitialLoad(false)
-        setIsRefreshing(false)
-      }
-    }
-
-    fetchBots()
-  }, [searchParams, currentPage])
-
-  if (isInitialLoad && bots.length === 0) {
+  if (isLoading && bots.length === 0) {
     return <BotListSkeleton />
   }
 
@@ -115,36 +90,18 @@ export const BotList = () => {
 
   return (
     <div className="space-y-6">
-      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 transition-opacity duration-200 ${isRefreshing ? 'opacity-60' : 'opacity-100'}`}>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {bots.map((bot) => (
           <BotCard key={bot.id} bot={bot} />
         ))}
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-4 mt-8">
-          <Button
-            variant="outline"
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="glass-rune border-gold-ancient/30 hover:border-gold-rich"
-          >
-            Previous
-          </Button>
-          <span className="text-parchment font-lore">
-            Page {currentPage} of {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-            className="glass-rune border-gold-ancient/30 hover:border-gold-rich"
-          >
-            Next
-          </Button>
-        </div>
-      )}
+      <InfiniteScrollTrigger
+        onLoadMore={loadMore}
+        hasMore={hasMore}
+        isLoading={isLoadingMore}
+        endMessage="You've seen all the bots!"
+      />
     </div>
   )
 }

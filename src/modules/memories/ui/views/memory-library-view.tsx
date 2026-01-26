@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -37,6 +37,8 @@ import { Slider } from '@/components/ui/slider'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { useInfiniteList } from '@/hooks/use-infinite-list'
+import { InfiniteScrollTrigger } from '@/components/ui/infinite-scroll-trigger'
 
 interface Memory {
   id: string
@@ -70,15 +72,70 @@ interface Memory {
 
 export const MemoryLibraryView = () => {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(true)
-  const [memories, setMemories] = useState<Memory[]>([])
-  const [filteredMemories, setFilteredMemories] = useState<Memory[]>([])
 
   // Filter state
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [sourceFilter, setSourceFilter] = useState<string>('all') // 'all', 'manual', 'auto'
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  // Use infinite list hook for memories
+  const {
+    items: memories,
+    isLoading,
+    isLoadingMore,
+    hasMore,
+    total: totalMemories,
+    loadMore,
+    refresh,
+    setParams,
+  } = useInfiniteList<Memory>({
+    endpoint: '/api/memories',
+    limit: 20,
+    initialParams: {},
+    itemsKey: 'memories',
+  })
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // Update API params when filters change
+  useEffect(() => {
+    const params: Record<string, string> = {}
+
+    if (typeFilter !== 'all') {
+      params.type = typeFilter
+    }
+
+    if (sourceFilter === 'manual') {
+      params.source = 'memory'
+    } else if (sourceFilter === 'auto') {
+      params.source = 'knowledge'
+    }
+
+    if (statusFilter === 'converted') {
+      params.convertedToLore = 'true'
+    } else if (statusFilter === 'not_converted') {
+      params.convertedToLore = 'false'
+    }
+
+    if (debouncedSearch) {
+      params.search = debouncedSearch
+    }
+
+    setParams(params)
+  }, [typeFilter, sourceFilter, statusFilter, debouncedSearch, setParams])
+
+  // Apply client-side filter for vectorized (not supported by API yet)
+  const filteredMemories = statusFilter === 'vectorized'
+    ? memories.filter(m => m.is_vectorized)
+    : memories
 
   // Conversion dialog state
   const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false)
@@ -111,9 +168,8 @@ export const MemoryLibraryView = () => {
   const [isCreating, setIsCreating] = useState(false)
   const [availableBots, setAvailableBots] = useState<{ id: string; name: string }[]>([])
 
-  // Fetch memories on mount
+  // Fetch supporting data on mount
   useEffect(() => {
-    fetchMemories()
     fetchKnowledgeCollections()
     fetchAvailableBots()
   }, [])
@@ -130,30 +186,6 @@ export const MemoryLibraryView = () => {
     }
   }
 
-  // Apply filters when memories or filter state changes
-  useEffect(() => {
-    applyFilters()
-  }, [memories, typeFilter, statusFilter, sourceFilter, searchQuery])
-
-  const fetchMemories = async () => {
-    setIsLoading(true)
-    try {
-      const response = await fetch('/api/memories?limit=100')
-      const data = (await response.json()) as { success?: boolean; memories?: Memory[]; message?: string }
-
-      if (data.success) {
-        setMemories(data.memories || [])
-      } else {
-        toast.error(data.message || 'Failed to fetch memories')
-      }
-    } catch (error) {
-      console.error('Error fetching memories:', error)
-      toast.error('Failed to fetch memories')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   const fetchKnowledgeCollections = async () => {
     try {
       const response = await fetch('/api/knowledge-collections')
@@ -165,46 +197,6 @@ export const MemoryLibraryView = () => {
     } catch (error) {
       console.error('Error fetching knowledge collections:', error)
     }
-  }
-
-  const applyFilters = () => {
-    let filtered = [...memories]
-
-    // Type filter
-    if (typeFilter !== 'all') {
-      filtered = filtered.filter(m => m.type === typeFilter)
-    }
-
-    // Status filter
-    if (statusFilter === 'converted') {
-      filtered = filtered.filter(m => m.converted_to_lore)
-    } else if (statusFilter === 'not_converted') {
-      filtered = filtered.filter(m => !m.converted_to_lore)
-    } else if (statusFilter === 'vectorized') {
-      filtered = filtered.filter(m => m.is_vectorized)
-    }
-
-    // Source filter (manual/imported vs auto-generated)
-    if (sourceFilter === 'manual') {
-      filtered = filtered.filter(m => m._sourceType !== 'knowledge')
-    } else if (sourceFilter === 'auto') {
-      filtered = filtered.filter(m => m._sourceType === 'knowledge')
-    }
-
-    // Search filter - handle bot being either object or array
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(m => {
-        if (m.entry.toLowerCase().includes(query)) return true
-        // Handle bot as single object or array
-        if (Array.isArray(m.bot)) {
-          return m.bot.some(b => b.name?.toLowerCase().includes(query))
-        }
-        return m.bot?.name?.toLowerCase().includes(query)
-      })
-    }
-
-    setFilteredMemories(filtered)
   }
 
   const handleConvertToLore = async () => {
@@ -236,7 +228,7 @@ export const MemoryLibraryView = () => {
         setSelectedCollectionId('')
 
         // Refresh memories
-        fetchMemories()
+        refresh()
       } else {
         toast.error(data.message || 'Failed to convert memory to lore')
       }
@@ -262,7 +254,7 @@ export const MemoryLibraryView = () => {
 
       if (data.success) {
         toast.success(`Memory vectorized with ${data.chunkCount} chunks`)
-        fetchMemories()
+        refresh()
       } else {
         toast.error(data.message || 'Failed to vectorize memory')
       }
@@ -313,7 +305,7 @@ export const MemoryLibraryView = () => {
         toast.success('Memory updated successfully')
         setIsEditDialogOpen(false)
         setEditingMemory(null)
-        fetchMemories()
+        refresh()
       } else {
         toast.error(data.message || 'Failed to update memory')
       }
@@ -347,7 +339,7 @@ export const MemoryLibraryView = () => {
         toast.success('Memory deleted successfully')
         setIsDeleteDialogOpen(false)
         setDeletingMemory(null)
-        fetchMemories()
+        refresh()
       } else {
         toast.error(data.message || 'Failed to delete memory')
       }
@@ -400,7 +392,7 @@ export const MemoryLibraryView = () => {
       if (data.success) {
         toast.success('Memory created successfully')
         setIsCreateDialogOpen(false)
-        fetchMemories()
+        refresh()
       } else {
         toast.error(data.message || 'Failed to create memory')
       }
@@ -470,7 +462,7 @@ export const MemoryLibraryView = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Memories</p>
-                  <p className="text-2xl font-bold">{memories.length}</p>
+                  <p className="text-2xl font-bold">{totalMemories}</p>
                 </div>
                 <Brain className="h-8 w-8 text-purple-400" />
               </div>
@@ -773,6 +765,16 @@ export const MemoryLibraryView = () => {
               </Card>
             )
           })}
+
+          {/* Only show infinite scroll trigger when not filtering by vectorized (client-side filter) */}
+          {statusFilter !== 'vectorized' && (
+            <InfiniteScrollTrigger
+              onLoadMore={loadMore}
+              hasMore={hasMore}
+              isLoading={isLoadingMore}
+              endMessage="You've seen all your memories!"
+            />
+          )}
         </div>
       )}
 

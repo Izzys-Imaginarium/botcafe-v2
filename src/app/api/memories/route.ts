@@ -78,6 +78,8 @@ function normalizeKnowledgeToMemory(knowledge: Knowledge): Record<string, unknow
  * - collectionId?: string - Filter by knowledge collection (memory tome)
  * - convertedToLore?: 'true' | 'false'
  * - source?: 'memory' | 'knowledge' | 'all' (default: 'all')
+ * - search?: string - Search memory content
+ * - sort?: string - Sort field (default: '-created_timestamp')
  * - limit?: number (default: 50)
  * - offset?: number (default: 0)
  *
@@ -133,6 +135,8 @@ export async function GET(request: NextRequest) {
     const collectionId = searchParams.get('collectionId')
     const convertedToLore = searchParams.get('convertedToLore')
     const source = searchParams.get('source') || 'all' // 'memory', 'knowledge', or 'all'
+    const search = searchParams.get('search')
+    const sort = searchParams.get('sort') || '-created_timestamp'
     const limit = parseInt(searchParams.get('limit') || '50', 10)
     const offset = parseInt(searchParams.get('offset') || '0', 10)
 
@@ -159,11 +163,16 @@ export async function GET(request: NextRequest) {
         memoryWhere.converted_to_lore = { equals: convertedToLore === 'true' }
       }
 
+      // Add search filter for entry content
+      if (search) {
+        memoryWhere.entry = { contains: search }
+      }
+
       const memoriesResult = await payload.find({
         collection: 'memory',
         where: memoryWhere,
         limit: source === 'all' ? 1000 : limit, // Fetch more if combining
-        sort: '-created_timestamp',
+        sort,
         depth: 2,
         overrideAccess: true,
       })
@@ -195,6 +204,11 @@ export async function GET(request: NextRequest) {
         knowledgeWhere.knowledge_collection = { equals: parseInt(collectionId, 10) }
       }
 
+      // Add search filter for entry content
+      if (search) {
+        knowledgeWhere.entry = { contains: search }
+      }
+
       // For type filter, only show knowledge entries for 'long_term' or 'all'
       // (auto-generated memories are effectively long-term)
       if (type && type !== 'long_term') {
@@ -205,7 +219,7 @@ export async function GET(request: NextRequest) {
           collection: 'knowledge',
           where: knowledgeWhere,
           limit: source === 'all' ? 1000 : limit,
-          sort: '-created_timestamp',
+          sort,
           depth: 2,
           overrideAccess: true,
         })
@@ -219,11 +233,29 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Sort combined results by created_timestamp descending
+    // Sort combined results based on sort parameter
+    const isDescending = sort.startsWith('-')
+    const sortField = isDescending ? sort.slice(1) : sort
     allMemories.sort((a, b) => {
-      const dateA = new Date(a.created_timestamp as string).getTime()
-      const dateB = new Date(b.created_timestamp as string).getTime()
-      return dateB - dateA
+      const valA = a[sortField]
+      const valB = b[sortField]
+
+      // Handle date fields
+      if (sortField.includes('timestamp') || sortField === 'createdAt' || sortField === 'updatedAt') {
+        const dateA = new Date(valA as string).getTime()
+        const dateB = new Date(valB as string).getTime()
+        return isDescending ? dateB - dateA : dateA - dateB
+      }
+
+      // Handle numeric fields
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return isDescending ? valB - valA : valA - valB
+      }
+
+      // Handle string fields
+      const strA = String(valA || '').toLowerCase()
+      const strB = String(valB || '').toLowerCase()
+      return isDescending ? strB.localeCompare(strA) : strA.localeCompare(strB)
     })
 
     // Apply pagination to combined results

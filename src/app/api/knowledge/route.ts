@@ -390,9 +390,11 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10')
     const collectionId = searchParams.get('collection')
     const includeMemories = searchParams.get('includeMemories') === 'true'
+    const search = searchParams.get('search')
+    const sort = searchParams.get('sort') || '-createdAt'
 
     // Build where clause
-    const whereClause: any = {
+    const whereClause: Record<string, unknown> = {
       user: {
         equals: payloadUser.id,
       },
@@ -413,13 +415,18 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Add search filter for entry content
+    if (search) {
+      whereClause.entry = { contains: search }
+    }
+
     // Fetch knowledge entries
     const knowledgeEntries = await payload.find({
       collection: 'knowledge',
       where: whereClause,
       page,
       limit,
-      sort: '-createdAt',
+      sort,
       overrideAccess: true,
     })
 

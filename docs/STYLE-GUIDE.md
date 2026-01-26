@@ -1,7 +1,7 @@
 # BotCafe v2 - Style Guide
 
 **Last Updated**: 2026-01-25
-**Version**: 2.8
+**Version**: 2.9
 
 ---
 
@@ -251,6 +251,7 @@ BotCafe uses **shadcn/ui** components with custom styling. All components are lo
 | Avatar | `/components/ui/avatar` | User/bot avatars |
 | Tooltip | `/components/ui/tooltip` | Hover tooltips |
 | ScrollArea | `/components/ui/scroll-area` | Scrollable containers |
+| InfiniteScrollTrigger | `/components/ui/infinite-scroll-trigger` | Infinite scroll loading trigger |
 
 ### ScrollArea Usage Caution
 
@@ -303,6 +304,30 @@ The `ScrollArea` component (from Radix UI) uses `overflow-hidden` internally. Th
 - Dynamic height flex layouts
 - Lists with interactive elements (dropdowns, menus)
 - When content extends beyond container bounds
+
+### Infinite Scroll Pattern
+
+```tsx
+import { useInfiniteList } from '@/hooks/use-infinite-list'
+import { InfiniteScrollTrigger } from '@/components/ui/infinite-scroll-trigger'
+
+const { items, isLoading, isLoadingMore, hasMore, loadMore, setParams } = useInfiniteList<Item>({
+  endpoint: '/api/items',
+  limit: 20,
+  itemsKey: 'items',
+})
+
+// In JSX
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  {items.map(item => <ItemCard key={item.id} item={item} />)}
+  <InfiniteScrollTrigger
+    onLoadMore={loadMore}
+    hasMore={hasMore}
+    isLoading={isLoadingMore}
+    endMessage="You've seen all items!"
+  />
+</div>
+```
 
 ### Button Variants
 

@@ -134,10 +134,22 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const includeMemoryTomes = searchParams.get('includeMemoryTomes') === 'true'
     const onlyMemoryTomes = searchParams.get('onlyMemoryTomes') === 'true'
+    const page = parseInt(searchParams.get('page') || '1', 10)
+    const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10), 100)
+    const search = searchParams.get('search')
+    const sort = searchParams.get('sort') || '-createdAt'
 
     // Build where clause for owned collections
     const ownedWhere: Record<string, unknown> = {
       user: { equals: payloadUser.id },
+    }
+
+    // Add search filter
+    if (search) {
+      ownedWhere.or = [
+        { name: { contains: search } },
+        { description: { contains: search } },
+      ]
     }
 
     // By default, exclude memory tomes from the main tome list
@@ -149,12 +161,13 @@ export async function GET(request: NextRequest) {
       ownedWhere['collection_metadata.collection_category'] = { not_equals: 'memories' }
     }
 
-    // Fetch owned knowledge collections
+    // Fetch owned knowledge collections with pagination
     const ownedCollections = await payload.find({
       collection: 'knowledgeCollections',
       where: ownedWhere,
-      sort: '-createdAt',
-      limit: 100,
+      sort,
+      page,
+      limit,
       overrideAccess: true,
     })
 
@@ -196,9 +209,18 @@ export async function GET(request: NextRequest) {
           sharedWhere['collection_metadata.collection_category'] = { not_equals: 'memories' }
         }
 
+        // Apply same search filter to shared collections
+        if (search) {
+          sharedWhere.or = [
+            { name: { contains: search } },
+            { description: { contains: search } },
+          ]
+        }
+
         const sharedCollectionsResult = await payload.find({
           collection: 'knowledgeCollections',
           where: sharedWhere,
+          sort,
           overrideAccess: true,
         })
         sharedCollections = sharedCollectionsResult.docs
@@ -262,6 +284,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       collections: collectionsWithCounts,
+      pagination: {
+        page: ownedCollections.page || page,
+        limit,
+        totalPages: ownedCollections.totalPages || 1,
+        totalDocs: ownedCollections.totalDocs + sharedCollections.length,
+        hasNextPage: ownedCollections.hasNextPage || false,
+        hasPrevPage: ownedCollections.hasPrevPage || false,
+      },
     })
   } catch (error: any) {
     console.error('Error fetching collections:', error)

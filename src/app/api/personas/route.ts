@@ -12,6 +12,8 @@ export const dynamic = 'force-dynamic'
  *
  * Query params:
  * - includePublic?: 'true' | 'false' (default: 'true')
+ * - search?: string - Search by name or description
+ * - sort?: string - Sort field (default: '-created_timestamp')
  * - limit?: number (default: 50)
  * - offset?: number (default: 0)
  *
@@ -63,14 +65,24 @@ export async function GET(request: NextRequest) {
 
     // Parse query parameters
     const { searchParams } = new URL(request.url)
+    const search = searchParams.get('search')
+    const sort = searchParams.get('sort') || '-created_timestamp'
     const limit = parseInt(searchParams.get('limit') || '50', 10)
     const offset = parseInt(searchParams.get('offset') || '0', 10)
 
     // Personas are always private - only fetch user's own personas
-    const where = {
+    const where: Record<string, unknown> = {
       user: {
         equals: payloadUser.id,
       },
+    }
+
+    // Add search filter for name and description
+    if (search) {
+      where.or = [
+        { name: { contains: search } },
+        { description: { contains: search } },
+      ]
     }
 
     // Fetch personas
@@ -79,7 +91,7 @@ export async function GET(request: NextRequest) {
       where,
       limit,
       page: Math.floor(offset / limit) + 1,
-      sort: '-created_timestamp',
+      sort,
       depth: 2, // Include avatar relationship
       overrideAccess: true,
     })

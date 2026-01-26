@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,6 +27,8 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import { useInfiniteList } from '@/hooks/use-infinite-list'
+import { InfiniteScrollTrigger } from '@/components/ui/infinite-scroll-trigger'
 
 interface CreatorProfile {
   id: string
@@ -78,9 +80,6 @@ const verificationIcons: Record<string, { icon: React.ReactNode; label: string; 
 }
 
 export const CreatorDirectoryView = () => {
-  const [isInitialLoad, setIsInitialLoad] = useState(true)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [creators, setCreators] = useState<CreatorProfile[]>([])
   const [hasProfile, setHasProfile] = useState(false)
   const [myProfile, setMyProfile] = useState<CreatorProfile | null>(null)
 
@@ -89,10 +88,21 @@ export const CreatorDirectoryView = () => {
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [sortBy, setSortBy] = useState<string>('-community_stats.follower_count')
 
-  // Pagination
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [totalCreators, setTotalCreators] = useState(0)
+  // Use infinite list hook
+  const {
+    items: creators,
+    isLoading,
+    isLoadingMore,
+    hasMore,
+    total: totalCreators,
+    loadMore,
+    setParams,
+  } = useInfiniteList<CreatorProfile>({
+    endpoint: '/api/creators',
+    limit: 12,
+    initialParams: { sort: '-community_stats.follower_count' },
+    itemsKey: 'creators',
+  })
 
   // Debounce search query to prevent flickering
   useEffect(() => {
@@ -102,22 +112,19 @@ export const CreatorDirectoryView = () => {
     return () => clearTimeout(timer)
   }, [searchQuery])
 
-  // Fetch creators and user profile status on mount
+  // Update params when filters change
+  useEffect(() => {
+    const params: Record<string, string> = { sort: sortBy }
+    if (debouncedSearch) {
+      params.search = debouncedSearch
+    }
+    setParams(params)
+  }, [debouncedSearch, sortBy, setParams])
+
+  // Check my profile on mount
   useEffect(() => {
     checkMyProfile()
-    fetchCreators()
   }, [])
-
-  // Refetch when filters change (using debounced search)
-  useEffect(() => {
-    setPage(1)
-    fetchCreators()
-  }, [debouncedSearch, sortBy])
-
-  // Refetch when page changes
-  useEffect(() => {
-    fetchCreators()
-  }, [page])
 
   const checkMyProfile = async () => {
     try {
@@ -130,48 +137,6 @@ export const CreatorDirectoryView = () => {
       }
     } catch (error) {
       console.error('Error checking profile:', error)
-    }
-  }
-
-  const fetchCreators = async () => {
-    // Only show full loading state on initial load, not during search/filter
-    if (creators.length === 0) {
-      setIsInitialLoad(true)
-    } else {
-      setIsRefreshing(true)
-    }
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: '12',
-        sort: sortBy,
-      })
-
-      if (debouncedSearch) {
-        params.set('search', debouncedSearch)
-      }
-
-      const response = await fetch(`/api/creators?${params}`)
-      const data = (await response.json()) as {
-        success?: boolean
-        creators?: CreatorProfile[]
-        pagination?: { page: number; totalPages: number; totalDocs: number }
-        message?: string
-      }
-
-      if (data.success) {
-        setCreators(data.creators || [])
-        setTotalPages(data.pagination?.totalPages || 1)
-        setTotalCreators(data.pagination?.totalDocs || 0)
-      } else {
-        toast.error(data.message || 'Failed to fetch creators')
-      }
-    } catch (error) {
-      console.error('Error fetching creators:', error)
-      toast.error('Failed to fetch creators')
-    } finally {
-      setIsInitialLoad(false)
-      setIsRefreshing(false)
     }
   }
 
@@ -292,7 +257,7 @@ export const CreatorDirectoryView = () => {
       </div>
 
       {/* Creator List */}
-      {isInitialLoad && creators.length === 0 ? (
+      {isLoading && creators.length === 0 ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
@@ -312,7 +277,7 @@ export const CreatorDirectoryView = () => {
         </Card>
       ) : (
         <>
-          <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-200 ${isRefreshing ? 'opacity-60' : 'opacity-100'}`}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {creators.map((creator) => (
               <Link key={creator.id} href={`/creators/${creator.username}`}>
                 <Card className="relative overflow-hidden hover:border-purple-500/50 transition-colors cursor-pointer h-full">
@@ -400,41 +365,12 @@ export const CreatorDirectoryView = () => {
             ))}
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center gap-2 mt-8">
-              <Button
-                variant="outline"
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                Previous
-              </Button>
-              <div className="flex items-center gap-2">
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const pageNum = page <= 3 ? i + 1 : page + i - 2
-                  if (pageNum < 1 || pageNum > totalPages) return null
-                  return (
-                    <Button
-                      key={pageNum}
-                      variant={pageNum === page ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setPage(pageNum)}
-                    >
-                      {pageNum}
-                    </Button>
-                  )
-                })}
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-              >
-                Next
-              </Button>
-            </div>
-          )}
+          <InfiniteScrollTrigger
+            onLoadMore={loadMore}
+            hasMore={hasMore}
+            isLoading={isLoadingMore}
+            endMessage="You've seen all the creators!"
+          />
         </>
       )}
     </div>

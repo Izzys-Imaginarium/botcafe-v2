@@ -21,6 +21,8 @@ import {
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { useInfiniteList } from '@/hooks/use-infinite-list'
+import { InfiniteScrollTrigger } from '@/components/ui/infinite-scroll-trigger'
 
 interface Persona {
   id: string
@@ -41,61 +43,49 @@ interface Persona {
 
 export const PersonaLibraryView = () => {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(true)
-  const [personas, setPersonas] = useState<Persona[]>([])
-  const [filteredPersonas, setFilteredPersonas] = useState<Persona[]>([])
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  // Use infinite list hook
+  const {
+    items: personas,
+    isLoading,
+    isLoadingMore,
+    hasMore,
+    total: totalPersonas,
+    loadMore,
+    refresh,
+    setParams,
+  } = useInfiniteList<Persona>({
+    endpoint: '/api/personas',
+    limit: 20,
+    initialParams: {},
+    itemsKey: 'personas',
+  })
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // Update API params when search changes
+  useEffect(() => {
+    const params: Record<string, string> = {}
+    if (debouncedSearch) {
+      params.search = debouncedSearch
+    }
+    setParams(params)
+  }, [debouncedSearch, setParams])
 
   // Delete dialog state
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-
-  // Fetch personas on mount
-  useEffect(() => {
-    fetchPersonas()
-  }, [])
-
-  // Apply filters when personas or filter state changes
-  useEffect(() => {
-    applyFilters()
-  }, [personas, searchQuery])
-
-  const fetchPersonas = async () => {
-    setIsLoading(true)
-    try {
-      const response = await fetch('/api/personas?limit=100')
-      const data = (await response.json()) as { success?: boolean; personas?: Persona[]; message?: string }
-
-      if (data.success) {
-        setPersonas(data.personas || [])
-      } else {
-        toast.error(data.message || 'Failed to fetch personas')
-      }
-    } catch (error) {
-      console.error('Error fetching personas:', error)
-      toast.error('Failed to fetch personas')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const applyFilters = () => {
-    let filtered = [...personas]
-
-    // Search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(p =>
-        p.name.toLowerCase().includes(query) ||
-        p.description.toLowerCase().includes(query)
-      )
-    }
-
-    setFilteredPersonas(filtered)
-  }
 
   const handleSetDefault = async (personaId: string) => {
     try {
@@ -113,7 +103,7 @@ export const PersonaLibraryView = () => {
 
       if (data.success) {
         toast.success('Default persona updated')
-        fetchPersonas()
+        refresh()
       } else {
         toast.error(data.message || 'Failed to set default persona')
       }
@@ -139,7 +129,7 @@ export const PersonaLibraryView = () => {
         toast.success('Persona deleted successfully')
         setIsDeleteDialogOpen(false)
         setSelectedPersona(null)
-        fetchPersonas()
+        refresh()
       } else {
         toast.error(data.message || 'Failed to delete persona')
       }
@@ -208,7 +198,7 @@ export const PersonaLibraryView = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Personas</p>
-                  <p className="text-2xl font-bold">{personas.length}</p>
+                  <p className="text-2xl font-bold">{totalPersonas}</p>
                 </div>
                 <User className="h-8 w-8 text-purple-400" />
               </div>
@@ -277,11 +267,11 @@ export const PersonaLibraryView = () => {
       </div>
 
       {/* Persona List */}
-      {isLoading ? (
+      {isLoading && personas.length === 0 ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
-      ) : filteredPersonas.length === 0 ? (
+      ) : personas.length === 0 ? (
         <Card>
           <CardContent className="py-12">
             <div className="text-center">
@@ -303,7 +293,7 @@ export const PersonaLibraryView = () => {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredPersonas.map((persona) => (
+          {personas.map((persona) => (
             <Card key={persona.id} className="relative overflow-hidden">
               {persona.is_default && (
                 <div className="absolute top-2 right-2">
@@ -382,6 +372,13 @@ export const PersonaLibraryView = () => {
               </CardFooter>
             </Card>
           ))}
+
+          <InfiniteScrollTrigger
+            onLoadMore={loadMore}
+            hasMore={hasMore}
+            isLoading={isLoadingMore}
+            endMessage="You've seen all your personas!"
+          />
         </div>
       )}
 

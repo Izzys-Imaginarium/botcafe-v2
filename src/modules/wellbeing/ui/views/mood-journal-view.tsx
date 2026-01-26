@@ -51,7 +51,11 @@ const moodLabels: Record<string, { label: string; emoji: string }> = Object.from
   moodOptions.map((m) => [m.value, { label: m.label, emoji: m.emoji }])
 )
 
-export const MoodJournalView = () => {
+interface MoodJournalViewProps {
+  embedded?: boolean
+}
+
+export const MoodJournalView = ({ embedded = false }: MoodJournalViewProps) => {
   const [entries, setEntries] = useState<MoodEntry[]>([])
   const [stats, setStats] = useState<MoodStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -134,21 +138,23 @@ export const MoodJournalView = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
-        <Link href="/wellbeing">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
-            Mood Journal
-          </h1>
-          <p className="text-muted-foreground">Track your emotional wellbeing</p>
+    <div className={embedded ? "" : "container mx-auto px-4 py-8"}>
+      {/* Header - only show when not embedded */}
+      {!embedded && (
+        <div className="flex items-center gap-4 mb-8">
+          <Link href="/dashboard">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
+              Mood Journal
+            </h1>
+            <p className="text-muted-foreground">Track your emotional wellbeing</p>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Log New Mood */}

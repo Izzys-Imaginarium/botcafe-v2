@@ -1,7 +1,7 @@
 # BotCafe v2 - Complete Sitemap
 
 **Last Updated**: 2026-01-25
-**Version**: 2.24
+**Version**: 2.26
 **Status**: ~98% Complete
 
 ---
@@ -35,7 +35,7 @@
 
 | Route | Status | Description |
 |-------|--------|-------------|
-| `/account` | ✅ Complete | Account settings - 6 tabs: Overview (analytics), Wellbeing, Profile, Security, API Keys, Data |
+| `/account` | ✅ Complete | Account settings - 6 tabs: Overview (analytics), Mood, Profile, Security, API Keys, Data |
 | `/dashboard` | ✅ Complete | Creator's Workshop - My Bots, Lore, Memories, Personas |
 
 ### Knowledge System (Lore)
@@ -61,13 +61,13 @@
 | `/personas/create` | ✅ Complete | Create new persona with personality traits |
 | `/personas/edit/[id]` | ✅ Complete | Edit existing persona |
 
-### Wellbeing
+### Mood
 
 | Route | Status | Description |
 |-------|--------|-------------|
-| `/wellbeing` | ↪️ Redirect | Redirects to `/account?tab=wellbeing` |
-| `/wellbeing/mood` | ✅ Complete | Mood journal with emoji selection and notes |
-| `/wellbeing/settings` | ✅ Complete | Self-moderation settings (limits, breaks, night mode) |
+| `/mood` | ↪️ Redirect | Redirects to `/account?tab=mood` |
+
+> **Note**: Self-moderation features (usage limits, breaks, night mode) have been removed and are planned as a future enhancement.
 
 ### Analytics
 
@@ -171,13 +171,13 @@
 | `/api/creators/[username]` | GET, PUT, DELETE | Creator profile operations |
 | `/api/creators/[username]/follow` | GET, POST | Check follow status, toggle follow/unfollow |
 
-### Wellbeing
+### Mood
 
 | Endpoint | Methods | Description |
 |----------|---------|-------------|
-| `/api/wellbeing` | GET | Overall wellbeing dashboard data |
-| `/api/wellbeing/mood` | GET, POST | Mood entries |
-| `/api/wellbeing/settings` | GET, POST, PUT | Self-moderation settings |
+| `/api/wellbeing/mood` | GET, POST | Mood journal entries |
+
+> **Note**: Self-moderation API endpoints have been removed and are planned as a future enhancement.
 
 ### Analytics
 
@@ -257,14 +257,14 @@
 | Lore | 3 | 0 | 3 |
 | Memories | 2 | 0 | 2 |
 | Personas | 3 | 0 | 3 |
-| Wellbeing | 2 | 1 | 3 |
+| Mood | 0 | 1 | 1 |
 | Analytics | 2 | 1 | 3 |
 | Legal | 4 | 0 | 4 |
 | Help | 3 | 0 | 3 |
 | Chat | 2 | 0 | 2 |
-| **Frontend Total** | **34** | **2** | **36** |
-| API Endpoints | 51 | 0 | 51 |
-| **Grand Total** | **85** | **2** | **87** |
+| **Frontend Total** | **32** | **2** | **34** |
+| API Endpoints | 49 | 0 | 49 |
+| **Grand Total** | **81** | **2** | **83** |
 
 *Note: "Redirect" routes automatically redirect to the Account page with the appropriate tab.*
 
@@ -304,7 +304,7 @@ BotCafe
 │   └── Personas (/dashboard?tab=personas)
 ├── Account (/account)
 │   ├── Overview (analytics dashboard)
-│   ├── Wellbeing (mood, usage tracking)
+│   ├── Mood (mood journal)
 │   ├── Profile (user settings)
 │   ├── Security (password, 2FA)
 │   ├── API Keys (provider keys)
@@ -318,9 +318,7 @@ BotCafe
 ├── Personas (/personas) - Standalone access
 │   ├── Create (/personas/create)
 │   └── Edit (/personas/edit/[id])
-├── Wellbeing Sub-pages (main /wellbeing redirects to Account)
-│   ├── Mood (/wellbeing/mood)
-│   └── Settings (/wellbeing/settings)
+├── Mood (/mood) - Redirects to Account
 ├── Analytics Sub-pages (main /analytics redirects to Account)
 │   ├── Bots (/analytics/bots)
 │   └── Usage (/analytics/usage)

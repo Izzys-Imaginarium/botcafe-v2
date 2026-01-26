@@ -10,10 +10,10 @@ import { AccountProfile } from '@/components/account-profile'
 import { AccountSecurity } from '@/components/account-security'
 import { ApiKeyManagement } from '@/components/api-key-management'
 import { DataManagement } from '@/components/data-management'
-import { AccountWellbeing } from '@/components/account-wellbeing'
+import { MoodJournalView } from '@/modules/wellbeing/ui/views/mood-journal-view'
 import { User, Shield, Key, Database, Activity, Heart } from 'lucide-react'
 
-const validTabs = ['overview', 'wellbeing', 'profile', 'security', 'api-keys', 'data']
+const validTabs = ['overview', 'mood', 'profile', 'security', 'api-keys', 'data']
 
 export const AccountDashboard = () => {
   const searchParams = useSearchParams()
@@ -52,9 +52,9 @@ export const AccountDashboard = () => {
                 <Activity className="w-4 h-4 mr-2" />
                 Overview
               </TabsTrigger>
-              <TabsTrigger value="wellbeing" className="text-xs lg:text-sm">
+              <TabsTrigger value="mood" className="text-xs lg:text-sm">
                 <Heart className="w-4 h-4 mr-2" />
-                Wellbeing
+                Mood
               </TabsTrigger>
               <TabsTrigger value="profile" className="text-xs lg:text-sm">
                 <User className="w-4 h-4 mr-2" />
@@ -79,8 +79,8 @@ export const AccountDashboard = () => {
                 <AccountOverview />
               </TabsContent>
 
-              <TabsContent value="wellbeing">
-                <AccountWellbeing />
+              <TabsContent value="mood">
+                <MoodJournalView embedded />
               </TabsContent>
 
               <TabsContent value="profile">

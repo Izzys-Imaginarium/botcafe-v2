@@ -179,34 +179,6 @@ export async function POST(request: NextRequest) {
       overrideAccess: true,
     })
 
-    // Update self-moderation tracking if enabled
-    try {
-      const selfMod = await payload.find({
-        collection: 'self-moderation',
-        where: {
-          user: { equals: payloadUser.id },
-        },
-        overrideAccess: true,
-      })
-
-      if (selfMod.docs.length > 0) {
-        const currentCount = (selfMod.docs[0].progress_tracking as any)?.mood_entries_count_week || 0
-        await payload.update({
-          collection: 'self-moderation',
-          id: selfMod.docs[0].id,
-          data: {
-            progress_tracking: {
-              ...(selfMod.docs[0].progress_tracking as any),
-              mood_entries_count_week: currentCount + 1,
-            },
-          },
-          overrideAccess: true,
-        })
-      }
-    } catch (e) {
-      // Non-critical, continue
-    }
-
     return NextResponse.json({ entry: moodEntry, success: true })
   } catch (error) {
     console.error('Error creating mood entry:', error)

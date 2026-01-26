@@ -24,7 +24,7 @@ Based on the sitemap, style guide, and database schema analysis, BotCafé v2 is 
 - **Creator Profiles**: ✅ Directory, profile pages, setup wizard, bot showcase gallery
 - **Legal Pages**: ✅ Legal hub, Terms of Service, Privacy Policy, Responsible AI pages
 - **Help Center**: ✅ Documentation hub, article viewer, category browsing, tutorials API
-- **Wellbeing System**: ✅ Mood journal, self-moderation settings
+- **Mood Journal**: ✅ Mood tracking with emoji selection and notes (self-moderation planned as future enhancement)
 - **Analytics Dashboard**: ✅ Overview stats, bot performance metrics, usage statistics views
 
 ### ❌ **REMAINING WORK (~3%)**
@@ -37,7 +37,7 @@ Based on the sitemap, style guide, and database schema analysis, BotCafé v2 is 
 5. **Bot Detail** ✅ - Individual bot pages with stats, info, and interactions
 6. **Creators** ✅ - Multi-tenant creator profiles & showcase (directory, profile pages, setup wizard)
 7. **Account** ✅ - My Bots dashboard with CRUD operations and profile display
-8. **Wellbeing** ✅ - Mood journal, self-moderation settings
+8. **Mood Journal** ✅ - Mood tracking (self-moderation features planned as future enhancement)
 9. **Memories** ✅ - Memory import, library browsing, and lore conversion (backend complete, chat integration pending)
 10. **Personas** ✅ - User persona/mask system (UI + CRUD complete, chat integration pending)
 11. **Analytics** ✅ - Usage insights & performance metrics (dashboard, bot analytics, usage stats)
@@ -645,11 +645,14 @@ When you add new Payload collections or modify existing ones:
   - Shows: Conversations, Engagement, Knowledge, Memories stats
   - Includes: Top Performing Bots, This Week stats, Recent Activity
   - Period selector (7/30/90 days) with refresh button
-- ✅ **Wellbeing Integration into Account Page**
-  - Added Wellbeing as second tab on Account page (6 tabs total)
-  - Created `src/components/account-wellbeing.tsx` with fantasy theme styling
-  - Removed standalone `/wellbeing` from navigation menus
-  - Wellbeing sub-pages still accessible (`/wellbeing/mood`, `/wellbeing/settings`, `/wellbeing/resources`)
+- ⚠️ **Self-Moderation Removed (Future Enhancement)**
+  - Removed self-moderation settings UI and API (`/wellbeing/settings`, `/api/wellbeing/settings`)
+  - Removed wellness gate from chat flow
+  - **Kept**: Mood journal as tab in Account page (6 tabs: Overview, Mood, Profile, Security, API Keys, Data)
+  - `/mood` route redirects to `/account?tab=mood`
+  - `/api/wellbeing/mood` endpoint preserved for mood tracking
+  - Self-moderation (usage limits, break reminders, night mode) planned as future enhancement
+  - SelfModeration collection schema preserved for future implementation
 - ✅ **Navigation Menu Updates**
   - Main nav bar: Home | Explore | Creators | Chat | Create
   - Chat and Create links require auth via Clerk's SignInButton
@@ -1187,6 +1190,7 @@ When you add new Payload collections or modify existing ones:
   - `/wellbeing/mood` - Mood journal
   - `/wellbeing/settings` - Self-moderation settings
 - ✅ Updated completion status to ~75%
+- ⚠️ **Note (2026-01-25):** Self-moderation features were later removed and marked as future enhancement. Only mood journal remains at `/mood`.
 
 ### **2026-01-04 Updates (Late Evening):**
 - ✅ **Phase 8 Complete: Legal & Documentation System**

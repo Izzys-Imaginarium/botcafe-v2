@@ -28,7 +28,7 @@ export const AccountDashboard = () => {
   }, [tabParam])
 
   return (
-    <div className="px-5 sm:px-6 lg:px-12 py-8 flex flex-col gap-6">
+    <div className="px-5 sm:px-6 lg:px-12 py-8 flex flex-col gap-6 overflow-x-hidden">
       <div className="flex flex-col lg:flex-row lg:items-center gap-y-2 lg:gap-y-0 justify-between">
         <h1 className="text-4xl font-display font-bold text-gold-rich">Account</h1>
         <Badge
@@ -44,7 +44,7 @@ export const AccountDashboard = () => {
           <ProfileSidebar />
         </div>
 
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-3 min-w-0">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 gap-1 h-auto lg:h-9 glass-rune border-gold-ancient/30">
               <TabsTrigger value="overview" className="text-xs lg:text-sm py-2 lg:py-1">

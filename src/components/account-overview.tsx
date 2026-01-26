@@ -167,7 +167,7 @@ export const AccountOverview = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-hidden">
       {/* Header with period selector */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -279,7 +279,7 @@ export const AccountOverview = () => {
                           </Badge>
                         )}
                       </div>
-                      <div className="flex items-center gap-4 text-xs text-parchment-dim">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-parchment-dim">
                         <span className="flex items-center gap-1">
                           <MessageCircle className="h-3 w-3" />
                           {bot.conversationCount}
@@ -363,11 +363,11 @@ export const AccountOverview = () => {
             </div>
 
             <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a140a]/20">
-              <div className="flex items-center gap-2">
-                <Bot className="h-5 w-5 text-forest-light" />
+              <div className="flex items-center gap-2 min-w-0">
+                <Bot className="h-5 w-5 text-forest-light shrink-0" />
                 <span className="text-sm text-parchment font-lore">Total Bots</span>
               </div>
-              <span className="font-bold text-parchment">
+              <span className="font-bold text-parchment whitespace-nowrap">
                 {data?.overview.totalBots || 0}
                 <span className="text-xs text-parchment/50 ml-1">
                   ({data?.overview.publicBots || 0} public)

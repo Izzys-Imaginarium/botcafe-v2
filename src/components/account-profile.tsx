@@ -143,7 +143,7 @@ export const AccountProfile = () => {
         throw new Error('Failed to update profile picture')
       }
 
-      const updateData = await updateResponse.json()
+      const updateData = (await updateResponse.json()) as { success?: boolean; preferences?: UserPreferences }
       if (updateData.success && updateData.preferences) {
         setPreferences(updateData.preferences)
         setOriginalPreferences(updateData.preferences)
@@ -174,7 +174,7 @@ export const AccountProfile = () => {
         throw new Error('Failed to remove profile picture')
       }
 
-      const data = await response.json()
+      const data = (await response.json()) as { success?: boolean; preferences?: UserPreferences }
       if (data.success && data.preferences) {
         setPreferences(data.preferences)
         setOriginalPreferences(data.preferences)

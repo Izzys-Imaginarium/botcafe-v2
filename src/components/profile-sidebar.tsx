@@ -17,7 +17,7 @@ export const ProfileSidebar = () => {
       try {
         const response = await fetch('/api/user/preferences')
         if (response.ok) {
-          const data = await response.json()
+          const data = (await response.json()) as { success?: boolean; preferences?: { avatar?: string } }
           if (data.success && data.preferences?.avatar) {
             setCustomAvatar(data.preferences.avatar)
           }

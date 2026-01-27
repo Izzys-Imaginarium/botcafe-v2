@@ -13,6 +13,7 @@ import { NextRequest } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
+import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { streamMessage, getDefaultModel, type ProviderName, type ChatMessage } from '@/lib/llm'
 import { buildChatContext } from '@/lib/chat/context-builder'
 import { generateConversationMemory } from '@/lib/chat/memory-service'
@@ -179,6 +180,9 @@ export async function GET(
           overrideAccess: true,
         })
 
+        // Get Cloudflare context for vector activation
+        const { env } = await getCloudflareContext()
+
         // Build context with knowledge activation
         // Pass user for profile context when no persona is selected
         const context = await buildChatContext({
@@ -189,6 +193,7 @@ export async function GET(
           persona,
           user: persona ? null : payloadUser, // Only use user profile when no persona
           recentMessages: recentMessages.docs.reverse(), // Oldest first
+          env: { VECTORIZE: env.VECTORIZE, AI: env.AI },
         })
 
         // Determine model to use

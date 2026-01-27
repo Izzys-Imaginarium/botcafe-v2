@@ -33,6 +33,10 @@ export interface OrchestrationContext {
   userMessage: string
   apiKeys: Map<number, { id: number; key: string; provider: ProviderName }>
   config?: Partial<MultiResponseConfig>
+  env?: {
+    VECTORIZE?: unknown
+    AI?: unknown
+  }
 }
 
 const DEFAULT_CONFIG: MultiResponseConfig = {
@@ -58,7 +62,7 @@ export async function* orchestrateMultiBotResponse(
   error?: string
 }, void, unknown> {
   const config = { ...DEFAULT_CONFIG, ...context.config }
-  const { payload, userId, conversation, bots, persona, recentMessages, userMessage, apiKeys } = context
+  const { payload, userId, conversation, bots, persona, recentMessages, userMessage, apiKeys, env } = context
 
   // Order bots
   let orderedBots = [...bots]
@@ -140,6 +144,7 @@ export async function* orchestrateMultiBotResponse(
         bot,
         persona,
         recentMessages: contextMessages,
+        env,
       })
 
       // Stream response from this bot

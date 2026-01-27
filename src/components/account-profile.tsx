@@ -121,11 +121,11 @@ export const AccountProfile = () => {
       })
 
       if (!uploadResponse.ok) {
-        const error = await uploadResponse.json()
-        throw new Error(error.error || 'Failed to upload image')
+        const errorData = (await uploadResponse.json()) as { error?: string }
+        throw new Error(errorData.error || 'Failed to upload image')
       }
 
-      const uploadData = await uploadResponse.json()
+      const uploadData = (await uploadResponse.json()) as { doc?: { id: number } }
       const mediaId = uploadData.doc?.id
 
       if (!mediaId) {

@@ -10,6 +10,13 @@ interface UserPreferencesUpdate {
   pronouns?: string
   custom_pronouns?: string
   description?: string
+  avatar?: number | null
+}
+
+interface MediaDoc {
+  id: number
+  url?: string
+  filename?: string
 }
 
 /**
@@ -48,6 +55,28 @@ export async function GET() {
 
     const payloadUser = payloadUsers.docs[0]
 
+    // Get avatar URL if avatar exists
+    let avatarUrl: string | null = null
+    let avatarId: number | null = null
+    if (payloadUser.avatar) {
+      const avatarData = payloadUser.avatar as MediaDoc | number
+      if (typeof avatarData === 'object' && avatarData.url) {
+        avatarUrl = avatarData.url
+        avatarId = avatarData.id
+      } else if (typeof avatarData === 'number') {
+        avatarId = avatarData
+        // Fetch the media to get URL
+        const media = await payload.findByID({
+          collection: 'media',
+          id: avatarData,
+          overrideAccess: true,
+        })
+        if (media?.url) {
+          avatarUrl = media.url as string
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       preferences: {
@@ -55,6 +84,8 @@ export async function GET() {
         pronouns: payloadUser.pronouns || '',
         custom_pronouns: payloadUser.custom_pronouns || '',
         description: payloadUser.description || '',
+        avatar: avatarUrl,
+        avatarId: avatarId,
       },
     })
   } catch (error: unknown) {
@@ -105,7 +136,7 @@ export async function PATCH(request: NextRequest) {
     const payloadUser = payloadUsers.docs[0]
 
     // Build update data - only include fields that are provided
-    const updateData: Record<string, string | null> = {}
+    const updateData: Record<string, string | number | null> = {}
 
     if (body.nickname !== undefined) {
       updateData.nickname = body.nickname || null
@@ -119,6 +150,9 @@ export async function PATCH(request: NextRequest) {
     if (body.description !== undefined) {
       updateData.description = body.description || null
     }
+    if (body.avatar !== undefined) {
+      updateData.avatar = body.avatar
+    }
 
     // Update user preferences
     const updatedUser = await payload.update({
@@ -128,6 +162,27 @@ export async function PATCH(request: NextRequest) {
       overrideAccess: true,
     })
 
+    // Get avatar URL for response
+    let updatedAvatarUrl: string | null = null
+    let updatedAvatarId: number | null = null
+    if (updatedUser.avatar) {
+      const avatarData = updatedUser.avatar as MediaDoc | number
+      if (typeof avatarData === 'object' && avatarData.url) {
+        updatedAvatarUrl = avatarData.url
+        updatedAvatarId = avatarData.id
+      } else if (typeof avatarData === 'number') {
+        updatedAvatarId = avatarData
+        const media = await payload.findByID({
+          collection: 'media',
+          id: avatarData,
+          overrideAccess: true,
+        })
+        if (media?.url) {
+          updatedAvatarUrl = media.url as string
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Preferences updated successfully',
@@ -136,6 +191,8 @@ export async function PATCH(request: NextRequest) {
         pronouns: updatedUser.pronouns || '',
         custom_pronouns: updatedUser.custom_pronouns || '',
         description: updatedUser.description || '',
+        avatar: updatedAvatarUrl,
+        avatarId: updatedAvatarId,
       },
     })
   } catch (error: unknown) {

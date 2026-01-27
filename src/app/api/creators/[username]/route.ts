@@ -117,17 +117,27 @@ export async function GET(
     const botIds = userBots.docs.map((bot) => bot.id)
 
     // Count actual conversations that include these bots
+    // We need to query differently because array field queries don't work reliably in D1/SQLite
     let realTotalConversations = 0
     if (botIds.length > 0) {
+      // Fetch conversations with depth to get bot_participation data
       const conversations = await payload.find({
         collection: 'conversation',
-        where: {
-          'bot_participation.bot_id': { in: botIds },
-        },
-        limit: 0, // Just get count
+        depth: 1,
+        limit: 1000, // Get a reasonable sample
         overrideAccess: true,
       })
-      realTotalConversations = conversations.totalDocs
+
+      // Count conversations that have any of the creator's bots
+      const botIdSet = new Set(botIds.map(id => String(id)))
+      realTotalConversations = conversations.docs.filter(conv => {
+        const participation = conv.bot_participation as Array<{ bot_id: number | { id: number } }> | undefined
+        if (!participation || !Array.isArray(participation)) return false
+        return participation.some(p => {
+          const botId = typeof p.bot_id === 'object' ? String(p.bot_id?.id) : String(p.bot_id)
+          return botIdSet.has(botId)
+        })
+      }).length
     }
 
     // Get all likes/favorites on the creator's bots

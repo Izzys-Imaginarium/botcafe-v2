@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -8,6 +9,28 @@ import { Separator } from '@/components/ui/separator'
 
 export const ProfileSidebar = () => {
   const { user, isLoaded } = useUser()
+  const [customAvatar, setCustomAvatar] = useState<string | null>(null)
+
+  // Fetch custom avatar from user preferences
+  useEffect(() => {
+    const fetchCustomAvatar = async () => {
+      try {
+        const response = await fetch('/api/user/preferences')
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success && data.preferences?.avatar) {
+            setCustomAvatar(data.preferences.avatar)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch custom avatar:', error)
+      }
+    }
+
+    if (isLoaded && user) {
+      fetchCustomAvatar()
+    }
+  }, [isLoaded, user])
 
   if (!isLoaded) {
     return (
@@ -52,7 +75,7 @@ export const ProfileSidebar = () => {
       <CardHeader className="text-center">
         <div className="relative mx-auto">
           <Avatar className="h-20 w-20 border-2 border-gold-ancient/30">
-            <AvatarImage src={user.imageUrl} />
+            <AvatarImage src={customAvatar || user.imageUrl} />
             <AvatarFallback className="bg-[#0a140a] text-gold-rich font-display text-xl">
               {getInitials()}
             </AvatarFallback>

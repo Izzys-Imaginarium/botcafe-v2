@@ -509,13 +509,19 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
                 id="slug"
                 placeholder="bot-name-for-url"
                 value={botData.slug}
-                onChange={(e) => handleInputChange('slug', e.target.value)}
+                onChange={(e) => {
+                  // Sanitize slug: lowercase, replace spaces/special chars with hyphens
+                  const sanitized = e.target.value
+                    .toLowerCase()
+                    .replace(/[^a-z0-9-]/g, '-')
+                    .replace(/-+/g, '-')
+                  handleInputChange('slug', sanitized)
+                }}
                 className="glass-rune"
-                disabled={mode === 'edit'} // Can't change slug in edit mode
               />
               <p className="text-sm text-muted-foreground">
                 This will be your bot's unique URL: {creatorUsername || 'username'}/{botData.slug || 'your-bot-name'}
-                {mode === 'edit' && ' (cannot be changed)'}
+                {mode === 'edit' && ' (changing this will update your bot\'s URL)'}
               </p>
             </div>
 

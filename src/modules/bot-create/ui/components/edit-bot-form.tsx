@@ -53,7 +53,10 @@ export function EditBotForm({ username, botSlug }: EditBotFormProps) {
           is_public: data.is_public || false,
           slug: data.slug || '',
           speech_examples: data.speech_examples?.map((ex: { example: string }) => ex.example) || [''],
-          knowledge_collections: data.knowledge_collections || [],
+          // Normalize knowledge_collections - they may be returned as objects or IDs
+          knowledge_collections: (data.knowledge_collections || []).map(
+            (kc: number | { id: number }) => typeof kc === 'object' ? kc.id : kc
+          ),
           picture: data.picture || null,
           personality_traits: {
             tone: data.personality_traits?.tone || '',

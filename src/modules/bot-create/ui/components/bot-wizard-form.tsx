@@ -137,6 +137,9 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false)
   const [picturePreview, setPicturePreview] = useState<string | null>(null)
 
+  // Creator username for URL display
+  const [creatorUsername, setCreatorUsername] = useState<string | null>(null)
+
   // Knowledge collections state
   interface KnowledgeCollection {
     id: string | number
@@ -183,6 +186,22 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
       fetchCollections()
     }
   }, [currentStep, fetchCollections])
+
+  // Fetch creator profile to get username for URL display
+  useEffect(() => {
+    const fetchCreatorProfile = async () => {
+      try {
+        const response = await fetch('/api/creators/me')
+        const data = await response.json() as { success?: boolean; creator?: { username?: string } }
+        if (data.success && data.creator?.username) {
+          setCreatorUsername(data.creator.username)
+        }
+      } catch (error) {
+        console.error('Error fetching creator profile:', error)
+      }
+    }
+    fetchCreatorProfile()
+  }, [])
 
   // Toggle collection selection
   const toggleCollectionSelection = (collectionId: string | number) => {
@@ -495,7 +514,7 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
                 disabled={mode === 'edit'} // Can't change slug in edit mode
               />
               <p className="text-sm text-muted-foreground">
-                This will be your bot's unique URL: /bot/{botData.slug || 'your-bot-name'}
+                This will be your bot's unique URL: {creatorUsername || 'username'}/{botData.slug || 'your-bot-name'}
                 {mode === 'edit' && ' (cannot be changed)'}
               </p>
             </div>

@@ -1315,8 +1315,35 @@ When you add new Payload collections or modify existing ones:
 
 ---
 
-**Last Updated**: 2026-01-26
-**Version**: 3.23
+## ⚠️ **KNOWN ISSUES / TECHNICAL DEBT**
+
+### **Image Upload Issues (Sharp Library) - HIGH PRIORITY**
+**Status:** Workaround in place, permanent fix needed
+
+**Problem:**
+Some PNG images fail to upload through Payload CMS on Cloudflare Workers because the `sharp` library (used for image processing) is not available in the Workers runtime. The error is often silent, providing no useful feedback to users. This affects both the bot wizard and user profile picture uploads.
+
+**Current Workarounds (2026-01-27):**
+- Disabled sharp-dependent features in Media collection config (`crop`, `focalPoint`, `imageSizes`, `adminThumbnail`, etc.)
+- Added better error logging in the image upload API (`/api/upload/image`)
+- Added client-side file validation in bot wizard form (size and type checks)
+- Fixed UI to show accurate 5MB limit (was incorrectly showing 10MB)
+
+**Permanent Fix Options (To Investigate):**
+1. **Use a Cloudflare-compatible image processing library** - Investigate alternatives like `@cloudflare/images` or WebAssembly-based solutions
+2. **Offload image processing** - Use Cloudflare Images API or a separate image processing service
+3. **Pre-process images client-side** - Use browser APIs (Canvas) to normalize images before upload
+4. **Wait for Payload CMS updates** - Monitor for Workers-compatible image handling in future Payload versions
+
+**Related Files:**
+- `src/collections/Media.ts` - Media collection config
+- `src/app/api/upload/image/route.ts` - Image upload API
+- `src/modules/bot-create/ui/components/bot-wizard-form.tsx` - Bot creation form
+
+---
+
+**Last Updated**: 2026-01-27
+**Version**: 3.24
 **Total Tasks**: 184
 **Completed**: 178
 **Progress**: ~97% (Memory edit/delete for tomes complete)

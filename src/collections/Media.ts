@@ -20,9 +20,8 @@ export const Media: CollectionConfig = {
     crop: false,
     focalPoint: false,
     // Disable image size generation (requires sharp)
+    // With no imageSizes, admin thumbnails won't be generated
     imageSizes: [],
-    // Disable admin thumbnail generation
-    adminThumbnail: false,
     // Disable resizing and format conversion
     resizeOptions: undefined,
     formatOptions: undefined,

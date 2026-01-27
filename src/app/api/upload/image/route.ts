@@ -75,20 +75,51 @@ export async function POST(request: NextRequest) {
 
     const payloadUser = users.docs[0]
 
-    // Create media entry (this will upload to R2 automatically)
-    const mediaEntry = await payload.create({
-      collection: 'media',
-      data: {
-        alt: alt || `Image uploaded by ${payloadUser.email}`,
-      },
-      file: {
-        data: buffer,
-        mimetype: file.type,
-        name: file.name,
-        size: file.size,
-      },
-      user: payloadUser,
+    // Log upload attempt for debugging
+    console.log('[Image Upload] Attempting upload:', {
+      filename: file.name,
+      size: file.size,
+      type: file.type,
+      bufferLength: buffer.length,
     })
+
+    // Create media entry (this will upload to R2 automatically)
+    let mediaEntry
+    try {
+      mediaEntry = await payload.create({
+        collection: 'media',
+        data: {
+          alt: alt || `Image uploaded by ${payloadUser.email}`,
+        },
+        file: {
+          data: buffer,
+          mimetype: file.type,
+          name: file.name,
+          size: file.size,
+        },
+        user: payloadUser,
+      })
+    } catch (payloadError: any) {
+      console.error('[Image Upload] Payload create error:', payloadError)
+      console.error('[Image Upload] Error details:', {
+        name: payloadError.name,
+        message: payloadError.message,
+        data: payloadError.data,
+        errors: payloadError.errors,
+      })
+
+      // Provide a more specific error message
+      let errorMessage = 'Failed to process image'
+      if (payloadError.message?.includes('sharp')) {
+        errorMessage = 'Image processing failed. Try a different image or convert to JPG.'
+      } else if (payloadError.message) {
+        errorMessage = payloadError.message
+      }
+
+      return NextResponse.json({ error: errorMessage }, { status: 500 })
+    }
+
+    console.log('[Image Upload] Success:', { id: mediaEntry.id, url: mediaEntry.url })
 
     // Return success with media data in Payload format
     return NextResponse.json({

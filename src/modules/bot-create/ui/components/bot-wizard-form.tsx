@@ -255,6 +255,22 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      // Validate file size (5MB limit)
+      const MAX_SIZE = 5 * 1024 * 1024
+      if (file.size > MAX_SIZE) {
+        toast.error(`File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Maximum size is 5MB.`)
+        e.target.value = '' // Reset the input
+        return
+      }
+
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+      if (!validTypes.includes(file.type)) {
+        toast.error('Invalid file type. Please use PNG, JPG, GIF, or WebP.')
+        e.target.value = ''
+        return
+      }
+
       setBotData(prev => ({ ...prev, picture: file }))
 
       const reader = new FileReader()
@@ -1002,7 +1018,7 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
                     </label>
                   </Button>
                   <p className="text-sm text-parchment-dim mt-2">
-                    PNG, JPG, GIF up to 10MB
+                    PNG, JPG, GIF, WebP up to 5MB
                   </p>
                 </div>
               )}

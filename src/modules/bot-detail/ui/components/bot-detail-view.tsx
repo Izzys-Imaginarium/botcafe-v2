@@ -262,57 +262,57 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
         <div className="mb-8">
           <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
             {/* Avatar */}
-            <Avatar className="h-32 w-32 border-4 border-gold-ancient/30">
+            <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-gold-ancient/30 flex-shrink-0">
               <AvatarImage src={getPictureUrl(bot.picture)} />
-              <AvatarFallback className="bg-[#0a140a] text-gold-rich font-display text-3xl">
+              <AvatarFallback className="bg-[#0a140a] text-gold-rich font-display text-2xl sm:text-3xl">
                 {getInitials(bot.name)}
               </AvatarFallback>
             </Avatar>
 
             {/* Bot Info */}
-            <div className="flex-1">
-              <div className="flex items-start justify-between gap-4 mb-2">
-                <div>
-                  <h1 className="text-4xl font-bold text-gold-rich font-display mb-2">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2 sm:gap-4 mb-2">
+                <div className="min-w-0">
+                  <h1 className="text-2xl sm:text-4xl font-bold text-gold-rich font-display mb-2 break-words">
                     {bot.name}
                     {bot.gender && (
-                      <span className="ml-2 text-2xl text-parchment-dim">
+                      <span className="ml-2 text-lg sm:text-2xl text-parchment-dim">
                         {getGenderIcon(bot.gender)}
                       </span>
                     )}
                   </h1>
-                  <p className="text-parchment-dim font-lore">
+                  <p className="text-parchment-dim font-lore text-sm sm:text-base">
                     Created by <span className="text-gold-rich">{bot.creator_display_name}</span>
                   </p>
                 </div>
 
                 {bot.is_public && (
-                  <Badge variant="secondary" className="bg-gold-ancient/20 text-gold-rich border-gold-ancient/30">
+                  <Badge variant="secondary" className="bg-gold-ancient/20 text-gold-rich border-gold-ancient/30 flex-shrink-0">
                     Public
                   </Badge>
                 )}
               </div>
 
               {/* Stats */}
-              <div className="flex items-center gap-6 mt-4">
-                <div className="flex items-center gap-2">
-                  <Heart className="h-5 w-5 text-magic-glow" />
-                  <span className="text-parchment font-lore">{likesCount}</span>
+              <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-4">
+                <div className="flex items-center gap-1.5">
+                  <Heart className="h-4 w-4 sm:h-5 sm:w-5 text-magic-glow" />
+                  <span className="text-parchment font-lore text-sm sm:text-base">{likesCount}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Star className="h-5 w-5 text-magic-teal" />
-                  <span className="text-parchment font-lore">{favoritesCount}</span>
+                <div className="flex items-center gap-1.5">
+                  <Star className="h-4 w-4 sm:h-5 sm:w-5 text-magic-teal" />
+                  <span className="text-parchment font-lore text-sm sm:text-base">{favoritesCount}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-parchment-dim" />
-                  <span className="text-parchment-dim font-lore text-sm">
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-parchment-dim" />
+                  <span className="text-parchment-dim font-lore text-xs sm:text-sm">
                     {new Date(bot.created_date).toLocaleDateString()}
                   </span>
                 </div>
                 {bot.age && (
-                  <div className="flex items-center gap-2">
-                    <User className="h-5 w-5 text-parchment-dim" />
-                    <span className="text-parchment-dim font-lore text-sm">
+                  <div className="flex items-center gap-1.5">
+                    <User className="h-4 w-4 sm:h-5 sm:w-5 text-parchment-dim" />
+                    <span className="text-parchment-dim font-lore text-xs sm:text-sm">
                       Age {bot.age}
                     </span>
                   </div>
@@ -320,17 +320,17 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3 mt-6">
+              <div className="flex flex-wrap gap-2 sm:gap-3 mt-6">
                 <Button
                   onClick={handleStartChat}
                   className="bg-forest hover:bg-forest/90 text-white"
-                  size="lg"
+                  size="default"
                   disabled={isStartingChat}
                 >
                   {isStartingChat ? (
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
-                    <MessageSquare className="mr-2 h-5 w-5" />
+                    <MessageSquare className="mr-2 h-4 w-4" />
                   )}
                   {isStartingChat ? 'Starting...' : 'Start Chat'}
                 </Button>
@@ -339,10 +339,10 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
                   onClick={handleLike}
                   variant="outline"
                   className={`ornate-border ${liked ? 'bg-magic-glow/10 border-magic-glow/50 text-magic-glow' : ''}`}
-                  size="lg"
+                  size="default"
                   disabled={isLiking}
                 >
-                  <Heart className={`mr-2 h-5 w-5 ${liked ? 'fill-current' : ''}`} />
+                  <Heart className={`mr-2 h-4 w-4 ${liked ? 'fill-current' : ''}`} />
                   {liked ? 'Liked' : 'Like'}
                 </Button>
 
@@ -350,10 +350,10 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
                   onClick={handleFavorite}
                   variant="outline"
                   className={`ornate-border ${favorited ? 'bg-magic-teal/10 border-magic-teal/50 text-magic-teal' : ''}`}
-                  size="lg"
+                  size="default"
                   disabled={isFavoriting}
                 >
-                  <Star className={`mr-2 h-5 w-5 ${favorited ? 'fill-current' : ''}`} />
+                  <Star className={`mr-2 h-4 w-4 ${favorited ? 'fill-current' : ''}`} />
                   {favorited ? 'Favorited' : 'Favorite'}
                 </Button>
 
@@ -362,9 +362,9 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
                     onClick={handleEdit}
                     variant="outline"
                     className="ornate-border"
-                    size="lg"
+                    size="default"
                   >
-                    <Edit className="mr-2 h-5 w-5" />
+                    <Edit className="mr-2 h-4 w-4" />
                     Edit Bot
                   </Button>
                 )}

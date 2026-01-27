@@ -234,8 +234,17 @@ export async function PATCH(
       )
 
       if (!alreadyInConvo) {
+        // Normalize existing records to ensure proper format for Payload update
+        const normalizedCurrentBots = currentBots.map((bp) => ({
+          id: bp.id, // Preserve existing record ID
+          bot_id: typeof bp.bot_id === 'object' ? bp.bot_id.id : bp.bot_id,
+          role: bp.role,
+          is_active: bp.is_active,
+          joined_at: bp.joined_at,
+        }))
+
         updateData.bot_participation = [
-          ...currentBots,
+          ...normalizedCurrentBots,
           {
             bot_id: addBotId,
             role: 'secondary',
@@ -274,10 +283,19 @@ export async function PATCH(
         )
       }
 
-      updateData.bot_participation = currentBots.filter(
-        (bp) =>
-          (typeof bp.bot_id === 'object' ? bp.bot_id.id : bp.bot_id) !== removeBotId
-      )
+      // Normalize and filter records to ensure proper format for Payload update
+      updateData.bot_participation = currentBots
+        .filter(
+          (bp) =>
+            (typeof bp.bot_id === 'object' ? bp.bot_id.id : bp.bot_id) !== removeBotId
+        )
+        .map((bp) => ({
+          id: bp.id, // Preserve existing record ID
+          bot_id: typeof bp.bot_id === 'object' ? bp.bot_id.id : bp.bot_id,
+          role: bp.role,
+          is_active: bp.is_active,
+          joined_at: bp.joined_at,
+        }))
 
       // Update conversation type if going from multi to single
       if (currentBots.length === 2) {

@@ -1794,8 +1794,8 @@
           "autoincrement": false,
           "default": 0
         },
-        "usage_analytics_count": {
-          "name": "usage_analytics_count",
+        "usage_analytics_citation_count": {
+          "name": "usage_analytics_citation_count",
           "type": "numeric",
           "primaryKey": false,
           "notNull": false,

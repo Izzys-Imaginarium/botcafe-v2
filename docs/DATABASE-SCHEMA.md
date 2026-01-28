@@ -69,6 +69,8 @@ File uploads and media management.
 | `filesize` | number | File size in bytes |
 | `width` | number | Image width (if applicable) |
 | `height` | number | Image height (if applicable) |
+| `focal_x` | number | Focal point X coordinate (Payload internal) |
+| `focal_y` | number | Focal point Y coordinate (Payload internal) |
 
 ---
 

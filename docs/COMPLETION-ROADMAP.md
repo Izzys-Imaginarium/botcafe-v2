@@ -1364,8 +1364,73 @@ Some PNG images fail to upload through Payload CMS on Cloudflare Workers because
 
 ---
 
+### **Conversation Bot-Tracking Dual Format - MEDIUM PRIORITY**
+**Status:** Workaround in place, data migration recommended
+
+**Problem:**
+Conversations track participating bots in TWO different formats:
+1. **`bot_participation` array** (newer format) - Array of objects with `{ bot_id, role, is_active, joined_at }`
+2. **`participants.bots` JSON field** (older format) - Simple array of bot IDs in a JSON blob
+
+This requires all analytics/stats code to check BOTH formats when counting conversations per bot or per creator. Code is duplicated across multiple files.
+
+**Current Workaround (2026-01-27):**
+- Updated `/api/analytics/route.ts`, `/api/creators/route.ts`, and `/api/creators/[username]/route.ts` to check both formats
+- Filtering logic checks `bot_participation` first, then falls back to `participants.bots`
+
+**Permanent Fix:**
+1. **Data migration** - Write a migration script to convert all `participants.bots` entries to `bot_participation` array format
+2. **Remove dual-format checks** - Once migrated, simplify code to only check `bot_participation`
+3. **Deprecate `participants.bots`** - Eventually remove the JSON field or repurpose it for other metadata
+
+**Related Files:**
+- `src/app/api/analytics/route.ts` - Account overview stats
+- `src/app/api/creators/route.ts` - Creator directory stats
+- `src/app/api/creators/[username]/route.ts` - Individual creator profile stats
+- `src/app/api/chat/conversations/route.ts` - Conversation creation (uses `bot_participation`)
+- `src/collections/Conversation.ts` - Schema definition
+
+---
+
+### **D1/SQLite Nested Array Query Limitation - LOW PRIORITY**
+**Status:** Architectural limitation, workaround in place
+
+**Problem:**
+Payload CMS with D1/SQLite adapter doesn't support querying nested fields within arrays. Queries like `'bot_participation.bot_id': { in: botIds }` don't work reliably.
+
+**Impact:**
+- Must fetch ALL conversations and filter in application code
+- Current limit is 5000 conversations per query
+- Doesn't scale well for large datasets
+- Increases memory usage and response time
+
+**Current Workaround:**
+```typescript
+// Instead of this (doesn't work):
+where: { 'bot_participation.bot_id': { in: botIds } }
+
+// We do this:
+const all = await payload.find({ collection: 'conversation', limit: 5000 })
+const filtered = all.docs.filter(conv =>
+  conv.bot_participation?.some(bp => botIds.includes(bp.bot_id))
+)
+```
+
+**Potential Solutions:**
+1. **Add denormalized fields** - Store bot IDs in a comma-separated text field for querying
+2. **Use separate junction table** - Create `ConversationBots` collection for many-to-many relationship
+3. **Monitor Payload updates** - D1 adapter may improve nested array support
+4. **Implement caching** - Cache conversation counts to avoid repeated full-table scans
+
+**Related Files:**
+- `src/app/api/analytics/route.ts`
+- `src/app/api/creators/route.ts`
+- `src/app/api/creators/[username]/route.ts`
+
+---
+
 **Last Updated**: 2026-01-27
-**Version**: 3.25
+**Version**: 3.26
 **Total Tasks**: 184
 **Completed**: 178
 **Progress**: ~97% (Memory edit/delete for tomes complete)

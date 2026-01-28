@@ -792,10 +792,17 @@ When you add new Payload collections or modify existing ones:
 - ✅ **Analytics & Creators Conversation Count Fix**
   - Fixed "Unknown Bot" showing in Account Overview recent activity
   - Fixed bots showing 0 conversations in "Top Performing Bots"
-  - Fixed creators showing 0.0K chats in Creator Directory
   - Root cause: Code was using non-existent `conversation.bot` field instead of `bot_participation` array
   - Updated `/api/analytics/route.ts` to correctly extract bot from `bot_participation[0].bot_id`
   - Updated `/api/creators/route.ts` to fetch all conversations and filter by `bot_participation` (D1/SQLite doesn't support nested array queries)
+- ✅ **Creator Stats Number Formatting Fix**
+  - Fixed creators showing "0.0K" chats when actual count is single digits (e.g., 3 or 7)
+  - Root cause: UI was always dividing by 1000 (`(value/1000).toFixed(1) + 'K'`)
+  - Added `formatCompactNumber()` helper that only uses K/M suffix when appropriate:
+    - Values < 1000: show raw number (e.g., "7")
+    - Values >= 1000: show K notation (e.g., "1.2K")
+    - Values >= 1,000,000: show M notation (e.g., "1.5M")
+  - Updated: `creator-directory-view.tsx`, `creator-profile-view.tsx`
 - ✅ **Media Focal Point Migration**
   - Added `focal_x` and `focal_y` columns to Media table
   - Required by Payload CMS even when focalPoint is disabled

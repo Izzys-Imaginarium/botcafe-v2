@@ -439,22 +439,22 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
       })
 
       const data = (await response.json()) as {
-        success?: boolean
-        media?: { id: number; url: string }
+        doc?: { id: number; url: string }
+        error?: string
         message?: string
       }
 
-      if (data.success && data.media) {
+      if (data.doc && data.doc.id && data.doc.url) {
         if (type === 'avatar') {
-          setAvatarUrl(data.media.url)
-          updateNestedFormData('profile_media', 'avatar', data.media.id)
+          setAvatarUrl(data.doc.url)
+          updateNestedFormData('profile_media', 'avatar', data.doc.id)
         } else {
-          setBannerUrl(data.media.url)
-          updateNestedFormData('profile_media', 'banner_image', data.media.id)
+          setBannerUrl(data.doc.url)
+          updateNestedFormData('profile_media', 'banner_image', data.doc.id)
         }
         toast.success(`${type === 'avatar' ? 'Profile picture' : 'Banner'} uploaded successfully`)
       } else {
-        toast.error(data.message || 'Failed to upload image')
+        toast.error(data.error || data.message || 'Failed to upload image')
       }
     } catch (error) {
       console.error('Error uploading image:', error)

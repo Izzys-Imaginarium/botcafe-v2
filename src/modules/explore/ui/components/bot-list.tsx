@@ -36,9 +36,11 @@ export const BotList = () => {
     const sort = searchParams.get('sort')
     const search = searchParams.get('search')
     const classifications = searchParams.get('classifications')
+    const excludeOwn = searchParams.get('excludeOwn')
     if (sort) params.sort = sort
     if (search) params.search = search
     if (classifications) params.classifications = classifications
+    if (excludeOwn) params.excludeOwn = excludeOwn
     return params
   }, [searchParams])
 

@@ -195,10 +195,11 @@ export async function PATCH(
     // Transform classifications array format if provided
     // Frontend sends: ['fantasy-rpg', 'creative-writing']
     // Payload expects: [{ classification: 'fantasy-rpg' }, { classification: 'creative-writing' }]
+    type ClassificationValue = 'conversational-ai' | 'creative-writing' | 'fantasy-rpg' | 'gaming' | 'fanfic' | 'oc' | 'dead-dove' | 'comedy-parody' | 'long-form' | 'one-shot'
     if (body.classifications !== undefined) {
       updateData.classifications = body.classifications
         .filter((c: string) => c && c.trim())
-        .map((c: string) => ({ classification: c }))
+        .map((c: string) => ({ classification: c as ClassificationValue }))
     }
 
     // Update the bot

@@ -222,10 +222,11 @@ export async function POST(request: NextRequest) {
     // Transform classifications array format
     // Frontend sends: ['fantasy-rpg', 'creative-writing']
     // Payload expects: [{ classification: 'fantasy-rpg' }, { classification: 'creative-writing' }]
+    type ClassificationValue = 'conversational-ai' | 'creative-writing' | 'fantasy-rpg' | 'gaming' | 'fanfic' | 'oc' | 'dead-dove' | 'comedy-parody' | 'long-form' | 'one-shot'
     const transformedClassifications = body.classifications
       ? body.classifications
           .filter((c: string) => c && c.trim())
-          .map((c: string) => ({ classification: c }))
+          .map((c: string) => ({ classification: c as ClassificationValue }))
       : []
 
     // Clean personality_traits - remove empty strings (Payload select fields don't accept empty strings)

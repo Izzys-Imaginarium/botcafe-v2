@@ -56,7 +56,7 @@ export async function GET() {
       overrideAccess: true,
     })
 
-    // Fetch conversations (with depth to populate bot relationship)
+    // Fetch conversations (with depth to populate bot_participation.bot_id relationship)
     const conversations = await payload.find({
       collection: 'conversation',
       where: {
@@ -64,7 +64,7 @@ export async function GET() {
       },
       sort: '-createdAt',
       limit: 100,
-      depth: 1, // Populate bot relationship to get bot name
+      depth: 2, // Populate bot_participation.bot_id relationship to get bot name
       overrideAccess: true,
     })
 
@@ -112,12 +112,21 @@ export async function GET() {
       const botInteractions = interactions.docs.filter(
         (i) => ((i as any).bot as any)?.id === bot.id || (i as any).bot === bot.id
       )
+      // Count conversations where this bot appears in bot_participation array
+      const botConversationCount = conversations.docs.filter((conv) => {
+        const participation = (conv as any).bot_participation as any[] | undefined
+        if (!participation || !Array.isArray(participation)) return false
+        return participation.some((p) => {
+          const botId = p.bot_id?.id || p.bot_id
+          return botId === bot.id
+        })
+      }).length
       return {
         id: bot.id,
         name: bot.name,
         avatar: ((bot as any).avatar as any)?.url || null,
         is_public: bot.is_public,
-        conversationCount: (bot as any).conversation_count || 0,
+        conversationCount: botConversationCount,
         likes: botInteractions.filter((i) => (i as any).liked === true).length,
         favorites: botInteractions.filter((i) => (i as any).favorited === true).length,
         rating: (bot as any).rating || 0,
@@ -140,11 +149,17 @@ export async function GET() {
       ...conversations.docs
         .filter((c) => new Date(c.createdAt) > thirtyDaysAgo)
         .slice(0, 10)
-        .map((c) => ({
-          type: 'conversation' as const,
-          name: ((c as any).bot as any)?.name || 'Unknown Bot',
-          date: c.createdAt,
-        })),
+        .map((c) => {
+          // Get bot name from bot_participation array (first/primary bot)
+          const participation = (c as any).bot_participation as any[] | undefined
+          const primaryBot = participation?.[0]?.bot_id
+          const botName = primaryBot?.name || (c as any).title || 'Unknown Bot'
+          return {
+            type: 'conversation' as const,
+            name: botName,
+            date: c.createdAt,
+          }
+        }),
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 20)
 

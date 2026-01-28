@@ -56,7 +56,7 @@ export async function GET() {
       overrideAccess: true,
     })
 
-    // Fetch conversations
+    // Fetch conversations (with depth to populate bot relationship)
     const conversations = await payload.find({
       collection: 'conversation',
       where: {
@@ -64,6 +64,7 @@ export async function GET() {
       },
       sort: '-createdAt',
       limit: 100,
+      depth: 1, // Populate bot relationship to get bot name
       overrideAccess: true,
     })
 

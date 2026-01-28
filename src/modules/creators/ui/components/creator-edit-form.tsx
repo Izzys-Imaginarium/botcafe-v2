@@ -66,15 +66,15 @@ interface CreatorFormData {
 
 const specialtyOptions = [
   { value: 'conversational-ai', label: 'Conversational AI' },
-  { value: 'fantasy-rpg', label: 'Fantasy/RPG Bots' },
-  { value: 'educational', label: 'Educational Bots' },
   { value: 'creative-writing', label: 'Creative Writing' },
-  { value: 'technical-support', label: 'Technical Support' },
-  { value: 'entertainment', label: 'Entertainment' },
-  { value: 'productivity', label: 'Productivity' },
-  { value: 'mental-health', label: 'Mental Health' },
+  { value: 'fantasy-rpg', label: 'Fantasy/RPG' },
   { value: 'gaming', label: 'Gaming' },
-  { value: 'business', label: 'Business/Customer Service' },
+  { value: 'fanfic', label: 'Fanfic' },
+  { value: 'oc', label: 'OC (Original Characters)' },
+  { value: 'dead-dove', label: 'Dead Dove' },
+  { value: 'comedy-parody', label: 'Comedy/Parody' },
+  { value: 'long-form', label: 'Long-form' },
+  { value: 'one-shot', label: 'One-shot' },
 ]
 
 const creatorTypeOptions = [

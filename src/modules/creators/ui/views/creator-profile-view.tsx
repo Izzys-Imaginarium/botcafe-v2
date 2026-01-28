@@ -93,15 +93,15 @@ interface CreatorProfile {
 
 const specialtyLabels: Record<string, string> = {
   'conversational-ai': 'Conversational AI',
-  'fantasy-rpg': 'Fantasy/RPG',
-  'educational': 'Educational',
   'creative-writing': 'Creative Writing',
-  'technical-support': 'Technical Support',
-  'entertainment': 'Entertainment',
-  'productivity': 'Productivity',
-  'mental-health': 'Mental Health',
+  'fantasy-rpg': 'Fantasy/RPG',
   'gaming': 'Gaming',
-  'business': 'Business',
+  'fanfic': 'Fanfic',
+  'oc': 'OC (Original Characters)',
+  'dead-dove': 'Dead Dove',
+  'comedy-parody': 'Comedy/Parody',
+  'long-form': 'Long-form',
+  'one-shot': 'One-shot',
 }
 
 const experienceLevelLabels: Record<string, string> = {

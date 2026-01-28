@@ -58,6 +58,14 @@ export default async function EditPersonaPage({ params }: EditPersonaPageProps) 
     redirect('/personas')
   }
 
+  // Extract avatar - it may be a Media object (with depth: 2) or just an ID
+  const avatarData = persona.appearance?.avatar
+  const avatarValue = avatarData
+    ? typeof avatarData === 'object'
+      ? avatarData // Pass the full object so form can extract URL for preview
+      : avatarData
+    : null
+
   // Transform persona data for form
   const initialData = {
     name: persona.name,
@@ -66,6 +74,7 @@ export default async function EditPersonaPage({ params }: EditPersonaPageProps) 
     age: persona.age || null,
     pronouns: persona.pronouns || null,
     custom_pronouns: persona.custom_pronouns || null,
+    appearance: { avatar: avatarValue },
     interaction_preferences: persona.interaction_preferences || {},
     is_default: persona.is_default || false,
     custom_instructions: persona.custom_instructions || '',

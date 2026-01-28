@@ -23,11 +23,16 @@ import {
   MessageSquare,
   Settings,
   Plus,
-  X
+  X,
+  ImageIcon,
+  Upload
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+
+// Avatar can be a File (new upload), number (existing ID), or Media object (from API with depth)
+type AvatarValue = File | number | { id: number; url?: string } | null
 
 interface PersonaFormData {
   name: string
@@ -36,6 +41,9 @@ interface PersonaFormData {
   age?: number | null
   pronouns?: string | null
   custom_pronouns?: string | null
+  appearance?: {
+    avatar?: AvatarValue
+  }
   interaction_preferences: {
     preferred_topics?: Array<{ topic?: string; id?: string }>
     avoid_topics?: Array<{ topic?: string; id?: string }>
@@ -57,6 +65,9 @@ const defaultFormData: PersonaFormData = {
   age: null,
   pronouns: null,
   custom_pronouns: null,
+  appearance: {
+    avatar: null,
+  },
   interaction_preferences: {
     preferred_topics: [],
     avoid_topics: [],
@@ -89,10 +100,24 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
   const [formData, setFormData] = useState<PersonaFormData>({
     ...defaultFormData,
     ...initialData,
+    appearance: {
+      ...defaultFormData.appearance,
+      ...initialData?.appearance,
+    },
     interaction_preferences: {
       ...defaultFormData.interaction_preferences,
       ...initialData?.interaction_preferences,
     },
+  })
+
+  // Avatar preview state
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(() => {
+    // Initialize preview from existing avatar URL if editing (Media object has url property)
+    const avatar = initialData?.appearance?.avatar
+    if (avatar && typeof avatar === 'object' && !(avatar instanceof File) && 'url' in avatar) {
+      return avatar.url || null
+    }
+    return null
   })
 
   // Topic input state
@@ -115,6 +140,42 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
     setIsSubmitting(true)
 
     try {
+      let avatarId: number | undefined = undefined
+
+      // Upload avatar if it's a new file
+      if (formData.appearance?.avatar instanceof File) {
+        const uploadFormData = new FormData()
+        uploadFormData.append('file', formData.appearance.avatar)
+        uploadFormData.append('alt', `${formData.name} persona avatar`)
+
+        const uploadResponse = await fetch('/api/upload/image', {
+          method: 'POST',
+          body: uploadFormData,
+        })
+
+        if (uploadResponse.ok) {
+          const uploadData = (await uploadResponse.json()) as { doc?: { id: number } }
+          avatarId = uploadData.doc?.id
+        } else {
+          const errorData = (await uploadResponse.json()) as { error?: string }
+          toast.error(errorData.error || 'Failed to upload avatar')
+          setIsSubmitting(false)
+          return
+        }
+      } else if (typeof formData.appearance?.avatar === 'number') {
+        // Keep existing avatar ID
+        avatarId = formData.appearance.avatar
+      } else if (formData.appearance?.avatar && typeof formData.appearance.avatar === 'object' && 'id' in formData.appearance.avatar) {
+        // Avatar is a Media object from API - extract ID
+        avatarId = formData.appearance.avatar.id
+      }
+
+      // Build payload with avatar ID
+      const payload = {
+        ...formData,
+        appearance: avatarId ? { avatar: avatarId } : { avatar: null },
+      }
+
       const url = mode === 'create' ? '/api/personas' : `/api/personas/${personaId}`
       const method = mode === 'create' ? 'POST' : 'PUT'
 
@@ -123,7 +184,7 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       })
 
       const data = (await response.json()) as { success?: boolean; persona?: any; message?: string }
@@ -186,6 +247,47 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
         avoid_topics: (prev.interaction_preferences.avoid_topics || []).filter(t => t.topic !== topicToRemove),
       },
     }))
+  }
+
+  // Avatar handlers
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate file size (5MB limit)
+      const MAX_SIZE = 5 * 1024 * 1024
+      if (file.size > MAX_SIZE) {
+        toast.error(`File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Maximum size is 5MB.`)
+        e.target.value = ''
+        return
+      }
+
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+      if (!validTypes.includes(file.type)) {
+        toast.error('Invalid file type. Please use PNG, JPG, GIF, or WebP.')
+        e.target.value = ''
+        return
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        appearance: { ...prev.appearance, avatar: file },
+      }))
+
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleRemoveAvatar = () => {
+    setFormData(prev => ({
+      ...prev,
+      appearance: { ...prev.appearance, avatar: null },
+    }))
+    setAvatarPreview(null)
   }
 
   return (
@@ -315,6 +417,85 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
                 />
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Avatar */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ImageIcon className="h-5 w-5" />
+              Avatar
+            </CardTitle>
+            <CardDescription>
+              Upload an image to represent this persona (optional)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col items-center gap-4">
+              {avatarPreview ? (
+                <div className="space-y-4">
+                  <div className="relative w-32 h-32 mx-auto">
+                    <img
+                      src={avatarPreview}
+                      alt="Persona avatar preview"
+                      className="w-full h-full object-cover rounded-full border-2 border-purple-500/50"
+                    />
+                  </div>
+                  <div className="flex gap-2 justify-center">
+                    <input
+                      type="file"
+                      id="avatar"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById('avatar')?.click()}
+                    >
+                      Change
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRemoveAvatar}
+                      className="text-red-500 hover:text-red-600"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <div className="w-32 h-32 mx-auto rounded-full bg-muted/50 border-2 border-dashed border-muted-foreground/30 flex items-center justify-center mb-4">
+                    <User className="h-12 w-12 text-muted-foreground/50" />
+                  </div>
+                  <input
+                    type="file"
+                    id="avatar"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('avatar')?.click()}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Avatar
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    PNG, JPG, GIF, WebP up to 5MB
+                  </p>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 

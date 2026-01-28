@@ -573,6 +573,12 @@ User personas/masks for conversations. Personas are always private to the user.
 | `createdAt` | date | Auto-generated |
 | `updatedAt` | date | Auto-generated |
 
+#### Persona Appearance (group)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `avatar` | relationship (Media) | Avatar image for this persona |
+
 #### Persona Interaction Preferences (group)
 
 | Field | Type | Description |

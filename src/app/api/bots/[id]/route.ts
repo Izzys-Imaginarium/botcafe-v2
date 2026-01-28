@@ -310,14 +310,14 @@ export async function DELETE(
 
     // Nullify bot reference on bot interactions (preserve interaction history)
     const botInteractions = await payload.find({
-      collection: 'bot-interaction',
+      collection: 'botInteractions',
       where: { bot: { equals: botIdNum } },
       limit: 1000,
       overrideAccess: true,
     })
     for (const interaction of botInteractions.docs) {
       await payload.update({
-        collection: 'bot-interaction',
+        collection: 'botInteractions',
         id: interaction.id,
         data: { bot: null },
         overrideAccess: true,
@@ -342,14 +342,14 @@ export async function DELETE(
 
     // Nullify bot reference on memory insights (preserve insights)
     const insights = await payload.find({
-      collection: 'memoryInsights',
+      collection: 'memory-insights',
       where: { bot: { equals: botIdNum } },
       limit: 1000,
       overrideAccess: true,
     })
     for (const insight of insights.docs) {
       await payload.update({
-        collection: 'memoryInsights',
+        collection: 'memory-insights',
         id: insight.id,
         data: { bot: null },
         overrideAccess: true,
@@ -358,14 +358,14 @@ export async function DELETE(
 
     // Nullify bot reference on messages (preserve conversation history)
     const messages = await payload.find({
-      collection: 'messages',
+      collection: 'message',
       where: { bot: { equals: botIdNum } },
       limit: 1000,
       overrideAccess: true,
     })
     for (const message of messages.docs) {
       await payload.update({
-        collection: 'messages',
+        collection: 'message',
         id: message.id,
         data: { bot: null },
         overrideAccess: true,

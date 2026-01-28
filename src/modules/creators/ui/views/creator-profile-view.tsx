@@ -91,6 +91,28 @@ interface CreatorProfile {
   last_active?: string
 }
 
+interface PublicBot {
+  id: number
+  name: string
+  slug: string
+  description?: string
+  picture?: { url?: string } | null
+  likes_count: number
+  favorites_count: number
+  created_date?: string
+}
+
+interface ActivityItem {
+  type: 'bot_created' | 'bot_updated'
+  bot: {
+    id: number
+    name: string
+    slug: string
+    picture?: { url?: string } | null
+  }
+  date: string
+}
+
 const specialtyLabels: Record<string, string> = {
   'conversational-ai': 'Conversational AI',
   'creative-writing': 'Creative Writing',
@@ -128,6 +150,8 @@ export const CreatorProfileView = ({ username }: CreatorProfileViewProps) => {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
   const [creator, setCreator] = useState<CreatorProfile | null>(null)
+  const [publicBots, setPublicBots] = useState<PublicBot[]>([])
+  const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([])
   const [isOwner, setIsOwner] = useState(false)
   const [isFollowing, setIsFollowing] = useState(false)
   const [isFollowLoading, setIsFollowLoading] = useState(false)
@@ -143,6 +167,8 @@ export const CreatorProfileView = ({ username }: CreatorProfileViewProps) => {
       const data = (await response.json()) as {
         success?: boolean
         creator?: CreatorProfile
+        publicBots?: PublicBot[]
+        recentActivity?: ActivityItem[]
         isOwner?: boolean
         isFollowing?: boolean
         message?: string
@@ -150,6 +176,8 @@ export const CreatorProfileView = ({ username }: CreatorProfileViewProps) => {
 
       if (data.success && data.creator) {
         setCreator(data.creator)
+        setPublicBots(data.publicBots || [])
+        setRecentActivity(data.recentActivity || [])
         setIsOwner(data.isOwner || false)
         setIsFollowing(data.isFollowing || false)
       } else {
@@ -163,6 +191,34 @@ export const CreatorProfileView = ({ username }: CreatorProfileViewProps) => {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Helper to get bot picture URL
+  const getBotPictureUrl = (picture: { url?: string } | null | undefined): string | undefined => {
+    if (!picture) return undefined
+    if (typeof picture === 'object' && picture.url) return picture.url
+    return undefined
+  }
+
+  // Format date for activity
+  const formatActivityDate = (dateString: string): string => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+    if (diffDays === 0) {
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+      if (diffHours === 0) {
+        const diffMinutes = Math.floor(diffMs / (1000 * 60))
+        return diffMinutes <= 1 ? 'Just now' : `${diffMinutes} minutes ago`
+      }
+      return diffHours === 1 ? '1 hour ago' : `${diffHours} hours ago`
+    }
+    if (diffDays === 1) return 'Yesterday'
+    if (diffDays < 7) return `${diffDays} days ago`
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   }
 
   const handleFollow = async () => {
@@ -373,40 +429,104 @@ export const CreatorProfileView = ({ username }: CreatorProfileViewProps) => {
         </TabsList>
 
         {/* Bots Tab */}
-        <TabsContent value="bots">
+        <TabsContent value="bots" className="space-y-6">
+          {/* Featured Bots Section */}
+          {creator.portfolio?.featured_bots && creator.portfolio.featured_bots.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Star className="h-5 w-5 text-yellow-500" />
+                  Featured Bots
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {creator.portfolio.featured_bots.map((bot: any) => (
+                    <Link key={bot.id} href={`/${creator.username}/${bot.slug}`}>
+                      <Card className="overflow-hidden hover:border-primary/50 transition-colors cursor-pointer">
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-3">
+                            <Avatar className="h-12 w-12">
+                              <AvatarImage src={getBotPictureUrl(bot.picture)} />
+                              <AvatarFallback>{bot.name?.charAt(0) || 'B'}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold truncate">{bot.name || 'Unnamed Bot'}</h3>
+                              <p className="text-sm text-muted-foreground line-clamp-2">
+                                {bot.description || 'No description'}
+                              </p>
+                              <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Heart className="h-3 w-3" />
+                                  {bot.likes_count || 0}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Star className="h-3 w-3" />
+                                  {bot.favorites_count || 0}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* All Public Bots Section */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Bot className="h-5 w-5" />
-                Featured Bots
+                All Public Bots
+                {publicBots.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {publicBots.length}
+                  </Badge>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {creator.portfolio?.featured_bots && creator.portfolio.featured_bots.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {creator.portfolio.featured_bots.map((bot: any) => (
-                    <Card key={bot.id} className="overflow-hidden">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <Avatar className="h-12 w-12">
-                            <AvatarImage src={bot.avatar?.url} />
-                            <AvatarFallback>{bot.name?.charAt(0) || 'B'}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <h3 className="font-semibold">{bot.name || 'Unnamed Bot'}</h3>
-                            <p className="text-sm text-muted-foreground line-clamp-2">
-                              {bot.description || 'No description'}
-                            </p>
+              {publicBots.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {publicBots.map((bot) => (
+                    <Link key={bot.id} href={`/${creator.username}/${bot.slug}`}>
+                      <Card className="overflow-hidden hover:border-primary/50 transition-colors cursor-pointer h-full">
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-3">
+                            <Avatar className="h-10 w-10 flex-shrink-0">
+                              <AvatarImage src={getBotPictureUrl(bot.picture)} />
+                              <AvatarFallback>{bot.name?.charAt(0) || 'B'}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-medium truncate text-sm">{bot.name}</h3>
+                              <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                                {bot.description || 'No description'}
+                              </p>
+                              <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Heart className="h-3 w-3" />
+                                  {bot.likes_count}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Star className="h-3 w-3" />
+                                  {bot.favorites_count}
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                        </CardContent>
+                      </Card>
+                    </Link>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <Bot className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No featured bots yet</p>
+                  <p>No public bots yet</p>
                 </div>
               )}
             </CardContent>
@@ -506,13 +626,61 @@ export const CreatorProfileView = ({ username }: CreatorProfileViewProps) => {
         <TabsContent value="activity">
           <Card>
             <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Recent Activity
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Activity feed coming soon</p>
-              </div>
+              {recentActivity.length > 0 ? (
+                <div className="space-y-4">
+                  {recentActivity.map((activity, idx) => (
+                    <div
+                      key={`${activity.bot.id}-${activity.date}-${idx}`}
+                      className="flex items-start gap-4 pb-4 border-b last:border-0 last:pb-0"
+                    >
+                      <div className={`p-2 rounded-full ${
+                        activity.type === 'bot_created'
+                          ? 'bg-green-500/10 text-green-500'
+                          : 'bg-blue-500/10 text-blue-500'
+                      }`}>
+                        {activity.type === 'bot_created' ? (
+                          <Bot className="h-4 w-4" />
+                        ) : (
+                          <Settings className="h-4 w-4" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/${creator.username}/${activity.bot.slug}`}
+                            className="font-medium hover:text-primary transition-colors truncate"
+                          >
+                            {activity.bot.name}
+                          </Link>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {activity.type === 'bot_created' ? 'Created a new bot' : 'Updated bot'}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {formatActivityDate(activity.date)}
+                        </p>
+                      </div>
+                      <Avatar className="h-8 w-8 flex-shrink-0">
+                        <AvatarImage src={getBotPictureUrl(activity.bot.picture)} />
+                        <AvatarFallback className="text-xs">
+                          {activity.bot.name?.charAt(0) || 'B'}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No recent activity</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

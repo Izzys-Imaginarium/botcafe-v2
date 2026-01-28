@@ -213,6 +213,45 @@ export async function GET(
       isFollowing = userFollow.docs.length > 0
     }
 
+    // Get all public bots by this creator (for profile display)
+    const publicBots = userBots.docs
+      .filter((bot: any) => bot.is_public || bot.sharing?.visibility === 'public')
+      .map((bot: any) => ({
+        id: bot.id,
+        name: bot.name,
+        slug: bot.slug,
+        description: bot.description,
+        picture: bot.picture,
+        likes_count: bot.likes_count || 0,
+        favorites_count: bot.favorites_count || 0,
+        created_date: bot.created_date,
+      }))
+
+    // Get recent activity (bot creations and updates) - sorted by date
+    const recentActivity = userBots.docs
+      .slice(0, 10) // Get up to 10 most recent
+      .map((bot: any) => {
+        const createdDate = bot.created_date ? new Date(bot.created_date) : null
+        const modifiedDate = bot.updatedAt ? new Date(bot.updatedAt) : null
+
+        // If modified date is significantly after created date, it's an update
+        const isUpdate = modifiedDate && createdDate &&
+          (modifiedDate.getTime() - createdDate.getTime()) > 60000 // More than 1 minute difference
+
+        return {
+          type: isUpdate ? 'bot_updated' : 'bot_created',
+          bot: {
+            id: bot.id,
+            name: bot.name,
+            slug: bot.slug,
+            picture: bot.picture,
+          },
+          date: isUpdate ? bot.updatedAt : bot.created_date,
+        }
+      })
+      .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 10) // Keep top 10 most recent activities
+
     // Merge computed stats into the creator object
     const creatorWithRealStats = {
       ...creator,
@@ -232,6 +271,8 @@ export async function GET(
     return NextResponse.json({
       success: true,
       creator: creatorWithRealStats,
+      publicBots,
+      recentActivity,
       isOwner,
       isFollowing,
     })
@@ -334,8 +375,11 @@ export async function PUT(
       display_name?: string
       bio?: string
       profile_media?: {
-        avatar?: string
-        banner_image?: string
+        avatar?: number | null
+        banner_image?: number | null
+      }
+      portfolio?: {
+        featured_bots?: number[]
       }
       social_links?: {
         website?: string
@@ -344,6 +388,8 @@ export async function PUT(
         linkedin?: string
         discord?: string
         youtube?: string
+        kofi?: string
+        patreon?: string
         other_links?: Array<{ platform: string; url: string }>
       }
       creator_info?: {

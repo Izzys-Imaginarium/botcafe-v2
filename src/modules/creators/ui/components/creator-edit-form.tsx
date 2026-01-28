@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Select,
   SelectContent,
@@ -31,15 +32,35 @@ import {
   Settings,
   Sparkles,
   ArrowLeft,
+  Bot,
+  Camera,
+  Star,
+  ImageIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
 
+interface BotData {
+  id: number
+  name: string
+  slug: string
+  description?: string
+  picture?: { url?: string } | number | null
+  is_public?: boolean
+}
+
 interface CreatorFormData {
   display_name: string
   bio: string
+  profile_media: {
+    avatar: number | null
+    banner_image: number | null
+  }
+  portfolio: {
+    featured_bots: number[]
+  }
   creator_info: {
     creator_type: string
     specialties: Array<{ specialty: string }>
@@ -108,6 +129,13 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
   const [formData, setFormData] = useState<CreatorFormData>({
     display_name: '',
     bio: '',
+    profile_media: {
+      avatar: null,
+      banner_image: null,
+    },
+    portfolio: {
+      featured_bots: [],
+    },
     creator_info: {
       creator_type: 'individual',
       specialties: [],
@@ -133,13 +161,25 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
     tags: [],
   })
 
+  // Additional state for media URLs and bot selection
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [bannerUrl, setBannerUrl] = useState<string | null>(null)
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false)
+  const [userBots, setUserBots] = useState<BotData[]>([])
+  const [isLoadingBots, setIsLoadingBots] = useState(false)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const bannerInputRef = useRef<HTMLInputElement>(null)
+
   const [originalData, setOriginalData] = useState<CreatorFormData | null>(null)
   const [newTag, setNewTag] = useState('')
   const [newLanguage, setNewLanguage] = useState('')
 
   // Section collapse state
   const [openSections, setOpenSections] = useState({
+    media: true,
     basic: true,
+    portfolio: true,
     details: true,
     social: true,
     settings: true,
@@ -155,6 +195,13 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
           creator?: {
             display_name?: string
             bio?: string
+            profile_media?: {
+              avatar?: { id: number; url?: string } | number | null
+              banner_image?: { id: number; url?: string } | number | null
+            }
+            portfolio?: {
+              featured_bots?: Array<{ id: number } | number>
+            }
             creator_info?: {
               creator_type?: string
               specialties?: Array<{ specialty: string }>
@@ -193,9 +240,31 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
             return
           }
 
+          // Extract avatar and banner URLs for display
+          const avatarMedia = creator.profile_media?.avatar
+          const bannerMedia = creator.profile_media?.banner_image
+          if (avatarMedia && typeof avatarMedia === 'object' && avatarMedia.url) {
+            setAvatarUrl(avatarMedia.url)
+          }
+          if (bannerMedia && typeof bannerMedia === 'object' && bannerMedia.url) {
+            setBannerUrl(bannerMedia.url)
+          }
+
+          // Extract featured bot IDs
+          const featuredBotIds = (creator.portfolio?.featured_bots || []).map((b) =>
+            typeof b === 'object' ? b.id : b
+          )
+
           const loadedData: CreatorFormData = {
             display_name: creator.display_name || '',
             bio: creator.bio || '',
+            profile_media: {
+              avatar: avatarMedia ? (typeof avatarMedia === 'object' ? avatarMedia.id : avatarMedia) : null,
+              banner_image: bannerMedia ? (typeof bannerMedia === 'object' ? bannerMedia.id : bannerMedia) : null,
+            },
+            portfolio: {
+              featured_bots: featuredBotIds,
+            },
             creator_info: {
               creator_type: creator.creator_info?.creator_type || 'individual',
               specialties: creator.creator_info?.specialties || [],
@@ -238,6 +307,38 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
 
     fetchProfile()
   }, [username, router])
+
+  // Fetch user's bots for featured bot selection
+  useEffect(() => {
+    const fetchUserBots = async () => {
+      setIsLoadingBots(true)
+      try {
+        // Fetch bots owned by the current user
+        const response = await fetch('/api/bots/explore?excludeOwn=false&limit=100')
+        const data = (await response.json()) as {
+          bots?: Array<{
+            id: number
+            name: string
+            slug: string
+            description?: string
+            picture?: { url?: string } | number | null
+            is_public?: boolean
+            accessType?: string
+          }>
+        }
+
+        // Filter to only bots the user owns
+        const ownedBots = (data.bots || []).filter((bot) => bot.accessType === 'owned')
+        setUserBots(ownedBots)
+      } catch (error) {
+        console.error('Error fetching user bots:', error)
+      } finally {
+        setIsLoadingBots(false)
+      }
+    }
+
+    fetchUserBots()
+  }, [])
 
   // Track changes
   useEffect(() => {
@@ -318,6 +419,78 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
       'languages',
       formData.creator_info.languages.filter((l) => l.language !== language)
     )
+  }
+
+  // Handle image upload for avatar or banner
+  const handleImageUpload = async (file: File, type: 'avatar' | 'banner') => {
+    if (type === 'avatar') {
+      setIsUploadingAvatar(true)
+    } else {
+      setIsUploadingBanner(true)
+    }
+
+    try {
+      const formDataUpload = new FormData()
+      formDataUpload.append('file', file)
+
+      const response = await fetch('/api/upload/image', {
+        method: 'POST',
+        body: formDataUpload,
+      })
+
+      const data = (await response.json()) as {
+        success?: boolean
+        media?: { id: number; url: string }
+        message?: string
+      }
+
+      if (data.success && data.media) {
+        if (type === 'avatar') {
+          setAvatarUrl(data.media.url)
+          updateNestedFormData('profile_media', 'avatar', data.media.id)
+        } else {
+          setBannerUrl(data.media.url)
+          updateNestedFormData('profile_media', 'banner_image', data.media.id)
+        }
+        toast.success(`${type === 'avatar' ? 'Profile picture' : 'Banner'} uploaded successfully`)
+      } else {
+        toast.error(data.message || 'Failed to upload image')
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error)
+      toast.error('Failed to upload image')
+    } finally {
+      if (type === 'avatar') {
+        setIsUploadingAvatar(false)
+      } else {
+        setIsUploadingBanner(false)
+      }
+    }
+  }
+
+  // Toggle featured bot selection
+  const toggleFeaturedBot = (botId: number) => {
+    const currentFeatured = formData.portfolio.featured_bots
+    const isSelected = currentFeatured.includes(botId)
+
+    if (isSelected) {
+      updateNestedFormData(
+        'portfolio',
+        'featured_bots',
+        currentFeatured.filter((id) => id !== botId)
+      )
+    } else if (currentFeatured.length < 6) {
+      updateNestedFormData('portfolio', 'featured_bots', [...currentFeatured, botId])
+    } else {
+      toast.error('Maximum 6 featured bots allowed')
+    }
+  }
+
+  // Get bot picture URL helper
+  const getBotPictureUrl = (picture: BotData['picture']): string | undefined => {
+    if (!picture) return undefined
+    if (typeof picture === 'object' && picture.url) return picture.url
+    return undefined
   }
 
   const handleSave = async () => {
@@ -416,6 +589,123 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
       )}
 
       <div className="space-y-4">
+        {/* Profile Media */}
+        <Collapsible open={openSections.media} onOpenChange={() => toggleSection('media')}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <ImageIcon className="h-5 w-5" />
+                    Profile Media
+                  </CardTitle>
+                  <ChevronDown
+                    className={`h-5 w-5 transition-transform ${openSections.media ? 'rotate-180' : ''}`}
+                  />
+                </div>
+                <CardDescription>Your profile picture and banner image</CardDescription>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="space-y-6">
+                {/* Avatar Upload */}
+                <div className="space-y-3">
+                  <Label>Profile Picture</Label>
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-24 w-24 border-2 border-border">
+                      <AvatarImage src={avatarUrl || undefined} />
+                      <AvatarFallback className="text-2xl">
+                        {formData.display_name?.charAt(0)?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col gap-2">
+                      <input
+                        ref={avatarInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) handleImageUpload(file, 'avatar')
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => avatarInputRef.current?.click()}
+                        disabled={isUploadingAvatar}
+                      >
+                        {isUploadingAvatar ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Camera className="mr-2 h-4 w-4" />
+                            {avatarUrl ? 'Change Picture' : 'Upload Picture'}
+                          </>
+                        )}
+                      </Button>
+                      <p className="text-xs text-muted-foreground">
+                        Recommended: Square image, at least 200x200px
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Banner Upload */}
+                <div className="space-y-3">
+                  <Label>Banner Image</Label>
+                  <div className="space-y-3">
+                    {bannerUrl ? (
+                      <div
+                        className="h-32 rounded-lg bg-cover bg-center border"
+                        style={{ backgroundImage: `url(${bannerUrl})` }}
+                      />
+                    ) : (
+                      <div className="h-32 rounded-lg bg-gradient-to-r from-purple-500/30 to-pink-500/30 border flex items-center justify-center">
+                        <span className="text-muted-foreground text-sm">No banner image</span>
+                      </div>
+                    )}
+                    <input
+                      ref={bannerInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) handleImageUpload(file, 'banner')
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => bannerInputRef.current?.click()}
+                      disabled={isUploadingBanner}
+                    >
+                      {isUploadingBanner ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <ImageIcon className="mr-2 h-4 w-4" />
+                          {bannerUrl ? 'Change Banner' : 'Upload Banner'}
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      Recommended: 1200x300px or similar wide aspect ratio
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
         {/* Basic Information */}
         <Collapsible open={openSections.basic} onOpenChange={() => toggleSection('basic')}>
           <Card>
@@ -476,6 +766,82 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
                     maxLength={100}
                   />
                 </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        {/* Featured Bots (Portfolio) */}
+        <Collapsible open={openSections.portfolio} onOpenChange={() => toggleSection('portfolio')}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Bot className="h-5 w-5" />
+                    Featured Bots
+                  </CardTitle>
+                  <ChevronDown
+                    className={`h-5 w-5 transition-transform ${openSections.portfolio ? 'rotate-180' : ''}`}
+                  />
+                </div>
+                <CardDescription>Select up to 6 bots to feature on your profile</CardDescription>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="space-y-4">
+                {isLoadingBots ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : userBots.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Bot className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>You haven't created any bots yet.</p>
+                    <Link href="/create">
+                      <Button variant="outline" className="mt-4">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Create Your First Bot
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Selected: {formData.portfolio.featured_bots.length}/6 bots
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {userBots.map((bot) => {
+                        const isSelected = formData.portfolio.featured_bots.includes(bot.id)
+                        return (
+                          <div
+                            key={bot.id}
+                            onClick={() => toggleFeaturedBot(bot.id)}
+                            className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                              isSelected
+                                ? 'bg-primary/10 border-primary'
+                                : 'hover:bg-accent'
+                            }`}
+                          >
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src={getBotPictureUrl(bot.picture)} />
+                              <AvatarFallback>{bot.name?.charAt(0) || 'B'}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">{bot.name}</p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {bot.description || 'No description'}
+                              </p>
+                            </div>
+                            {isSelected && (
+                              <Star className="h-5 w-5 text-primary fill-current flex-shrink-0" />
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </>
+                )}
               </CardContent>
             </CollapsibleContent>
           </Card>

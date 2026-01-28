@@ -162,18 +162,26 @@ export async function GET(request: NextRequest) {
     }
 
     // Batch fetch conversations that involve these bots
-    // Count conversations per bot by looking at bot_participation
+    // Note: Nested array field queries don't work reliably with D1/SQLite,
+    // so we fetch all recent conversations and filter in code
     let allConversations: any[] = []
     if (allBotIds.length > 0) {
       const conversationsResult = await payload.find({
         collection: 'conversation',
-        where: {
-          'bot_participation.bot_id': { in: allBotIds },
-        },
         limit: 5000,
+        depth: 1, // Populate bot_participation.bot_id
         overrideAccess: true,
       })
-      allConversations = conversationsResult.docs
+      // Filter to only conversations that include any of our bots
+      allConversations = conversationsResult.docs.filter((conv) => {
+        const botParticipation = (conv as any).bot_participation || []
+        return botParticipation.some((bp: any) => {
+          const botId = typeof bp.bot_id === 'object' && bp.bot_id !== null
+            ? String(bp.bot_id.id)
+            : String(bp.bot_id)
+          return allBotIds.map(String).includes(botId)
+        })
+      })
     }
 
     // Map stats to each creator

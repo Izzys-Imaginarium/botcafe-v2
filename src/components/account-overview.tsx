@@ -227,21 +227,21 @@ export const AccountOverview = () => {
         />
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-3 gap-6 min-w-0">
         {/* Bot Performance */}
-        <Card className="glass-rune lg:col-span-2">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
+        <Card className="glass-rune lg:col-span-2 min-w-0 overflow-hidden">
+          <CardHeader className="pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="min-w-0">
                 <CardTitle className="flex items-center gap-2 text-parchment font-display">
-                  <BarChart3 className="h-5 w-5 text-gold-rich" />
-                  Top Performing Bots
+                  <BarChart3 className="h-5 w-5 text-gold-rich shrink-0" />
+                  <span className="truncate">Top Performing Bots</span>
                 </CardTitle>
                 <CardDescription className="text-parchment-dim font-lore">
                   Your most popular creations
                 </CardDescription>
               </div>
-              <Link href="/dashboard">
+              <Link href="/dashboard" className="shrink-0">
                 <Button variant="ghost" size="sm" className="text-gold-rich hover:text-gold-ancient">
                   View All
                 </Button>
@@ -319,7 +319,7 @@ export const AccountOverview = () => {
         </Card>
 
         {/* This Week Stats */}
-        <Card className="glass-rune">
+        <Card className="glass-rune min-w-0 overflow-hidden">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-parchment font-display">
               <Zap className="h-5 w-5 text-gold-rich" />
@@ -362,14 +362,14 @@ export const AccountOverview = () => {
               <span className="font-bold text-parchment">{data?.overview.totalPersonas || 0}</span>
             </div>
 
-            <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a140a]/20">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a140a]/20 gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 <Bot className="h-5 w-5 text-forest-light shrink-0" />
-                <span className="text-sm text-parchment font-lore">Total Bots</span>
+                <span className="text-sm text-parchment font-lore whitespace-nowrap">Total Bots</span>
               </div>
-              <span className="font-bold text-parchment whitespace-nowrap">
+              <span className="font-bold text-parchment text-right shrink-0">
                 {data?.overview.totalBots || 0}
-                <span className="text-xs text-parchment/50 ml-1">
+                <span className="text-xs text-parchment/50 ml-1 hidden sm:inline">
                   ({data?.overview.publicBots || 0} public)
                 </span>
               </span>

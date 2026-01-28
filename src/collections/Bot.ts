@@ -257,6 +257,31 @@ export const Bot: CollectionConfig = {
       ],
     },
     {
+      name: 'classifications',
+      type: 'array',
+      admin: {
+        description: 'Content classifications to categorize and discover this bot',
+      },
+      fields: [
+        {
+          name: 'classification',
+          type: 'select',
+          options: [
+            { label: 'Conversational AI', value: 'conversational-ai' },
+            { label: 'Creative Writing', value: 'creative-writing' },
+            { label: 'Fantasy/RPG', value: 'fantasy-rpg' },
+            { label: 'Gaming', value: 'gaming' },
+            { label: 'Fanfic', value: 'fanfic' },
+            { label: 'OC (Original Characters)', value: 'oc' },
+            { label: 'Dead Dove', value: 'dead-dove' },
+            { label: 'Comedy/Parody', value: 'comedy-parody' },
+            { label: 'Long-form', value: 'long-form' },
+            { label: 'One-shot', value: 'one-shot' },
+          ],
+        },
+      ],
+    },
+    {
       name: 'slug',
       type: 'text',
       required: true,

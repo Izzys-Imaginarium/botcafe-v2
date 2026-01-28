@@ -9,6 +9,7 @@ import * as migration_20260125_202551 from './20260125_202551';
 import * as migration_20260126_014706 from './20260126_014706';
 import * as migration_20260126_210000_fix_citation_count from './20260126_210000_fix_citation_count';
 import * as migration_20260127_000000_add_media_focal_columns from './20260127_000000_add_media_focal_columns';
+import * as migration_20260128_063625 from './20260128_063625';
 
 export const migrations = [
   {
@@ -54,16 +55,21 @@ export const migrations = [
   {
     up: migration_20260126_014706.up,
     down: migration_20260126_014706.down,
-    name: '20260126_014706'
+    name: '20260126_014706',
   },
   {
     up: migration_20260126_210000_fix_citation_count.up,
     down: migration_20260126_210000_fix_citation_count.down,
-    name: '20260126_210000_fix_citation_count'
+    name: '20260126_210000_fix_citation_count',
   },
   {
     up: migration_20260127_000000_add_media_focal_columns.up,
     down: migration_20260127_000000_add_media_focal_columns.down,
-    name: '20260127_000000_add_media_focal_columns'
+    name: '20260127_000000_add_media_focal_columns',
+  },
+  {
+    up: migration_20260128_063625.up,
+    down: migration_20260128_063625.down,
+    name: '20260128_063625'
   },
 ];

@@ -44,6 +44,7 @@ export interface BotFormData {
   }
   signature_phrases: string[]
   tags: string[]
+  classifications: string[]
 }
 
 interface BotWizardFormProps {
@@ -131,6 +132,7 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
     },
     signature_phrases: initialData?.signature_phrases || [''],
     tags: initialData?.tags || [],
+    classifications: initialData?.classifications || [],
   })
 
   // Share dialog state
@@ -447,6 +449,7 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
         behavior_settings: botData.behavior_settings,
         signature_phrases: botData.signature_phrases.filter(phrase => phrase.trim() !== ''),
         tags: botData.tags,
+        classifications: botData.classifications,
         sharing: {
           visibility: botData.visibility,
         },
@@ -783,11 +786,68 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
       case 3: // Tags & Phrases
         return (
           <div className="space-y-6">
-            {/* Tags */}
+            {/* Classifications */}
             <div className="space-y-4">
               <div>
+                <Label>Classifications</Label>
+                <p className="text-sm text-muted-foreground">Select categories that describe your bot (up to 5)</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: 'conversational-ai', label: 'Conversational AI' },
+                  { value: 'creative-writing', label: 'Creative Writing' },
+                  { value: 'fantasy-rpg', label: 'Fantasy/RPG' },
+                  { value: 'gaming', label: 'Gaming' },
+                  { value: 'fanfic', label: 'Fanfic' },
+                  { value: 'oc', label: 'OC (Original Characters)' },
+                  { value: 'dead-dove', label: 'Dead Dove' },
+                  { value: 'comedy-parody', label: 'Comedy/Parody' },
+                  { value: 'long-form', label: 'Long-form' },
+                  { value: 'one-shot', label: 'One-shot' },
+                ].map((option) => {
+                  const isSelected = botData.classifications.includes(option.value)
+                  return (
+                    <Badge
+                      key={option.value}
+                      variant={isSelected ? 'default' : 'outline'}
+                      className={`cursor-pointer transition-colors ${
+                        isSelected
+                          ? 'bg-forest hover:bg-forest/80'
+                          : 'hover:bg-forest/20'
+                      }`}
+                      onClick={() => {
+                        if (isSelected) {
+                          setBotData(prev => ({
+                            ...prev,
+                            classifications: prev.classifications.filter(c => c !== option.value)
+                          }))
+                        } else if (botData.classifications.length < 5) {
+                          setBotData(prev => ({
+                            ...prev,
+                            classifications: [...prev.classifications, option.value]
+                          }))
+                        } else {
+                          toast.error('Maximum 5 classifications allowed')
+                        }
+                      }}
+                    >
+                      {option.label}
+                    </Badge>
+                  )
+                })}
+              </div>
+              {botData.classifications.length > 0 && (
+                <p className="text-sm text-forest">
+                  {botData.classifications.length} classification{botData.classifications.length !== 1 ? 's' : ''} selected
+                </p>
+              )}
+            </div>
+
+            {/* Tags */}
+            <div className="space-y-4 border-t border-gold-ancient/20 pt-6">
+              <div>
                 <Label>Tags</Label>
-                <p className="text-sm text-muted-foreground">Add tags to help users discover your bot</p>
+                <p className="text-sm text-muted-foreground">Add custom tags to help users discover your bot</p>
               </div>
               <div className="flex gap-2">
                 <Input
@@ -1081,6 +1141,29 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
                   <p><span className="font-medium text-parchment-dim">Knowledge Sharing:</span> {botData.behavior_settings.knowledge_sharing}</p>
                 </div>
               </div>
+
+              {botData.classifications.length > 0 && (
+                <div className="p-4 border border-gold-ancient/30 rounded-lg glass-rune">
+                  <h4 className="font-semibold mb-2 text-gold-rich">Classifications</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {botData.classifications.map((classification, idx) => {
+                      const label = {
+                        'conversational-ai': 'Conversational AI',
+                        'creative-writing': 'Creative Writing',
+                        'fantasy-rpg': 'Fantasy/RPG',
+                        'gaming': 'Gaming',
+                        'fanfic': 'Fanfic',
+                        'oc': 'OC (Original Characters)',
+                        'dead-dove': 'Dead Dove',
+                        'comedy-parody': 'Comedy/Parody',
+                        'long-form': 'Long-form',
+                        'one-shot': 'One-shot',
+                      }[classification] || classification
+                      return <Badge key={idx} variant="secondary">{label}</Badge>
+                    })}
+                  </div>
+                </div>
+              )}
 
               {botData.tags.length > 0 && (
                 <div className="p-4 border border-gold-ancient/30 rounded-lg glass-rune">

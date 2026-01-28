@@ -232,6 +232,9 @@ export interface Media {
   filesize?: number | null;
   width?: number | null;
   height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+  sizes?: {};
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -330,6 +333,28 @@ export interface Bot {
       }[]
     | null;
   /**
+   * Content classifications to categorize and discover this bot
+   */
+  classifications?:
+    | {
+        classification?:
+          | (
+              | 'conversational-ai'
+              | 'creative-writing'
+              | 'fantasy-rpg'
+              | 'gaming'
+              | 'fanfic'
+              | 'oc'
+              | 'dead-dove'
+              | 'comedy-parody'
+              | 'long-form'
+              | 'one-shot'
+            )
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
    * URL slug for this bot (must be unique within creator profile)
    */
   slug: string;
@@ -420,15 +445,15 @@ export interface CreatorProfile {
           specialty?:
             | (
                 | 'conversational-ai'
-                | 'fantasy-rpg'
-                | 'educational'
                 | 'creative-writing'
-                | 'technical-support'
-                | 'entertainment'
-                | 'productivity'
-                | 'mental-health'
+                | 'fantasy-rpg'
                 | 'gaming'
-                | 'business'
+                | 'fanfic'
+                | 'oc'
+                | 'dead-dove'
+                | 'comedy-parody'
+                | 'long-form'
+                | 'one-shot'
               )
             | null;
           id?: string | null;
@@ -2719,6 +2744,9 @@ export interface MediaSelect<T extends boolean = true> {
   filesize?: T;
   width?: T;
   height?: T;
+  focalX?: T;
+  focalY?: T;
+  sizes?: T | {};
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2772,6 +2800,12 @@ export interface BotSelect<T extends boolean = true> {
     | T
     | {
         tag?: T;
+        id?: T;
+      };
+  classifications?:
+    | T
+    | {
+        classification?: T;
         id?: T;
       };
   slug?: T;

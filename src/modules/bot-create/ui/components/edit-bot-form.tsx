@@ -71,6 +71,8 @@ export function EditBotForm({ username, botSlug }: EditBotFormProps) {
           },
           signature_phrases: data.signature_phrases?.map((p: { phrase: string }) => p.phrase) || [''],
           tags: data.tags?.map((t: { tag: string }) => t.tag) || [],
+          // Transform classifications from [{ classification: 'value' }] to ['value']
+          classifications: data.classifications?.map((c: { classification: string }) => c.classification) || [],
         })
       } catch (err: any) {
         console.error('Error fetching bot:', err)

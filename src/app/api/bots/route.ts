@@ -38,6 +38,7 @@ interface BotCreateRequest {
   }
   signature_phrases?: string[]
   tags?: string[]
+  classifications?: string[]
 }
 
 // Helper function to generate a URL-safe username from display name or email
@@ -218,6 +219,15 @@ export async function POST(request: NextRequest) {
           .map((tag: string) => ({ tag }))
       : []
 
+    // Transform classifications array format
+    // Frontend sends: ['fantasy-rpg', 'creative-writing']
+    // Payload expects: [{ classification: 'fantasy-rpg' }, { classification: 'creative-writing' }]
+    const transformedClassifications = body.classifications
+      ? body.classifications
+          .filter((c: string) => c && c.trim())
+          .map((c: string) => ({ classification: c }))
+      : []
+
     // Clean personality_traits - remove empty strings (Payload select fields don't accept empty strings)
     const cleanPersonalityTraits: Record<string, string | undefined> = {}
     if (body.personality_traits) {
@@ -255,6 +265,7 @@ export async function POST(request: NextRequest) {
         behavior_settings: Object.keys(cleanBehaviorSettings).length > 0 ? cleanBehaviorSettings : undefined,
         signature_phrases: transformedSignaturePhrases,
         tags: transformedTags,
+        classifications: transformedClassifications,
         knowledge_collections: (body.knowledge_collections || []) as number[],
         picture: body.picture ? Number(body.picture) : undefined,
         created_date: new Date().toISOString(),

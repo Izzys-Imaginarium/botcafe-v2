@@ -41,6 +41,7 @@ interface BotUpdateRequest {
   }
   signature_phrases?: string[]
   tags?: string[]
+  classifications?: string[]
   sharing?: {
     visibility?: VisibilityOption
   }
@@ -189,6 +190,15 @@ export async function PATCH(
       updateData.tags = body.tags
         .filter((tag: string) => tag && tag.trim())
         .map((tag: string) => ({ tag }))
+    }
+
+    // Transform classifications array format if provided
+    // Frontend sends: ['fantasy-rpg', 'creative-writing']
+    // Payload expects: [{ classification: 'fantasy-rpg' }, { classification: 'creative-writing' }]
+    if (body.classifications !== undefined) {
+      updateData.classifications = body.classifications
+        .filter((c: string) => c && c.trim())
+        .map((c: string) => ({ classification: c }))
     }
 
     // Update the bot

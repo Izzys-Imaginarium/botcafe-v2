@@ -282,7 +282,7 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
                     )}
                   </h1>
                   <p className="text-parchment-dim font-lore text-sm sm:text-base">
-                    Created by <span className="text-gold-rich">{bot.creator_display_name}</span>
+                    Created by <span className="text-gold-rich">{bot.creator_username || bot.creator_display_name}</span>
                   </p>
                 </div>
 

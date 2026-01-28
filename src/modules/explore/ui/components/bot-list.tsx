@@ -287,7 +287,7 @@ const BotCard = ({ bot }: BotCardProps) => {
                   className="text-xs text-parchment-dim font-lore hover:text-gold-rich transition-colors"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  by {bot.creator_display_name}
+                  by {bot.creator_username || bot.creator_display_name}
                 </Link>
               </div>
             </div>

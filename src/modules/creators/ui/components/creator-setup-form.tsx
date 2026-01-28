@@ -241,7 +241,7 @@ export const CreatorSetupForm = () => {
     if (step === 1) {
       return (
         formData.username.length >= 3 &&
-        clerkUser?.username &&
+        formData.display_name.trim().length > 0 &&
         formData.bio.length >= 20 &&
         usernameAvailable === true
       )
@@ -262,10 +262,7 @@ export const CreatorSetupForm = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...formData,
-          display_name: clerkUser?.username || formData.display_name,
-        }),
+        body: JSON.stringify(formData),
       })
 
       const data = (await response.json()) as { success?: boolean; creator?: { username: string }; message?: string }
@@ -342,12 +339,16 @@ export const CreatorSetupForm = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>Display Name</Label>
-              <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md border">
-                <span className="font-medium">{clerkUser?.username || 'Loading...'}</span>
-              </div>
+              <Label htmlFor="display_name">Display Name *</Label>
+              <Input
+                id="display_name"
+                value={formData.display_name}
+                onChange={(e) => updateFormData('display_name', e.target.value)}
+                placeholder="Your display name"
+                maxLength={100}
+              />
               <p className="text-xs text-muted-foreground">
-                Your display name is set to your account username.
+                This is your public display name. Your username will be @{formData.username || 'username'}.
               </p>
             </div>
 

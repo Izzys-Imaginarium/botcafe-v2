@@ -124,7 +124,15 @@ export async function GET() {
           if (found) return true
         }
         // Check participants.bots JSON field (older format)
-        const participants = (conv as any).participants
+        // Note: JSON fields in D1/SQLite may be stored as strings
+        let participants = (conv as any).participants
+        if (typeof participants === 'string') {
+          try {
+            participants = JSON.parse(participants)
+          } catch {
+            participants = null
+          }
+        }
         if (participants && Array.isArray(participants.bots)) {
           return participants.bots.some((id: any) => String(id) === String(bot.id))
         }
@@ -172,8 +180,16 @@ export async function GET() {
           }
 
           // If still unknown, try participants.bots and look up bot name
+          // Note: JSON fields in D1/SQLite may be stored as strings
           if (botName === 'Unknown Bot') {
-            const participants = (c as any).participants
+            let participants = (c as any).participants
+            if (typeof participants === 'string') {
+              try {
+                participants = JSON.parse(participants)
+              } catch {
+                participants = null
+              }
+            }
             if (participants && Array.isArray(participants.bots) && participants.bots.length > 0) {
               const firstBotId = String(participants.bots[0])
               const matchingBot = bots.docs.find((b) => String(b.id) === firstBotId)

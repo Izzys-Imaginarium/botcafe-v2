@@ -14,18 +14,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Edit3, ExternalLink, MessageCircle, Save, Loader2, Camera, X, ImageIcon } from 'lucide-react'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Edit3, ExternalLink, MessageCircle, Save, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { useRef } from 'react'
 
 interface UserPreferences {
   nickname: string
   pronouns: string
   custom_pronouns: string
   description: string
-  avatar: string | null
-  avatarId: number | null
 }
 
 export const AccountProfile = () => {
@@ -37,22 +33,16 @@ export const AccountProfile = () => {
     pronouns: '',
     custom_pronouns: '',
     description: '',
-    avatar: null,
-    avatarId: null,
   })
   const [isLoadingPreferences, setIsLoadingPreferences] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
   const [originalPreferences, setOriginalPreferences] = useState<UserPreferences>({
     nickname: '',
     pronouns: '',
     custom_pronouns: '',
     description: '',
-    avatar: null,
-    avatarId: null,
   })
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Fetch user preferences on mount
   useEffect(() => {
@@ -90,113 +80,6 @@ export const AccountProfile = () => {
       preferences.description !== originalPreferences.description
     setHasChanges(changed)
   }, [preferences, originalPreferences])
-
-  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-    if (!validTypes.includes(file.type)) {
-      toast.error('Please select a valid image file (JPEG, PNG, GIF, or WebP)')
-      return
-    }
-
-    // Validate file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be less than 5MB')
-      return
-    }
-
-    setIsUploadingAvatar(true)
-    try {
-      // Upload image
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('alt', 'User profile picture')
-
-      const uploadResponse = await fetch('/api/upload/image', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!uploadResponse.ok) {
-        const errorData = (await uploadResponse.json()) as { error?: string }
-        throw new Error(errorData.error || 'Failed to upload image')
-      }
-
-      const uploadData = (await uploadResponse.json()) as { doc?: { id: number } }
-      const mediaId = uploadData.doc?.id
-
-      if (!mediaId) {
-        throw new Error('No media ID returned')
-      }
-
-      // Update user preferences with new avatar
-      const updateResponse = await fetch('/api/user/preferences', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ avatar: mediaId }),
-      })
-
-      if (!updateResponse.ok) {
-        throw new Error('Failed to update profile picture')
-      }
-
-      const updateData = (await updateResponse.json()) as { success?: boolean; preferences?: UserPreferences }
-      if (updateData.success && updateData.preferences) {
-        setPreferences(updateData.preferences)
-        setOriginalPreferences(updateData.preferences)
-        toast.success('Profile picture updated!')
-      }
-    } catch (error) {
-      console.error('Avatar upload error:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to upload profile picture')
-    } finally {
-      setIsUploadingAvatar(false)
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
-    }
-  }
-
-  const handleRemoveAvatar = async () => {
-    setIsUploadingAvatar(true)
-    try {
-      const response = await fetch('/api/user/preferences', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ avatar: null }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to remove profile picture')
-      }
-
-      const data = (await response.json()) as { success?: boolean; preferences?: UserPreferences }
-      if (data.success && data.preferences) {
-        setPreferences(data.preferences)
-        setOriginalPreferences(data.preferences)
-        toast.success('Profile picture removed')
-      }
-    } catch (error) {
-      console.error('Remove avatar error:', error)
-      toast.error('Failed to remove profile picture')
-    } finally {
-      setIsUploadingAvatar(false)
-    }
-  }
-
-  const getInitials = () => {
-    if (user?.firstName && user?.lastName) {
-      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
-    }
-    if (user?.username) {
-      return user.username.slice(0, 2).toUpperCase()
-    }
-    return 'U'
-  }
 
   const handleSavePreferences = async () => {
     setIsSaving(true)
@@ -250,68 +133,6 @@ export const AccountProfile = () => {
 
   return (
     <div className="space-y-6">
-      {/* Profile Picture */}
-      <Card className="glass-rune">
-        <CardHeader>
-          <CardTitle className="text-parchment font-display flex items-center gap-2">
-            <ImageIcon className="w-5 h-5" />
-            Profile Picture
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row items-center gap-6">
-            <div className="relative group">
-              <Avatar className="h-24 w-24 border-2 border-gold-ancient/30">
-                <AvatarImage src={preferences.avatar || user?.imageUrl} />
-                <AvatarFallback className="bg-[#0a140a] text-gold-rich font-display text-2xl">
-                  {getInitials()}
-                </AvatarFallback>
-              </Avatar>
-              {isUploadingAvatar && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
-                  <Loader2 className="h-8 w-8 animate-spin text-gold-rich" />
-                </div>
-              )}
-            </div>
-            <div className="flex flex-col gap-3">
-              <p className="text-sm text-parchment-dim font-lore text-center sm:text-left">
-                Upload a custom profile picture. Supported formats: JPEG, PNG, GIF, WebP (max 5MB).
-              </p>
-              <div className="flex gap-2 justify-center sm:justify-start">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/gif,image/webp"
-                  onChange={handleAvatarUpload}
-                  className="hidden"
-                  id="avatar-upload"
-                />
-                <Button
-                  variant="outline"
-                  className="ornate-border"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploadingAvatar}
-                >
-                  <Camera className="w-4 h-4 mr-2" />
-                  {preferences.avatar ? 'Change Picture' : 'Upload Picture'}
-                </Button>
-                {preferences.avatar && (
-                  <Button
-                    variant="outline"
-                    className="ornate-border text-destructive hover:text-destructive"
-                    onClick={handleRemoveAvatar}
-                    disabled={isUploadingAvatar}
-                  >
-                    <X className="w-4 h-4 mr-2" />
-                    Remove
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Account Information (Clerk-managed) */}
       <Card className="glass-rune">
         <CardHeader>
@@ -357,8 +178,8 @@ export const AccountProfile = () => {
           </div>
           <div className="p-4 bg-[#0a140a]/30 rounded-lg border border-gold-ancient/20">
             <p className="text-sm text-parchment-dim font-lore mb-4">
-              Account information is managed by your Clerk account. To update your name, username, or
-              email, click the button below.
+              Account information is managed by your Clerk account. To update your profile picture,
+              name, username, or email, click the button below.
             </p>
             <Button
               onClick={handleOpenProfileSettings}

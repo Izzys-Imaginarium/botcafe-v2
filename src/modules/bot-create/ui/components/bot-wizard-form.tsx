@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { MagicalBackground } from '@/modules/home/ui/components/magical-background'
 import { ShareDialog } from '@/components/share-dialog'
+import { useUser } from '@clerk/nextjs'
 
 type Visibility = 'private' | 'shared' | 'public'
 
@@ -101,6 +102,7 @@ const steps = [
 
 export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizardFormProps) {
   const router = useRouter()
+  const { user: clerkUser } = useUser()
   const [currentStep, setCurrentStep] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -138,6 +140,13 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
   // Share dialog state
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false)
   const [picturePreview, setPicturePreview] = useState<string | null>(null)
+
+  // Set creator_display_name from Clerk username
+  useEffect(() => {
+    if (clerkUser?.username && !botData.creator_display_name) {
+      setBotData(prev => ({ ...prev, creator_display_name: clerkUser.username || '' }))
+    }
+  }, [clerkUser?.username])
 
   // Creator username for URL display
   const [creatorUsername, setCreatorUsername] = useState<string | null>(null)
@@ -380,7 +389,7 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
   const validateCurrentStep = () => {
     switch (currentStep) {
       case 0: // Basic Information
-        return botData.name && botData.creator_display_name && botData.slug
+        return botData.name && botData.slug && clerkUser?.username
       case 1: // Personality & Voice
         return botData.system_prompt
       case 2: // Behavior Settings
@@ -434,7 +443,7 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
 
       const cleanedData = {
         name: botData.name,
-        creator_display_name: botData.creator_display_name,
+        creator_display_name: clerkUser?.username || botData.creator_display_name,
         description: botData.description,
         system_prompt: botData.system_prompt,
         greeting: botData.greeting,
@@ -512,14 +521,13 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="creator_display_name">Display Name *</Label>
-              <Input
-                id="creator_display_name"
-                placeholder="How users will see you as the creator"
-                value={botData.creator_display_name}
-                onChange={(e) => handleInputChange('creator_display_name', e.target.value)}
-                className="glass-rune"
-              />
+              <Label htmlFor="creator_display_name">Creator Name</Label>
+              <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md border border-gold-ancient/30">
+                <span className="text-parchment font-medium">@{clerkUser?.username || 'Loading...'}</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Your username from your account. This cannot be changed here.
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -1113,7 +1121,7 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
                 <h4 className="font-semibold mb-2 text-gold-rich">Basic Information</h4>
                 <div className="space-y-1 text-sm text-parchment">
                   <p><span className="font-medium text-parchment-dim">Name:</span> {botData.name}</p>
-                  <p><span className="font-medium text-parchment-dim">Display Name:</span> {botData.creator_display_name}</p>
+                  <p><span className="font-medium text-parchment-dim">Creator:</span> @{clerkUser?.username}</p>
                   <p><span className="font-medium text-parchment-dim">Slug:</span> {botData.slug}</p>
                   {botData.description && <p><span className="font-medium text-parchment-dim">Description:</span> {botData.description}</p>}
                 </div>

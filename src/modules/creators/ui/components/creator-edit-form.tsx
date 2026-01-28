@@ -35,6 +35,7 @@ import {
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useUser } from '@clerk/nextjs'
 
 interface CreatorFormData {
   display_name: string
@@ -99,6 +100,7 @@ interface CreatorEditFormProps {
 
 export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
   const router = useRouter()
+  const { user: clerkUser } = useUser()
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
@@ -322,8 +324,8 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
     if (!hasChanges) return
 
     // Validation
-    if (formData.display_name.length < 2) {
-      toast.error('Display name must be at least 2 characters')
+    if (!clerkUser?.username) {
+      toast.error('Unable to get username from your account')
       return
     }
     if (formData.bio.length < 20) {
@@ -342,7 +344,10 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          display_name: clerkUser?.username || formData.display_name,
+        }),
       })
 
       const data = (await response.json()) as {
@@ -434,14 +439,13 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
             <CollapsibleContent>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="display_name">Display Name *</Label>
-                  <Input
-                    id="display_name"
-                    value={formData.display_name}
-                    onChange={(e) => updateFormData('display_name', e.target.value)}
-                    placeholder="Your Display Name"
-                    maxLength={100}
-                  />
+                  <Label>Display Name</Label>
+                  <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md border">
+                    <span className="font-medium">{clerkUser?.username || 'Loading...'}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Your display name is set to your account username.
+                  </p>
                 </div>
 
                 <div className="space-y-2">

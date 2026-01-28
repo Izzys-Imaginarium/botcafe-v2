@@ -19,23 +19,21 @@ export const CreatorProfiles: CollectionConfig = {
       }
     },
     update: ({ req: { user } }) => {
+      // Admins can update any creator profile
+      if (user?.role === 'admin') return true
+
+      // Otherwise, only the profile owner can update
       return {
-        or: [
-          {
-            user: {
-              equals: user?.id,
-            },
-          },
-          // Allow admins to update any creator profile
-          {
-            user: {
-              equals: null, // This would need admin check in actual implementation
-            },
-          },
-        ],
+        user: {
+          equals: user?.id,
+        },
       }
     },
     delete: ({ req: { user } }) => {
+      // Admins can delete any creator profile
+      if (user?.role === 'admin') return true
+
+      // Otherwise, only the profile owner can delete
       return {
         user: {
           equals: user?.id,

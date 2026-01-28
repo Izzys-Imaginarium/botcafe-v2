@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,6 +27,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { useUser } from '@clerk/nextjs'
 
 interface CreatorFormData {
   username: string
@@ -88,6 +89,7 @@ const experienceLevelOptions = [
 
 export const CreatorSetupForm = () => {
   const router = useRouter()
+  const { user: clerkUser } = useUser()
   const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isCheckingUsername, setIsCheckingUsername] = useState(false)
@@ -124,6 +126,13 @@ export const CreatorSetupForm = () => {
 
   const [newTag, setNewTag] = useState('')
   const [newLanguage, setNewLanguage] = useState('')
+
+  // Set display_name from Clerk username
+  useEffect(() => {
+    if (clerkUser?.username && !formData.display_name) {
+      updateFormData('display_name', clerkUser.username)
+    }
+  }, [clerkUser?.username])
 
   const updateFormData = <K extends keyof CreatorFormData>(
     key: K,
@@ -232,7 +241,7 @@ export const CreatorSetupForm = () => {
     if (step === 1) {
       return (
         formData.username.length >= 3 &&
-        formData.display_name.length >= 2 &&
+        clerkUser?.username &&
         formData.bio.length >= 20 &&
         usernameAvailable === true
       )
@@ -253,7 +262,10 @@ export const CreatorSetupForm = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          display_name: clerkUser?.username || formData.display_name,
+        }),
       })
 
       const data = (await response.json()) as { success?: boolean; creator?: { username: string }; message?: string }
@@ -330,14 +342,13 @@ export const CreatorSetupForm = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="display_name">Display Name *</Label>
-              <Input
-                id="display_name"
-                value={formData.display_name}
-                onChange={(e) => updateFormData('display_name', e.target.value)}
-                placeholder="Your Display Name"
-                maxLength={100}
-              />
+              <Label>Display Name</Label>
+              <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md border">
+                <span className="font-medium">{clerkUser?.username || 'Loading...'}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Your display name is set to your account username.
+              </p>
             </div>
 
             <div className="space-y-2">

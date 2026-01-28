@@ -30,6 +30,17 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
+// Format numbers with K/M suffix only when appropriate
+function formatCompactNumber(num: number): string {
+  if (num >= 1_000_000) {
+    return (num / 1_000_000).toFixed(1) + 'M'
+  }
+  if (num >= 1_000) {
+    return (num / 1_000).toFixed(1) + 'K'
+  }
+  return num.toString()
+}
+
 interface CreatorProfile {
   id: string
   username: string
@@ -332,7 +343,7 @@ export const CreatorProfileView = ({ username }: CreatorProfileViewProps) => {
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold">
-                {((creator.portfolio?.total_conversations || 0) / 1000).toFixed(1)}K
+                {formatCompactNumber(creator.portfolio?.total_conversations || 0)}
               </p>
               <p className="text-sm text-muted-foreground">Conversations</p>
             </div>

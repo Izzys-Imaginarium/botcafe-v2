@@ -165,7 +165,6 @@ export async function GET(request: NextRequest) {
     // Note: Nested array field queries don't work reliably with D1/SQLite,
     // so we fetch all recent conversations and filter in code
     let allConversations: any[] = []
-    let allConversationsRaw: any[] = [] // DEBUG: Store raw conversations for debugging
     if (allBotIds.length > 0) {
       const allBotIdStrings = allBotIds.map(String)
       const conversationsResult = await payload.find({
@@ -174,7 +173,6 @@ export async function GET(request: NextRequest) {
         depth: 1, // Populate bot_participation.bot_id
         overrideAccess: true,
       })
-      allConversationsRaw = conversationsResult.docs // DEBUG
       // Filter to only conversations that include any of our bots
       // Check both bot_participation array AND participants.bots JSON field (older format)
       allConversations = conversationsResult.docs.filter((conv) => {
@@ -285,19 +283,6 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // DEBUG: Add diagnostic info to understand conversation counting issue
-    const debug = {
-      totalBotsFound: allBots.length,
-      allBotIds: allBotIds.map(String),
-      conversationsBeforeFilter: allConversationsRaw.length,
-      conversationsAfterFilter: allConversations.length,
-      sampleConversation: allConversationsRaw[0] ? {
-        id: allConversationsRaw[0].id,
-        bot_participation: (allConversationsRaw[0] as any).bot_participation,
-        participants: (allConversationsRaw[0] as any).participants,
-      } : null,
-    }
-
     return NextResponse.json({
       success: true,
       creators: creatorsWithRealStats,
@@ -307,7 +292,6 @@ export async function GET(request: NextRequest) {
         totalPages: creators.totalPages,
         totalDocs: creators.totalDocs,
       },
-      debug, // TEMP: Remove after fixing
     })
   } catch (error: any) {
     console.error('Fetch creators error:', error)

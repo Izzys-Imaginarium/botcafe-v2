@@ -30,6 +30,17 @@ import { toast } from 'sonner'
 import { useInfiniteList } from '@/hooks/use-infinite-list'
 import { InfiniteScrollTrigger } from '@/components/ui/infinite-scroll-trigger'
 
+// Format numbers with K/M suffix only when appropriate
+function formatCompactNumber(num: number): string {
+  if (num >= 1_000_000) {
+    return (num / 1_000_000).toFixed(1) + 'M'
+  }
+  if (num >= 1_000) {
+    return (num / 1_000).toFixed(1) + 'K'
+  }
+  return num.toString()
+}
+
 interface CreatorProfile {
   id: string
   username: string
@@ -197,7 +208,7 @@ export const CreatorDirectoryView = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Total Conversations</p>
                   <p className="text-2xl font-bold">
-                    {((creators.reduce((sum, c) => sum + (c.portfolio?.total_conversations || 0), 0)) / 1000).toFixed(1)}K
+                    {formatCompactNumber(creators.reduce((sum, c) => sum + (c.portfolio?.total_conversations || 0), 0))}
                   </p>
                 </div>
                 <MessageSquare className="h-8 w-8 text-green-400" />
@@ -347,7 +358,7 @@ export const CreatorDirectoryView = () => {
                           <MessageSquare className="h-4 w-4" />
                         </div>
                         <p className="text-sm font-semibold">
-                          {((creator.portfolio?.total_conversations || 0) / 1000).toFixed(1)}K
+                          {formatCompactNumber(creator.portfolio?.total_conversations || 0)}
                         </p>
                         <p className="text-xs text-muted-foreground">Chats</p>
                       </div>

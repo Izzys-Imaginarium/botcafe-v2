@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || ''
     const classifications = searchParams.get('classifications')?.split(',').filter(Boolean) || []
     const includeShared = searchParams.get('includeShared') !== 'false' // Default true
+    const excludeOwn = searchParams.get('excludeOwn') === 'true'
 
     // Get Payload instance with error handling
     let payload
@@ -29,9 +30,10 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Get current user for shared bot access
+    // Get current user for shared bot access, excludeOwn, or recently-chatted sort
     let payloadUserId: number | null = null
-    if (includeShared) {
+    const needsUserId = includeShared || excludeOwn || sort === 'recently-chatted'
+    if (needsUserId) {
       const clerkUser = await currentUser()
       if (clerkUser) {
         const payloadUsers = await payload.find({
@@ -50,7 +52,7 @@ export async function GET(request: NextRequest) {
 
     // Get IDs of bots shared with this user via AccessControl
     const sharedBotIds: number[] = []
-    if (payloadUserId) {
+    if (payloadUserId && includeShared) {
       const accessControls = await payload.find({
         collection: 'access-control',
         where: {
@@ -85,8 +87,8 @@ export async function GET(request: NextRequest) {
       orConditions.push({ id: { in: sharedBotIds } })
     }
 
-    // Add user's own bots
-    if (payloadUserId) {
+    // Add user's own bots (unless excludeOwn is true)
+    if (payloadUserId && !excludeOwn) {
       orConditions.push({ user: { equals: payloadUserId } })
     }
 
@@ -94,21 +96,58 @@ export async function GET(request: NextRequest) {
       or: orConditions,
     }
 
+    // If excludeOwn is true, explicitly exclude user's bots
+    if (excludeOwn && payloadUserId) {
+      where.and = where.and || []
+      where.and.push({ user: { not_equals: payloadUserId } })
+    }
+
     // Add search filter if provided
     if (search) {
-      where.and = [
-        {
-          or: [
-            { name: { contains: search } },
-            { description: { contains: search } },
-            { creator_display_name: { contains: search } },
-          ],
+      where.and = where.and || []
+      where.and.push({
+        or: [
+          { name: { contains: search } },
+          { description: { contains: search } },
+          { creator_display_name: { contains: search } },
+        ],
+      })
+    }
+
+    // For "recently-chatted" sort, get bot IDs ordered by last chat activity
+    let recentlyChatted: Map<number, Date> = new Map()
+    if (sort === 'recently-chatted' && payloadUserId) {
+      const conversations = await payload.find({
+        collection: 'conversation',
+        where: {
+          user: { equals: payloadUserId },
         },
-      ]
+        sort: '-conversation_metadata.last_activity',
+        limit: 100,
+        depth: 0,
+        overrideAccess: true,
+      })
+
+      // Build a map of bot_id -> last activity time
+      for (const conv of conversations.docs as any[]) {
+        const lastActivity = conv.conversation_metadata?.last_activity
+          ? new Date(conv.conversation_metadata.last_activity)
+          : new Date(conv.modified_timestamp || conv.created_timestamp)
+
+        if (conv.bot_participation && Array.isArray(conv.bot_participation)) {
+          for (const bp of conv.bot_participation) {
+            const botId = typeof bp.bot_id === 'object' ? bp.bot_id?.id : bp.bot_id
+            if (botId && (!recentlyChatted.has(botId) || lastActivity > recentlyChatted.get(botId)!)) {
+              recentlyChatted.set(botId, lastActivity)
+            }
+          }
+        }
+      }
     }
 
     // Determine sort order
     let sortField = '-created_date' // default: newest first
+    const useInMemorySort = sort === 'random' || sort === 'recently-chatted'
     switch (sort) {
       case 'name':
         sortField = 'name'
@@ -128,19 +167,25 @@ export async function GET(request: NextRequest) {
       case 'recent':
         sortField = '-created_date'
         break
+      case 'random':
+      case 'recently-chatted':
+        // These need in-memory sorting, use default DB sort
+        sortField = '-created_date'
+        break
     }
 
     // Fetch bots from Payload with creator profile populated
-    // If filtering by classifications, we need to fetch more and filter in-memory
+    // If filtering by classifications or using in-memory sort, we need to fetch more
     // due to D1/SQLite limitations with nested array queries
-    const fetchLimit = classifications.length > 0 ? Math.max(limit * 3, 100) : limit
+    const needsInMemoryProcessing = classifications.length > 0 || useInMemorySort
+    const fetchLimit = needsInMemoryProcessing ? Math.max(limit * 3, 100) : limit
 
     const result = await payload.find({
       collection: 'bot',
       where,
       sort: sortField,
       limit: fetchLimit,
-      page: classifications.length > 0 ? 1 : page, // Fetch from page 1 if filtering
+      page: needsInMemoryProcessing ? 1 : page, // Fetch from page 1 if doing in-memory processing
       depth: 1, // Include related data
       overrideAccess: true,
     })
@@ -156,14 +201,38 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Apply pagination manually if we filtered by classifications
+    // Apply in-memory sorting for random or recently-chatted
+    if (sort === 'random') {
+      // Fisher-Yates shuffle
+      for (let i = filteredDocs.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[filteredDocs[i], filteredDocs[j]] = [filteredDocs[j], filteredDocs[i]]
+      }
+    } else if (sort === 'recently-chatted' && recentlyChatted.size > 0) {
+      // Sort by last chat activity, putting chatted bots first
+      filteredDocs.sort((a: any, b: any) => {
+        const aTime = recentlyChatted.get(a.id)
+        const bTime = recentlyChatted.get(b.id)
+
+        // Bots the user has chatted with come first
+        if (aTime && !bTime) return -1
+        if (!aTime && bTime) return 1
+        if (aTime && bTime) {
+          return bTime.getTime() - aTime.getTime() // Most recent first
+        }
+        // For bots not chatted with, maintain creation date order
+        return new Date(b.created_date).getTime() - new Date(a.created_date).getTime()
+      })
+    }
+
+    // Apply pagination manually if we did in-memory processing
     let paginatedDocs = filteredDocs
     let totalDocs = result.totalDocs
     let totalPages = result.totalPages
     let hasNextPage = result.hasNextPage
     let hasPrevPage = result.hasPrevPage
 
-    if (classifications.length > 0) {
+    if (needsInMemoryProcessing) {
       totalDocs = filteredDocs.length
       totalPages = Math.ceil(totalDocs / limit)
       const startIndex = (page - 1) * limit

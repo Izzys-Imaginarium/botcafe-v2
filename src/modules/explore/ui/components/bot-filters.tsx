@@ -26,6 +26,7 @@ export const BotFilters = () => {
   const [selectedClassifications, setSelectedClassifications] = useState<string[]>(
     searchParams.get('classifications')?.split(',').filter(Boolean) || []
   )
+  const [hideMyBots, setHideMyBots] = useState(searchParams.get('excludeOwn') === 'true')
 
   // Debounce search
   useEffect(() => {
@@ -55,6 +56,18 @@ export const BotFilters = () => {
       params.set('classifications', newSelections.join(','))
     } else {
       params.delete('classifications')
+    }
+    router.push(`?${params.toString()}`)
+  }
+
+  // Handle hide my bots toggle
+  const handleHideMyBotsChange = (checked: boolean) => {
+    setHideMyBots(checked)
+    const params = new URLSearchParams(searchParams.toString())
+    if (checked) {
+      params.set('excludeOwn', 'true')
+    } else {
+      params.delete('excludeOwn')
     }
     router.push(`?${params.toString()}`)
   }
@@ -93,6 +106,19 @@ export const BotFilters = () => {
               </label>
             ))}
           </div>
+        </div>
+
+        <div className="space-y-3 pt-4 border-t border-gold-ancient/20">
+          <Label className="text-parchment-dim font-lore text-sm">Visibility</Label>
+          <label className="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={hideMyBots}
+              onChange={(e) => handleHideMyBotsChange(e.target.checked)}
+              className="rounded border-gold-ancient/30 text-gold-rich focus:ring-gold-rich/20"
+            />
+            <span className="text-parchment font-lore text-sm">Hide my bots</span>
+          </label>
         </div>
       </div>
     </Card>

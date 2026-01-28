@@ -64,6 +64,18 @@ export const BotSort = () => {
           >
             Recently Created
           </SelectItem>
+          <SelectItem
+            value="recently-chatted"
+            className="text-parchment hover:bg-gold-ancient/20 focus:bg-gold-ancient/20"
+          >
+            Recently Chatted
+          </SelectItem>
+          <SelectItem
+            value="random"
+            className="text-parchment hover:bg-gold-ancient/20 focus:bg-gold-ancient/20"
+          >
+            Random
+          </SelectItem>
         </SelectContent>
       </Select>
     </div>

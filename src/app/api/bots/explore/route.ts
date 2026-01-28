@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '12')
     const sort = searchParams.get('sort') || 'recent'
     const search = searchParams.get('search') || ''
+    const classifications = searchParams.get('classifications')?.split(',').filter(Boolean) || []
     const includeShared = searchParams.get('includeShared') !== 'false' // Default true
 
     // Get Payload instance with error handling
@@ -130,18 +131,49 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch bots from Payload with creator profile populated
+    // If filtering by classifications, we need to fetch more and filter in-memory
+    // due to D1/SQLite limitations with nested array queries
+    const fetchLimit = classifications.length > 0 ? Math.max(limit * 3, 100) : limit
+
     const result = await payload.find({
       collection: 'bot',
       where,
       sort: sortField,
-      limit,
-      page,
+      limit: fetchLimit,
+      page: classifications.length > 0 ? 1 : page, // Fetch from page 1 if filtering
       depth: 1, // Include related data
       overrideAccess: true,
     })
 
+    // Filter by classifications if specified
+    let filteredDocs = result.docs
+    if (classifications.length > 0) {
+      filteredDocs = result.docs.filter((bot: any) => {
+        if (!bot.classifications || bot.classifications.length === 0) return false
+        return bot.classifications.some((c: any) =>
+          classifications.includes(c.classification)
+        )
+      })
+    }
+
+    // Apply pagination manually if we filtered by classifications
+    let paginatedDocs = filteredDocs
+    let totalDocs = result.totalDocs
+    let totalPages = result.totalPages
+    let hasNextPage = result.hasNextPage
+    let hasPrevPage = result.hasPrevPage
+
+    if (classifications.length > 0) {
+      totalDocs = filteredDocs.length
+      totalPages = Math.ceil(totalDocs / limit)
+      const startIndex = (page - 1) * limit
+      paginatedDocs = filteredDocs.slice(startIndex, startIndex + limit)
+      hasNextPage = page < totalPages
+      hasPrevPage = page > 1
+    }
+
     // Transform docs to include creator username and access info
-    const botsWithCreatorUsername = result.docs.map((bot: any) => {
+    const botsWithCreatorUsername = paginatedDocs.map((bot: any) => {
       const creatorProfile = bot.creator_profile
       const botUserId = typeof bot.user === 'object' ? bot.user?.id : bot.user
 
@@ -163,11 +195,11 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       bots: botsWithCreatorUsername,
-      totalPages: result.totalPages,
-      currentPage: result.page,
-      totalDocs: result.totalDocs,
-      hasNextPage: result.hasNextPage,
-      hasPrevPage: result.hasPrevPage,
+      totalPages,
+      currentPage: page,
+      totalDocs,
+      hasNextPage,
+      hasPrevPage,
     })
   } catch (error: any) {
     console.error('Error fetching bots:', error)

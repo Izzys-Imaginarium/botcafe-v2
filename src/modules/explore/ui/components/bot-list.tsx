@@ -35,8 +35,10 @@ export const BotList = () => {
     const params: Record<string, string> = {}
     const sort = searchParams.get('sort')
     const search = searchParams.get('search')
+    const classifications = searchParams.get('classifications')
     if (sort) params.sort = sort
     if (search) params.search = search
+    if (classifications) params.classifications = classifications
     return params
   }, [searchParams])
 

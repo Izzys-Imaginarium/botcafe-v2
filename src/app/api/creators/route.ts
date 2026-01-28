@@ -166,6 +166,7 @@ export async function GET(request: NextRequest) {
     // so we fetch all recent conversations and filter in code
     let allConversations: any[] = []
     if (allBotIds.length > 0) {
+      const allBotIdStrings = allBotIds.map(String)
       const conversationsResult = await payload.find({
         collection: 'conversation',
         limit: 5000,
@@ -173,14 +174,25 @@ export async function GET(request: NextRequest) {
         overrideAccess: true,
       })
       // Filter to only conversations that include any of our bots
+      // Check both bot_participation array AND participants.bots JSON field (older format)
       allConversations = conversationsResult.docs.filter((conv) => {
+        // Check bot_participation array (newer format)
         const botParticipation = (conv as any).bot_participation || []
-        return botParticipation.some((bp: any) => {
+        const hasInParticipation = botParticipation.some((bp: any) => {
           const botId = typeof bp.bot_id === 'object' && bp.bot_id !== null
             ? String(bp.bot_id.id)
             : String(bp.bot_id)
-          return allBotIds.map(String).includes(botId)
+          return allBotIdStrings.includes(botId)
         })
+        if (hasInParticipation) return true
+
+        // Check participants.bots JSON field (older format)
+        const participants = (conv as any).participants
+        if (participants && Array.isArray(participants.bots)) {
+          return participants.bots.some((botId: any) => allBotIdStrings.includes(String(botId)))
+        }
+
+        return false
       })
     }
 
@@ -204,14 +216,25 @@ export async function GET(request: NextRequest) {
       const realBotCount = creatorBots.length
 
       // Count conversations that include any of this creator's bots
+      // Check both bot_participation array AND participants.bots JSON field
       const realTotalConversations = allConversations.filter((conv) => {
+        // Check bot_participation array (newer format)
         const botParticipation = conv.bot_participation || []
-        return botParticipation.some((bp: any) => {
+        const hasInParticipation = botParticipation.some((bp: any) => {
           const botId = typeof bp.bot_id === 'object' && bp.bot_id !== null
             ? bp.bot_id.id
             : bp.bot_id
           return creatorBotIds.includes(String(botId))
         })
+        if (hasInParticipation) return true
+
+        // Check participants.bots JSON field (older format)
+        const participants = conv.participants
+        if (participants && Array.isArray(participants.bots)) {
+          return participants.bots.some((botId: any) => creatorBotIds.includes(String(botId)))
+        }
+
+        return false
       }).length
 
       const realTotalLikes = allLikes.filter((like) => {

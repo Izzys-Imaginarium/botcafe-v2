@@ -129,14 +129,24 @@ export async function GET(
       })
 
       // Count conversations that have any of the creator's bots
+      // Check both bot_participation array AND participants.bots JSON field
       const botIdSet = new Set(botIds.map(id => String(id)))
       realTotalConversations = conversations.docs.filter(conv => {
+        // Check bot_participation array (newer format)
         const participation = conv.bot_participation as Array<{ bot_id: number | { id: number } }> | undefined
-        if (!participation || !Array.isArray(participation)) return false
-        return participation.some(p => {
-          const botId = typeof p.bot_id === 'object' ? String(p.bot_id?.id) : String(p.bot_id)
-          return botIdSet.has(botId)
-        })
+        if (participation && Array.isArray(participation)) {
+          const found = participation.some(p => {
+            const botId = typeof p.bot_id === 'object' ? String(p.bot_id?.id) : String(p.bot_id)
+            return botIdSet.has(botId)
+          })
+          if (found) return true
+        }
+        // Check participants.bots JSON field (older format)
+        const participants = (conv as any).participants
+        if (participants && Array.isArray(participants.bots)) {
+          return participants.bots.some((id: any) => botIdSet.has(String(id)))
+        }
+        return false
       }).length
     }
 

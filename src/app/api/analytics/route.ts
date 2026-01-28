@@ -112,14 +112,23 @@ export async function GET() {
       const botInteractions = interactions.docs.filter(
         (i) => ((i as any).bot as any)?.id === bot.id || (i as any).bot === bot.id
       )
-      // Count conversations where this bot appears in bot_participation array
+      // Count conversations where this bot appears in bot_participation array OR participants.bots
       const botConversationCount = conversations.docs.filter((conv) => {
+        // Check bot_participation array (newer format)
         const participation = (conv as any).bot_participation as any[] | undefined
-        if (!participation || !Array.isArray(participation)) return false
-        return participation.some((p) => {
-          const botId = p.bot_id?.id || p.bot_id
-          return botId === bot.id
-        })
+        if (participation && Array.isArray(participation)) {
+          const found = participation.some((p) => {
+            const botId = p.bot_id?.id || p.bot_id
+            return String(botId) === String(bot.id)
+          })
+          if (found) return true
+        }
+        // Check participants.bots JSON field (older format)
+        const participants = (conv as any).participants
+        if (participants && Array.isArray(participants.bots)) {
+          return participants.bots.some((id: any) => String(id) === String(bot.id))
+        }
+        return false
       }).length
       return {
         id: bot.id,
@@ -150,10 +159,35 @@ export async function GET() {
         .filter((c) => new Date(c.createdAt) > thirtyDaysAgo)
         .slice(0, 10)
         .map((c) => {
-          // Get bot name from bot_participation array (first/primary bot)
+          // Get bot name from bot_participation array (first/primary bot) OR participants.bots
+          let botName = 'Unknown Bot'
+
+          // Try bot_participation array first (newer format)
           const participation = (c as any).bot_participation as any[] | undefined
-          const primaryBot = participation?.[0]?.bot_id
-          const botName = primaryBot?.name || (c as any).title || 'Unknown Bot'
+          if (participation && participation.length > 0) {
+            const primaryBot = participation[0]?.bot_id
+            if (primaryBot?.name) {
+              botName = primaryBot.name
+            }
+          }
+
+          // If still unknown, try participants.bots and look up bot name
+          if (botName === 'Unknown Bot') {
+            const participants = (c as any).participants
+            if (participants && Array.isArray(participants.bots) && participants.bots.length > 0) {
+              const firstBotId = String(participants.bots[0])
+              const matchingBot = bots.docs.find((b) => String(b.id) === firstBotId)
+              if (matchingBot) {
+                botName = matchingBot.name
+              }
+            }
+          }
+
+          // Fallback to conversation title
+          if (botName === 'Unknown Bot' && (c as any).title) {
+            botName = (c as any).title
+          }
+
           return {
             type: 'conversation' as const,
             name: botName,

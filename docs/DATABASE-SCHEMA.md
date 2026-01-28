@@ -1,7 +1,7 @@
 # BotCafe v2 - Database Schema
 
-**Last Updated**: 2026-01-25
-**Version**: 3.13
+**Last Updated**: 2026-01-27
+**Version**: 3.14
 **Database**: Cloudflare D1 (SQLite) via Payload CMS
 
 ---

@@ -4,6 +4,7 @@ import { getPayload } from 'payload'
 import config from '@/payload.config'
 import fs from 'fs'
 import path from 'path'
+import { getCloudflareContext } from '@opennextjs/cloudflare'
 
 export const dynamic = 'force-dynamic'
 
@@ -56,9 +57,25 @@ function mapAiEngineToProvider(aiEngine: string): ApiKeyProvider {
   return mapping[aiEngine.toLowerCase()] || 'openai'
 }
 
-// Load migration data from JSON file
-function loadMigrationData(): MigrationData | null {
+// Load migration data from R2 (production) or local file (development)
+async function loadMigrationData(): Promise<MigrationData | null> {
   try {
+    // Try R2 first (production)
+    try {
+      const cloudflare = await getCloudflareContext()
+      if (cloudflare?.env?.R2) {
+        const r2Object = await cloudflare.env.R2.get('migration_data.json')
+        if (r2Object) {
+          const text = await r2Object.text()
+          return JSON.parse(text) as MigrationData
+        }
+      }
+    } catch (r2Error) {
+      // R2 not available, fall back to filesystem
+      console.log('R2 not available, trying filesystem')
+    }
+
+    // Fall back to local filesystem (development)
     const migrationFilePath = path.join(process.cwd(), 'migration-data', 'migration_data.json')
     if (!fs.existsSync(migrationFilePath)) {
       console.log('Migration data file not found')
@@ -98,7 +115,7 @@ export async function GET(_request: NextRequest) {
     }
 
     // Load migration data
-    const migrationData = loadMigrationData()
+    const migrationData = await loadMigrationData()
     if (!migrationData) {
       return NextResponse.json({
         success: true,
@@ -181,7 +198,7 @@ export async function POST(_request: NextRequest) {
     }
 
     // Load migration data
-    const migrationData = loadMigrationData()
+    const migrationData = await loadMigrationData()
     if (!migrationData) {
       return NextResponse.json(
         { success: false, message: 'Migration data file not found' },

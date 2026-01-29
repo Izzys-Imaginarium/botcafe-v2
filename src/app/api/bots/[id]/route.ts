@@ -306,23 +306,46 @@ export async function DELETE(
     }
 
     // Clean up all bot references before deletion
+    // Use small batch sizes to avoid D1 "too many SQL variables" error
     const botIdNum = typeof id === 'string' ? parseInt(id, 10) : id
+    const BATCH_SIZE = 50
 
-    // DELETE bot interactions (bot field is required, can't nullify)
-    await payload.delete({
-      collection: 'botInteractions',
-      where: { bot: { equals: botIdNum } },
-      overrideAccess: true,
+    // Helper to process in batches
+    async function processBatched<T>(
+      collection: string,
+      whereClause: Record<string, any> | undefined,
+      processor: (doc: T) => Promise<void>
+    ) {
+      let page = 1
+      let hasMore = true
+      while (hasMore) {
+        const result = await payload.find({
+          collection: collection as any,
+          where: whereClause,
+          limit: BATCH_SIZE,
+          page,
+          overrideAccess: true,
+        })
+        for (const doc of result.docs) {
+          await processor(doc as T)
+        }
+        hasMore = result.hasNextPage
+        page++
+      }
+    }
+
+    // DELETE bot interactions one by one (bot field is required)
+    await processBatched('botInteractions', { bot: { equals: botIdNum } }, async (interaction: any) => {
+      await payload.delete({
+        collection: 'botInteractions',
+        id: interaction.id,
+        overrideAccess: true,
+      })
     })
 
     // Remove bot from memories array (hasMany, not required)
-    const memories = await payload.find({
-      collection: 'memory',
-      limit: 1000,
-      overrideAccess: true,
-    })
-    for (const memory of memories.docs) {
-      const memoryBots = (memory as any).bot || []
+    await processBatched('memory', undefined, async (memory: any) => {
+      const memoryBots = memory.bot || []
       const botArray = Array.isArray(memoryBots) ? memoryBots : [memoryBots]
       const hasBotRef = botArray.some((b: any) => {
         const bId = typeof b === 'object' ? b?.id : b
@@ -340,40 +363,30 @@ export async function DELETE(
           overrideAccess: true,
         })
       }
-    }
+    })
 
-    // DELETE memory insights (bot field is required, can't nullify)
-    await payload.delete({
-      collection: 'memory-insights',
-      where: { bot: { equals: botIdNum } },
-      overrideAccess: true,
+    // DELETE memory insights one by one (bot field is required)
+    await processBatched('memory-insights', { bot: { equals: botIdNum } }, async (insight: any) => {
+      await payload.delete({
+        collection: 'memory-insights',
+        id: insight.id,
+        overrideAccess: true,
+      })
     })
 
     // Nullify bot reference on messages (not required)
-    const messages = await payload.find({
-      collection: 'message',
-      where: { bot: { equals: botIdNum } },
-      limit: 1000,
-      overrideAccess: true,
-    })
-    for (const message of messages.docs) {
+    await processBatched('message', { bot: { equals: botIdNum } }, async (message: any) => {
       await payload.update({
         collection: 'message',
         id: message.id,
         data: { bot: null },
         overrideAccess: true,
       })
-    }
+    })
 
     // Also nullify source_bot_id in message_attribution
-    const messagesWithSourceBot = await payload.find({
-      collection: 'message',
-      where: { 'message_attribution.source_bot_id': { equals: botIdNum } },
-      limit: 1000,
-      overrideAccess: true,
-    })
-    for (const message of messagesWithSourceBot.docs) {
-      const attribution = (message as any).message_attribution || {}
+    await processBatched('message', { 'message_attribution.source_bot_id': { equals: botIdNum } }, async (message: any) => {
+      const attribution = message.message_attribution || {}
       await payload.update({
         collection: 'message',
         id: message.id,
@@ -385,16 +398,11 @@ export async function DELETE(
         },
         overrideAccess: true,
       })
-    }
+    })
 
     // Remove bot from bot_participation arrays in conversations
-    const allConversations = await payload.find({
-      collection: 'conversation',
-      limit: 5000,
-      overrideAccess: true,
-    })
-    for (const conv of allConversations.docs) {
-      const participation = (conv as any).bot_participation || []
+    await processBatched('conversation', undefined, async (conv: any) => {
+      const participation = conv.bot_participation || []
       const hasBot = participation.some((bp: any) => {
         const bpBotId = typeof bp.bot_id === 'object' ? bp.bot_id?.id : bp.bot_id
         return bpBotId === botIdNum
@@ -411,16 +419,11 @@ export async function DELETE(
           overrideAccess: true,
         })
       }
-    }
+    })
 
     // Remove bot from featured_bots in creator profiles
-    const allProfiles = await payload.find({
-      collection: 'creatorProfiles',
-      limit: 1000,
-      overrideAccess: true,
-    })
-    for (const profile of allProfiles.docs) {
-      const currentFeatured = (profile as any).portfolio?.featured_bots || []
+    await processBatched('creatorProfiles', undefined, async (profile: any) => {
+      const currentFeatured = profile.portfolio?.featured_bots || []
       const hasBot = currentFeatured.some((b: any) => {
         const bId = typeof b === 'object' ? b?.id : b
         return bId === botIdNum
@@ -435,23 +438,18 @@ export async function DELETE(
           id: profile.id,
           data: {
             portfolio: {
-              ...((profile as any).portfolio || {}),
+              ...(profile.portfolio || {}),
               featured_bots: updatedFeatured,
             },
           },
           overrideAccess: true,
         })
       }
-    }
+    })
 
     // Remove bot from Knowledge applies_to_bots (hasMany)
-    const allKnowledge = await payload.find({
-      collection: 'knowledge',
-      limit: 5000,
-      overrideAccess: true,
-    })
-    for (const entry of allKnowledge.docs) {
-      const appliesToBots = (entry as any).applies_to_bots || []
+    await processBatched('knowledge', undefined, async (entry: any) => {
+      const appliesToBots = entry.applies_to_bots || []
       const hasBot = appliesToBots.some((b: any) => {
         const bId = typeof b === 'object' ? b?.id : b
         return bId === botIdNum
@@ -468,16 +466,11 @@ export async function DELETE(
           overrideAccess: true,
         })
       }
-    }
+    })
 
     // Remove bot from KnowledgeCollections bot array (hasMany)
-    const allCollections = await payload.find({
-      collection: 'knowledgeCollections',
-      limit: 1000,
-      overrideAccess: true,
-    })
-    for (const coll of allCollections.docs) {
-      const collBots = (coll as any).bot || []
+    await processBatched('knowledgeCollections', undefined, async (coll: any) => {
+      const collBots = coll.bot || []
       const hasBot = collBots.some((b: any) => {
         const bId = typeof b === 'object' ? b?.id : b
         return bId === botIdNum
@@ -494,23 +487,20 @@ export async function DELETE(
           overrideAccess: true,
         })
       }
-    }
+    })
 
-    // DELETE PersonaAnalytics (bot field is required, can't nullify)
-    await payload.delete({
-      collection: 'persona-analytics',
-      where: { bot: { equals: botIdNum } },
-      overrideAccess: true,
+    // DELETE PersonaAnalytics one by one (bot field is required)
+    await processBatched('persona-analytics', { bot: { equals: botIdNum } }, async (pa: any) => {
+      await payload.delete({
+        collection: 'persona-analytics',
+        id: pa.id,
+        overrideAccess: true,
+      })
     })
 
     // Nullify bot_id in UsageAnalytics resource_details
-    const allUsageAnalytics = await payload.find({
-      collection: 'usage-analytics',
-      limit: 5000,
-      overrideAccess: true,
-    })
-    for (const ua of allUsageAnalytics.docs) {
-      const resourceDetails = (ua as any).resource_details || {}
+    await processBatched('usage-analytics', undefined, async (ua: any) => {
+      const resourceDetails = ua.resource_details || {}
       const resourceBotId = typeof resourceDetails.bot_id === 'object' ? resourceDetails.bot_id?.id : resourceDetails.bot_id
       if (resourceBotId === botIdNum) {
         await payload.update({
@@ -525,18 +515,20 @@ export async function DELETE(
           overrideAccess: true,
         })
       }
-    }
+    })
 
-    // Delete access control entries for this bot
-    await payload.delete({
-      collection: 'access-control',
-      where: {
-        and: [
-          { resource_type: { equals: 'bot' } },
-          { resource_id: { equals: String(botIdNum) } },
-        ],
-      },
-      overrideAccess: true,
+    // Delete access control entries one by one
+    await processBatched('access-control', {
+      and: [
+        { resource_type: { equals: 'bot' } },
+        { resource_id: { equals: String(botIdNum) } },
+      ],
+    }, async (ac: any) => {
+      await payload.delete({
+        collection: 'access-control',
+        id: ac.id,
+        overrideAccess: true,
+      })
     })
 
     // Now delete the bot

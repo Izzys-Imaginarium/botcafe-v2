@@ -26,6 +26,55 @@ interface MigrationApiKey {
   ai_engine: string
 }
 
+interface MigrationBot {
+  old_id: string
+  name: string
+  description: string
+  category: string
+  avatar_type: string
+  avatar_value: string
+  created_at: string
+  system_prompt: string
+  is_public: boolean
+  greeting_message: string
+  is_nsfw: boolean
+  speech_examples: string
+  kinks: string
+  slug: string
+  is_shared_edit: boolean
+  is_shared_view: boolean
+}
+
+interface MigrationKnowledgeEntry {
+  old_id: string
+  text: string
+  bot_id: string | null
+  collection_id: string | null
+  created_at: string
+  updated_at: string
+  is_orphaned: boolean
+  type: string
+}
+
+interface MigrationMessage {
+  old_id: string
+  role: string
+  content: string
+  created_at: string
+  is_deleted: boolean
+}
+
+interface MigrationConversation {
+  old_id: string
+  bot_id: string | null
+  first_message_preview: string
+  last_message_preview: string
+  created_at: string
+  updated_at: string
+  is_deleted: boolean
+  messages: MigrationMessage[]
+}
+
 interface MigrationUserData {
   old_id: string
   username: string
@@ -33,9 +82,18 @@ interface MigrationUserData {
   last_name: string
   email: string
   knowledge_collections: MigrationCollection[]
-  knowledge_count?: number
+  knowledge_entries: MigrationKnowledgeEntry[]
   api_keys: MigrationApiKey[]
-  persona_count?: number
+  bots: MigrationBot[]
+  conversations: MigrationConversation[]
+  stats?: {
+    bot_count: number
+    collection_count: number
+    knowledge_count: number
+    api_key_count: number
+    conversation_count: number
+    message_count: number
+  }
 }
 
 type MigrationData = Record<string, MigrationUserData>
@@ -56,12 +114,27 @@ function mapAiEngineToProvider(aiEngine: string): ApiKeyProvider {
   return mapping[aiEngine.toLowerCase()] || 'openai'
 }
 
+function generateSlug(name: string, existingSlugs: Set<string>): string {
+  let baseSlug = name.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+  if (!baseSlug) baseSlug = 'bot'
+
+  let slug = baseSlug
+  let counter = 1
+  while (existingSlugs.has(slug)) {
+    slug = `${baseSlug}-${counter}`
+    counter++
+  }
+  existingSlugs.add(slug)
+  return slug
+}
+
 async function loadMigrationData(): Promise<MigrationData | null> {
   try {
+    // Try R2 first (production) - use complete data file
     try {
       const cloudflare = await getCloudflareContext()
       if (cloudflare?.env?.R2) {
-        const r2Object = await cloudflare.env.R2.get('migration_data.json')
+        const r2Object = await cloudflare.env.R2.get('migration_data_complete.json')
         if (r2Object) {
           const text = await r2Object.text()
           return JSON.parse(text) as MigrationData
@@ -71,8 +144,15 @@ async function loadMigrationData(): Promise<MigrationData | null> {
       console.log('R2 not available, trying filesystem')
     }
 
-    const migrationFilePath = path.join(process.cwd(), 'migration-data', 'migration_data.json')
+    // Fall back to local filesystem (development)
+    const migrationFilePath = path.join(process.cwd(), 'migration-data', 'migration_data_complete.json')
     if (!fs.existsSync(migrationFilePath)) {
+      // Also try old filename for backwards compatibility
+      const oldPath = path.join(process.cwd(), 'migration-data', 'migration_data.json')
+      if (fs.existsSync(oldPath)) {
+        const rawData = fs.readFileSync(oldPath, 'utf-8')
+        return JSON.parse(rawData) as MigrationData
+      }
       return null
     }
     const rawData = fs.readFileSync(migrationFilePath, 'utf-8')
@@ -89,7 +169,7 @@ async function loadMigrationData(): Promise<MigrationData | null> {
  * Admin-only endpoint to batch migrate all users from the old database.
  * Creates Payload users (if they don't exist) and migrates their data.
  */
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // Authenticate user - must be admin
     const clerkUser = await currentUser()
@@ -134,8 +214,13 @@ export async function POST(request: NextRequest) {
       usersCreated: 0,
       usersSkipped: 0,
       usersFailed: 0,
+      creatorProfilesCreated: 0,
+      botsCreated: 0,
       collectionsCreated: 0,
+      knowledgeEntriesCreated: 0,
       apiKeysCreated: 0,
+      conversationsCreated: 0,
+      messagesCreated: 0,
       errors: [] as string[],
     }
 
@@ -175,10 +260,70 @@ export async function POST(request: NextRequest) {
           results.usersCreated++
         }
 
-        // Migrate knowledge collections
-        for (const collection of userData.knowledge_collections) {
+        // Track ID mappings for this user
+        const collectionIdMap: Record<string, number> = {}
+        const botIdMap: Record<string, number> = {}
+        const conversationIdMap: Record<string, number> = {}
+
+        // Create creator profile if user has bots
+        let creatorProfile: any = null
+        if (userData.bots && userData.bots.length > 0) {
           try {
-            await payload.create({
+            // Check if creator profile already exists
+            const existingProfiles = await payload.find({
+              collection: 'creatorProfiles',
+              where: { user: { equals: payloadUser.id } },
+              limit: 1,
+              overrideAccess: true,
+            })
+
+            if (existingProfiles.docs.length > 0) {
+              creatorProfile = existingProfiles.docs[0]
+            } else {
+              // Generate unique username from old username or email
+              let baseUsername = userData.username || email.split('@')[0]
+              baseUsername = baseUsername.toLowerCase().replace(/[^a-z0-9-_]/g, '-')
+
+              // Check for username uniqueness
+              let username = baseUsername
+              let counter = 1
+              while (true) {
+                const existing = await payload.find({
+                  collection: 'creatorProfiles',
+                  where: { username: { equals: username } },
+                  limit: 1,
+                  overrideAccess: true,
+                })
+                if (existing.docs.length === 0) break
+                username = `${baseUsername}-${counter}`
+                counter++
+              }
+
+              creatorProfile = await payload.create({
+                collection: 'creatorProfiles',
+                data: {
+                  user: payloadUser.id,
+                  username: username,
+                  display_name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || userData.username || 'Creator',
+                  bio: 'Migrated creator profile from BotCafe v1',
+                  creator_info: {
+                    creator_type: 'individual',
+                  },
+                  tags: [{ tag: 'migrated' }],
+                },
+                overrideAccess: true,
+              })
+              results.creatorProfilesCreated++
+            }
+          } catch (profileError: any) {
+            results.errors.push(`Creator profile for ${email}: ${profileError.message}`)
+          }
+        }
+
+        // Migrate knowledge collections
+        for (const collection of userData.knowledge_collections || []) {
+          try {
+            const newCollection = await payload.create({
               collection: 'knowledgeCollections',
               data: {
                 name: collection.name,
@@ -201,14 +346,110 @@ export async function POST(request: NextRequest) {
               },
               overrideAccess: true,
             })
+            collectionIdMap[collection.old_id] = newCollection.id
             results.collectionsCreated++
           } catch (collError: any) {
             results.errors.push(`Collection "${collection.name}" for ${email}: ${collError.message}`)
           }
         }
 
+        // Migrate bots (requires creator profile)
+        const usedSlugs = new Set<string>()
+        if (creatorProfile && userData.bots) {
+          for (const bot of userData.bots) {
+            try {
+              const slug = generateSlug(bot.slug || bot.name, usedSlugs)
+
+              // Parse speech examples if it's a JSON string
+              let speechExamples: { example: string }[] = []
+              if (bot.speech_examples) {
+                try {
+                  const parsed = JSON.parse(bot.speech_examples)
+                  if (Array.isArray(parsed)) {
+                    speechExamples = parsed.map((ex: string) => ({ example: ex }))
+                  }
+                } catch {
+                  // If not JSON, treat as single example
+                  if (bot.speech_examples.trim()) {
+                    speechExamples = [{ example: bot.speech_examples }]
+                  }
+                }
+              }
+
+              const newBot = await payload.create({
+                collection: 'bot',
+                data: {
+                  user: payloadUser.id,
+                  creator_profile: creatorProfile.id,
+                  name: bot.name,
+                  description: bot.description || '',
+                  system_prompt: bot.system_prompt || 'You are a helpful assistant.',
+                  slug: slug,
+                  is_public: bot.is_public,
+                  sharing: {
+                    visibility: bot.is_public ? 'public' : 'private',
+                  },
+                  greeting: bot.greeting_message || '',
+                  speech_examples: speechExamples,
+                  tags: bot.category ? [{ tag: bot.category }] : [],
+                  creator_display_name: creatorProfile.display_name,
+                  created_date: bot.created_at || new Date().toISOString(),
+                },
+                overrideAccess: true,
+              })
+              botIdMap[bot.old_id] = newBot.id
+              results.botsCreated++
+            } catch (botError: any) {
+              results.errors.push(`Bot "${bot.name}" for ${email}: ${botError.message}`)
+            }
+          }
+        }
+
+        // Migrate knowledge entries (only if they have a valid collection)
+        for (const entry of userData.knowledge_entries || []) {
+          try {
+            // Find the new collection ID if it was migrated
+            const newCollectionId = entry.collection_id ? collectionIdMap[entry.collection_id] : null
+
+            // Skip entries without a valid collection (knowledge_collection is required)
+            if (!newCollectionId) {
+              results.errors.push(`Knowledge entry for ${email}: No valid collection mapping`)
+              continue
+            }
+
+            // Map old type to new type enum
+            type KnowledgeType = 'url' | 'document' | 'text' | 'image' | 'audio' | 'video' | 'legacy_memory'
+            const typeMapping: Record<string, KnowledgeType> = {
+              'general': 'text',
+              'bot persona': 'text',
+              'user persona': 'text',
+              'document': 'document',
+              'url': 'url',
+              'text': 'text',
+            }
+            const entryType: KnowledgeType = typeMapping[entry.type?.toLowerCase() || 'text'] || 'text'
+
+            await payload.create({
+              collection: 'knowledge',
+              data: {
+                user: payloadUser.id,
+                entry: entry.text || '',
+                knowledge_collection: newCollectionId,
+                type: entryType,
+                created_timestamp: entry.created_at || new Date().toISOString(),
+                modified_timestamp: entry.updated_at || new Date().toISOString(),
+                tags: entry.type ? [{ tag: `migrated:${entry.type}` }] : [],
+              },
+              overrideAccess: true,
+            })
+            results.knowledgeEntriesCreated++
+          } catch (entryError: any) {
+            results.errors.push(`Knowledge entry for ${email}: ${entryError.message}`)
+          }
+        }
+
         // Migrate API keys
-        for (const apiKey of userData.api_keys) {
+        for (const apiKey of userData.api_keys || []) {
           try {
             await payload.create({
               collection: 'api-key',
@@ -227,6 +468,77 @@ export async function POST(request: NextRequest) {
             results.apiKeysCreated++
           } catch (keyError: any) {
             results.errors.push(`API Key for ${email}: ${keyError.message}`)
+          }
+        }
+
+        // Migrate conversations
+        for (const conv of userData.conversations || []) {
+          try {
+            // Find the new bot ID if the conversation was with a bot
+            const newBotId = conv.bot_id ? botIdMap[conv.bot_id] : null
+
+            const newConversation = await payload.create({
+              collection: 'conversation',
+              data: {
+                user: payloadUser.id,
+                title: conv.first_message_preview?.substring(0, 50) || 'Migrated Conversation',
+                created_timestamp: conv.created_at || new Date().toISOString(),
+                modified_timestamp: conv.updated_at || new Date().toISOString(),
+                conversation_type: 'single-bot',
+                bot_participation: newBotId ? [{
+                  bot_id: newBotId,
+                  joined_at: conv.created_at || new Date().toISOString(),
+                  role: 'primary',
+                  is_active: true,
+                }] : [],
+                status: conv.is_deleted ? 'archived' : 'active',
+                conversation_metadata: {
+                  total_messages: conv.messages?.length || 0,
+                  participant_count: 2,
+                  last_activity: conv.updated_at || new Date().toISOString(),
+                  tags: [{ tag: 'migrated' }],
+                },
+              },
+              overrideAccess: true,
+            })
+            conversationIdMap[conv.old_id] = newConversation.id
+            results.conversationsCreated++
+
+            // Migrate messages for this conversation
+            for (const msg of conv.messages || []) {
+              try {
+                const isAI = msg.role === 'bot' || msg.role === 'assistant'
+
+                await payload.create({
+                  collection: 'message',
+                  data: {
+                    user: payloadUser.id,
+                    conversation: newConversation.id,
+                    message_type: 'text',
+                    entry: msg.content || '',
+                    created_timestamp: msg.created_at || new Date().toISOString(),
+                    modified_timestamp: msg.created_at || new Date().toISOString(),
+                    bot: isAI && newBotId ? newBotId : undefined,
+                    message_attribution: {
+                      is_ai_generated: isAI,
+                    },
+                    message_status: {
+                      delivery_status: 'delivered',
+                    },
+                    metadata: {
+                      priority_level: 'normal',
+                      sensitivity_level: 'private',
+                    },
+                  },
+                  overrideAccess: true,
+                })
+                results.messagesCreated++
+              } catch (msgError: any) {
+                results.errors.push(`Message in conv for ${email}: ${msgError.message}`)
+              }
+            }
+          } catch (convError: any) {
+            results.errors.push(`Conversation for ${email}: ${convError.message}`)
           }
         }
 
@@ -314,15 +626,23 @@ export async function GET(_request: NextRequest) {
 
     const migratedEmails = new Set(migratedUsers.docs.map((u: any) => u.email.toLowerCase()))
 
+    let totalBots = 0
     let totalCollections = 0
+    let totalKnowledgeEntries = 0
     let totalApiKeys = 0
+    let totalConversations = 0
+    let totalMessages = 0
     let pendingUsers = 0
 
     for (const [email, userData] of Object.entries(migrationData)) {
       if (!migratedEmails.has(email.toLowerCase())) {
         pendingUsers++
-        totalCollections += userData.knowledge_collections.length
-        totalApiKeys += userData.api_keys.length
+        totalBots += userData.bots?.length || 0
+        totalCollections += userData.knowledge_collections?.length || 0
+        totalKnowledgeEntries += userData.knowledge_entries?.length || 0
+        totalApiKeys += userData.api_keys?.length || 0
+        totalConversations += userData.conversations?.length || 0
+        totalMessages += userData.conversations?.reduce((sum, c) => sum + (c.messages?.length || 0), 0) || 0
       }
     }
 
@@ -333,8 +653,12 @@ export async function GET(_request: NextRequest) {
         totalUsersInData: Object.keys(migrationData).length,
         alreadyMigrated: migratedEmails.size,
         pendingMigration: pendingUsers,
+        pendingBots: totalBots,
         pendingCollections: totalCollections,
+        pendingKnowledgeEntries: totalKnowledgeEntries,
         pendingApiKeys: totalApiKeys,
+        pendingConversations: totalConversations,
+        pendingMessages: totalMessages,
       },
     })
   } catch (error: any) {

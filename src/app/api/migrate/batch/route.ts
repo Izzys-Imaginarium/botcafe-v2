@@ -114,6 +114,15 @@ function mapAiEngineToProvider(aiEngine: string): ApiKeyProvider {
   return mapping[aiEngine.toLowerCase()] || 'openai'
 }
 
+function generateRandomPassword(): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'
+  let password = ''
+  for (let i = 0; i < 32; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return password
+}
+
 function generateSlug(name: string, existingSlugs: Set<string>): string {
   let baseSlug = name.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
   if (!baseSlug) baseSlug = 'bot'
@@ -247,11 +256,12 @@ export async function POST(_request: NextRequest) {
             continue
           }
         } else {
-          // Create new user
+          // Create new user with random password (users authenticate via Clerk, not this password)
           payloadUser = await payload.create({
             collection: 'users',
             data: {
               email: email,
+              password: generateRandomPassword(),
               name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || userData.username,
               role: 'user',
             },
@@ -439,6 +449,32 @@ export async function POST(_request: NextRequest) {
                 created_timestamp: entry.created_at || new Date().toISOString(),
                 modified_timestamp: entry.updated_at || new Date().toISOString(),
                 tags: entry.type ? [{ tag: `migrated:${entry.type}` }] : [],
+                privacy_settings: {
+                  privacy_level: 'private',
+                  allow_sharing: true,
+                  password_protected: false,
+                  access_count: 0,
+                },
+                activation_settings: {
+                  activation_mode: 'vector',
+                  case_sensitive: false,
+                  match_whole_words: false,
+                  use_regex: false,
+                  vector_similarity_threshold: 0.7,
+                  max_vector_results: 5,
+                  probability: 100,
+                  use_probability: false,
+                  scan_depth: 2,
+                  match_in_user_messages: true,
+                  match_in_bot_messages: true,
+                  match_in_system_prompts: false,
+                },
+                positioning: {
+                  position: 'before_character',
+                  depth: 0,
+                  role: 'system',
+                  order: 100,
+                },
               },
               overrideAccess: true,
             })

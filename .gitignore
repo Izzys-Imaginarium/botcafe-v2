@@ -51,5 +51,7 @@ node_modules/
 
 # OpenNext
 .open-next
-.wrangler# Migration export file
-.wrangler/migration-export.sql
+.wrangler
+
+# Migration data files (temporary, not needed after migration complete)
+/migration-data/

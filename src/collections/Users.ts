@@ -166,6 +166,24 @@ export const Users: CollectionConfig = {
       },
     },
     {
+      name: 'migration_completed',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        description: 'Whether data has been migrated from the old BotCafe site',
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'old_user_id',
+      type: 'text',
+      admin: {
+        description: 'Old user ID from previous database (for reference)',
+        position: 'sidebar',
+        condition: (data) => !!data?.migration_completed,
+      },
+    },
+    {
       name: 'avatar',
       type: 'upload',
       relationTo: 'media',

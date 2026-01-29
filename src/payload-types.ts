@@ -177,6 +177,14 @@ export interface User {
    * User role - only admins can access the Payload admin panel
    */
   role: 'user' | 'moderator' | 'admin';
+  /**
+   * Whether data has been migrated from the old BotCafe site
+   */
+  migration_completed?: boolean | null;
+  /**
+   * Old user ID from previous database (for reference)
+   */
+  old_user_id?: string | null;
   avatar?: (number | null) | Media;
   /**
    * Display name used when not using a persona
@@ -2706,6 +2714,8 @@ export interface PayloadMigration {
  */
 export interface UsersSelect<T extends boolean = true> {
   role?: T;
+  migration_completed?: T;
+  old_user_id?: T;
   avatar?: T;
   name?: T;
   nickname?: T;

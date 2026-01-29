@@ -108,8 +108,8 @@ export default buildConfig({
   // database-adapter-config-start
   db: sqliteD1Adapter({
     binding: cloudflare.env.D1,
-    // Disable schema push in production - use migrations only
-    push: process.env.NODE_ENV !== 'production',
+    // Disable schema push - using imported production database
+    push: false,
     // Provide migrations for production builds
     prodMigrations: migrations,
     // Skip migration checks during build

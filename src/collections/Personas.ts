@@ -8,31 +8,43 @@ export const Personas: CollectionConfig = {
   },
   access: {
     read: ({ req: { user } }) => {
+      if (!user) return false
+      // Admins can read all personas
+      if (user.role === 'admin') return true
       // Users can only read their own personas
       return {
         user: {
-          equals: user?.id,
+          equals: user.id,
         },
       }
     },
     create: ({ req: { user } }) => {
+      if (!user) return false
+      // Admins can create personas for any user
+      if (user.role === 'admin') return true
       return {
         user: {
-          equals: user?.id,
+          equals: user.id,
         },
       }
     },
     update: ({ req: { user } }) => {
+      if (!user) return false
+      // Admins can update any persona
+      if (user.role === 'admin') return true
       return {
         user: {
-          equals: user?.id,
+          equals: user.id,
         },
       }
     },
     delete: ({ req: { user } }) => {
+      if (!user) return false
+      // Admins can delete any persona
+      if (user.role === 'admin') return true
       return {
         user: {
-          equals: user?.id,
+          equals: user.id,
         },
       }
     },

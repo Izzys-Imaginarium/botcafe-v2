@@ -68,13 +68,13 @@ export async function GET(request: NextRequest) {
       whereClause.verification_status = { equals: verification }
     }
 
-    // Fetch creators - get all and filter in memory for nested field compatibility
+    // Fetch ALL creators - we need them all for proper in-memory sorting
+    // Don't pass page here since we paginate in memory after sorting
     const creators = await payload.find({
       collection: 'creatorProfiles',
       where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
-      page,
-      limit: 100, // Fetch more to filter in memory
-      sort: '-createdAt', // Use simple sort field
+      limit: 500, // Fetch all creators (increase if needed)
+      sort: '-createdAt',
       depth: 2,
       overrideAccess: true,
     })

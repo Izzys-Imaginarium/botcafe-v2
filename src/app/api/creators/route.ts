@@ -32,7 +32,11 @@ export async function GET(request: NextRequest) {
     const featured = searchParams.get('featured') === 'true'
     const specialty = searchParams.get('specialty')
     const verification = searchParams.get('verification')
-    const sort = searchParams.get('sort') || '-community_stats.follower_count'
+    // Note: D1/SQLite adapter may not support nested field sorting
+    // Convert dot notation to underscore for D1 compatibility
+    let sort = searchParams.get('sort') || '-community_stats_follower_count'
+    // Convert Payload dot notation to D1 column names
+    sort = sort.replace(/\./g, '_')
     const search = searchParams.get('search')
 
     // Get Payload instance
@@ -40,9 +44,10 @@ export async function GET(request: NextRequest) {
     const payload = await getPayload({ config: payloadConfig })
 
     // Build where clause
+    // Note: D1/SQLite adapter uses underscored column names for nested fields
     const whereConditions: any[] = [
       {
-        'profile_settings.profile_visibility': {
+        'profile_settings_profile_visibility': {
           equals: 'public',
         },
       },
@@ -57,8 +62,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (specialty) {
+      // Note: Array field queries may not work with D1/SQLite
+      // This filter may need to be applied in-memory
       whereConditions.push({
-        'creator_info.specialties.specialty': {
+        'creator_info_specialties_specialty': {
           equals: specialty,
         },
       })
@@ -294,10 +301,12 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error: any) {
-    console.error('Fetch creators error:', error)
-    // Return empty results instead of error for better UX
+    console.error('Fetch creators error:', error?.message || error)
+    console.error('Error stack:', error?.stack)
+    // Return error message for debugging
     return NextResponse.json({
-      success: true,
+      success: false,
+      error: error?.message || 'Unknown error',
       creators: [],
       pagination: {
         page: 1,

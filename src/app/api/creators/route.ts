@@ -107,25 +107,22 @@ export async function GET(request: NextRequest) {
     }
 
     // Compute real stats for each creator
-    // Get all user IDs from ALL filtered creators for efficient batch lookup (needed for proper sorting)
-    const userIds = filteredCreators.map((creator: any) => {
-      return typeof creator.user === 'object' && creator.user !== null
-        ? creator.user.id
-        : creator.user
-    }).filter(Boolean)
+    // Get all creator profile IDs for efficient batch lookup (needed for proper sorting)
+    // Bots have a direct creator_profile relationship, which is more reliable than going through user
+    const creatorProfileIds = filteredCreators.map((creator: any) => creator.id).filter(Boolean)
 
-    // Batch fetch all bots created by these users
+    // Batch fetch all bots by their creator_profile relationship
     // D1/SQLite has a limit on IN clause parameters, so batch in chunks of 50
     let allBots: any[] = []
-    if (userIds.length > 0) {
+    if (creatorProfileIds.length > 0) {
       try {
         const BATCH_SIZE = 50
-        for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
-          const batchIds = userIds.slice(i, i + BATCH_SIZE)
+        for (let i = 0; i < creatorProfileIds.length; i += BATCH_SIZE) {
+          const batchIds = creatorProfileIds.slice(i, i + BATCH_SIZE)
           const botsResult = await payload.find({
             collection: 'bot',
             where: {
-              user: { in: batchIds },
+              creator_profile: { in: batchIds },
             },
             limit: 500,
             overrideAccess: true,
@@ -166,17 +163,15 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get all creator IDs for follower count lookup (use ALL filtered, not just paginated)
-    const creatorIds = filteredCreators.map((creator: any) => creator.id)
-
     // Batch fetch all follower counts for these creators
     // Wrapped in try-catch in case table doesn't exist, batched for D1 limits
+    // Uses creatorProfileIds computed above
     let allFollows: any[] = []
-    if (creatorIds.length > 0) {
+    if (creatorProfileIds.length > 0) {
       try {
         const BATCH_SIZE = 50
-        for (let i = 0; i < creatorIds.length; i += BATCH_SIZE) {
-          const batchIds = creatorIds.slice(i, i + BATCH_SIZE)
+        for (let i = 0; i < creatorProfileIds.length; i += BATCH_SIZE) {
+          const batchIds = creatorProfileIds.slice(i, i + BATCH_SIZE)
           const followsResult = await payload.find({
             collection: 'creatorFollows',
             where: {
@@ -236,16 +231,12 @@ export async function GET(request: NextRequest) {
 
     // First, compute stats for ALL filtered creators (before pagination) for proper sorting
     const allCreatorsWithStats = filteredCreators.map((creator: any) => {
-      const creatorUserId = typeof creator.user === 'object' && creator.user !== null
-        ? creator.user.id
-        : creator.user
-
-      // Find bots belonging to this creator
+      // Find bots belonging to this creator (using creator_profile relationship)
       const creatorBots = allBots.filter((bot) => {
-        const botCreatorId = typeof bot.user === 'object' && bot.user !== null
-          ? bot.user.id
-          : bot.user
-        return String(botCreatorId) === String(creatorUserId)
+        const botCreatorProfileId = typeof bot.creator_profile === 'object' && bot.creator_profile !== null
+          ? bot.creator_profile.id
+          : bot.creator_profile
+        return String(botCreatorProfileId) === String(creator.id)
       })
 
       const creatorBotIds = creatorBots.map((bot) => String(bot.id))

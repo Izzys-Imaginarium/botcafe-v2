@@ -18,6 +18,14 @@ export interface UseInfiniteListOptions {
   itemsKey?: string
 }
 
+export interface AggregateStats {
+  totalCreators?: number
+  totalBots?: number
+  totalConversations?: number
+  totalFollowers?: number
+  [key: string]: number | undefined
+}
+
 export interface UseInfiniteListReturn<T> {
   items: T[]
   isLoading: boolean
@@ -30,6 +38,7 @@ export interface UseInfiniteListReturn<T> {
   refresh: () => Promise<void>
   setParams: (params: Record<string, string>) => void
   params: Record<string, string>
+  aggregateStats: AggregateStats | null
 }
 
 interface PaginatedResponse {
@@ -56,6 +65,7 @@ export function useInfiniteList<T extends { id: string | number }>(
   const [hasMore, setHasMore] = useState(true)
   const [total, setTotal] = useState(0)
   const [params, setParamsState] = useState<Record<string, string>>(initialParams)
+  const [aggregateStats, setAggregateStats] = useState<AggregateStats | null>(null)
 
   // Track if initial load has happened
   const hasLoadedRef = useRef(false)
@@ -132,6 +142,12 @@ export function useInfiniteList<T extends { id: string | number }>(
         setPage(currentPage)
         setHasMore(nextPageExists)
         setTotal(totalDocs)
+
+        // Store aggregate stats if provided by the API
+        if (data.aggregateStats) {
+          setAggregateStats(data.aggregateStats as AggregateStats)
+        }
+
         hasLoadedRef.current = true
       } catch (err) {
         if (fetchId === fetchIdRef.current) {
@@ -193,5 +209,6 @@ export function useInfiniteList<T extends { id: string | number }>(
     refresh,
     setParams,
     params,
+    aggregateStats,
   }
 }

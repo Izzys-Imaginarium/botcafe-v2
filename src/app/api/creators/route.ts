@@ -319,6 +319,14 @@ export async function GET(request: NextRequest) {
       totalPages: Math.ceil(sortedCreators.length / limit),
     }
 
+    // Calculate aggregate stats across ALL creators (not just paginated)
+    const aggregateStats = {
+      totalCreators: sortedCreators.length,
+      totalBots: sortedCreators.reduce((sum: number, c: any) => sum + (c.portfolio?.bot_count || 0), 0),
+      totalConversations: sortedCreators.reduce((sum: number, c: any) => sum + (c.portfolio?.total_conversations || 0), 0),
+      totalFollowers: sortedCreators.reduce((sum: number, c: any) => sum + (c.community_stats?.follower_count || 0), 0),
+    }
+
     return NextResponse.json({
       success: true,
       creators: creatorsWithRealStats,
@@ -328,6 +336,7 @@ export async function GET(request: NextRequest) {
         totalPages: finalCreatorsResult.totalPages,
         totalDocs: finalCreatorsResult.totalDocs,
       },
+      aggregateStats,
     })
   } catch (error: any) {
     console.error('Fetch creators error:', error?.message || error)

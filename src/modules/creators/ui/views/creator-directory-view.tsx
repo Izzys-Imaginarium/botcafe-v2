@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -26,7 +26,6 @@ import {
   MapPin,
 } from 'lucide-react'
 import Link from 'next/link'
-import { toast } from 'sonner'
 import { useInfiniteList } from '@/hooks/use-infinite-list'
 import { InfiniteScrollTrigger } from '@/components/ui/infinite-scroll-trigger'
 
@@ -108,6 +107,7 @@ export const CreatorDirectoryView = () => {
     total: totalCreators,
     loadMore,
     setParams,
+    aggregateStats,
   } = useInfiniteList<CreatorProfile>({
     endpoint: '/api/creators',
     limit: 12,
@@ -181,7 +181,7 @@ export const CreatorDirectoryView = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Creators</p>
-                  <p className="text-2xl font-bold">{totalCreators}</p>
+                  <p className="text-2xl font-bold">{aggregateStats?.totalCreators ?? totalCreators}</p>
                 </div>
                 <Users className="h-8 w-8 text-purple-400" />
               </div>
@@ -194,7 +194,7 @@ export const CreatorDirectoryView = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Total Bots</p>
                   <p className="text-2xl font-bold">
-                    {creators.reduce((sum, c) => sum + (c.portfolio?.bot_count || 0), 0)}
+                    {aggregateStats?.totalBots ?? 0}
                   </p>
                 </div>
                 <Bot className="h-8 w-8 text-blue-400" />
@@ -208,7 +208,7 @@ export const CreatorDirectoryView = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Total Conversations</p>
                   <p className="text-2xl font-bold">
-                    {formatCompactNumber(creators.reduce((sum, c) => sum + (c.portfolio?.total_conversations || 0), 0))}
+                    {formatCompactNumber(aggregateStats?.totalConversations ?? 0)}
                   </p>
                 </div>
                 <MessageSquare className="h-8 w-8 text-green-400" />

@@ -115,17 +115,26 @@ export async function GET(request: NextRequest) {
     }).filter(Boolean)
 
     // Batch fetch all bots created by these users
+    // D1/SQLite has a limit on IN clause parameters, so batch in chunks of 50
     let allBots: any[] = []
     if (userIds.length > 0) {
-      const botsResult = await payload.find({
-        collection: 'bot',
-        where: {
-          user: { in: userIds },
-        },
-        limit: 1000,
-        overrideAccess: true,
-      })
-      allBots = botsResult.docs
+      try {
+        const BATCH_SIZE = 50
+        for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
+          const batchIds = userIds.slice(i, i + BATCH_SIZE)
+          const botsResult = await payload.find({
+            collection: 'bot',
+            where: {
+              user: { in: batchIds },
+            },
+            limit: 500,
+            overrideAccess: true,
+          })
+          allBots = allBots.concat(botsResult.docs)
+        }
+      } catch (e) {
+        console.warn('Could not fetch bots:', e)
+      }
     }
 
     // Get all bot IDs for interaction lookup

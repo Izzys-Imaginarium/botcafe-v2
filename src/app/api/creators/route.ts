@@ -107,16 +107,28 @@ export async function GET(request: NextRequest) {
     }
 
     // Compute real stats for each creator
-    // Get all creator profile IDs for efficient batch lookup (needed for proper sorting)
-    // Bots have a direct creator_profile relationship, which is more reliable than going through user
-    const creatorProfileIds = filteredCreators.map((creator: any) => creator.id).filter(Boolean)
+    // Get all creator profile IDs and user IDs for efficient batch lookup
+    // Ensure IDs are numbers and filter out invalid values
+    const creatorProfileIds = filteredCreators
+      .map((creator: any) => typeof creator.id === 'number' ? creator.id : parseInt(creator.id, 10))
+      .filter((id: number) => !isNaN(id) && id > 0)
 
-    // Batch fetch all bots by their creator_profile relationship
-    // D1/SQLite has a limit on IN clause parameters, so batch in chunks of 50
+    // Also extract user IDs for fallback bot lookup (migrated bots may only have user, not creator_profile)
+    const userIds = filteredCreators.map((creator: any) => {
+      const userId = typeof creator.user === 'object' && creator.user !== null
+        ? creator.user.id
+        : creator.user
+      return typeof userId === 'number' ? userId : parseInt(userId, 10)
+    }).filter((id: number) => !isNaN(id) && id > 0)
+
+    // Batch fetch all bots - try by creator_profile first, then by user as fallback
+    // D1/SQLite has a limit on IN clause parameters, so batch in smaller chunks
     let allBots: any[] = []
+    const BATCH_SIZE = 30  // Reduced from 50 for D1 safety
+
+    // Try fetching by creator_profile first
     if (creatorProfileIds.length > 0) {
       try {
-        const BATCH_SIZE = 50
         for (let i = 0; i < creatorProfileIds.length; i += BATCH_SIZE) {
           const batchIds = creatorProfileIds.slice(i, i + BATCH_SIZE)
           const botsResult = await payload.find({
@@ -129,22 +141,44 @@ export async function GET(request: NextRequest) {
           })
           allBots = allBots.concat(botsResult.docs)
         }
-      } catch (e) {
-        console.warn('Could not fetch bots:', e)
+      } catch (e: any) {
+        console.warn('Could not fetch bots by creator_profile:', e?.message || e)
       }
     }
 
-    // Get all bot IDs for interaction lookup
-    const allBotIds = allBots.map((bot) => bot.id)
+    // If no bots found by creator_profile, try by user (for migrated data)
+    if (allBots.length === 0 && userIds.length > 0) {
+      try {
+        for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
+          const batchIds = userIds.slice(i, i + BATCH_SIZE)
+          const botsResult = await payload.find({
+            collection: 'bot',
+            where: {
+              user: { in: batchIds },
+            },
+            limit: 500,
+            overrideAccess: true,
+          })
+          allBots = allBots.concat(botsResult.docs)
+        }
+      } catch (e: any) {
+        console.warn('Could not fetch bots by user:', e?.message || e)
+      }
+    }
+
+    // Get all bot IDs for interaction lookup - ensure they're numbers
+    const allBotIds = allBots
+      .map((bot) => typeof bot.id === 'number' ? bot.id : parseInt(bot.id, 10))
+      .filter((id: number) => !isNaN(id) && id > 0)
 
     // Batch fetch all likes on these bots
-    // D1/SQLite has a limit on IN clause parameters, so batch in chunks of 50
+    // D1/SQLite has a limit on IN clause parameters, so batch in smaller chunks
     let allLikes: any[] = []
     if (allBotIds.length > 0) {
       try {
-        const BATCH_SIZE = 50
-        for (let i = 0; i < allBotIds.length; i += BATCH_SIZE) {
-          const batchIds = allBotIds.slice(i, i + BATCH_SIZE)
+        const LIKES_BATCH_SIZE = 30
+        for (let i = 0; i < allBotIds.length; i += LIKES_BATCH_SIZE) {
+          const batchIds = allBotIds.slice(i, i + LIKES_BATCH_SIZE)
           const likesResult = await payload.find({
             collection: 'botInteractions',
             where: {
@@ -158,8 +192,8 @@ export async function GET(request: NextRequest) {
           })
           allLikes = allLikes.concat(likesResult.docs)
         }
-      } catch (e) {
-        console.warn('Could not fetch bot interactions:', e)
+      } catch (e: any) {
+        console.warn('Could not fetch bot interactions:', e?.message || e)
       }
     }
 
@@ -169,9 +203,9 @@ export async function GET(request: NextRequest) {
     let allFollows: any[] = []
     if (creatorProfileIds.length > 0) {
       try {
-        const BATCH_SIZE = 50
-        for (let i = 0; i < creatorProfileIds.length; i += BATCH_SIZE) {
-          const batchIds = creatorProfileIds.slice(i, i + BATCH_SIZE)
+        const FOLLOWS_BATCH_SIZE = 30
+        for (let i = 0; i < creatorProfileIds.length; i += FOLLOWS_BATCH_SIZE) {
+          const batchIds = creatorProfileIds.slice(i, i + FOLLOWS_BATCH_SIZE)
           const followsResult = await payload.find({
             collection: 'creatorFollows',
             where: {
@@ -182,8 +216,8 @@ export async function GET(request: NextRequest) {
           })
           allFollows = allFollows.concat(followsResult.docs)
         }
-      } catch (e) {
-        console.warn('Could not fetch creator follows:', e)
+      } catch (e: any) {
+        console.warn('Could not fetch creator follows:', e?.message || e)
       }
     }
 
@@ -224,19 +258,32 @@ export async function GET(request: NextRequest) {
           }
           return false
         })
-      } catch (e) {
-        console.warn('Could not fetch conversations:', e)
+      } catch (e: any) {
+        console.warn('Could not fetch conversations:', e?.message || e)
       }
     }
 
     // First, compute stats for ALL filtered creators (before pagination) for proper sorting
     const allCreatorsWithStats = filteredCreators.map((creator: any) => {
-      // Find bots belonging to this creator (using creator_profile relationship)
+      // Get creator's user ID for matching
+      const creatorUserId = typeof creator.user === 'object' && creator.user !== null
+        ? creator.user.id
+        : creator.user
+
+      // Find bots belonging to this creator (try creator_profile first, then user)
       const creatorBots = allBots.filter((bot) => {
+        // Try matching by creator_profile
         const botCreatorProfileId = typeof bot.creator_profile === 'object' && bot.creator_profile !== null
           ? bot.creator_profile.id
           : bot.creator_profile
-        return String(botCreatorProfileId) === String(creator.id)
+        if (botCreatorProfileId && String(botCreatorProfileId) === String(creator.id)) {
+          return true
+        }
+        // Fall back to matching by user (for migrated bots)
+        const botUserId = typeof bot.user === 'object' && bot.user !== null
+          ? bot.user.id
+          : bot.user
+        return creatorUserId && String(botUserId) === String(creatorUserId)
       })
 
       const creatorBotIds = creatorBots.map((bot) => String(bot.id))

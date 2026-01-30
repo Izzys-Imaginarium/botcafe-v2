@@ -97,7 +97,7 @@ export const CreatorDirectoryView = () => {
   // Filter state
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [sortBy, setSortBy] = useState<string>('-createdAt')
+  const [sortBy, setSortBy] = useState<string>('-followers')
 
   // Use infinite list hook
   const {
@@ -111,7 +111,7 @@ export const CreatorDirectoryView = () => {
   } = useInfiniteList<CreatorProfile>({
     endpoint: '/api/creators',
     limit: 12,
-    initialParams: { sort: '-createdAt' },
+    initialParams: { sort: '-followers' },
     itemsKey: 'creators',
   })
 
@@ -241,10 +241,10 @@ export const CreatorDirectoryView = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="-followers">Most Followers</SelectItem>
+                    <SelectItem value="-bots">Most Bots</SelectItem>
+                    <SelectItem value="-conversations">Most Conversations</SelectItem>
                     <SelectItem value="-createdAt">Newest</SelectItem>
-                    <SelectItem value="createdAt">Oldest</SelectItem>
-                    <SelectItem value="username">Username A-Z</SelectItem>
-                    <SelectItem value="-username">Username Z-A</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -254,7 +254,7 @@ export const CreatorDirectoryView = () => {
                   variant="outline"
                   onClick={() => {
                     setSearchQuery('')
-                    setSortBy('-createdAt')
+                    setSortBy('-followers')
                   }}
                   className="w-full"
                 >

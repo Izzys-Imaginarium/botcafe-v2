@@ -107,8 +107,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Compute real stats for each creator
-    // Get all user IDs from the paginated creators for efficient batch lookup
-    const userIds = paginatedCreators.map((creator: any) => {
+    // Get all user IDs from ALL filtered creators for efficient batch lookup (needed for proper sorting)
+    const userIds = filteredCreators.map((creator: any) => {
       return typeof creator.user === 'object' && creator.user !== null
         ? creator.user.id
         : creator.user
@@ -148,21 +148,26 @@ export async function GET(request: NextRequest) {
       allLikes = likesResult.docs
     }
 
-    // Get all creator IDs for follower count lookup
-    const creatorIds = paginatedCreators.map((creator: any) => creator.id)
+    // Get all creator IDs for follower count lookup (use ALL filtered, not just paginated)
+    const creatorIds = filteredCreators.map((creator: any) => creator.id)
 
     // Batch fetch all follower counts for these creators
+    // Wrapped in try-catch in case table doesn't exist
     let allFollows: any[] = []
     if (creatorIds.length > 0) {
-      const followsResult = await payload.find({
-        collection: 'creatorFollows',
-        where: {
-          following: { in: creatorIds },
-        },
-        limit: 5000,
-        overrideAccess: true,
-      })
-      allFollows = followsResult.docs
+      try {
+        const followsResult = await payload.find({
+          collection: 'creatorFollows',
+          where: {
+            following: { in: creatorIds },
+          },
+          limit: 5000,
+          overrideAccess: true,
+        })
+        allFollows = followsResult.docs
+      } catch (e) {
+        console.warn('Could not fetch creator follows:', e)
+      }
     }
 
     // Batch fetch conversations that involve these bots
@@ -208,8 +213,8 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Map stats to each creator
-    const creatorsWithRealStats = paginatedCreators.map((creator: any) => {
+    // First, compute stats for ALL filtered creators (before pagination) for proper sorting
+    const allCreatorsWithStats = filteredCreators.map((creator: any) => {
       const creatorUserId = typeof creator.user === 'object' && creator.user !== null
         ? creator.user.id
         : creator.user
@@ -223,14 +228,10 @@ export async function GET(request: NextRequest) {
       })
 
       const creatorBotIds = creatorBots.map((bot) => String(bot.id))
-
-      // Calculate stats
       const realBotCount = creatorBots.length
 
-      // Count conversations that include any of this creator's bots
-      // Check both bot_participation array AND participants.bots JSON field
+      // Count conversations
       const realTotalConversations = allConversations.filter((conv) => {
-        // Check bot_participation array (newer format)
         const botParticipation = conv.bot_participation || []
         const hasInParticipation = botParticipation.some((bp: any) => {
           const botId = typeof bp.bot_id === 'object' && bp.bot_id !== null
@@ -239,21 +240,13 @@ export async function GET(request: NextRequest) {
           return creatorBotIds.includes(String(botId))
         })
         if (hasInParticipation) return true
-
-        // Check participants.bots JSON field (older format)
-        // Note: JSON fields in D1/SQLite may be stored as strings
         let participants = conv.participants
         if (typeof participants === 'string') {
-          try {
-            participants = JSON.parse(participants)
-          } catch {
-            participants = null
-          }
+          try { participants = JSON.parse(participants) } catch { participants = null }
         }
         if (participants && Array.isArray(participants.bots)) {
           return participants.bots.some((botId: any) => creatorBotIds.includes(String(botId)))
         }
-
         return false
       }).length
 
@@ -264,7 +257,6 @@ export async function GET(request: NextRequest) {
         return creatorBotIds.includes(String(likeBotId))
       }).length
 
-      // Calculate follower count
       const realFollowerCount = allFollows.filter((follow) => {
         const followingId = typeof follow.following === 'object' && follow.following !== null
           ? follow.following.id
@@ -287,14 +279,42 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    // Sort in memory based on sort parameter
+    const sortedCreators = [...allCreatorsWithStats].sort((a: any, b: any) => {
+      switch (sort) {
+        case '-followers':
+          return (b.community_stats?.follower_count || 0) - (a.community_stats?.follower_count || 0)
+        case '-bots':
+          return (b.portfolio?.bot_count || 0) - (a.portfolio?.bot_count || 0)
+        case '-conversations':
+          return (b.portfolio?.total_conversations || 0) - (a.portfolio?.total_conversations || 0)
+        case '-createdAt':
+        default:
+          return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+      }
+    })
+
+    // Paginate after sorting
+    const paginatedSortedCreators = sortedCreators.slice(startIndex, startIndex + limit)
+
+    // Update the result with correctly sorted data
+    const creatorsWithRealStats = paginatedSortedCreators
+
+    // Update pagination to reflect sorted total
+    const finalCreatorsResult = {
+      ...creatorsResult,
+      totalDocs: sortedCreators.length,
+      totalPages: Math.ceil(sortedCreators.length / limit),
+    }
+
     return NextResponse.json({
       success: true,
       creators: creatorsWithRealStats,
       pagination: {
-        page: creatorsResult.page,
-        limit: creatorsResult.limit,
-        totalPages: creatorsResult.totalPages,
-        totalDocs: creatorsResult.totalDocs,
+        page: finalCreatorsResult.page,
+        limit: finalCreatorsResult.limit,
+        totalPages: finalCreatorsResult.totalPages,
+        totalDocs: finalCreatorsResult.totalDocs,
       },
     })
   } catch (error: any) {

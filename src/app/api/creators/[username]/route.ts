@@ -159,20 +159,25 @@ export async function GET(
     }
 
     // Get all likes/favorites on the creator's bots
+    // D1/SQLite has a limit on IN clause parameters, so batch in chunks of 50
     let realTotalLikes = 0
     if (botIds.length > 0) {
-      const interactions = await payload.find({
-        collection: 'botInteractions',
-        where: {
-          and: [
-            { bot: { in: botIds } },
-            { liked: { equals: true } },
-          ],
-        },
-        limit: 0, // Just get count
-        overrideAccess: true,
-      })
-      realTotalLikes = interactions.totalDocs
+      const BATCH_SIZE = 50
+      for (let i = 0; i < botIds.length; i += BATCH_SIZE) {
+        const batchIds = botIds.slice(i, i + BATCH_SIZE)
+        const interactions = await payload.find({
+          collection: 'botInteractions',
+          where: {
+            and: [
+              { bot: { in: batchIds } },
+              { liked: { equals: true } },
+            ],
+          },
+          limit: 0, // Just get count
+          overrideAccess: true,
+        })
+        realTotalLikes += interactions.totalDocs
+      }
     }
 
     // Get real follower count

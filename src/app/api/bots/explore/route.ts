@@ -83,7 +83,10 @@ export async function GET(request: NextRequest) {
     ]
 
     // Add shared bots if user is logged in
-    if (sharedBotIds.length > 0) {
+    // D1/SQLite has a limit on IN clause parameters, so only include in query if <= 50
+    // If more than 50, we'll fetch shared bots separately in batches
+    const fetchSharedBotsSeparately = sharedBotIds.length > 50
+    if (sharedBotIds.length > 0 && !fetchSharedBotsSeparately) {
       orConditions.push({ id: { in: sharedBotIds } })
     }
 
@@ -175,9 +178,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch bots from Payload with creator profile populated
-    // If filtering by classifications or using in-memory sort, we need to fetch more
-    // due to D1/SQLite limitations with nested array queries
-    const needsInMemoryProcessing = classifications.length > 0 || useInMemorySort
+    // If filtering by classifications, using in-memory sort, or fetching shared bots separately,
+    // we need to fetch more due to D1/SQLite limitations
+    const needsInMemoryProcessing = classifications.length > 0 || useInMemorySort || fetchSharedBotsSeparately
     const fetchLimit = needsInMemoryProcessing ? Math.max(limit * 3, 100) : limit
 
     const result = await payload.find({
@@ -190,10 +193,35 @@ export async function GET(request: NextRequest) {
       overrideAccess: true,
     })
 
+    // If we have more than 50 shared bot IDs, fetch them separately in batches
+    // D1/SQLite has a limit on IN clause parameters
+    let sharedBotsDocs: any[] = []
+    if (fetchSharedBotsSeparately && sharedBotIds.length > 0) {
+      const BATCH_SIZE = 50
+      for (let i = 0; i < sharedBotIds.length; i += BATCH_SIZE) {
+        const batchIds = sharedBotIds.slice(i, i + BATCH_SIZE)
+        const batchResult = await payload.find({
+          collection: 'bot',
+          where: { id: { in: batchIds } },
+          depth: 1,
+          overrideAccess: true,
+        })
+        sharedBotsDocs = sharedBotsDocs.concat(batchResult.docs)
+      }
+    }
+
+    // Merge shared bots with main results (dedupe by id)
+    let allDocs = result.docs
+    if (sharedBotsDocs.length > 0) {
+      const existingIds = new Set(result.docs.map((d: any) => d.id))
+      const newSharedBots = sharedBotsDocs.filter((d: any) => !existingIds.has(d.id))
+      allDocs = [...result.docs, ...newSharedBots]
+    }
+
     // Filter by classifications if specified
-    let filteredDocs = result.docs
+    let filteredDocs = allDocs
     if (classifications.length > 0) {
-      filteredDocs = result.docs.filter((bot: any) => {
+      filteredDocs = allDocs.filter((bot: any) => {
         if (!bot.classifications || bot.classifications.length === 0) return false
         return bot.classifications.some((c: any) =>
           classifications.includes(c.classification)
@@ -225,14 +253,15 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Apply pagination manually if we did in-memory processing
+    // Apply pagination manually if we did in-memory processing or fetched shared bots separately
     let paginatedDocs = filteredDocs
     let totalDocs = result.totalDocs
     let totalPages = result.totalPages
     let hasNextPage = result.hasNextPage
     let hasPrevPage = result.hasPrevPage
 
-    if (needsInMemoryProcessing) {
+    // Need in-memory pagination if we filtered by classification, used special sort, or fetched shared bots separately
+    if (needsInMemoryProcessing || fetchSharedBotsSeparately) {
       totalDocs = filteredDocs.length
       totalPages = Math.ceil(totalDocs / limit)
       const startIndex = (page - 1) * limit

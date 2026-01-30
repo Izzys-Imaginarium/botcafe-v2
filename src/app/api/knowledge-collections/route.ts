@@ -198,32 +198,38 @@ export async function GET(request: NextRequest) {
         .filter((id: number) => !isNaN(id))
 
       if (numericIds.length > 0) {
-        // Build where clause for shared collections with same memory tome filter
-        const sharedWhere: Record<string, unknown> = {
-          id: { in: numericIds },
-        }
+        // D1/SQLite has a limit on IN clause parameters, so batch in chunks of 50
+        const BATCH_SIZE = 50
+        for (let i = 0; i < numericIds.length; i += BATCH_SIZE) {
+          const batchIds = numericIds.slice(i, i + BATCH_SIZE)
 
-        if (onlyMemoryTomes) {
-          sharedWhere['collection_metadata.collection_category'] = { equals: 'memories' }
-        } else if (!includeMemoryTomes) {
-          sharedWhere['collection_metadata.collection_category'] = { not_equals: 'memories' }
-        }
+          // Build where clause for shared collections with same memory tome filter
+          const sharedWhere: Record<string, unknown> = {
+            id: { in: batchIds },
+          }
 
-        // Apply same search filter to shared collections
-        if (search) {
-          sharedWhere.or = [
-            { name: { contains: search } },
-            { description: { contains: search } },
-          ]
-        }
+          if (onlyMemoryTomes) {
+            sharedWhere['collection_metadata.collection_category'] = { equals: 'memories' }
+          } else if (!includeMemoryTomes) {
+            sharedWhere['collection_metadata.collection_category'] = { not_equals: 'memories' }
+          }
 
-        const sharedCollectionsResult = await payload.find({
-          collection: 'knowledgeCollections',
-          where: sharedWhere,
-          sort,
-          overrideAccess: true,
-        })
-        sharedCollections = sharedCollectionsResult.docs
+          // Apply same search filter to shared collections
+          if (search) {
+            sharedWhere.or = [
+              { name: { contains: search } },
+              { description: { contains: search } },
+            ]
+          }
+
+          const sharedCollectionsResult = await payload.find({
+            collection: 'knowledgeCollections',
+            where: sharedWhere,
+            sort,
+            overrideAccess: true,
+          })
+          sharedCollections = sharedCollections.concat(sharedCollectionsResult.docs)
+        }
       }
     }
 

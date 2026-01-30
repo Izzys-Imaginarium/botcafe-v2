@@ -161,13 +161,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify bots exist
-    const bots = await payload.find({
-      collection: 'bot',
-      where: {
-        id: { in: botIdsToAdd },
-      },
-      overrideAccess: true,
-    })
+    // D1/SQLite has a limit on IN clause parameters, so batch in chunks of 50
+    let allBotDocs: any[] = []
+    const BATCH_SIZE = 50
+    for (let i = 0; i < botIdsToAdd.length; i += BATCH_SIZE) {
+      const batchIds = botIdsToAdd.slice(i, i + BATCH_SIZE)
+      const batchResult = await payload.find({
+        collection: 'bot',
+        where: {
+          id: { in: batchIds },
+        },
+        overrideAccess: true,
+      })
+      allBotDocs = allBotDocs.concat(batchResult.docs)
+    }
+    const bots = { docs: allBotDocs }
 
     if (bots.docs.length !== botIdsToAdd.length) {
       return NextResponse.json(

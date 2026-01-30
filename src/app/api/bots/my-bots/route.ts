@@ -77,6 +77,7 @@ export async function GET(request: NextRequest) {
       .filter((id: string) => id)
 
     // Fetch the shared bots
+    // D1/SQLite has a limit on IN clause parameters, so batch in chunks of 50
     let sharedBots: any[] = []
     if (sharedBotIds.length > 0) {
       // Parse IDs to numbers for the query
@@ -85,15 +86,19 @@ export async function GET(request: NextRequest) {
         .filter((id: number) => !isNaN(id))
 
       if (numericIds.length > 0) {
-        const sharedBotsResult = await payload.find({
-          collection: 'bot',
-          where: {
-            id: { in: numericIds },
-          },
-          depth: 1,
-          overrideAccess: true,
-        })
-        sharedBots = sharedBotsResult.docs
+        const BATCH_SIZE = 50
+        for (let i = 0; i < numericIds.length; i += BATCH_SIZE) {
+          const batchIds = numericIds.slice(i, i + BATCH_SIZE)
+          const sharedBotsResult = await payload.find({
+            collection: 'bot',
+            where: {
+              id: { in: batchIds },
+            },
+            depth: 1,
+            overrideAccess: true,
+          })
+          sharedBots = sharedBots.concat(sharedBotsResult.docs)
+        }
       }
     }
 

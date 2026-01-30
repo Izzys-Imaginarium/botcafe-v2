@@ -97,7 +97,7 @@ export const CreatorDirectoryView = () => {
   // Filter state
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [sortBy, setSortBy] = useState<string>('-community_stats.follower_count')
+  const [sortBy, setSortBy] = useState<string>('-createdAt')
 
   // Use infinite list hook
   const {
@@ -111,7 +111,7 @@ export const CreatorDirectoryView = () => {
   } = useInfiniteList<CreatorProfile>({
     endpoint: '/api/creators',
     limit: 12,
-    initialParams: { sort: '-community_stats.follower_count' },
+    initialParams: { sort: '-createdAt' },
     itemsKey: 'creators',
   })
 
@@ -241,11 +241,10 @@ export const CreatorDirectoryView = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="-community_stats.follower_count">Most Followers</SelectItem>
-                    <SelectItem value="-portfolio.bot_count">Most Bots</SelectItem>
-                    <SelectItem value="-portfolio.total_conversations">Most Conversations</SelectItem>
-                    <SelectItem value="-portfolio.average_rating">Highest Rated</SelectItem>
-                    <SelectItem value="-created_timestamp">Newest</SelectItem>
+                    <SelectItem value="-createdAt">Newest</SelectItem>
+                    <SelectItem value="createdAt">Oldest</SelectItem>
+                    <SelectItem value="username">Username A-Z</SelectItem>
+                    <SelectItem value="-username">Username Z-A</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -255,7 +254,7 @@ export const CreatorDirectoryView = () => {
                   variant="outline"
                   onClick={() => {
                     setSearchQuery('')
-                    setSortBy('-community_stats.follower_count')
+                    setSortBy('-createdAt')
                   }}
                   className="w-full"
                 >

@@ -40,76 +40,75 @@ export async function GET(request: NextRequest) {
     const payloadConfig = await config
     const payload = await getPayload({ config: payloadConfig })
 
-    // Build where clause
-    // Note: Payload where clause uses dot notation for nested fields
-    // The D1 adapter handles translation to underscore column names internally
-    const whereConditions: any[] = [
-      {
-        'profile_settings.profile_visibility': {
-          equals: 'public',
-        },
-      },
-    ]
+    // Build where clause - filter to public profiles only
+    // Then apply additional filters in-memory for D1 compatibility
+    const whereClause: any = {}
 
-    if (featured) {
-      whereConditions.push({
-        featured_creator: {
-          equals: true,
+    // Only add search filter if provided (simple fields work with D1)
+    if (search) {
+      whereClause.or = [
+        {
+          username: {
+            contains: search.toLowerCase(),
+          },
         },
-      })
+        {
+          display_name: {
+            contains: search,
+          },
+        },
+      ]
     }
 
-    if (specialty) {
-      // Note: Array field queries may not work with D1/SQLite
-      // This filter may need to be applied in-memory
-      whereConditions.push({
-        'creator_info.specialties.specialty': {
-          equals: specialty,
-        },
-      })
+    if (featured) {
+      whereClause.featured_creator = { equals: true }
     }
 
     if (verification) {
-      whereConditions.push({
-        verification_status: {
-          equals: verification,
-        },
-      })
+      whereClause.verification_status = { equals: verification }
     }
 
-    if (search) {
-      whereConditions.push({
-        or: [
-          {
-            username: {
-              contains: search.toLowerCase(),
-            },
-          },
-          {
-            display_name: {
-              contains: search,
-            },
-          },
-        ],
-      })
-    }
-
-    // Fetch creators
+    // Fetch creators - get all and filter in memory for nested field compatibility
     const creators = await payload.find({
       collection: 'creatorProfiles',
-      where: {
-        and: whereConditions,
-      },
+      where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
       page,
-      limit,
-      sort,
+      limit: 100, // Fetch more to filter in memory
+      sort: '-createdAt', // Use simple sort field
       depth: 2,
       overrideAccess: true,
     })
 
+    // Filter to public profiles in memory (D1 nested field query workaround)
+    const publicCreators = creators.docs.filter((creator: any) => {
+      const visibility = creator.profile_settings?.profile_visibility
+      return visibility === 'public' || !visibility // Default to public if not set
+    })
+
+    // Apply specialty filter in memory if needed
+    const filteredCreators = specialty
+      ? publicCreators.filter((creator: any) => {
+          const specialties = creator.creator_info?.specialties || []
+          return specialties.some((s: any) => s.specialty === specialty)
+        })
+      : publicCreators
+
+    // Paginate the filtered results
+    const startIndex = (page - 1) * limit
+    const paginatedCreators = filteredCreators.slice(startIndex, startIndex + limit)
+
+    // Create a mock creators object with the filtered/paginated results
+    const creatorsResult = {
+      docs: paginatedCreators,
+      totalDocs: filteredCreators.length,
+      page,
+      limit,
+      totalPages: Math.ceil(filteredCreators.length / limit),
+    }
+
     // Compute real stats for each creator
-    // Get all user IDs from creators for efficient batch lookup
-    const userIds = creators.docs.map((creator) => {
+    // Get all user IDs from the paginated creators for efficient batch lookup
+    const userIds = paginatedCreators.map((creator: any) => {
       return typeof creator.user === 'object' && creator.user !== null
         ? creator.user.id
         : creator.user
@@ -150,7 +149,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all creator IDs for follower count lookup
-    const creatorIds = creators.docs.map((creator) => creator.id)
+    const creatorIds = paginatedCreators.map((creator: any) => creator.id)
 
     // Batch fetch all follower counts for these creators
     let allFollows: any[] = []
@@ -210,7 +209,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Map stats to each creator
-    const creatorsWithRealStats = creators.docs.map((creator) => {
+    const creatorsWithRealStats = paginatedCreators.map((creator: any) => {
       const creatorUserId = typeof creator.user === 'object' && creator.user !== null
         ? creator.user.id
         : creator.user
@@ -292,10 +291,10 @@ export async function GET(request: NextRequest) {
       success: true,
       creators: creatorsWithRealStats,
       pagination: {
-        page: creators.page,
-        limit: creators.limit,
-        totalPages: creators.totalPages,
-        totalDocs: creators.totalDocs,
+        page: creatorsResult.page,
+        limit: creatorsResult.limit,
+        totalPages: creatorsResult.totalPages,
+        totalDocs: creatorsResult.totalDocs,
       },
     })
   } catch (error: any) {

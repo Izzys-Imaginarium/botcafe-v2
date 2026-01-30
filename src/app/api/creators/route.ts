@@ -132,39 +132,52 @@ export async function GET(request: NextRequest) {
     const allBotIds = allBots.map((bot) => bot.id)
 
     // Batch fetch all likes on these bots
+    // D1/SQLite has a limit on IN clause parameters, so batch in chunks of 50
     let allLikes: any[] = []
     if (allBotIds.length > 0) {
-      const likesResult = await payload.find({
-        collection: 'botInteractions',
-        where: {
-          and: [
-            { bot: { in: allBotIds } },
-            { liked: { equals: true } },
-          ],
-        },
-        limit: 5000,
-        overrideAccess: true,
-      })
-      allLikes = likesResult.docs
+      try {
+        const BATCH_SIZE = 50
+        for (let i = 0; i < allBotIds.length; i += BATCH_SIZE) {
+          const batchIds = allBotIds.slice(i, i + BATCH_SIZE)
+          const likesResult = await payload.find({
+            collection: 'botInteractions',
+            where: {
+              and: [
+                { bot: { in: batchIds } },
+                { liked: { equals: true } },
+              ],
+            },
+            limit: 1000,
+            overrideAccess: true,
+          })
+          allLikes = allLikes.concat(likesResult.docs)
+        }
+      } catch (e) {
+        console.warn('Could not fetch bot interactions:', e)
+      }
     }
 
     // Get all creator IDs for follower count lookup (use ALL filtered, not just paginated)
     const creatorIds = filteredCreators.map((creator: any) => creator.id)
 
     // Batch fetch all follower counts for these creators
-    // Wrapped in try-catch in case table doesn't exist
+    // Wrapped in try-catch in case table doesn't exist, batched for D1 limits
     let allFollows: any[] = []
     if (creatorIds.length > 0) {
       try {
-        const followsResult = await payload.find({
-          collection: 'creatorFollows',
-          where: {
-            following: { in: creatorIds },
-          },
-          limit: 5000,
-          overrideAccess: true,
-        })
-        allFollows = followsResult.docs
+        const BATCH_SIZE = 50
+        for (let i = 0; i < creatorIds.length; i += BATCH_SIZE) {
+          const batchIds = creatorIds.slice(i, i + BATCH_SIZE)
+          const followsResult = await payload.find({
+            collection: 'creatorFollows',
+            where: {
+              following: { in: batchIds },
+            },
+            limit: 1000,
+            overrideAccess: true,
+          })
+          allFollows = allFollows.concat(followsResult.docs)
+        }
       } catch (e) {
         console.warn('Could not fetch creator follows:', e)
       }
@@ -175,42 +188,41 @@ export async function GET(request: NextRequest) {
     // so we fetch all recent conversations and filter in code
     let allConversations: any[] = []
     if (allBotIds.length > 0) {
-      const allBotIdStrings = allBotIds.map(String)
-      const conversationsResult = await payload.find({
-        collection: 'conversation',
-        limit: 5000,
-        depth: 1, // Populate bot_participation.bot_id
-        overrideAccess: true,
-      })
-      // Filter to only conversations that include any of our bots
-      // Check both bot_participation array AND participants.bots JSON field (older format)
-      allConversations = conversationsResult.docs.filter((conv) => {
-        // Check bot_participation array (newer format)
-        const botParticipation = (conv as any).bot_participation || []
-        const hasInParticipation = botParticipation.some((bp: any) => {
-          const botId = typeof bp.bot_id === 'object' && bp.bot_id !== null
-            ? String(bp.bot_id.id)
-            : String(bp.bot_id)
-          return allBotIdStrings.includes(botId)
+      try {
+        const allBotIdStrings = allBotIds.map(String)
+        const conversationsResult = await payload.find({
+          collection: 'conversation',
+          limit: 2000,
+          depth: 1,
+          overrideAccess: true,
         })
-        if (hasInParticipation) return true
+        // Filter to only conversations that include any of our bots
+        allConversations = conversationsResult.docs.filter((conv) => {
+          const botParticipation = (conv as any).bot_participation || []
+          const hasInParticipation = botParticipation.some((bp: any) => {
+            const botId = typeof bp.bot_id === 'object' && bp.bot_id !== null
+              ? String(bp.bot_id.id)
+              : String(bp.bot_id)
+            return allBotIdStrings.includes(botId)
+          })
+          if (hasInParticipation) return true
 
-        // Check participants.bots JSON field (older format)
-        // Note: JSON fields in D1/SQLite may be stored as strings
-        let participants = (conv as any).participants
-        if (typeof participants === 'string') {
-          try {
-            participants = JSON.parse(participants)
-          } catch {
-            participants = null
+          let participants = (conv as any).participants
+          if (typeof participants === 'string') {
+            try {
+              participants = JSON.parse(participants)
+            } catch {
+              participants = null
+            }
           }
-        }
-        if (participants && Array.isArray(participants.bots)) {
-          return participants.bots.some((botId: any) => allBotIdStrings.includes(String(botId)))
-        }
-
-        return false
-      })
+          if (participants && Array.isArray(participants.bots)) {
+            return participants.bots.some((botId: any) => allBotIdStrings.includes(String(botId)))
+          }
+          return false
+        })
+      } catch (e) {
+        console.warn('Could not fetch conversations:', e)
+      }
     }
 
     // First, compute stats for ALL filtered creators (before pagination) for proper sorting

@@ -234,7 +234,11 @@ export async function GET(
       }))
 
     // Get recent activity (bot creations and updates) - sorted by date
-    const recentActivity = userBots.docs
+    // Only show activity for PUBLIC bots (not private ones)
+    const publicBotDocs = userBots.docs.filter(
+      (bot: any) => bot.is_public || bot.sharing?.visibility === 'public'
+    )
+    const recentActivity = publicBotDocs
       .slice(0, 10) // Get up to 10 most recent
       .map((bot: any) => {
         const createdDate = bot.created_date ? new Date(bot.created_date) : null

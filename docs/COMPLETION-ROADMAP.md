@@ -618,6 +618,20 @@ When you add new Payload collections or modify existing ones:
   - Creator profile Activity tab now only shows activity for public bots
   - Private bot creations/updates are no longer visible on public creator profiles
   - Updated file: `src/app/api/creators/[username]/route.ts`
+- ✅ **Help Center Content (Seed)**
+  - Created `/api/admin/seed-help` endpoint to seed help articles
+  - Added 14 comprehensive help articles across categories:
+    - Getting Started: Welcome, Create First Bot, Exploring Bots
+    - Knowledge Base: Understanding Lore, Creating Entries, Tomes
+    - Personas & Moods: Creating Personas
+    - Bot Management: Managing Bots, Sharing & Privacy
+    - Creator Programs: Creator Profile Setup
+    - Account & Billing: Using API Keys
+    - Troubleshooting: Common Issues
+    - FAQ: Frequently Asked Questions
+    - Best Practices: Bot Creation Tips
+  - Uses Lexical rich text format matching legal documents pattern
+  - Created file: `src/app/api/admin/seed-help/route.ts`
 
 ### **2026-01-25 Updates:**
 - ✅ **Memory System Enhancements**

@@ -107,29 +107,58 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Build query - include only public bots OR shared bots
-    // Note: For D1/SQLite, checkbox fields are stored as 0/1 integers
-    // Using explicit integer comparison for reliability
-    const orConditions: any[] = [
-      { is_public: { equals: true } },
-      { 'sharing.visibility': { equals: 'public' } },
-    ]
-
-    // Add shared bots if user is logged in
-    // D1/SQLite has a limit on IN clause parameters, so only include in query if <= 50
-    // If more than 50, we'll fetch shared bots separately in batches
-    const fetchSharedBotsSeparately = sharedBotIds.length > 50
-    if (sharedBotIds.length > 0 && !fetchSharedBotsSeparately) {
-      orConditions.push({ id: { in: sharedBotIds } })
+    // Determine which bot IDs to fetch based on filters
+    // When liked/favorited filters are active, we fetch those specific bots directly
+    let targetBotIds: number[] | null = null
+    if (filterLiked && filterFavorited) {
+      // Intersection: bots that are both liked AND favorited
+      targetBotIds = likedBotIds.filter(id => favoritedBotIds.includes(id))
+    } else if (filterLiked) {
+      targetBotIds = likedBotIds
+    } else if (filterFavorited) {
+      targetBotIds = favoritedBotIds
     }
 
-    // Note: We intentionally don't add user's own bots to the query.
-    // The explore page shows public bots only. User's own private bots
-    // are accessible via their profile page. The in-memory filter below
-    // will still allow the user's own PUBLIC bots to appear.
+    // Build query
+    let where: any
+    let fetchSharedBotsSeparately = false
 
-    const where: any = {
-      or: orConditions,
+    if (targetBotIds !== null) {
+      // When filtering by liked/favorited, fetch those specific bots
+      if (targetBotIds.length === 0) {
+        // User hasn't liked/favorited any bots, return empty results immediately
+        return NextResponse.json({
+          bots: [],
+          totalPages: 0,
+          currentPage: page,
+          totalDocs: 0,
+          hasNextPage: false,
+          hasPrevPage: false,
+        })
+      }
+      // D1/SQLite has a limit on IN clause parameters, so batch if > 50
+      if (targetBotIds.length <= 50) {
+        where = { id: { in: targetBotIds } }
+      } else {
+        // Fetch in batches - start with first 50, fetch rest separately
+        where = { id: { in: targetBotIds.slice(0, 50) } }
+      }
+    } else {
+      // Normal explore: public bots + shared bots
+      // Note: For D1/SQLite, checkbox fields are stored as 0/1 integers
+      const orConditions: any[] = [
+        { is_public: { equals: true } },
+        { 'sharing.visibility': { equals: 'public' } },
+      ]
+
+      // Add shared bots if user is logged in
+      // D1/SQLite has a limit on IN clause parameters, so only include in query if <= 50
+      fetchSharedBotsSeparately = sharedBotIds.length > 50
+      if (sharedBotIds.length > 0 && !fetchSharedBotsSeparately) {
+        orConditions.push({ id: { in: sharedBotIds } })
+      }
+
+      where = { or: orConditions }
     }
 
     // If excludeOwn is true, explicitly exclude user's bots

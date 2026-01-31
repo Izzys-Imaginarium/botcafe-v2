@@ -76,7 +76,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Build query - include public bots OR shared bots OR user's own bots
+    // Build query - include only public bots OR shared bots
+    // Note: For D1/SQLite, checkbox fields are stored as 0/1 integers
+    // Using explicit integer comparison for reliability
     const orConditions: any[] = [
       { is_public: { equals: true } },
       { 'sharing.visibility': { equals: 'public' } },
@@ -90,10 +92,10 @@ export async function GET(request: NextRequest) {
       orConditions.push({ id: { in: sharedBotIds } })
     }
 
-    // Add user's own bots (unless excludeOwn is true)
-    if (payloadUserId && !excludeOwn) {
-      orConditions.push({ user: { equals: payloadUserId } })
-    }
+    // Note: We intentionally don't add user's own bots to the query.
+    // The explore page shows public bots only. User's own private bots
+    // are accessible via their profile page. The in-memory filter below
+    // will still allow the user's own PUBLIC bots to appear.
 
     const where: any = {
       or: orConditions,
@@ -218,10 +220,34 @@ export async function GET(request: NextRequest) {
       allDocs = [...result.docs, ...newSharedBots]
     }
 
+    // IMPORTANT: Filter to ensure ONLY public/shared bots are shown
+    // This is a safety check in case the database query returns unexpected results
+    // The explore page should only show public bots (not user's own private bots)
+    let filteredDocs = allDocs.filter((bot: any) => {
+      const botUserId = typeof bot.user === 'object' ? bot.user?.id : bot.user
+
+      // If excludeOwn is true, filter out user's bots entirely
+      if (excludeOwn && payloadUserId && botUserId === payloadUserId) {
+        return false
+      }
+
+      // Allow if bot is public (checking both boolean and integer values)
+      if (bot.is_public === true || bot.is_public === 1) return true
+
+      // Allow if sharing visibility is public
+      if (bot.sharing?.visibility === 'public') return true
+
+      // Allow if shared with user
+      if (sharedBotIds.includes(bot.id)) return true
+
+      // Otherwise, filter out - this includes user's own PRIVATE bots
+      // (they should access those via their profile, not explore)
+      return false
+    })
+
     // Filter by classifications if specified
-    let filteredDocs = allDocs
     if (classifications.length > 0) {
-      filteredDocs = allDocs.filter((bot: any) => {
+      filteredDocs = filteredDocs.filter((bot: any) => {
         if (!bot.classifications || bot.classifications.length === 0) return false
         return bot.classifications.some((c: any) =>
           classifications.includes(c.classification)

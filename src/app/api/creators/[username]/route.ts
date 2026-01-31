@@ -159,10 +159,11 @@ export async function GET(
     }
 
     // Get all likes/favorites on the creator's bots
-    // D1/SQLite has a limit on IN clause parameters, so batch in chunks of 50
+    // D1/SQLite has a limit on IN clause parameters
+    // Payload seems to bind each param twice, so use smaller batches
     let realTotalLikes = 0
     if (botIds.length > 0) {
-      const BATCH_SIZE = 50
+      const BATCH_SIZE = 20 // Reduced from 50 due to D1 param limits
       for (let i = 0; i < botIds.length; i += BATCH_SIZE) {
         const batchIds = botIds.slice(i, i + BATCH_SIZE)
         const interactions = await payload.find({

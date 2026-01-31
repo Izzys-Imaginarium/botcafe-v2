@@ -610,6 +610,14 @@ When you add new Payload collections or modify existing ones:
   - Fetches user's follows from `creatorFollows` collection
   - Added "Followed" checkbox to creator directory filters
   - Updated files: `src/app/api/creators/route.ts`, `src/modules/creators/ui/views/creator-directory-view.tsx`
+- ✅ **Bug Fix: Explore Filters Not Passing to API**
+  - Fixed `bot-list.tsx` to pass `liked` and `favorited` query params to the API
+  - Previously the filters were updating the URL but not being sent to `/api/bots/explore`
+  - Updated file: `src/modules/explore/ui/components/bot-list.tsx`
+- ✅ **Creator Activity Privacy Fix**
+  - Creator profile Activity tab now only shows activity for public bots
+  - Private bot creations/updates are no longer visible on public creator profiles
+  - Updated file: `src/app/api/creators/[username]/route.ts`
 
 ### **2026-01-25 Updates:**
 - ✅ **Memory System Enhancements**

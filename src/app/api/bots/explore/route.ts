@@ -13,6 +13,8 @@ export async function GET(request: NextRequest) {
     const classifications = searchParams.get('classifications')?.split(',').filter(Boolean) || []
     const includeShared = searchParams.get('includeShared') !== 'false' // Default true
     const excludeOwn = searchParams.get('excludeOwn') === 'true'
+    const filterLiked = searchParams.get('liked') === 'true'
+    const filterFavorited = searchParams.get('favorited') === 'true'
 
     // Get Payload instance with error handling
     let payload
@@ -30,9 +32,9 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Get current user for shared bot access, excludeOwn, or recently-chatted sort
+    // Get current user for shared bot access, excludeOwn, liked/favorited filters, or recently-chatted sort
     let payloadUserId: number | null = null
-    const needsUserId = includeShared || excludeOwn || sort === 'recently-chatted'
+    const needsUserId = includeShared || excludeOwn || sort === 'recently-chatted' || filterLiked || filterFavorited
     if (needsUserId) {
       const clerkUser = await currentUser()
       if (clerkUser) {
@@ -71,6 +73,35 @@ export async function GET(request: NextRequest) {
           const botId = parseInt(ac.resource_id, 10)
           if (!isNaN(botId)) {
             sharedBotIds.push(botId)
+          }
+        }
+      }
+    }
+
+    // Get IDs of bots the user has liked or favorited (for filtering)
+    let likedBotIds: number[] = []
+    let favoritedBotIds: number[] = []
+    if (payloadUserId && (filterLiked || filterFavorited)) {
+      const interactions = await payload.find({
+        collection: 'botInteractions' as any,
+        where: {
+          user: { equals: payloadUserId },
+        },
+        limit: 500,
+        overrideAccess: true,
+      })
+
+      for (const interaction of interactions.docs as any[]) {
+        const botId = typeof interaction.bot === 'object' ? interaction.bot?.id : interaction.bot
+        if (botId) {
+          const numericBotId = typeof botId === 'number' ? botId : parseInt(botId, 10)
+          if (!isNaN(numericBotId)) {
+            if (interaction.liked) {
+              likedBotIds.push(numericBotId)
+            }
+            if (interaction.favorited) {
+              favoritedBotIds.push(numericBotId)
+            }
           }
         }
       }
@@ -180,9 +211,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch bots from Payload with creator profile populated
-    // If filtering by classifications, using in-memory sort, or fetching shared bots separately,
+    // If filtering by classifications, liked/favorited, using in-memory sort, or fetching shared bots separately,
     // we need to fetch more due to D1/SQLite limitations
-    const needsInMemoryProcessing = classifications.length > 0 || useInMemorySort || fetchSharedBotsSeparately
+    const needsInMemoryProcessing = classifications.length > 0 || useInMemorySort || fetchSharedBotsSeparately || filterLiked || filterFavorited
     const fetchLimit = needsInMemoryProcessing ? Math.max(limit * 3, 100) : limit
 
     const result = await payload.find({
@@ -244,6 +275,26 @@ export async function GET(request: NextRequest) {
       // (they should access those via their profile, not explore)
       return false
     })
+
+    // Filter by liked bots if requested
+    if (filterLiked && payloadUserId) {
+      if (likedBotIds.length === 0) {
+        // User hasn't liked any bots, return empty results
+        filteredDocs = []
+      } else {
+        filteredDocs = filteredDocs.filter((bot: any) => likedBotIds.includes(bot.id))
+      }
+    }
+
+    // Filter by favorited bots if requested
+    if (filterFavorited && payloadUserId) {
+      if (favoritedBotIds.length === 0) {
+        // User hasn't favorited any bots, return empty results
+        filteredDocs = []
+      } else {
+        filteredDocs = filteredDocs.filter((bot: any) => favoritedBotIds.includes(bot.id))
+      }
+    }
 
     // Filter by classifications if specified
     if (classifications.length > 0) {

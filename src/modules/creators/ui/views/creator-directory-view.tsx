@@ -97,6 +97,7 @@ export const CreatorDirectoryView = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [sortBy, setSortBy] = useState<string>('-followers')
+  const [showFollowed, setShowFollowed] = useState(false)
 
   // Use infinite list hook
   const {
@@ -129,8 +130,11 @@ export const CreatorDirectoryView = () => {
     if (debouncedSearch) {
       params.search = debouncedSearch
     }
+    if (showFollowed) {
+      params.followed = 'true'
+    }
     setParams(params)
-  }, [debouncedSearch, sortBy, setParams])
+  }, [debouncedSearch, sortBy, showFollowed, setParams])
 
   // Check my profile on mount
   useEffect(() => {
@@ -249,12 +253,22 @@ export const CreatorDirectoryView = () => {
                 </Select>
               </div>
 
-              <div className="flex items-end">
+              <div className="flex items-end gap-4">
+                <label className="flex items-center space-x-2 cursor-pointer whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    checked={showFollowed}
+                    onChange={(e) => setShowFollowed(e.target.checked)}
+                    className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                  />
+                  <span className="text-sm">Followed</span>
+                </label>
                 <Button
                   variant="outline"
                   onClick={() => {
                     setSearchQuery('')
                     setSortBy('-followers')
+                    setShowFollowed(false)
                   }}
                   className="w-full"
                 >

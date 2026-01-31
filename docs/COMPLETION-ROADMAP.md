@@ -598,6 +598,19 @@ When you add new Payload collections or modify existing ones:
 
 ## 🔄 **Recent Changes**
 
+### **2026-01-31 Updates:**
+- ✅ **Explore Page Filters (Liked/Favorited)**
+  - Added `liked=true` query param to `/api/bots/explore` to filter to bots user has liked
+  - Added `favorited=true` query param to `/api/bots/explore` to filter to bots user has favorited
+  - Fetches user's interactions from `botInteractions` collection
+  - Added "My Interactions" section to explore page filters UI with Liked/Favorited checkboxes
+  - Updated files: `src/app/api/bots/explore/route.ts`, `src/modules/explore/ui/components/bot-filters.tsx`
+- ✅ **Creator Directory Filter (Followed)**
+  - Added `followed=true` query param to `/api/creators` to filter to creators user follows
+  - Fetches user's follows from `creatorFollows` collection
+  - Added "Followed" checkbox to creator directory filters
+  - Updated files: `src/app/api/creators/route.ts`, `src/modules/creators/ui/views/creator-directory-view.tsx`
+
 ### **2026-01-25 Updates:**
 - ✅ **Memory System Enhancements**
   - Wired up memory retrieval into chat context (`context-builder.ts`)
@@ -1436,8 +1449,8 @@ const filtered = all.docs.filter(conv =>
 
 ---
 
-**Last Updated**: 2026-01-27
-**Version**: 3.26
+**Last Updated**: 2026-01-31
+**Version**: 3.27
 **Total Tasks**: 184
 **Completed**: 178
 **Progress**: ~97% (Memory edit/delete for tomes complete)

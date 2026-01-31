@@ -27,6 +27,8 @@ export const BotFilters = () => {
     searchParams.get('classifications')?.split(',').filter(Boolean) || []
   )
   const [hideMyBots, setHideMyBots] = useState(searchParams.get('excludeOwn') === 'true')
+  const [showLiked, setShowLiked] = useState(searchParams.get('liked') === 'true')
+  const [showFavorited, setShowFavorited] = useState(searchParams.get('favorited') === 'true')
 
   // Debounce search
   useEffect(() => {
@@ -72,6 +74,30 @@ export const BotFilters = () => {
     router.push(`?${params.toString()}`)
   }
 
+  // Handle show liked toggle
+  const handleShowLikedChange = (checked: boolean) => {
+    setShowLiked(checked)
+    const params = new URLSearchParams(searchParams.toString())
+    if (checked) {
+      params.set('liked', 'true')
+    } else {
+      params.delete('liked')
+    }
+    router.push(`?${params.toString()}`)
+  }
+
+  // Handle show favorited toggle
+  const handleShowFavoritedChange = (checked: boolean) => {
+    setShowFavorited(checked)
+    const params = new URLSearchParams(searchParams.toString())
+    if (checked) {
+      params.set('favorited', 'true')
+    } else {
+      params.delete('favorited')
+    }
+    router.push(`?${params.toString()}`)
+  }
+
   return (
     <Card className="glass-rune p-6 space-y-6">
       <div>
@@ -106,6 +132,28 @@ export const BotFilters = () => {
               </label>
             ))}
           </div>
+        </div>
+
+        <div className="space-y-3 pt-4 border-t border-gold-ancient/20">
+          <Label className="text-parchment-dim font-lore text-sm">My Interactions</Label>
+          <label className="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showLiked}
+              onChange={(e) => handleShowLikedChange(e.target.checked)}
+              className="rounded border-gold-ancient/30 text-gold-rich focus:ring-gold-rich/20"
+            />
+            <span className="text-parchment font-lore text-sm">Liked</span>
+          </label>
+          <label className="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showFavorited}
+              onChange={(e) => handleShowFavoritedChange(e.target.checked)}
+              className="rounded border-gold-ancient/30 text-gold-rich focus:ring-gold-rich/20"
+            />
+            <span className="text-parchment font-lore text-sm">Favorited</span>
+          </label>
         </div>
 
         <div className="space-y-3 pt-4 border-t border-gold-ancient/20">

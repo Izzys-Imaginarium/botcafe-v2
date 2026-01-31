@@ -1,7 +1,7 @@
 # BotCafe v2 - Complete Sitemap
 
-**Last Updated**: 2026-01-26
-**Version**: 2.27
+**Last Updated**: 2026-01-31
+**Version**: 2.28
 **Status**: ~98% Complete
 
 ---
@@ -110,7 +110,7 @@
 | Endpoint | Methods | Description |
 |----------|---------|-------------|
 | `/api/bots` | GET, POST | List all bots, create new bot |
-| `/api/bots/explore` | GET | Bot discovery (public + owned + shared via AccessControl) |
+| `/api/bots/explore` | GET | Bot discovery (public + owned + shared via AccessControl). Query params: `liked=true` (filter to liked bots), `favorited=true` (filter to favorited bots) |
 | `/api/bots/my-bots` | GET | Get current user's bots |
 | `/api/bots/[id]` | GET, PUT, DELETE | Bot CRUD operations |
 | `/api/bots/[id]/like` | POST | Toggle like on bot |
@@ -166,7 +166,7 @@
 
 | Endpoint | Methods | Description |
 |----------|---------|-------------|
-| `/api/creators` | GET, POST | List creators, create profile |
+| `/api/creators` | GET, POST | List creators, create profile. Query params: `followed=true` (filter to followed creators) |
 | `/api/creators/me` | GET | Get current user's profile |
 | `/api/creators/[username]` | GET, PUT, DELETE | Creator profile operations |
 | `/api/creators/[username]/follow` | GET, POST | Check follow status, toggle follow/unfollow |

@@ -35,10 +35,52 @@ export async function GET(request: NextRequest) {
     // Payload sort uses dot notation for nested fields
     const sort = searchParams.get('sort') || '-community_stats.follower_count'
     const search = searchParams.get('search')
+    const filterFollowed = searchParams.get('followed') === 'true'
 
     // Get Payload instance
     const payloadConfig = await config
     const payload = await getPayload({ config: payloadConfig })
+
+    // Get current user's followed creators if filter is active
+    let followedCreatorIds: number[] = []
+    if (filterFollowed) {
+      const clerkUser = await currentUser()
+      if (clerkUser) {
+        // Find the Payload user
+        const users = await payload.find({
+          collection: 'users',
+          where: {
+            email: { equals: clerkUser.emailAddresses[0]?.emailAddress },
+          },
+          limit: 1,
+          overrideAccess: true,
+        })
+
+        if (users.docs.length > 0) {
+          const payloadUserId = users.docs[0].id
+
+          // Fetch all creators this user follows
+          const follows = await payload.find({
+            collection: 'creatorFollows',
+            where: {
+              follower: { equals: payloadUserId },
+            },
+            limit: 500,
+            overrideAccess: true,
+          })
+
+          for (const follow of follows.docs as any[]) {
+            const followingId = typeof follow.following === 'object' ? follow.following?.id : follow.following
+            if (followingId) {
+              const numericId = typeof followingId === 'number' ? followingId : parseInt(followingId, 10)
+              if (!isNaN(numericId)) {
+                followedCreatorIds.push(numericId)
+              }
+            }
+          }
+        }
+      }
+    }
 
     // Build where clause - filter to public profiles only
     // Then apply additional filters in-memory for D1 compatibility
@@ -86,12 +128,24 @@ export async function GET(request: NextRequest) {
     })
 
     // Apply specialty filter in memory if needed
-    const filteredCreators = specialty
+    let filteredCreators = specialty
       ? publicCreators.filter((creator: any) => {
           const specialties = creator.creator_info?.specialties || []
           return specialties.some((s: any) => s.specialty === specialty)
         })
       : publicCreators
+
+    // Apply followed filter if requested
+    if (filterFollowed) {
+      if (followedCreatorIds.length === 0) {
+        // User doesn't follow anyone, return empty results
+        filteredCreators = []
+      } else {
+        filteredCreators = filteredCreators.filter((creator: any) =>
+          followedCreatorIds.includes(typeof creator.id === 'number' ? creator.id : parseInt(creator.id, 10))
+        )
+      }
+    }
 
     // Paginate the filtered results
     const startIndex = (page - 1) * limit

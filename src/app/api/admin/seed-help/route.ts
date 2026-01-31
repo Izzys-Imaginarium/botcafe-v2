@@ -5,6 +5,38 @@ import config from '@/payload.config'
 
 export const dynamic = 'force-dynamic'
 
+// Category type matching the Documentation collection
+type DocumentationCategory =
+  | 'getting-started'
+  | 'bot-creation'
+  | 'bot-management'
+  | 'knowledge-base'
+  | 'personas-moods'
+  | 'analytics-insights'
+  | 'api-reference'
+  | 'troubleshooting'
+  | 'best-practices'
+  | 'account-billing'
+  | 'creator-programs'
+  | 'legal-compliance'
+  | 'platform-updates'
+  | 'faq'
+
+type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert'
+
+interface HelpArticle {
+  slug: string
+  title: string
+  category: DocumentationCategory
+  difficultyLevel: DifficultyLevel
+  estimatedReadTime: number
+  isFeatured: boolean
+  sortOrder: number
+  metaDescription: string
+  tags: Array<{ tag: string }>
+  content: any
+}
+
 // Helper to create lexical content
 const createContent = (children: any[]) => ({
   root: {
@@ -48,7 +80,7 @@ const numberedList = (items: string[]) => ({
 
 // ============ HELP ARTICLES ============
 
-const welcomeArticle = {
+const welcomeArticle: HelpArticle = {
   slug: 'welcome-to-botcafe',
   title: 'Welcome to BotCafe',
   category: 'getting-started',
@@ -81,7 +113,7 @@ const welcomeArticle = {
   ]),
 }
 
-const createFirstBotArticle = {
+const createFirstBotArticle: HelpArticle = {
   slug: 'create-your-first-bot',
   title: 'Create Your First Bot',
   category: 'getting-started',
@@ -127,7 +159,7 @@ const createFirstBotArticle = {
   ]),
 }
 
-const exploringBotsArticle = {
+const exploringBotsArticle: HelpArticle = {
   slug: 'exploring-bots',
   title: 'Exploring and Finding Bots',
   category: 'getting-started',
@@ -159,7 +191,7 @@ const exploringBotsArticle = {
   ]),
 }
 
-const loreBasicsArticle = {
+const loreBasicsArticle: HelpArticle = {
   slug: 'understanding-lore',
   title: 'Understanding Lore (Knowledge Base)',
   category: 'knowledge-base',
@@ -193,7 +225,7 @@ const loreBasicsArticle = {
   ]),
 }
 
-const creatingLoreArticle = {
+const creatingLoreArticle: HelpArticle = {
   slug: 'creating-lore-entries',
   title: 'Creating Lore Entries',
   category: 'knowledge-base',
@@ -234,7 +266,7 @@ const creatingLoreArticle = {
   ]),
 }
 
-const tomesArticle = {
+const tomesArticle: HelpArticle = {
   slug: 'organizing-with-tomes',
   title: 'Organizing Lore with Tomes',
   category: 'knowledge-base',
@@ -273,7 +305,7 @@ const tomesArticle = {
   ]),
 }
 
-const personasArticle = {
+const personasArticle: HelpArticle = {
   slug: 'creating-personas',
   title: 'Creating and Using Personas',
   category: 'personas-moods',
@@ -313,7 +345,7 @@ const personasArticle = {
   ]),
 }
 
-const managingBotsArticle = {
+const managingBotsArticle: HelpArticle = {
   slug: 'managing-your-bots',
   title: 'Managing Your Bots',
   category: 'bot-management',
@@ -348,7 +380,7 @@ const managingBotsArticle = {
   ]),
 }
 
-const sharingPrivacyArticle = {
+const sharingPrivacyArticle: HelpArticle = {
   slug: 'sharing-and-privacy',
   title: 'Bot Sharing and Privacy',
   category: 'bot-management',
@@ -389,7 +421,7 @@ const sharingPrivacyArticle = {
   ]),
 }
 
-const creatorProfileArticle = {
+const creatorProfileArticle: HelpArticle = {
   slug: 'setting-up-creator-profile',
   title: 'Setting Up Your Creator Profile',
   category: 'creator-programs',
@@ -432,7 +464,7 @@ const creatorProfileArticle = {
   ]),
 }
 
-const apiKeysArticle = {
+const apiKeysArticle: HelpArticle = {
   slug: 'using-your-own-api-keys',
   title: 'Using Your Own API Keys',
   category: 'account-billing',
@@ -473,7 +505,7 @@ const apiKeysArticle = {
   ]),
 }
 
-const troubleshootingArticle = {
+const troubleshootingArticle: HelpArticle = {
   slug: 'common-issues',
   title: 'Common Issues and Solutions',
   category: 'troubleshooting',
@@ -520,7 +552,7 @@ const troubleshootingArticle = {
   ]),
 }
 
-const faqArticle = {
+const faqArticle: HelpArticle = {
   slug: 'frequently-asked-questions',
   title: 'Frequently Asked Questions',
   category: 'faq',
@@ -555,7 +587,7 @@ const faqArticle = {
   ]),
 }
 
-const bestPracticesArticle = {
+const bestPracticesArticle: HelpArticle = {
   slug: 'bot-creation-best-practices',
   title: 'Bot Creation Best Practices',
   category: 'best-practices',
@@ -609,7 +641,7 @@ const bestPracticesArticle = {
 }
 
 // All articles array
-const helpArticles = [
+const helpArticles: HelpArticle[] = [
   welcomeArticle,
   createFirstBotArticle,
   exploringBotsArticle,
@@ -683,11 +715,11 @@ export async function POST() {
           data: {
             title: article.title,
             slug: article.slug,
-            category: article.category,
+            category: article.category as any,
             content: article.content as any,
             language: 'en',
             isPublished: true,
-            difficultyLevel: article.difficultyLevel,
+            difficultyLevel: article.difficultyLevel as any,
             estimatedReadTime: article.estimatedReadTime,
             isFeatured: article.isFeatured,
             sortOrder: article.sortOrder,

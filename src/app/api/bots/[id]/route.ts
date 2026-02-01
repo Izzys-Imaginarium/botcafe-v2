@@ -334,14 +334,14 @@ export async function DELETE(
     // 3. Nullify memory insights bot reference
     try {
       const memoryInsights = await payload.find({
-        collection: 'memoryInsights',
+        collection: 'memory-insights',
         where: { bot: { equals: botIdNum } },
         limit: 0,
         overrideAccess: true,
       })
       for (const insight of memoryInsights.docs) {
         await payload.update({
-          collection: 'memoryInsights',
+          collection: 'memory-insights',
           id: insight.id,
           data: { bot: null } as any,
           overrideAccess: true,
@@ -403,7 +403,7 @@ export async function DELETE(
     // 6. Delete PersonaAnalytics (bot FK constraint)
     try {
       await payload.delete({
-        collection: 'personaAnalytics',
+        collection: 'persona-analytics',
         where: { bot: { equals: botIdNum } },
         overrideAccess: true,
       })
@@ -530,7 +530,7 @@ export async function DELETE(
     // 11. Delete access control entries
     try {
       await payload.delete({
-        collection: 'accessControl',
+        collection: 'access-control',
         where: {
           and: [
             { resource_type: { equals: 'bot' } },

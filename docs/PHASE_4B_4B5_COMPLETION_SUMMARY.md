@@ -20,7 +20,7 @@ Phases 4B and 4B.5 represent the complete implementation of the Lore (Knowledge 
 3. **`DELETE /api/knowledge/[id]`** - Delete knowledge entry with vector cleanup
 4. **`POST /api/knowledge-collections`** - Create new knowledge collections
 5. **`GET /api/knowledge-collections`** - List user's knowledge collections
-6. **`DELETE /api/knowledge-collections/[id]`** - Delete collection with safety checks
+6. **`DELETE /api/knowledge-collections/[id]`** - Delete collection with cascade delete of all entries
 
 #### Features Implemented:
 - ✅ Multi-tenant data isolation (users only see their own data)
@@ -29,7 +29,7 @@ Phases 4B and 4B.5 represent the complete implementation of the Lore (Knowledge 
 - ✅ Type-safe TypeScript implementation
 - ✅ Proper error handling and validation
 - ✅ Owner-only delete permissions
-- ✅ Collection safety checks (prevent deletion if entries exist)
+- ✅ Collection cascade delete (entries are deleted when collection is deleted)
 - ✅ Token estimation for knowledge entries
 - ✅ Privacy settings initialization
 - ✅ Content metadata tracking (word count, processing status)

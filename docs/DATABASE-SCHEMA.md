@@ -135,6 +135,18 @@ AI companion definitions.
 
 > **Note**: Bots CAN be made public from the UI. The `is_public` field is maintained for backwards compatibility and is synced with `sharing.visibility`.
 
+> **Cascade Delete**: When a Bot is deleted, the following related records are automatically cleaned up:
+> - `BotInteraction` records (likes/favorites) are deleted
+> - `Memory` records referencing the bot are deleted
+> - `MemoryInsights` bot references are nullified
+> - `Message` bot references are nullified
+> - `PersonaAnalytics` records are deleted
+> - `Conversation` bot_participation entries are removed
+> - `Knowledge` applies_to_bots references are removed
+> - `KnowledgeCollections` bot references are removed
+> - `CreatorProfiles` featured_bots references are removed
+> - `AccessControl` permission records are deleted
+
 ### BotInteraction
 
 User interactions with bots (likes, favorites).
@@ -326,6 +338,8 @@ Grouped knowledge for organization with sharing and collaboration features.
 > - Displayed in the Memories section instead
 > - Automatically created and linked when conversations generate memories
 > - Named after the conversation they're associated with (e.g., "Memories: Adventure with Aria")
+
+> **Cascade Delete**: When a KnowledgeCollection is deleted, all Knowledge entries within it are automatically deleted as well. This ensures no orphaned entries remain in the database.
 
 ### VectorRecord
 

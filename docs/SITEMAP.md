@@ -112,7 +112,7 @@
 | `/api/bots` | GET, POST | List all bots, create new bot |
 | `/api/bots/explore` | GET | Bot discovery (public + owned + shared via AccessControl). Query params: `liked=true` (filter to liked bots), `favorited=true` (filter to favorited bots) |
 | `/api/bots/my-bots` | GET | Get current user's bots |
-| `/api/bots/[id]` | GET, PUT, DELETE | Bot CRUD operations |
+| `/api/bots/[id]` | GET, PUT, DELETE | Bot CRUD operations. DELETE cascades to remove all related data (interactions, memories, analytics, etc.) |
 | `/api/bots/[id]/like` | POST | Toggle like on bot |
 | `/api/bots/[id]/favorite` | POST | Toggle favorite on bot |
 | `/api/bots/[id]/status` | GET | Get like/favorite status |
@@ -124,7 +124,7 @@
 | `/api/knowledge` | GET, POST | List and create knowledge entries. Query params: `collection`, `page`, `limit`, `includeMemories` (default: false - excludes legacy memory entries) |
 | `/api/knowledge/[id]` | GET, PATCH, DELETE | Get, update, or delete knowledge entry |
 | `/api/knowledge-collections` | GET, POST | List and create collections. Query params: `includeMemoryTomes` (default: false), `onlyMemoryTomes` (default: false) |
-| `/api/knowledge-collections/[id]` | GET, PATCH, DELETE | Get, update, or delete collection |
+| `/api/knowledge-collections/[id]` | GET, PATCH, DELETE | Get, update, or delete collection. DELETE cascades to remove all entries in the collection |
 
 ### Sharing & Permissions
 

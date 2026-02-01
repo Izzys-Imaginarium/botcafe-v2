@@ -141,7 +141,7 @@ By building foundational systems first, we avoid rework and ensure chat has all 
   - [x] Create `/api/knowledge` endpoint (POST, GET) ✅
   - [x] Create `/api/knowledge/[id]` endpoint (DELETE with vector cleanup) ✅
   - [x] Create `/api/knowledge-collections` endpoint (POST, GET) ✅
-  - [x] Create `/api/knowledge-collections/[id]` endpoint (DELETE with safety checks) ✅
+  - [x] Create `/api/knowledge-collections/[id]` endpoint (DELETE with cascade delete of entries) ✅
   - [x] Fetch and display real collections in dropdown ✅
   - [x] Fetch and display real knowledge entries ✅
   - [x] Add delete functionality for entries and collections ✅
@@ -597,6 +597,21 @@ When you add new Payload collections or modify existing ones:
 ---
 
 ## 🔄 **Recent Changes**
+
+### **2026-02-01 Updates:**
+- ✅ **Lore Collection Cascade Delete**
+  - Fixed bug where deleting a lore collection with entries would fail
+  - Collections now cascade delete all knowledge entries within them
+  - Updated `/api/knowledge-collections/[id]` DELETE endpoint
+- ✅ **Bot Cascade Delete (Payload API Migration)**
+  - Fixed bot deletion failures caused by raw SQL/Drizzle incompatibility with D1
+  - Rewrote bot deletion to use Payload APIs instead of raw SQL
+  - Now properly cleans up all related data: interactions, memories, messages, analytics, conversations, knowledge references, access control
+  - Updated `/api/bots/[id]` DELETE endpoint
+- ✅ **Documentation Updates**
+  - Added cascade delete behavior documentation to DATABASE-SCHEMA.md
+  - Updated SITEMAP.md API descriptions to reflect cascade behavior
+  - Updated COMPLETION-ROADMAP.md to reflect cascade delete instead of safety checks
 
 ### **2026-01-31 Updates:**
 - ✅ **Explore Page Filters (Liked/Favorited)**
@@ -1357,7 +1372,7 @@ When you add new Payload collections or modify existing ones:
   - `/api/knowledge` (POST, GET) - Create and list knowledge entries
   - `/api/knowledge/[id]` (DELETE) - Delete entries with vector cleanup
   - `/api/knowledge-collections` (POST, GET) - Create and list collections
-  - `/api/knowledge-collections/[id]` (DELETE) - Delete collections with safety checks
+  - `/api/knowledge-collections/[id]` (DELETE) - Delete collections with cascade delete of all entries
 - ✅ Connected lore UI to real backend:
   - Fetch real collections for dropdown in entry creation form
   - Fetch and display real knowledge entries in browse tab

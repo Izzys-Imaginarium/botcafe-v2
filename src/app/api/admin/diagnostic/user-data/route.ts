@@ -220,10 +220,43 @@ export async function GET(request: NextRequest) {
       },
       knowledgeCollections: {
         count: knowledgeCollections.totalDocs,
-        items: knowledgeCollections.docs.map((k: any) => ({
-          id: k.id,
-          name: k.name,
-        })),
+        // Categorize by migration type
+        byType: (() => {
+          const categorized: Record<string, Array<{ id: number; name: string }>> = {
+            userPersona: [],
+            botPersona: [],
+            memory: [],
+            lore: [],
+            general: [],
+            other: [],
+          }
+          for (const k of knowledgeCollections.docs) {
+            const col = k as {
+              id: number
+              name: string
+              collection_metadata?: { tags?: Array<{ tag: string }> }
+            }
+            const tags = col.collection_metadata?.tags || []
+            const migratedTag = tags.find((t) => t.tag?.startsWith('migrated:'))
+            const migratedType = migratedTag?.tag?.replace('migrated:', '') || ''
+
+            const item = { id: col.id, name: col.name }
+            if (migratedType === 'user persona') {
+              categorized.userPersona.push(item)
+            } else if (migratedType === 'bot persona') {
+              categorized.botPersona.push(item)
+            } else if (migratedType === 'memory') {
+              categorized.memory.push(item)
+            } else if (migratedType === 'lore') {
+              categorized.lore.push(item)
+            } else if (migratedType === 'general') {
+              categorized.general.push(item)
+            } else {
+              categorized.other.push(item)
+            }
+          }
+          return categorized
+        })(),
       },
       apiKeys: {
         count: apiKeys.totalDocs,
@@ -258,6 +291,17 @@ export async function GET(request: NextRequest) {
 
     if (!creatorProfiles.docs[0] && bots.totalDocs > 0) {
       issues.push('User has bots but no creator profile')
+    }
+
+    // Check for user persona collections that might need migration to actual persona records
+    const userPersonaCollections = knowledgeCollections.docs.filter((k: any) => {
+      const tags = k.collection_metadata?.tags || []
+      return tags.some((t: { tag: string }) => t.tag === 'migrated:user persona')
+    })
+    if (userPersonaCollections.length > 0 && personas.totalDocs === 0) {
+      issues.push(
+        `User has ${userPersonaCollections.length} "user persona" collection(s) but no actual persona records - data may need migration`
+      )
     }
 
     return NextResponse.json({

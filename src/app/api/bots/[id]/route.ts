@@ -305,345 +305,250 @@ export async function DELETE(
       )
     }
 
-    // Clean up all bot references before deletion
-    // Use very small batch sizes and depth:0 to avoid D1 "too many SQL variables" error
+    // Clean up all bot references before deletion using Payload APIs
     const botIdNum = typeof id === 'string' ? parseInt(id, 10) : id
-    const BATCH_SIZE = 10
 
-    // Helper to process in batches with minimal depth
-    async function processBatched<T>(
-      collection: string,
-      whereClause: Record<string, any> | undefined,
-      processor: (doc: T) => Promise<void>
-    ) {
-      let page = 1
-      let hasMore = true
-      while (hasMore) {
-        const result = await payload.find({
-          collection: collection as any,
-          where: whereClause,
-          limit: BATCH_SIZE,
-          page,
-          depth: 0, // Don't expand relationships to reduce SQL variables
+    // 1. Delete bot interactions (bot field is required - FK constraint)
+    try {
+      await payload.delete({
+        collection: 'botInteractions',
+        where: { bot: { equals: botIdNum } },
+        overrideAccess: true,
+      })
+    } catch (e) {
+      console.warn('Failed to delete bot_interactions:', e)
+    }
+
+    // 2. Delete memories that reference this bot
+    // Memory.bot is a required hasMany relationship
+    try {
+      await payload.delete({
+        collection: 'memory',
+        where: { bot: { equals: botIdNum } },
+        overrideAccess: true,
+      })
+    } catch (e) {
+      console.warn('Failed to delete memories:', e)
+    }
+
+    // 3. Nullify memory insights bot reference
+    try {
+      const memoryInsights = await payload.find({
+        collection: 'memoryInsights',
+        where: { bot: { equals: botIdNum } },
+        limit: 0,
+        overrideAccess: true,
+      })
+      for (const insight of memoryInsights.docs) {
+        await payload.update({
+          collection: 'memoryInsights',
+          id: insight.id,
+          data: { bot: null } as any,
           overrideAccess: true,
         })
-        for (const doc of result.docs) {
-          await processor(doc as T)
-        }
-        hasMore = result.hasNextPage
-        page++
       }
+    } catch (e) {
+      console.warn('Failed to nullify memory-insights bot_id:', e)
     }
 
-    // Handle all FK constraints that would block deletion
-
-    // DELETE bot interactions using raw SQL (bot field is required - FK constraint)
-    const drizzle = payload.db.drizzle
-    if (drizzle) {
-      try {
-        await drizzle.run({
-          sql: 'DELETE FROM bot_interactions WHERE bot_id = ?',
-          args: [botIdNum]
-        } as any)
-      } catch (e) {
-        console.warn('Failed to delete bot_interactions:', e)
-      }
-    }
-
-    // DELETE memories that reference this bot using raw SQL
-    // The bot field is required and hasMany, stored in memory_rels table
-    // We need to:
-    // 1. Find memories that ONLY have this bot (delete them)
-    // 2. Remove bot reference from memories that have other bots too
-    if (drizzle) {
-      try {
-        // First, find and delete memories where this is the only bot
-        // Memories with only one bot entry that matches our bot should be deleted
-        await drizzle.run({
-          sql: `DELETE FROM memory WHERE id IN (
-            SELECT parent_id FROM memory_rels
-            WHERE bot_id = ?
-            AND parent_id NOT IN (
-              SELECT parent_id FROM memory_rels WHERE bot_id != ?
-            )
-          )`,
-          args: [botIdNum, botIdNum]
-        } as any)
-      } catch (e) {
-        console.warn('Failed to delete single-bot memories:', e)
-      }
-
-      try {
-        // Now remove this bot from the _rels table (for memories that had multiple bots)
-        await drizzle.run({
-          sql: 'DELETE FROM memory_rels WHERE bot_id = ?',
-          args: [botIdNum]
-        } as any)
-      } catch (e) {
-        console.warn('Failed to clean memory_rels:', e)
-      }
-    }
-
-    // DELETE memory insights using raw SQL
-    if (drizzle) {
-      try {
-        await drizzle.run({
-          sql: 'UPDATE memory_insights SET bot_id = NULL WHERE bot_id = ?',
-          args: [botIdNum]
-        } as any)
-      } catch (e) {
-        console.warn('Failed to nullify memory-insights bot_id:', e)
-      }
-    }
-
-    // Nullify bot reference on messages using raw SQL ONLY
-    // The message table has many nested array fields that cause "too many SQL variables" errors
-    // even with depth:0, so we MUST use raw SQL - no Payload fallback
-    if (drizzle) {
-      try {
-        // Update bot_id to NULL
-        await drizzle.run({
-          sql: 'UPDATE message SET bot_id = NULL WHERE bot_id = ?',
-          args: [botIdNum]
-        } as any)
-      } catch (e) {
-        console.warn('Failed to nullify message.bot_id:', e)
-      }
-
-      try {
-        // Also nullify source_bot_id in message_attribution
-        // The column name in SQLite is message_attribution_source_bot_id_id (with _id suffix for relationships)
-        await drizzle.run({
-          sql: 'UPDATE message SET message_attribution_source_bot_id_id = NULL WHERE message_attribution_source_bot_id_id = ?',
-          args: [botIdNum]
-        } as any)
-      } catch (e) {
-        console.warn('Failed to nullify message_attribution_source_bot_id_id:', e)
-      }
-    }
-
-    // DELETE PersonaAnalytics using raw SQL (bot FK constraint)
-    if (drizzle) {
-      try {
-        await drizzle.run({
-          sql: 'DELETE FROM persona_analytics WHERE bot_id = ?',
-          args: [botIdNum]
-        } as any)
-      } catch (e) {
-        console.warn('Failed to delete persona_analytics:', e)
-      }
-    }
-
-    // Remove bot from conversation bot_participation using raw SQL
-    // This avoids Payload's complex queries that can trigger message fetches
-    if (drizzle) {
-      try {
-        // The bot_participation is stored in a separate table: conversation_bot_participation
-        await drizzle.run({
-          sql: 'DELETE FROM "conversation_bot_participation" WHERE bot_id_id = ?',
-          args: [botIdNum]
-        } as any)
-      } catch (e) {
-        console.warn('Failed to clean conversation_bot_participation:', e)
-      }
-    }
-
-    // Remove bot from knowledge applies_to_bots using raw SQL
-    // hasMany relationships are stored in _rels tables
-    if (drizzle) {
-      try {
-        await drizzle.run({
-          sql: 'DELETE FROM "knowledge_rels" WHERE bot_id = ?',
-          args: [botIdNum]
-        } as any)
-      } catch (e) {
-        console.warn('Failed to clean knowledge_rels:', e)
-      }
-    }
-
-    // Remove bot from knowledgeCollections bot arrays using raw SQL
-    if (drizzle) {
-      try {
-        await drizzle.run({
-          sql: 'DELETE FROM "knowledge_collections_rels" WHERE bot_id = ?',
-          args: [botIdNum]
-        } as any)
-      } catch (e) {
-        console.warn('Failed to clean knowledge_collections_rels:', e)
-      }
-    }
-
-    // Remove bot from creatorProfiles featured_bots using raw SQL
-    if (drizzle) {
-      try {
-        await drizzle.run({
-          sql: 'DELETE FROM "creator_profiles_rels" WHERE bot_id = ?',
-          args: [botIdNum]
-        } as any)
-      } catch (e) {
-        console.warn('Failed to clean creator_profiles_rels:', e)
-      }
-    }
-
-    // Delete access control entries using raw SQL
-    if (drizzle) {
-      try {
-        await drizzle.run({
-          sql: 'DELETE FROM access_control WHERE resource_type = ? AND resource_id = ?',
-          args: ['bot', String(botIdNum)]
-        } as any)
-      } catch (e) {
-        console.warn('Failed to delete access_control:', e)
-      }
-    }
-
-    // Clean up relationship tables using raw SQL
-    // These _rels tables can have FK constraints that block bot deletion
+    // 4. Nullify bot reference on messages (bot field is optional)
     try {
-      if (drizzle) {
-        // Clean up any remaining references in relationship tables
-        const relTables = [
-          'memory_rels',
-          'knowledge_rels',
-          'knowledge_collections_rels',
-          'conversation_bot_participation',
-          'creator_profiles_rels',
-          'bot_rels',
-        ]
-
-        for (const table of relTables) {
-          try {
-            // Try to delete rows that reference this bot
-            await drizzle.run({
-              sql: `DELETE FROM "${table}" WHERE bot_id = ?`,
-              args: [botIdNum]
-            } as any)
-          } catch (e) {
-            // Table might not exist or column might be named differently - that's ok
-          }
-        }
-
-        // Also clean up bot_knowledge_collections relationship table
-        try {
-          await drizzle.run({
-            sql: `DELETE FROM "bot_knowledge_collections" WHERE bot_id = ?`,
-            args: [botIdNum]
-          } as any)
-        } catch (e) {
-          // Might not exist
-        }
-
-        // Clean up bot_rels table (relationships FROM the bot)
-        try {
-          await drizzle.run({
-            sql: `DELETE FROM "bot_rels" WHERE parent_id = ?`,
-            args: [botIdNum]
-          } as any)
-        } catch (e) {
-          // Might not exist
-        }
-
-        // Clean up payload_locked_documents_rels which might reference bot
-        try {
-          await drizzle.run({
-            sql: `DELETE FROM "payload_locked_documents_rels" WHERE bot_id = ?`,
-            args: [botIdNum]
-          } as any)
-        } catch (e) {
-          // Might not exist
-        }
-
-        // Clean up payload_locked_documents for this bot
-        try {
-          await drizzle.run({
-            sql: `DELETE FROM "payload_locked_documents" WHERE document_id = ? AND global_slug = 'bot'`,
-            args: [String(botIdNum)]
-          } as any)
-        } catch (e) {
-          // Might not exist
-        }
-
-        // Clean up any conversation_bot_participation entries
-        try {
-          await drizzle.run({
-            sql: `DELETE FROM "conversation_bot_participation" WHERE bot_id_id = ?`,
-            args: [botIdNum]
-          } as any)
-        } catch (e) {
-          // Might not exist or column name different
-        }
-
-        // Final cleanup - delete from bot_tags, bot_signature_phrases, etc.
-        const botArrayTables = [
-          'bot_tags',
-          'bot_signature_phrases',
-          'bot_speech_examples',
-          'bot_classifications',
-        ]
-        for (const table of botArrayTables) {
-          try {
-            await drizzle.run({
-              sql: `DELETE FROM "${table}" WHERE _parent_id = ?`,
-              args: [botIdNum]
-            } as any)
-          } catch (e) {
-            // Table might not exist
-          }
-        }
+      const messages = await payload.find({
+        collection: 'message',
+        where: { bot: { equals: botIdNum } },
+        limit: 0,
+        depth: 0,
+        overrideAccess: true,
+      })
+      for (const msg of messages.docs) {
+        await payload.update({
+          collection: 'message',
+          id: msg.id,
+          data: { bot: null } as any,
+          depth: 0,
+          overrideAccess: true,
+        })
       }
-    } catch (relError) {
-      console.warn('Relationship table cleanup warning:', relError)
-      // Continue with deletion attempt
+    } catch (e) {
+      console.warn('Failed to nullify message.bot_id:', e)
+    }
+
+    // 5. Nullify message_attribution.source_bot_id references
+    try {
+      const messagesWithAttribution = await payload.find({
+        collection: 'message',
+        where: { 'message_attribution.source_bot_id': { equals: botIdNum } },
+        limit: 0,
+        depth: 0,
+        overrideAccess: true,
+      })
+      for (const msg of messagesWithAttribution.docs) {
+        await payload.update({
+          collection: 'message',
+          id: msg.id,
+          data: {
+            message_attribution: {
+              ...(msg as any).message_attribution,
+              source_bot_id: null,
+            },
+          } as any,
+          depth: 0,
+          overrideAccess: true,
+        })
+      }
+    } catch (e) {
+      console.warn('Failed to nullify message_attribution_source_bot_id:', e)
+    }
+
+    // 6. Delete PersonaAnalytics (bot FK constraint)
+    try {
+      await payload.delete({
+        collection: 'personaAnalytics',
+        where: { bot: { equals: botIdNum } },
+        overrideAccess: true,
+      })
+    } catch (e) {
+      console.warn('Failed to delete persona_analytics:', e)
+    }
+
+    // 7. Remove bot from conversation bot_participation
+    // This is an array field, so we need to update each conversation
+    try {
+      const conversations = await payload.find({
+        collection: 'conversation',
+        where: { 'bot_participation.bot_id': { equals: botIdNum } },
+        limit: 0,
+        depth: 0,
+        overrideAccess: true,
+      })
+      for (const conv of conversations.docs) {
+        const participation = (conv as any).bot_participation || []
+        const filteredParticipation = participation.filter(
+          (p: any) => {
+            const pBotId = typeof p.bot_id === 'object' ? p.bot_id?.id : p.bot_id
+            return pBotId !== botIdNum
+          }
+        )
+        await payload.update({
+          collection: 'conversation',
+          id: conv.id,
+          data: { bot_participation: filteredParticipation } as any,
+          depth: 0,
+          overrideAccess: true,
+        })
+      }
+    } catch (e) {
+      console.warn('Failed to clean conversation_bot_participation:', e)
+    }
+
+    // 8. Remove bot from knowledge applies_to_bots (hasMany relationship)
+    try {
+      const knowledgeEntries = await payload.find({
+        collection: 'knowledge',
+        where: { applies_to_bots: { equals: botIdNum } },
+        limit: 0,
+        depth: 0,
+        overrideAccess: true,
+      })
+      for (const entry of knowledgeEntries.docs) {
+        const currentBots = (entry as any).applies_to_bots || []
+        const filteredBots = currentBots.filter((b: any) => {
+          const bId = typeof b === 'object' ? b.id : b
+          return bId !== botIdNum
+        })
+        await payload.update({
+          collection: 'knowledge',
+          id: entry.id,
+          data: { applies_to_bots: filteredBots } as any,
+          depth: 0,
+          overrideAccess: true,
+        })
+      }
+    } catch (e) {
+      console.warn('Failed to clean knowledge applies_to_bots:', e)
+    }
+
+    // 9. Remove bot from knowledgeCollections bot arrays
+    try {
+      const collections = await payload.find({
+        collection: 'knowledgeCollections',
+        where: { bot: { equals: botIdNum } },
+        limit: 0,
+        depth: 0,
+        overrideAccess: true,
+      })
+      for (const coll of collections.docs) {
+        const currentBots = (coll as any).bot || []
+        const filteredBots = currentBots.filter((b: any) => {
+          const bId = typeof b === 'object' ? b.id : b
+          return bId !== botIdNum
+        })
+        await payload.update({
+          collection: 'knowledgeCollections',
+          id: coll.id,
+          data: { bot: filteredBots } as any,
+          depth: 0,
+          overrideAccess: true,
+        })
+      }
+    } catch (e) {
+      console.warn('Failed to clean knowledge_collections bot:', e)
+    }
+
+    // 10. Remove bot from creatorProfiles featured_bots
+    try {
+      const profiles = await payload.find({
+        collection: 'creatorProfiles',
+        where: { 'portfolio.featured_bots': { equals: botIdNum } },
+        limit: 0,
+        depth: 0,
+        overrideAccess: true,
+      })
+      for (const profile of profiles.docs) {
+        const currentBots = (profile as any).portfolio?.featured_bots || []
+        const filteredBots = currentBots.filter((b: any) => {
+          const bId = typeof b === 'object' ? b.id : b
+          return bId !== botIdNum
+        })
+        await payload.update({
+          collection: 'creatorProfiles',
+          id: profile.id,
+          data: {
+            portfolio: {
+              ...(profile as any).portfolio,
+              featured_bots: filteredBots,
+            },
+          } as any,
+          depth: 0,
+          overrideAccess: true,
+        })
+      }
+    } catch (e) {
+      console.warn('Failed to clean creator_profiles featured_bots:', e)
+    }
+
+    // 11. Delete access control entries
+    try {
+      await payload.delete({
+        collection: 'accessControl',
+        where: {
+          and: [
+            { resource_type: { equals: 'bot' } },
+            { resource_id: { equals: String(botIdNum) } },
+          ],
+        },
+        overrideAccess: true,
+      })
+    } catch (e) {
+      console.warn('Failed to delete access_control:', e)
     }
 
     // Now delete the bot
-    try {
-      await payload.delete({
-        collection: 'bot',
-        id,
-        overrideAccess: true,
-      })
-    } catch (deleteError: any) {
-      console.error('Payload delete failed, trying raw SQL:', deleteError)
-
-      // Try raw SQL as a last resort (drizzle already declared above)
-      if (drizzle) {
-        try {
-          // First, let's see what might still be referencing this bot
-          // by checking common relationship patterns
-          const possibleFKTables = [
-            { table: 'memory_bot', column: 'bot_id' },
-            { table: 'memory_rels', column: 'bot_id' },
-            { table: 'knowledge_applies_to_bots', column: 'bot_id' },
-            { table: 'knowledge_rels', column: 'bot_id' },
-            { table: 'conversation_bot_participation', column: 'bot_id_id' },
-          ]
-
-          for (const { table, column } of possibleFKTables) {
-            try {
-              await drizzle.run({
-                sql: `DELETE FROM "${table}" WHERE "${column}" = ?`,
-                args: [botIdNum]
-              } as any)
-              console.log(`Cleaned up ${table}`)
-            } catch (e) {
-              // Table/column might not exist
-            }
-          }
-
-          // Now try raw delete
-          await drizzle.run({
-            sql: `DELETE FROM "bot" WHERE "id" = ?`,
-            args: [botIdNum]
-          } as any)
-        } catch (rawError) {
-          console.error('Raw SQL delete also failed:', rawError)
-          throw deleteError // Throw the original error
-        }
-      } else {
-        throw deleteError
-      }
-    }
+    await payload.delete({
+      collection: 'bot',
+      id,
+      overrideAccess: true,
+    })
 
     return NextResponse.json({
       message: 'Bot deleted successfully',

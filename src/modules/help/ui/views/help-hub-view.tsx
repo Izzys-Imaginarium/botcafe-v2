@@ -21,6 +21,7 @@ import {
   Eye,
   Star,
   GraduationCap,
+  Key,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -191,6 +192,40 @@ export const HelpHubView = () => {
             </Card>
           )}
         </div>
+      </div>
+
+      {/* Quick Links */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
+        <Link href="/help/welcome-to-botcafe">
+          <Card className="h-full hover:border-purple-500/50 transition-colors cursor-pointer group">
+            <CardContent className="py-4 flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400 group-hover:bg-purple-500/20 transition-colors">
+                <Rocket className="h-5 w-5" />
+              </div>
+              <span className="font-medium text-sm">Welcome to BotCafe</span>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/help/create-your-first-bot">
+          <Card className="h-full hover:border-purple-500/50 transition-colors cursor-pointer group">
+            <CardContent className="py-4 flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400 group-hover:bg-purple-500/20 transition-colors">
+                <Bot className="h-5 w-5" />
+              </div>
+              <span className="font-medium text-sm">Create Your First Bot</span>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/help/using-your-own-api-keys">
+          <Card className="h-full hover:border-purple-500/50 transition-colors cursor-pointer group">
+            <CardContent className="py-4 flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400 group-hover:bg-purple-500/20 transition-colors">
+                <Key className="h-5 w-5" />
+              </div>
+              <span className="font-medium text-sm">Using Your Own API Keys</span>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       {/* Categories Grid */}

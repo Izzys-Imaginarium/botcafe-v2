@@ -126,6 +126,50 @@ export async function PATCH(
     // Build update data object - only include fields that were provided
     const updateData: Record<string, any> = {}
 
+    // Handle legacy bots that may be missing required fields
+    // If creator_profile is missing, find or create one for the user
+    if (!(bot as any).creator_profile) {
+      // Find user's creator profile
+      const userProfiles = await payload.find({
+        collection: 'creatorProfiles',
+        where: { user: { equals: payloadUser.id } },
+        limit: 1,
+        overrideAccess: true,
+      })
+
+      if (userProfiles.docs.length > 0) {
+        updateData.creator_profile = userProfiles.docs[0].id
+        // Also set creator_display_name if missing
+        if (!(bot as any).creator_display_name) {
+          updateData.creator_display_name = userProfiles.docs[0].display_name || payloadUser.email
+        }
+      } else {
+        // User doesn't have a creator profile - they need to create one first
+        return NextResponse.json(
+          { message: 'Please set up your creator profile before editing bots. Visit /creators/setup' },
+          { status: 400 }
+        )
+      }
+    }
+
+    // If creator_display_name is missing, set a default
+    if (!(bot as any).creator_display_name && !updateData.creator_display_name) {
+      // Try to get from creator profile
+      const profileId = (bot as any).creator_profile?.id || (bot as any).creator_profile
+      if (profileId) {
+        const profile = await payload.findByID({
+          collection: 'creatorProfiles',
+          id: profileId,
+          overrideAccess: true,
+        })
+        if (profile) {
+          updateData.creator_display_name = profile.display_name || payloadUser.email
+        }
+      } else {
+        updateData.creator_display_name = payloadUser.email
+      }
+    }
+
     if (body.name !== undefined) updateData.name = body.name
     if (body.slug !== undefined) updateData.slug = body.slug
     if (body.system_prompt !== undefined) updateData.system_prompt = body.system_prompt

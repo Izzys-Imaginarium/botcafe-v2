@@ -64,9 +64,16 @@ export async function GET(
 
     const bot = bots.docs[0]
 
+    // For legacy bots, ensure creator_display_name has a value
+    const botData = {
+      ...bot,
+      // Fallback for legacy bots missing creator_display_name
+      creator_display_name: (bot as any).creator_display_name || creatorProfile.display_name || username,
+    }
+
     // Return bot data with creator info
     return NextResponse.json({
-      ...bot,
+      ...botData,
       creator_username: creatorProfile.username,
       creator_profile_data: {
         id: creatorProfile.id,

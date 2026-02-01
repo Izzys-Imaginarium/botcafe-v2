@@ -12,12 +12,10 @@ import {
   Eye,
   Calendar,
   BookOpen,
-  ArrowRight,
   ThumbsUp,
   ThumbsDown,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 
 interface Article {
   id: string
@@ -160,7 +158,6 @@ const RenderNode = ({ node }: { node: any }) => {
 }
 
 export const HelpArticleView = ({ slug }: HelpArticleViewProps) => {
-  const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
   const [article, setArticle] = useState<Article | null>(null)
   const [relatedArticles, setRelatedArticles] = useState<Article[]>([])
@@ -379,8 +376,8 @@ export const HelpArticleView = ({ slug }: HelpArticleViewProps) => {
           <Card>
             <CardContent className="py-4">
               <Link href="/help">
-                <Button variant="outline" className="w-full">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
+                <Button variant="outline" className="w-full h-auto py-2 whitespace-normal">
+                  <ArrowLeft className="mr-2 h-4 w-4 shrink-0" />
                   Back to Help Center
                 </Button>
               </Link>

@@ -1,7 +1,7 @@
 # BotCafe v2 - Complete Sitemap
 
-**Last Updated**: 2026-01-31
-**Version**: 2.28
+**Last Updated**: 2026-02-01
+**Version**: 2.29
 **Status**: ~98% Complete
 
 ---
@@ -35,7 +35,7 @@
 
 | Route | Status | Description |
 |-------|--------|-------------|
-| `/account` | ✅ Complete | Account settings - 6 tabs: Overview (analytics), Mood, Profile, Security, API Keys, Data |
+| `/account` | ✅ Complete | Account settings - 5 tabs: Overview (analytics), Mood, Profile, Security, API Keys |
 | `/dashboard` | ✅ Complete | Creator's Workshop - My Bots, Lore, Memories, Personas |
 
 ### Knowledge System (Lore)
@@ -308,8 +308,7 @@ BotCafe
 │   ├── Mood (mood journal)
 │   ├── Profile (user settings)
 │   ├── Security (Connected Accounts, password, 2FA via Clerk)
-│   ├── API Keys (provider keys)
-│   └── Data (export, delete)
+│   └── API Keys (provider keys)
 ├── Lore (/lore) - Standalone access
 │   ├── Entries (/lore/entries)
 │   └── Collections (/lore/collections)

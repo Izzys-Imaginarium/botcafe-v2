@@ -666,7 +666,7 @@ When you add new Payload collections or modify existing ones:
     - Memories (embedded memory-panel.tsx)
     - Personas (embedded persona-panel.tsx)
   - Supports URL tab navigation: `/dashboard?tab=lore`, `/dashboard?tab=memories`, `/dashboard?tab=personas`
-  - `/account` page now focuses on account settings only (Overview, Profile, Security, API Keys, Data)
+  - `/account` page now focuses on account settings only (Overview, Mood, Profile, Security, API Keys)
   - Updated navigation menus (navbar.tsx, navbar-sidebar.tsx) to link to dashboard tabs
   - Updated quick actions in account overview to link to dashboard
   - New components:
@@ -684,7 +684,7 @@ When you add new Payload collections or modify existing ones:
 - ⚠️ **Self-Moderation Removed (Future Enhancement)**
   - Removed self-moderation settings UI and API (`/wellbeing/settings`, `/api/wellbeing/settings`)
   - Removed wellness gate from chat flow
-  - **Kept**: Mood journal as tab in Account page (6 tabs: Overview, Mood, Profile, Security, API Keys, Data)
+  - **Kept**: Mood journal as tab in Account page (5 tabs: Overview, Mood, Profile, Security, API Keys)
   - `/mood` route redirects to `/account?tab=mood`
   - `/api/wellbeing/mood` endpoint preserved for mood tracking
   - Self-moderation (usage limits, break reminders, night mode) planned as future enhancement
@@ -1471,8 +1471,8 @@ const filtered = all.docs.filter(conv =>
 
 ---
 
-**Last Updated**: 2026-01-31
-**Version**: 3.27
+**Last Updated**: 2026-02-01
+**Version**: 3.28
 **Total Tasks**: 184
 **Completed**: 178
 **Progress**: ~97% (Memory edit/delete for tomes complete)

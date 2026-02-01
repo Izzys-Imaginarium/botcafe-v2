@@ -335,10 +335,9 @@ export async function DELETE(
       }
     }
 
-    // Only handle FK constraints that would block deletion
-    // Skip array field updates (featured_bots, applies_to_bots, etc.) - they're not FK constraints
+    // Handle all FK constraints that would block deletion
 
-    // DELETE bot interactions one by one (bot field is required - FK constraint)
+    // DELETE bot interactions (bot field is required - FK constraint)
     await processBatched('botInteractions', { bot: { equals: botIdNum } }, async (interaction: any) => {
       await payload.delete({
         collection: 'botInteractions',
@@ -347,7 +346,32 @@ export async function DELETE(
       })
     })
 
-    // DELETE memory insights one by one (bot field is required - FK constraint)
+    // DELETE memories that reference this bot (bot field is required hasMany)
+    // Since bot is required, we need to delete memories that only have this bot
+    await processBatched('memory', { bot: { contains: botIdNum } }, async (memory: any) => {
+      const currentBots = Array.isArray(memory.bot) ? memory.bot : [memory.bot]
+      const botIds = currentBots.map((b: any) => typeof b === 'object' ? b.id : b).filter(Boolean)
+
+      if (botIds.length === 1 && botIds[0] === botIdNum) {
+        // This is the only bot - delete the memory
+        await payload.delete({
+          collection: 'memory',
+          id: memory.id,
+          overrideAccess: true,
+        })
+      } else {
+        // Remove this bot from the array
+        const remainingBots = botIds.filter((bid: number) => bid !== botIdNum)
+        await payload.update({
+          collection: 'memory',
+          id: memory.id,
+          data: { bot: remainingBots },
+          overrideAccess: true,
+        })
+      }
+    })
+
+    // DELETE memory insights (bot field is optional but has FK)
     await processBatched('memory-insights', { bot: { equals: botIdNum } }, async (insight: any) => {
       await payload.delete({
         collection: 'memory-insights',
@@ -366,7 +390,22 @@ export async function DELETE(
       })
     })
 
-    // DELETE PersonaAnalytics one by one (bot field is required - FK constraint)
+    // Nullify source_bot_id in message_attribution
+    await processBatched('message', { 'message_attribution.source_bot_id': { equals: botIdNum } }, async (message: any) => {
+      await payload.update({
+        collection: 'message',
+        id: message.id,
+        data: {
+          message_attribution: {
+            ...(message.message_attribution || {}),
+            source_bot_id: null,
+          }
+        },
+        overrideAccess: true,
+      })
+    })
+
+    // DELETE PersonaAnalytics (bot FK constraint)
     await processBatched('persona-analytics', { bot: { equals: botIdNum } }, async (pa: any) => {
       await payload.delete({
         collection: 'persona-analytics',
@@ -375,7 +414,83 @@ export async function DELETE(
       })
     })
 
-    // Delete access control entries one by one
+    // Nullify related_bot on tokenGifts
+    await processBatched('tokenGifts', { related_bot: { equals: botIdNum } }, async (gift: any) => {
+      await payload.update({
+        collection: 'tokenGifts',
+        id: gift.id,
+        data: { related_bot: null },
+        overrideAccess: true,
+      })
+    })
+
+    // Remove bot from conversation bot_participation arrays
+    await processBatched('conversation', undefined, async (conv: any) => {
+      if (conv.bot_participation && Array.isArray(conv.bot_participation)) {
+        const hasBot = conv.bot_participation.some((bp: any) => {
+          const bpBotId = typeof bp.bot_id === 'object' ? bp.bot_id?.id : bp.bot_id
+          return bpBotId === botIdNum
+        })
+        if (hasBot) {
+          const updatedParticipation = conv.bot_participation.filter((bp: any) => {
+            const bpBotId = typeof bp.bot_id === 'object' ? bp.bot_id?.id : bp.bot_id
+            return bpBotId !== botIdNum
+          })
+          await payload.update({
+            collection: 'conversation',
+            id: conv.id,
+            data: { bot_participation: updatedParticipation },
+            overrideAccess: true,
+          })
+        }
+      }
+    })
+
+    // Remove bot from knowledge applies_to_bots arrays
+    await processBatched('knowledge', { applies_to_bots: { contains: botIdNum } }, async (knowledge: any) => {
+      const currentBots = Array.isArray(knowledge.applies_to_bots) ? knowledge.applies_to_bots : []
+      const botIds = currentBots.map((b: any) => typeof b === 'object' ? b.id : b).filter(Boolean)
+      const remainingBots = botIds.filter((bid: number) => bid !== botIdNum)
+      await payload.update({
+        collection: 'knowledge',
+        id: knowledge.id,
+        data: { applies_to_bots: remainingBots },
+        overrideAccess: true,
+      })
+    })
+
+    // Remove bot from knowledgeCollections bot arrays
+    await processBatched('knowledgeCollections', { bot: { contains: botIdNum } }, async (collection: any) => {
+      const currentBots = Array.isArray(collection.bot) ? collection.bot : []
+      const botIds = currentBots.map((b: any) => typeof b === 'object' ? b.id : b).filter(Boolean)
+      const remainingBots = botIds.filter((bid: number) => bid !== botIdNum)
+      await payload.update({
+        collection: 'knowledgeCollections',
+        id: collection.id,
+        data: { bot: remainingBots },
+        overrideAccess: true,
+      })
+    })
+
+    // Remove bot from creatorProfiles featured_bots arrays
+    await processBatched('creatorProfiles', { 'portfolio.featured_bots': { contains: botIdNum } }, async (profile: any) => {
+      const featuredBots = profile.portfolio?.featured_bots || []
+      const botIds = featuredBots.map((b: any) => typeof b === 'object' ? b.id : b).filter(Boolean)
+      const remainingBots = botIds.filter((bid: number) => bid !== botIdNum)
+      await payload.update({
+        collection: 'creatorProfiles',
+        id: profile.id,
+        data: {
+          portfolio: {
+            ...(profile.portfolio || {}),
+            featured_bots: remainingBots,
+          }
+        },
+        overrideAccess: true,
+      })
+    })
+
+    // Delete access control entries
     await processBatched('access-control', {
       and: [
         { resource_type: { equals: 'bot' } },

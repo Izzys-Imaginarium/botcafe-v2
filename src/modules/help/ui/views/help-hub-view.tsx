@@ -135,14 +135,6 @@ export const HelpHubView = () => {
     }
   }
 
-  // Quick links for common help topics (using flat slugs that match the [slug] route)
-  const quickLinks = [
-    { title: 'Create Your First Bot', href: '/help/create-bot', icon: <Bot className="h-5 w-5" /> },
-    { title: 'Add Knowledge to Bots', href: '/help/add-lore', icon: <Database className="h-5 w-5" /> },
-    { title: 'Set Up Personas', href: '/help/setup-personas', icon: <User className="h-5 w-5" /> },
-    { title: 'API Documentation', href: '/help/category/api-reference', icon: <Code className="h-5 w-5" /> },
-  ]
-
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       {/* Header */}
@@ -199,22 +191,6 @@ export const HelpHubView = () => {
             </Card>
           )}
         </div>
-      </div>
-
-      {/* Quick Links */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-        {quickLinks.map((link) => (
-          <Link key={link.title} href={link.href}>
-            <Card className="h-full hover:border-purple-500/50 transition-colors cursor-pointer group">
-              <CardContent className="py-4 flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400 group-hover:bg-purple-500/20 transition-colors">
-                  {link.icon}
-                </div>
-                <span className="font-medium text-sm">{link.title}</span>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
       </div>
 
       {/* Categories Grid */}

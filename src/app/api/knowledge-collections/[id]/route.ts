@@ -316,7 +316,7 @@ export async function DELETE(
       )
     }
 
-    // Check if collection has entries
+    // Delete all entries in the collection first (cascade delete)
     const entriesInCollection = await payload.find({
       collection: 'knowledge',
       where: {
@@ -324,15 +324,21 @@ export async function DELETE(
           equals: numericId,
         },
       },
-      limit: 1,
+      limit: 0, // Get all entries
       overrideAccess: true,
     })
 
     if (entriesInCollection.totalDocs > 0) {
-      return NextResponse.json(
-        { message: 'Cannot delete collection with existing entries. Please delete all entries first.' },
-        { status: 400 }
-      )
+      // Delete all entries in the collection
+      await payload.delete({
+        collection: 'knowledge',
+        where: {
+          knowledge_collection: {
+            equals: numericId,
+          },
+        },
+        overrideAccess: true,
+      })
     }
 
     // Delete the collection

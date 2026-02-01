@@ -1,7 +1,7 @@
 # BotCafe v2 - Database Schema
 
-**Last Updated**: 2026-01-27
-**Version**: 3.14
+**Last Updated**: 2026-02-01
+**Version**: 3.15
 **Database**: Cloudflare D1 (SQLite) via Payload CMS
 
 ---
@@ -684,11 +684,10 @@ Token transfer system.
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | string | Primary key |
-| `sender` | relationship (Users) | Gift sender |
-| `recipient` | relationship (Users) | Gift recipient |
-| `amount` | number | Token amount |
-| `message` | text | Gift message |
-| `related_bot` | relationship (Bot) | Related bot |
+| `sender` | relationship (Users) | Gift sender (required) |
+| `receiver` | relationship (Users) | Gift receiver (required) |
+| `tokens` | number | Token amount (required, min: 1) |
+| `message` | textarea | Gift message |
 | `createdAt` | date | Auto-generated |
 
 ### SubscriptionPayments
@@ -949,10 +948,11 @@ CreatorProfiles
 
 Bot
 ├── BotInteraction (bot)
-├── Conversations (bot)
-├── Knowledge (bot)
+├── Conversations (bot_participation)
+├── Knowledge (applies_to_bots)
 ├── KnowledgeCollections (bot)
-└── TokenGifts (related_bot)
+├── Memory (bot)
+└── Message (bot)
 
 Knowledge
 ├── VectorRecord (source_id)

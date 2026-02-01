@@ -349,7 +349,10 @@ export async function DELETE(
       )
     }
 
-    // Clean up all bot references before deletion using Payload APIs
+    // Clean up critical FK constraints before deletion using Payload APIs
+    // Note: We only delete/update what's strictly necessary to avoid FK constraint errors
+    // Optional references (like message.bot) are left as orphaned references to avoid
+    // hitting Cloudflare Worker subrequest limits (1000 max per invocation)
     const botIdNum = typeof id === 'string' ? parseInt(id, 10) : id
 
     // 1. Delete bot interactions (bot field is required - FK constraint)
@@ -363,8 +366,7 @@ export async function DELETE(
       console.warn('Failed to delete bot_interactions:', e)
     }
 
-    // 2. Delete memories that reference this bot
-    // Memory.bot is a required hasMany relationship
+    // 2. Delete memories that reference this bot (required FK)
     try {
       await payload.delete({
         collection: 'memory',
@@ -375,76 +377,18 @@ export async function DELETE(
       console.warn('Failed to delete memories:', e)
     }
 
-    // 3. Nullify memory insights bot reference
+    // 3. Delete memory insights for this bot (required FK)
     try {
-      const memoryInsights = await payload.find({
+      await payload.delete({
         collection: 'memory-insights',
         where: { bot: { equals: botIdNum } },
-        limit: 0,
         overrideAccess: true,
       })
-      for (const insight of memoryInsights.docs) {
-        await payload.update({
-          collection: 'memory-insights',
-          id: insight.id,
-          data: { bot: null } as any,
-          overrideAccess: true,
-        })
-      }
     } catch (e) {
-      console.warn('Failed to nullify memory-insights bot_id:', e)
+      console.warn('Failed to delete memory-insights:', e)
     }
 
-    // 4. Nullify bot reference on messages (bot field is optional)
-    try {
-      const messages = await payload.find({
-        collection: 'message',
-        where: { bot: { equals: botIdNum } },
-        limit: 0,
-        depth: 0,
-        overrideAccess: true,
-      })
-      for (const msg of messages.docs) {
-        await payload.update({
-          collection: 'message',
-          id: msg.id,
-          data: { bot: null } as any,
-          depth: 0,
-          overrideAccess: true,
-        })
-      }
-    } catch (e) {
-      console.warn('Failed to nullify message.bot_id:', e)
-    }
-
-    // 5. Nullify message_attribution.source_bot_id references
-    try {
-      const messagesWithAttribution = await payload.find({
-        collection: 'message',
-        where: { 'message_attribution.source_bot_id': { equals: botIdNum } },
-        limit: 0,
-        depth: 0,
-        overrideAccess: true,
-      })
-      for (const msg of messagesWithAttribution.docs) {
-        await payload.update({
-          collection: 'message',
-          id: msg.id,
-          data: {
-            message_attribution: {
-              ...(msg as any).message_attribution,
-              source_bot_id: null,
-            },
-          } as any,
-          depth: 0,
-          overrideAccess: true,
-        })
-      }
-    } catch (e) {
-      console.warn('Failed to nullify message_attribution_source_bot_id:', e)
-    }
-
-    // 6. Delete PersonaAnalytics (bot FK constraint)
+    // 4. Delete PersonaAnalytics (bot FK constraint)
     try {
       await payload.delete({
         collection: 'persona-analytics',
@@ -455,123 +399,7 @@ export async function DELETE(
       console.warn('Failed to delete persona_analytics:', e)
     }
 
-    // 7. Remove bot from conversation bot_participation
-    // This is an array field, so we need to update each conversation
-    try {
-      const conversations = await payload.find({
-        collection: 'conversation',
-        where: { 'bot_participation.bot_id': { equals: botIdNum } },
-        limit: 0,
-        depth: 0,
-        overrideAccess: true,
-      })
-      for (const conv of conversations.docs) {
-        const participation = (conv as any).bot_participation || []
-        const filteredParticipation = participation.filter(
-          (p: any) => {
-            const pBotId = typeof p.bot_id === 'object' ? p.bot_id?.id : p.bot_id
-            return pBotId !== botIdNum
-          }
-        )
-        await payload.update({
-          collection: 'conversation',
-          id: conv.id,
-          data: { bot_participation: filteredParticipation } as any,
-          depth: 0,
-          overrideAccess: true,
-        })
-      }
-    } catch (e) {
-      console.warn('Failed to clean conversation_bot_participation:', e)
-    }
-
-    // 8. Remove bot from knowledge applies_to_bots (hasMany relationship)
-    try {
-      const knowledgeEntries = await payload.find({
-        collection: 'knowledge',
-        where: { applies_to_bots: { equals: botIdNum } },
-        limit: 0,
-        depth: 0,
-        overrideAccess: true,
-      })
-      for (const entry of knowledgeEntries.docs) {
-        const currentBots = (entry as any).applies_to_bots || []
-        const filteredBots = currentBots.filter((b: any) => {
-          const bId = typeof b === 'object' ? b.id : b
-          return bId !== botIdNum
-        })
-        await payload.update({
-          collection: 'knowledge',
-          id: entry.id,
-          data: { applies_to_bots: filteredBots } as any,
-          depth: 0,
-          overrideAccess: true,
-        })
-      }
-    } catch (e) {
-      console.warn('Failed to clean knowledge applies_to_bots:', e)
-    }
-
-    // 9. Remove bot from knowledgeCollections bot arrays
-    try {
-      const collections = await payload.find({
-        collection: 'knowledgeCollections',
-        where: { bot: { equals: botIdNum } },
-        limit: 0,
-        depth: 0,
-        overrideAccess: true,
-      })
-      for (const coll of collections.docs) {
-        const currentBots = (coll as any).bot || []
-        const filteredBots = currentBots.filter((b: any) => {
-          const bId = typeof b === 'object' ? b.id : b
-          return bId !== botIdNum
-        })
-        await payload.update({
-          collection: 'knowledgeCollections',
-          id: coll.id,
-          data: { bot: filteredBots } as any,
-          depth: 0,
-          overrideAccess: true,
-        })
-      }
-    } catch (e) {
-      console.warn('Failed to clean knowledge_collections bot:', e)
-    }
-
-    // 10. Remove bot from creatorProfiles featured_bots
-    try {
-      const profiles = await payload.find({
-        collection: 'creatorProfiles',
-        where: { 'portfolio.featured_bots': { equals: botIdNum } },
-        limit: 0,
-        depth: 0,
-        overrideAccess: true,
-      })
-      for (const profile of profiles.docs) {
-        const currentBots = (profile as any).portfolio?.featured_bots || []
-        const filteredBots = currentBots.filter((b: any) => {
-          const bId = typeof b === 'object' ? b.id : b
-          return bId !== botIdNum
-        })
-        await payload.update({
-          collection: 'creatorProfiles',
-          id: profile.id,
-          data: {
-            portfolio: {
-              ...(profile as any).portfolio,
-              featured_bots: filteredBots,
-            },
-          } as any,
-          depth: 0,
-          overrideAccess: true,
-        })
-      }
-    } catch (e) {
-      console.warn('Failed to clean creator_profiles featured_bots:', e)
-    }
-
-    // 11. Delete access control entries
+    // 5. Delete access control entries
     try {
       await payload.delete({
         collection: 'access-control',
@@ -586,6 +414,15 @@ export async function DELETE(
     } catch (e) {
       console.warn('Failed to delete access_control:', e)
     }
+
+    // Note: The following are NOT deleted to avoid hitting API limits:
+    // - message.bot (optional field - orphaned references are harmless)
+    // - message.message_attribution.source_bot_id (optional)
+    // - conversation.bot_participation (array field - would require per-record updates)
+    // - knowledge.applies_to_bots (hasMany - would require per-record updates)
+    // - knowledgeCollections.bot (hasMany - would require per-record updates)
+    // - creatorProfiles.featured_bots (hasMany - would require per-record updates)
+    // These orphaned references don't cause errors and can be cleaned up later if needed
 
     // Now delete the bot
     await payload.delete({

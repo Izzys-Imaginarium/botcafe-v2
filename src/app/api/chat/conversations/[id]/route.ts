@@ -235,13 +235,20 @@ export async function PATCH(
 
       if (!alreadyInConvo) {
         // Normalize existing records to ensure proper format for Payload update
-        const normalizedCurrentBots = currentBots.map((bp) => ({
-          id: bp.id, // Preserve existing record ID
-          bot_id: typeof bp.bot_id === 'object' ? bp.bot_id.id : bp.bot_id,
-          role: bp.role,
-          is_active: bp.is_active,
-          joined_at: bp.joined_at,
-        }))
+        // Only include id if it exists - legacy/migrated records may be missing id
+        const normalizedCurrentBots = currentBots.map((bp) => {
+          const normalized: Record<string, unknown> = {
+            bot_id: typeof bp.bot_id === 'object' ? bp.bot_id.id : bp.bot_id,
+            role: bp.role,
+            is_active: bp.is_active,
+            joined_at: bp.joined_at,
+          }
+          // Only include id if it exists (preserves existing records, allows Payload to generate new ids for legacy records)
+          if (bp.id) {
+            normalized.id = bp.id
+          }
+          return normalized
+        })
 
         updateData.bot_participation = [
           ...normalizedCurrentBots,
@@ -284,18 +291,25 @@ export async function PATCH(
       }
 
       // Normalize and filter records to ensure proper format for Payload update
+      // Only include id if it exists - legacy/migrated records may be missing id
       updateData.bot_participation = currentBots
         .filter(
           (bp) =>
             (typeof bp.bot_id === 'object' ? bp.bot_id.id : bp.bot_id) !== removeBotId
         )
-        .map((bp) => ({
-          id: bp.id, // Preserve existing record ID
-          bot_id: typeof bp.bot_id === 'object' ? bp.bot_id.id : bp.bot_id,
-          role: bp.role,
-          is_active: bp.is_active,
-          joined_at: bp.joined_at,
-        }))
+        .map((bp) => {
+          const normalized: Record<string, unknown> = {
+            bot_id: typeof bp.bot_id === 'object' ? bp.bot_id.id : bp.bot_id,
+            role: bp.role,
+            is_active: bp.is_active,
+            joined_at: bp.joined_at,
+          }
+          // Only include id if it exists (preserves existing records, allows Payload to generate new ids for legacy records)
+          if (bp.id) {
+            normalized.id = bp.id
+          }
+          return normalized
+        })
 
       // Update conversation type if going from multi to single
       if (currentBots.length === 2) {

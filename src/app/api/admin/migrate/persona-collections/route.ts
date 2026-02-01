@@ -5,6 +5,13 @@ import config from '@/payload.config'
 
 export const dynamic = 'force-dynamic'
 
+// Helper to extract user ID from Payload relationship field
+function getUserId(user: number | { id: number } | null | undefined): number | null {
+  if (user === null || user === undefined) return null
+  if (typeof user === 'object') return user.id
+  return user
+}
+
 /**
  * GET /api/admin/migrate/persona-collections
  *
@@ -91,7 +98,7 @@ export async function GET(request: NextRequest) {
 
       // Filter by user if specified
       if (filterUserId) {
-        const userId = typeof col.user === 'object' ? col.user?.id : col.user
+        const userId = getUserId(col.user)
         return userId === parseInt(filterUserId, 10)
       }
       return true
@@ -108,8 +115,8 @@ export async function GET(request: NextRequest) {
     const existingPersonaKeys = new Set<string>()
     for (const persona of existingPersonas.docs) {
       const p = persona as { user: number | { id: number }; name: string }
-      const userId = typeof p.user === 'object' ? p.user?.id : p.user
-      existingPersonaKeys.add(`${userId}:${p.name.toLowerCase().trim()}`)
+      const pUserId = getUserId(p.user)
+      existingPersonaKeys.add(`${pUserId}:${p.name.toLowerCase().trim()}`)
     }
 
     // Analyze each collection for migration
@@ -309,8 +316,8 @@ export async function POST(request: NextRequest) {
     const existingPersonaKeys = new Set<string>()
     for (const persona of existingPersonas.docs) {
       const p = persona as { user: number | { id: number }; name: string }
-      const userId = typeof p.user === 'object' ? p.user?.id : p.user
-      existingPersonaKeys.add(`${userId}:${p.name.toLowerCase().trim()}`)
+      const pUserId = getUserId(p.user)
+      existingPersonaKeys.add(`${pUserId}:${p.name.toLowerCase().trim()}`)
     }
 
     // Migrate each collection
@@ -330,12 +337,9 @@ export async function POST(request: NextRequest) {
         user: number | { id: number } | null
       }
 
-      const userId =
-        typeof collection.user === 'object' && collection.user !== null
-          ? collection.user.id
-          : collection.user
+      const userId = getUserId(collection.user)
 
-      const userExists = userId ? userIdSet.has(userId as number) : false
+      const userExists = userId ? userIdSet.has(userId) : false
       const personaName = collection.name.trim()
       const personaDescription = collection.description?.trim() || ''
 

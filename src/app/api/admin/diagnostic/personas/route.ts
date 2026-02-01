@@ -104,6 +104,13 @@ export async function GET(request: NextRequest) {
       newUserId: number
     }> = []
 
+    // Helper to extract user ID from relationship field
+    const getUserId = (user: number | { id: number } | null): number | null => {
+      if (user === null) return null
+      if (typeof user === 'object') return user.id
+      return user
+    }
+
     // Check each persona
     for (const persona of allPersonas.docs) {
       const personaData = persona as {
@@ -113,10 +120,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Get the user ID from the persona
-      const userId =
-        typeof personaData.user === 'object' && personaData.user !== null
-          ? personaData.user.id
-          : personaData.user
+      const userId = getUserId(personaData.user)
 
       if (!userId) {
         // Persona has no user reference
@@ -131,7 +135,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Check if user exists
-      const userExists = userIdMap.has(userId as number)
+      const userExists = userIdMap.has(userId)
 
       if (!userExists) {
         // User ID doesn't exist in the database

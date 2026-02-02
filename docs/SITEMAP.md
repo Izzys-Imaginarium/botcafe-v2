@@ -1,7 +1,7 @@
 # BotCafe v2 - Complete Sitemap
 
-**Last Updated**: 2026-02-01
-**Version**: 2.30
+**Last Updated**: 2026-02-02
+**Version**: 2.31
 **Status**: ~98% Complete
 
 ---
@@ -213,6 +213,8 @@
 | `/api/admin/vector-sync-check` | GET, POST | Check and fix vector/knowledge sync issues |
 | `/api/admin/fix/slugs` | GET, POST | GET: Preview bots with non-lowercase slugs. POST: Normalize all bot slugs to lowercase |
 | `/api/admin/fix/empty-personas` | GET, POST | GET: Preview user persona collections with empty descriptions. POST: Create personas from empty-description collections using knowledge content |
+| `/api/admin/fix/empty-collections` | GET, POST | GET: Preview knowledge collections with empty descriptions. POST: Populate descriptions from knowledge entries |
+| `/api/admin/fix/recover-linked-knowledge` | GET, POST | GET: Preview knowledge entries linked via junction tables in old DB. POST: Import linked entries into new DB. Query/Body params: `email` (required), `createMissingCollections`, `skipDuplicates` |
 | `/api/admin/diagnostic/lookup` | GET | Diagnostic lookup for bots, users, or creator profiles. Query params: `botName`, `username`, `botSlug` |
 
 ### File Upload
@@ -267,8 +269,8 @@
 | Help | 3 | 0 | 3 |
 | Chat | 2 | 0 | 2 |
 | **Frontend Total** | **32** | **2** | **34** |
-| API Endpoints | 52 | 0 | 52 |
-| **Grand Total** | **84** | **2** | **86** |
+| API Endpoints | 54 | 0 | 54 |
+| **Grand Total** | **86** | **2** | **88** |
 
 *Note: "Redirect" routes automatically redirect to the Account page with the appropriate tab.*
 

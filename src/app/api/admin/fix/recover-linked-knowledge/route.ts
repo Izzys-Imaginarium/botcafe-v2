@@ -559,6 +559,9 @@ export async function POST(request: NextRequest) {
                 name: link.collection_name.trim(),
                 user: newUserId,
                 description: `Recovered from migration`,
+                sharing_settings: {
+                  sharing_level: 'private',
+                },
               },
               overrideAccess: true,
             })
@@ -599,6 +602,16 @@ export async function POST(request: NextRequest) {
               user: newUserId,
               knowledge_collection: collectionId,
               entry: link.text,
+              type: 'text',
+              privacy_settings: {
+                privacy_level: 'private',
+              },
+              activation_settings: {
+                activation_mode: 'vector',
+              },
+              positioning: {
+                position: 'before_character',
+              },
             },
             overrideAccess: true,
           })
@@ -672,6 +685,9 @@ export async function POST(request: NextRequest) {
                   name: `${link.bot_name} Lore`,
                   user: newUserId,
                   description: `Lore entries for ${link.bot_name}`,
+                  sharing_settings: {
+                    sharing_level: 'private',
+                  },
                 },
                 overrideAccess: true,
               })
@@ -714,6 +730,16 @@ export async function POST(request: NextRequest) {
               user: newUserId,
               knowledge_collection: loreCollectionId,
               entry: link.text,
+              type: 'text',
+              privacy_settings: {
+                privacy_level: 'private',
+              },
+              activation_settings: {
+                activation_mode: 'vector',
+              },
+              positioning: {
+                position: 'before_character',
+              },
             },
             overrideAccess: true,
           })

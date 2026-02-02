@@ -18,6 +18,231 @@ interface OldUser {
   email: string
 }
 
+// Helper function for processing a single user's import
+async function processUserImport(
+  payload: Awaited<ReturnType<typeof getPayload>>,
+  oldDb: any,
+  oldUserId: string,
+  newUserId: number,
+  includeCollectionLinked: boolean,
+  includeBotLinked: boolean,
+  skipDuplicates: boolean,
+  createMissingCollections: boolean
+): Promise<{ imported: number; skipped: number; errors: number; collectionsCreated: number }> {
+  // Get new collections for this user
+  const newCollections = await payload.find({
+    collection: 'knowledgeCollections',
+    where: { user: { equals: newUserId } },
+    limit: 500,
+    overrideAccess: true,
+  })
+
+  const collectionNameToId = new Map<string, number>()
+  for (const col of newCollections.docs) {
+    const c = col as { id: number; name: string }
+    collectionNameToId.set(c.name.trim().toLowerCase(), c.id)
+  }
+
+  // Get new bots for this user
+  const newBots = await payload.find({
+    collection: 'bot',
+    where: { user: { equals: newUserId } },
+    limit: 500,
+    overrideAccess: true,
+  })
+
+  const botNameToLoreCollectionId = new Map<string, number>()
+  for (const bot of newBots.docs) {
+    const b = bot as { id: number; name: string }
+    const loreCollectionName = `${b.name} Lore`.toLowerCase()
+    const existingLoreCollection = collectionNameToId.get(loreCollectionName)
+    if (existingLoreCollection) {
+      botNameToLoreCollectionId.set(b.name.trim().toLowerCase(), existingLoreCollection)
+    }
+  }
+
+  // Get existing knowledge entries for deduplication
+  const existingKnowledge = await payload.find({
+    collection: 'knowledge',
+    where: { user: { equals: newUserId } },
+    limit: 2000,
+    overrideAccess: true,
+  })
+
+  const existingTexts = new Set<string>()
+  for (const k of existingKnowledge.docs) {
+    const entry = k as { entry: string }
+    existingTexts.add(entry.entry.substring(0, 100).toLowerCase())
+  }
+
+  let imported = 0
+  let skipped = 0
+  let errors = 0
+  let collectionsCreated = 0
+
+  // Process collection-linked entries
+  if (includeCollectionLinked) {
+    const collectionLinksResult = (await oldDb
+      .prepare(
+        `
+        SELECT kcl.knowledge_id, kcl.collection_id, kc.name as collection_name, k.text
+        FROM knowledge_collection_links kcl
+        JOIN knowledge_collections kc ON kcl.collection_id = kc.id
+        JOIN knowledge k ON kcl.knowledge_id = k.id
+        WHERE kc.owner_id = ?
+      `
+      )
+      .bind(oldUserId)
+      .all()) as D1Result<{
+      knowledge_id: string
+      collection_id: string
+      collection_name: string
+      text: string
+    }>
+
+    for (const link of collectionLinksResult.results) {
+      const isDuplicate = existingTexts.has(link.text.substring(0, 100).toLowerCase())
+      if (isDuplicate && skipDuplicates) {
+        skipped++
+        continue
+      }
+
+      let collectionId = collectionNameToId.get(link.collection_name.trim().toLowerCase())
+
+      if (!collectionId && createMissingCollections) {
+        try {
+          const newCollection = await payload.create({
+            collection: 'knowledgeCollections',
+            data: {
+              name: link.collection_name.trim(),
+              user: newUserId,
+              description: `Recovered from migration`,
+              sharing_settings: { sharing_level: 'private' },
+            },
+            overrideAccess: true,
+          })
+          collectionId = newCollection.id
+          collectionNameToId.set(link.collection_name.trim().toLowerCase(), collectionId)
+          collectionsCreated++
+        } catch {
+          errors++
+          continue
+        }
+      }
+
+      if (!collectionId) {
+        skipped++
+        continue
+      }
+
+      try {
+        await payload.create({
+          collection: 'knowledge',
+          data: {
+            user: newUserId,
+            knowledge_collection: collectionId,
+            entry: link.text,
+            type: 'text',
+            privacy_settings: { privacy_level: 'private' },
+            activation_settings: { activation_mode: 'vector' },
+            positioning: { position: 'before_character' },
+          },
+          overrideAccess: true,
+        })
+        existingTexts.add(link.text.substring(0, 100).toLowerCase())
+        imported++
+      } catch {
+        errors++
+      }
+    }
+  }
+
+  // Process bot-linked entries
+  if (includeBotLinked) {
+    const botLinksResult = (await oldDb
+      .prepare(
+        `
+        SELECT kbl.knowledge_id, kbl.bot_id, b.name as bot_name, k.text
+        FROM knowledge_bot_links kbl
+        JOIN bots b ON kbl.bot_id = b.id
+        JOIN knowledge k ON kbl.knowledge_id = k.id
+        WHERE b.user_id = ?
+      `
+      )
+      .bind(oldUserId)
+      .all()) as D1Result<{
+      knowledge_id: string
+      bot_id: string
+      bot_name: string
+      text: string
+    }>
+
+    for (const link of botLinksResult.results) {
+      const isDuplicate = existingTexts.has(link.text.substring(0, 100).toLowerCase())
+      if (isDuplicate && skipDuplicates) {
+        skipped++
+        continue
+      }
+
+      let loreCollectionId = botNameToLoreCollectionId.get(link.bot_name.trim().toLowerCase())
+
+      if (!loreCollectionId) {
+        const loreCollectionName = `${link.bot_name} Lore`.toLowerCase()
+        loreCollectionId = collectionNameToId.get(loreCollectionName)
+
+        if (!loreCollectionId && createMissingCollections) {
+          try {
+            const newCollection = await payload.create({
+              collection: 'knowledgeCollections',
+              data: {
+                name: `${link.bot_name} Lore`,
+                user: newUserId,
+                description: `Lore entries for ${link.bot_name}`,
+                sharing_settings: { sharing_level: 'private' },
+              },
+              overrideAccess: true,
+            })
+            loreCollectionId = newCollection.id
+            botNameToLoreCollectionId.set(link.bot_name.trim().toLowerCase(), loreCollectionId)
+            collectionNameToId.set(`${link.bot_name} Lore`.toLowerCase(), loreCollectionId)
+            collectionsCreated++
+          } catch {
+            errors++
+            continue
+          }
+        }
+      }
+
+      if (!loreCollectionId) {
+        skipped++
+        continue
+      }
+
+      try {
+        await payload.create({
+          collection: 'knowledge',
+          data: {
+            user: newUserId,
+            knowledge_collection: loreCollectionId,
+            entry: link.text,
+            type: 'text',
+            privacy_settings: { privacy_level: 'private' },
+            activation_settings: { activation_mode: 'vector' },
+            positioning: { position: 'before_character' },
+          },
+          overrideAccess: true,
+        })
+        existingTexts.add(link.text.substring(0, 100).toLowerCase())
+        imported++
+      } catch {
+        errors++
+      }
+    }
+  }
+
+  return { imported, skipped, errors, collectionsCreated }
+}
+
 /**
  * GET /api/admin/fix/recover-linked-knowledge
  *
@@ -412,7 +637,8 @@ export async function GET(request: NextRequest) {
  * junction tables into the new database.
  *
  * Body:
- * - email: string (required) - User's email
+ * - email: string - User's email (required unless `all` is true)
+ * - all?: boolean - Process all users with linked knowledge (default: false)
  * - includeCollectionLinked?: boolean - Import collection-linked entries (default: true)
  * - includeBotLinked?: boolean - Import bot-linked entries (default: true)
  * - skipDuplicates?: boolean - Skip entries that already exist (default: true)
@@ -461,6 +687,7 @@ export async function POST(request: NextRequest) {
     // Parse body
     const body = (await request.json().catch(() => ({}))) as {
       email?: string
+      all?: boolean
       includeCollectionLinked?: boolean
       includeBotLinked?: boolean
       skipDuplicates?: boolean
@@ -468,17 +695,11 @@ export async function POST(request: NextRequest) {
     }
 
     const filterEmail = body.email
+    const processAll = body.all === true
     const includeCollectionLinked = body.includeCollectionLinked !== false
     const includeBotLinked = body.includeBotLinked !== false
     const skipDuplicates = body.skipDuplicates !== false
     const createMissingCollections = body.createMissingCollections === true
-
-    if (!filterEmail) {
-      return NextResponse.json(
-        { success: false, message: 'email is required in body' },
-        { status: 400 }
-      )
-    }
 
     // Get Cloudflare context for OLD_DB binding
     const cf = await getCloudflareContext({ async: true })
@@ -488,6 +709,148 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, message: 'OLD_DB binding not available' },
         { status: 500 }
+      )
+    }
+
+    // BATCH MODE: Process all users
+    if (processAll) {
+      // Get all users with collection-linked entries
+      const collectionLinkUsers = (await oldDb
+        .prepare(
+          `
+          SELECT DISTINCT u.email, u.id as user_id
+          FROM users u
+          JOIN knowledge_collections kc ON kc.owner_id = u.id
+          JOIN knowledge_collection_links kcl ON kcl.collection_id = kc.id
+        `
+        )
+        .all()) as D1Result<{ email: string; user_id: string }>
+
+      // Get all users with bot-linked entries
+      const botLinkUsers = (await oldDb
+        .prepare(
+          `
+          SELECT DISTINCT u.email, u.id as user_id
+          FROM users u
+          JOIN bots b ON b.user_id = u.id
+          JOIN knowledge_bot_links kbl ON kbl.bot_id = b.id
+        `
+        )
+        .all()) as D1Result<{ email: string; user_id: string }>
+
+      // Merge unique emails
+      const allEmails = new Set<string>()
+      for (const u of collectionLinkUsers.results) allEmails.add(u.email)
+      for (const u of botLinkUsers.results) allEmails.add(u.email)
+
+      const batchResults: Array<{
+        email: string
+        status: 'success' | 'skipped' | 'error'
+        imported?: number
+        skipped?: number
+        errors?: number
+        collectionsCreated?: number
+        reason?: string
+      }> = []
+
+      let totalImported = 0
+      let totalSkipped = 0
+      let totalErrors = 0
+      let totalCollectionsCreated = 0
+
+      for (const email of allEmails) {
+        // Check if user exists in new database
+        const newUserCheck = await payload.find({
+          collection: 'users',
+          where: { email: { equals: email } },
+          overrideAccess: true,
+        })
+
+        if (!newUserCheck.docs.length) {
+          batchResults.push({
+            email,
+            status: 'skipped',
+            reason: 'User not found in new database',
+          })
+          continue
+        }
+
+        const newUserId = newUserCheck.docs[0].id
+
+        // Get old user ID
+        const oldUserCheck = (await oldDb
+          .prepare('SELECT id FROM users WHERE email = ?')
+          .bind(email)
+          .all()) as D1Result<{ id: string }>
+
+        if (!oldUserCheck.results.length) {
+          batchResults.push({
+            email,
+            status: 'skipped',
+            reason: 'User not found in old database',
+          })
+          continue
+        }
+
+        const oldUserId = oldUserCheck.results[0].id
+
+        try {
+          // Process this user (reusing the single-user logic)
+          const userResult = await processUserImport(
+            payload,
+            oldDb,
+            oldUserId,
+            newUserId,
+            includeCollectionLinked,
+            includeBotLinked,
+            skipDuplicates,
+            createMissingCollections
+          )
+
+          batchResults.push({
+            email,
+            status: 'success',
+            imported: userResult.imported,
+            skipped: userResult.skipped,
+            errors: userResult.errors,
+            collectionsCreated: userResult.collectionsCreated,
+          })
+
+          totalImported += userResult.imported
+          totalSkipped += userResult.skipped
+          totalErrors += userResult.errors
+          totalCollectionsCreated += userResult.collectionsCreated
+        } catch (err: any) {
+          batchResults.push({
+            email,
+            status: 'error',
+            reason: err.message,
+          })
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        mode: 'batch',
+        summary: {
+          usersProcessed: batchResults.filter((r) => r.status === 'success').length,
+          usersSkipped: batchResults.filter((r) => r.status === 'skipped').length,
+          usersErrored: batchResults.filter((r) => r.status === 'error').length,
+          totalImported,
+          totalSkipped,
+          totalErrors,
+          totalCollectionsCreated,
+        },
+        results: batchResults,
+        message: `Processed ${batchResults.length} users. Imported ${totalImported} entries total.`,
+      })
+    }
+
+    // SINGLE USER MODE
+    if (!filterEmail) {
+      return NextResponse.json(
+        { success: false, message: 'email is required in body (or set all: true for batch mode)' },
+        { status: 400 }
       )
     }
 

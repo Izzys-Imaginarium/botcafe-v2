@@ -598,6 +598,19 @@ When you add new Payload collections or modify existing ones:
 
 ## 🔄 **Recent Changes**
 
+### **2026-02-02 Updates:**
+- ✅ **Message Pagination Fix**
+  - Fixed long conversations only loading first 50 (oldest) messages instead of most recent
+  - Changed API to sort by `-created_timestamp` (descending) then reverse for display
+  - Added `hasMore` and `isLoadingMore` state tracking in `use-chat.ts` hook
+  - Enabled "Load earlier messages" button in MessageList component
+  - Users can now scroll back through full conversation history
+  - Updated files:
+    - `src/app/api/chat/conversations/[id]/messages/route.ts` - Fixed sort order for initial load
+    - `src/modules/chat/hooks/use-chat.ts` - Added pagination state tracking
+    - `src/modules/chat/ui/views/chat-view.tsx` - Connected hasMore state to UI
+    - `src/modules/chat/ui/components/message-list.tsx` - Added isLoadingMore prop
+
 ### **2026-02-01 Updates (Evening):**
 - ✅ **Bot Slug Case-Sensitivity Fix**
   - Fixed "Bot not found" errors for legacy bots with mixed-case slugs (e.g., "Nyvarin" vs "nyvarin")
@@ -1505,8 +1518,8 @@ const filtered = all.docs.filter(conv =>
 
 ---
 
-**Last Updated**: 2026-02-01
-**Version**: 3.29
+**Last Updated**: 2026-02-02
+**Version**: 3.30
 **Total Tasks**: 184
-**Completed**: 178
-**Progress**: ~97% (Memory edit/delete for tomes complete)
+**Completed**: 179
+**Progress**: ~97% (Message pagination fix complete)

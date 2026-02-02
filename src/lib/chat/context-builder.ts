@@ -334,18 +334,15 @@ function buildBotSystemPrompt(bot: Bot, persona: Persona | null, user?: User | n
     }
   } else if (user) {
     // User is speaking as themselves (no persona) - use profile info
-    const hasUserInfo = user.nickname || user.name || user.pronouns || user.description
+    // IMPORTANT: Only use nickname (user-set display name), never user.name
+    // which may contain private account info like firstName/lastName from Clerk
+    const hasUserInfo = user.nickname || user.pronouns || user.description
     if (hasUserInfo) {
       parts.push(`\n\n--- User Context ---`)
 
-      // Prefer nickname for addressing the user, fall back to name
+      // Only use nickname - this is explicitly set by the user for bot interactions
       if (user.nickname) {
         parts.push(`The user should be called ${user.nickname}.`)
-        if (user.name && user.name !== user.nickname) {
-          parts.push(`Their full name is ${user.name}.`)
-        }
-      } else if (user.name) {
-        parts.push(`The user's name is ${user.name}.`)
       }
 
       if (user.pronouns) {

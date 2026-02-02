@@ -688,6 +688,8 @@ export async function POST(request: NextRequest) {
     const body = (await request.json().catch(() => ({}))) as {
       email?: string
       all?: boolean
+      limit?: number
+      offset?: number
       includeCollectionLinked?: boolean
       includeBotLinked?: boolean
       skipDuplicates?: boolean
@@ -696,6 +698,8 @@ export async function POST(request: NextRequest) {
 
     const filterEmail = body.email
     const processAll = body.all === true
+    const batchLimit = body.limit || 10 // Default to 10 users per batch to stay under subrequest limits
+    const batchOffset = body.offset || 0
     const includeCollectionLinked = body.includeCollectionLinked !== false
     const includeBotLinked = body.includeBotLinked !== false
     const skipDuplicates = body.skipDuplicates !== false
@@ -769,7 +773,12 @@ export async function POST(request: NextRequest) {
       let totalErrors = 0
       let totalCollectionsCreated = 0
 
-      for (const [email, oldUserId] of oldUserEmailToId) {
+      // Convert to array and apply limit/offset for pagination
+      const allUserEntries = Array.from(oldUserEmailToId.entries())
+      const totalUsers = allUserEntries.length
+      const usersToProcess = allUserEntries.slice(batchOffset, batchOffset + batchLimit)
+
+      for (const [email, oldUserId] of usersToProcess) {
         // Check if user exists in new database (using pre-fetched map)
         const newUserId = newUserEmailToId.get(email)
 
@@ -817,9 +826,20 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      const hasMore = batchOffset + batchLimit < totalUsers
+      const nextOffset = batchOffset + batchLimit
+
       return NextResponse.json({
         success: true,
         mode: 'batch',
+        pagination: {
+          totalUsers,
+          offset: batchOffset,
+          limit: batchLimit,
+          processed: usersToProcess.length,
+          hasMore,
+          nextOffset: hasMore ? nextOffset : null,
+        },
         summary: {
           usersProcessed: batchResults.filter((r) => r.status === 'success').length,
           usersSkipped: batchResults.filter((r) => r.status === 'skipped').length,
@@ -830,7 +850,7 @@ export async function POST(request: NextRequest) {
           totalCollectionsCreated,
         },
         results: batchResults,
-        message: `Processed ${batchResults.length} users. Imported ${totalImported} entries total.`,
+        message: `Processed ${usersToProcess.length} of ${totalUsers} users (offset ${batchOffset}). Imported ${totalImported} entries.${hasMore ? ` Run again with offset: ${nextOffset} to continue.` : ' All users processed.'}`,
       })
     }
 

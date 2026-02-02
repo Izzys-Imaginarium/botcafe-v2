@@ -94,18 +94,23 @@ export async function GET(
     }
 
     // Fetch messages
+    // For initial load (no before/after): get most recent messages, sorted descending, then reverse for display
+    // For loading older (before): get messages before ID, sorted descending, then reverse
+    // For loading newer (after): get messages after ID, sorted ascending
+    const sortDescending = !after // Sort descending unless we're loading newer messages
+
     const result = await payload.find({
       collection: 'message',
       where,
-      sort: before ? '-created_timestamp' : 'created_timestamp',
+      sort: sortDescending ? '-created_timestamp' : 'created_timestamp',
       page,
       limit,
       depth: 2, // Include bot details and nested relationships (like bot.picture)
       overrideAccess: true,
     })
 
-    // Reverse if fetching before (for proper order)
-    const messages = before ? result.docs.reverse() : result.docs
+    // Reverse if sorted descending (for proper chronological display order)
+    const messages = sortDescending ? result.docs.reverse() : result.docs
 
     // Format response
     const formattedMessages = messages.map((msg) => {

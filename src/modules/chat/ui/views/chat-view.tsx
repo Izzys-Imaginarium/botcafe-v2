@@ -112,6 +112,8 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
     isSending,
     isStreaming,
     error,
+    hasMore,
+    isLoadingMore,
     selectedApiKeyId,
     setSelectedApiKeyId,
     selectedModel,
@@ -497,7 +499,8 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
       <MessageList
         messages={formattedMessages}
         isLoading={isLoading}
-        hasMore={false} // TODO: Implement pagination
+        isLoadingMore={isLoadingMore}
+        hasMore={hasMore}
         onLoadMore={loadMoreMessages}
         userName={user?.firstName || user?.username || undefined}
         userAvatar={user?.imageUrl}

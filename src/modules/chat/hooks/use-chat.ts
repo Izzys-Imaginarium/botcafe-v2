@@ -79,6 +79,8 @@ export function useChat(options: UseChatOptions) {
   const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(false)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
 
   const [selectedApiKeyId, setSelectedApiKeyId] = useState<number | null>(null)
   const [selectedModel, setSelectedModel] = useState<string | null>(null)
@@ -153,6 +155,10 @@ export function useChat(options: UseChatOptions) {
   // Fetch messages
   const fetchMessages = useCallback(async (before?: number) => {
     try {
+      if (before) {
+        setIsLoadingMore(true)
+      }
+
       const params = new URLSearchParams({ limit: '50' })
       if (before) {
         params.set('before', String(before))
@@ -174,6 +180,11 @@ export function useChat(options: UseChatOptions) {
           tokens?: { input: number; output: number; total: number; cost: number }
           status?: string
         }>
+        total?: number
+        page?: number
+        totalPages?: number
+        hasNextPage?: boolean
+        hasPrevPage?: boolean
       }
 
       if (!response.ok) {
@@ -198,15 +209,24 @@ export function useChat(options: UseChatOptions) {
       }))
 
       if (before) {
+        // Loading older messages - prepend to existing
         setMessages(prev => [...transformedMessages, ...prev])
+        // After loading older messages, check if there are even older ones
+        // hasPrevPage from the API indicates if there are more messages before these
+        setHasMore(data.hasPrevPage ?? false)
       } else {
+        // Initial load - replace all
         setMessages(transformedMessages)
+        // For initial load sorted descending then reversed, hasPrevPage indicates older messages exist
+        setHasMore(data.hasPrevPage ?? false)
       }
 
       return data
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
       return null
+    } finally {
+      setIsLoadingMore(false)
     }
   }, [conversationId])
 
@@ -521,6 +541,8 @@ export function useChat(options: UseChatOptions) {
     isSending,
     isStreaming: streaming.isStreaming,
     error,
+    hasMore,
+    isLoadingMore,
 
     // API key / model selection
     selectedApiKeyId,
@@ -544,7 +566,7 @@ export function useChat(options: UseChatOptions) {
       fetchMessages()
     },
     loadMoreMessages: () => {
-      if (messages.length > 0) {
+      if (messages.length > 0 && hasMore && !isLoadingMore) {
         fetchMessages(messages[0].id)
       }
     },

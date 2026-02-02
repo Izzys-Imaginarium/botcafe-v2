@@ -20,6 +20,7 @@ export interface Message extends Omit<ChatMessageProps, 'className'> {
 export interface MessageListProps {
   messages: Message[]
   isLoading?: boolean
+  isLoadingMore?: boolean
   hasMore?: boolean
   onLoadMore?: () => void
   userName?: string
@@ -33,6 +34,7 @@ export interface MessageListProps {
 export function MessageList({
   messages,
   isLoading = false,
+  isLoadingMore = false,
   hasMore = false,
   onLoadMore,
   userName,
@@ -91,10 +93,10 @@ export function MessageList({
               variant="ghost"
               size="sm"
               onClick={onLoadMore}
-              disabled={isLoading}
+              disabled={isLoadingMore}
               className="gap-2"
             >
-              {isLoading ? (
+              {isLoadingMore ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <ChevronUp className="h-4 w-4" />

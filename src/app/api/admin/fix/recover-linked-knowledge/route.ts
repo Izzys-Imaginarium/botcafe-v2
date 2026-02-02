@@ -75,13 +75,6 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const filterEmail = searchParams.get('email')
 
-    if (!filterEmail) {
-      return NextResponse.json(
-        { success: false, message: 'email parameter is required' },
-        { status: 400 }
-      )
-    }
-
     // Get Cloudflare context for OLD_DB binding
     const cf = await getCloudflareContext({ async: true })
     const oldDb = (cf.env as any).OLD_DB
@@ -95,6 +88,77 @@ export async function GET(request: NextRequest) {
         },
         { status: 500 }
       )
+    }
+
+    // If no email provided, list all users with linked knowledge
+    if (!filterEmail) {
+      // Get all users with collection-linked entries
+      const collectionLinkUsers = (await oldDb
+        .prepare(
+          `
+          SELECT u.email, u.id as user_id, COUNT(DISTINCT kcl.knowledge_id) as collection_linked_count
+          FROM users u
+          JOIN knowledge_collections kc ON kc.owner_id = u.id
+          JOIN knowledge_collection_links kcl ON kcl.collection_id = kc.id
+          GROUP BY u.id, u.email
+          ORDER BY collection_linked_count DESC
+        `
+        )
+        .all()) as D1Result<{ email: string; user_id: string; collection_linked_count: number }>
+
+      // Get all users with bot-linked entries
+      const botLinkUsers = (await oldDb
+        .prepare(
+          `
+          SELECT u.email, u.id as user_id, COUNT(DISTINCT kbl.knowledge_id) as bot_linked_count
+          FROM users u
+          JOIN bots b ON b.user_id = u.id
+          JOIN knowledge_bot_links kbl ON kbl.bot_id = b.id
+          GROUP BY u.id, u.email
+          ORDER BY bot_linked_count DESC
+        `
+        )
+        .all()) as D1Result<{ email: string; user_id: string; bot_linked_count: number }>
+
+      // Merge the results
+      const userMap = new Map<
+        string,
+        { email: string; collectionLinked: number; botLinked: number; total: number }
+      >()
+
+      for (const u of collectionLinkUsers.results) {
+        userMap.set(u.email, {
+          email: u.email,
+          collectionLinked: u.collection_linked_count,
+          botLinked: 0,
+          total: u.collection_linked_count,
+        })
+      }
+
+      for (const u of botLinkUsers.results) {
+        const existing = userMap.get(u.email)
+        if (existing) {
+          existing.botLinked = u.bot_linked_count
+          existing.total += u.bot_linked_count
+        } else {
+          userMap.set(u.email, {
+            email: u.email,
+            collectionLinked: 0,
+            botLinked: u.bot_linked_count,
+            total: u.bot_linked_count,
+          })
+        }
+      }
+
+      const users = Array.from(userMap.values()).sort((a, b) => b.total - a.total)
+
+      return NextResponse.json({
+        success: true,
+        message: `Found ${users.length} users with linked knowledge entries in old database`,
+        users,
+        totalCollectionLinked: users.reduce((sum, u) => sum + u.collectionLinked, 0),
+        totalBotLinked: users.reduce((sum, u) => sum + u.botLinked, 0),
+      })
     }
 
     // Find the user in the old database

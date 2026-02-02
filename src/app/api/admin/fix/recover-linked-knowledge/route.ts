@@ -184,7 +184,7 @@ export async function GET(request: NextRequest) {
     // Get new bots for this user
     const newBots = await payload.find({
       collection: 'bot',
-      where: { user_id: { equals: newUserId } },
+      where: { user: { equals: newUserId } },
       limit: 500,
       overrideAccess: true,
     })
@@ -476,7 +476,7 @@ export async function POST(request: NextRequest) {
     // Get new bots for this user
     const newBots = await payload.find({
       collection: 'bot',
-      where: { user_id: { equals: newUserId } },
+      where: { user: { equals: newUserId } },
       limit: 500,
       overrideAccess: true,
     })

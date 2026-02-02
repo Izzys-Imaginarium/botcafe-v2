@@ -3,6 +3,11 @@ import { getPayloadHMR } from '@payloadcms/next/utilities'
 import { currentUser } from '@clerk/nextjs/server'
 import config from '@payload-config'
 import { checkResourceAccess, canUserAccess } from '@/lib/permissions/check-access'
+import { eq } from 'drizzle-orm'
+import {
+  conversation_rels,
+  payload_locked_documents_rels,
+} from '@/payload-generated-schema'
 
 type GenderOption = 'male' | 'female' | 'non-binary' | 'other'
 type ToneOption = 'friendly' | 'professional' | 'playful' | 'mysterious' | 'wise' | 'humorous' | 'empathetic' | 'authoritative'
@@ -418,11 +423,29 @@ export async function DELETE(
     // Note: The following are NOT deleted to avoid hitting API limits:
     // - message.bot (optional field - orphaned references are harmless)
     // - message.message_attribution.source_bot_id (optional)
-    // - conversation.bot_participation (array field - would require per-record updates)
     // - knowledge.applies_to_bots (hasMany - would require per-record updates)
     // - knowledgeCollections.bot (hasMany - would require per-record updates)
     // - creatorProfiles.featured_bots (hasMany - would require per-record updates)
     // These orphaned references don't cause errors and can be cleaned up later if needed
+
+    // 6. Delete conversation_rels entries (bot_participation FK constraint)
+    // SQLite CASCADE doesn't always work reliably in D1, so we delete explicitly
+    try {
+      const db = (payload.db as any).drizzle
+      await db.delete(conversation_rels).where(eq(conversation_rels.botID, botIdNum))
+    } catch (e) {
+      console.warn('Failed to delete conversation_rels:', e)
+    }
+
+    // 7. Delete payload_locked_documents_rels entries (internal Payload FK)
+    try {
+      const db = (payload.db as any).drizzle
+      await db
+        .delete(payload_locked_documents_rels)
+        .where(eq(payload_locked_documents_rels.botID, botIdNum))
+    } catch (e) {
+      console.warn('Failed to delete payload_locked_documents_rels:', e)
+    }
 
     // Now delete the bot
     await payload.delete({

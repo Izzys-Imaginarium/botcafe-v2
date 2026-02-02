@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
         user: { equals: payloadUser.id },
       },
       sort: '-created_date',
-      limit: 100,
+      limit: 500,
       depth: 1,
       overrideAccess: true,
     })
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
           { is_revoked: { equals: false } },
         ],
       },
-      limit: 100,
+      limit: 500,
       overrideAccess: true,
     })
 

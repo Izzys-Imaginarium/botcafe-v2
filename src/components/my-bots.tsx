@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { Bot, Plus, Edit, Eye, Trash2, Heart, Globe, Lock } from 'lucide-react'
+import { Bot, Plus, Edit, Eye, Trash2, Heart, Globe, Lock, Search } from 'lucide-react'
+import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
 
 interface UserBot {
@@ -27,6 +28,7 @@ export const MyBots = () => {
   const [userBots, setUserBots] = useState<UserBot[]>([])
   const [isLoadingBots, setIsLoadingBots] = useState(true)
   const [deletingBotId, setDeletingBotId] = useState<string | number | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     const fetchUserBots = async () => {
@@ -119,6 +121,19 @@ export const MyBots = () => {
         </Link>
       </div>
 
+      {/* Search */}
+      {userBots.length > 0 && (
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-parchment-dim" />
+          <Input
+            placeholder="Search your bots..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 bg-[#0a140a]/50 border-gold-ancient/20 text-parchment placeholder:text-parchment-dim"
+          />
+        </div>
+      )}
+
       {/* Bots Grid */}
       {isLoadingBots ? (
         <div className="flex items-center justify-center py-24">
@@ -143,9 +158,23 @@ export const MyBots = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {userBots.map((bot) => (
-            <Card
+        <>
+          {searchQuery && (
+            <p className="text-sm text-parchment-dim font-lore">
+              Showing {userBots.filter((bot) =>
+                bot.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                bot.description?.toLowerCase().includes(searchQuery.toLowerCase())
+              ).length} of {userBots.length} bots
+            </p>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {userBots
+              .filter((bot) =>
+                bot.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                bot.description?.toLowerCase().includes(searchQuery.toLowerCase())
+              )
+              .map((bot) => (
+              <Card
               key={bot.id}
               className="glass-rune hover:border-gold-ancient/50 transition-colors"
             >
@@ -235,7 +264,8 @@ export const MyBots = () => {
               </CardContent>
             </Card>
           ))}
-        </div>
+          </div>
+        </>
       )}
     </div>
   )

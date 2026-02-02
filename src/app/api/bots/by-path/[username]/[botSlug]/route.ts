@@ -38,7 +38,8 @@ export async function GET(
     const creatorProfile = creatorProfiles.docs[0]
 
     // Find the bot by slug within this creator's bots
-    const bots = await payload.find({
+    // Try exact match first, then case-insensitive match for legacy bots with mixed-case slugs
+    let bots = await payload.find({
       collection: 'bot',
       where: {
         and: [
@@ -46,7 +47,7 @@ export async function GET(
             creator_profile: { equals: creatorProfile.id },
           },
           {
-            slug: { equals: botSlug.toLowerCase() },
+            slug: { equals: botSlug },
           },
         ],
       },
@@ -54,6 +55,28 @@ export async function GET(
       depth: 1, // Include related data like picture
       overrideAccess: true,
     })
+
+    // If not found, try case-insensitive search for legacy bots
+    if (bots.docs.length === 0) {
+      // Get all bots for this creator and find case-insensitive match
+      const allCreatorBots = await payload.find({
+        collection: 'bot',
+        where: {
+          creator_profile: { equals: creatorProfile.id },
+        },
+        limit: 500,
+        depth: 1,
+        overrideAccess: true,
+      })
+
+      const matchingBot = allCreatorBots.docs.find(
+        (bot: any) => bot.slug?.toLowerCase() === botSlug.toLowerCase()
+      )
+
+      if (matchingBot) {
+        bots = { ...allCreatorBots, docs: [matchingBot], totalDocs: 1 }
+      }
+    }
 
     if (bots.docs.length === 0) {
       return NextResponse.json(

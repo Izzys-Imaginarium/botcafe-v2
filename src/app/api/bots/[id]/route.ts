@@ -3,7 +3,7 @@ import { getPayloadHMR } from '@payloadcms/next/utilities'
 import { currentUser } from '@clerk/nextjs/server'
 import config from '@payload-config'
 import { checkResourceAccess, canUserAccess } from '@/lib/permissions/check-access'
-import { eq } from 'drizzle-orm'
+import { eq } from '@payloadcms/db-d1-sqlite/drizzle'
 import {
   conversation_rels,
   payload_locked_documents_rels,

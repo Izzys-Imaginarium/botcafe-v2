@@ -36,6 +36,7 @@ import {
   Camera,
   Star,
   ImageIcon,
+  Search,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
@@ -168,6 +169,7 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
   const [isUploadingBanner, setIsUploadingBanner] = useState(false)
   const [userBots, setUserBots] = useState<BotData[]>([])
   const [isLoadingBots, setIsLoadingBots] = useState(false)
+  const [botSearchQuery, setBotSearchQuery] = useState('')
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const bannerInputRef = useRef<HTMLInputElement>(null)
 
@@ -314,7 +316,7 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
       setIsLoadingBots(true)
       try {
         // Fetch bots owned by the current user
-        const response = await fetch('/api/bots/explore?excludeOwn=false&limit=100')
+        const response = await fetch('/api/bots/explore?excludeOwn=false&limit=500')
         const data = (await response.json()) as {
           bots?: Array<{
             id: number
@@ -807,11 +809,31 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
                   </div>
                 ) : (
                   <>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Selected: {formData.portfolio.featured_bots.length}/6 bots
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {userBots.map((bot) => {
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                      <p className="text-sm text-muted-foreground">
+                        Selected: {formData.portfolio.featured_bots.length}/6 bots
+                      </p>
+                      <div className="relative w-full sm:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search your bots..."
+                          value={botSearchQuery}
+                          onChange={(e) => setBotSearchQuery(e.target.value)}
+                          className="pl-9"
+                        />
+                      </div>
+                    </div>
+                    {userBots.length > 0 && (
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Showing {userBots.filter((bot) =>
+                          bot.name.toLowerCase().includes(botSearchQuery.toLowerCase())
+                        ).length} of {userBots.length} bots
+                      </p>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+                      {userBots.filter((bot) =>
+                        bot.name.toLowerCase().includes(botSearchQuery.toLowerCase())
+                      ).map((bot) => {
                         const isSelected = formData.portfolio.featured_bots.includes(bot.id)
                         return (
                           <div

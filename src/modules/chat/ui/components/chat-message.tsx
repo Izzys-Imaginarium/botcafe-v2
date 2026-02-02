@@ -163,7 +163,7 @@ export function ChatMessage({
                         'h-6 w-6 transition-opacity',
                         isFailed
                           ? 'opacity-100'
-                          : 'opacity-0 group-hover:opacity-100'
+                          : 'opacity-100 md:opacity-0 md:group-hover:opacity-100'
                       )}
                       onClick={() => onRegenerate(messageId)}
                     >

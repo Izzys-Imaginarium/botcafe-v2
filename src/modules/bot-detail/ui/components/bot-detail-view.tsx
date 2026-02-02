@@ -56,6 +56,7 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
   const [favoritesCount, setFavoritesCount] = useState(0)
   const [isLiking, setIsLiking] = useState(false)
   const [isFavoriting, setIsFavoriting] = useState(false)
+  const [canEditBot, setCanEditBot] = useState(false)
 
   useEffect(() => {
     const fetchBot = async () => {
@@ -81,18 +82,16 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
             const statusData = (await statusResponse.json()) as {
               liked: boolean
               favorited: boolean
+              permission: 'owner' | 'editor' | 'readonly' | null
             }
             setLiked(statusData.liked)
             setFavorited(statusData.favorited)
+            // User can view bot details if they are owner or editor
+            setCanEditBot(statusData.permission === 'owner' || statusData.permission === 'editor')
+            setIsOwner(statusData.permission === 'owner')
           }
         }
 
-        // Check if current user is the bot owner
-        if (clerkUser) {
-          const botUserId = typeof data.user === 'object' ? data.user.id : data.user
-          // We'll need to compare with Payload user ID
-          // For now, we'll implement a simpler check via API
-        }
       } catch (err: any) {
         console.error('Error fetching bot:', err)
         setError(err.message || 'Failed to load bot')
@@ -229,7 +228,7 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center pt-24">
+      <div className="min-h-screen flex items-center justify-center pt-24">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-forest"></div>
       </div>
     )
@@ -237,7 +236,7 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
 
   if (error || !bot) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center pt-24">
+      <div className="min-h-screen flex items-center justify-center pt-24">
         <Card className="glass-rune max-w-md">
           <CardContent className="pt-6 text-center">
             <p className="text-parchment-dim font-lore text-lg mb-4">
@@ -256,7 +255,7 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background pt-24 pb-12">
+    <div className="min-h-screen pt-24 pb-12">
       <div className="container mx-auto px-4 max-w-5xl">
         {/* Header Section */}
         <div className="mb-8">
@@ -387,8 +386,8 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
           </Card>
         )}
 
-        {/* Greeting Section */}
-        {bot.greeting && (
+        {/* Greeting Section - Only visible to creators/editors */}
+        {canEditBot && bot.greeting && (
           <Card className="glass-rune mb-6">
             <CardHeader>
               <CardTitle className="text-gold-rich font-display">Greeting</CardTitle>
@@ -401,8 +400,8 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
           </Card>
         )}
 
-        {/* Speech Examples */}
-        {bot.speech_examples && bot.speech_examples.length > 0 && (
+        {/* Speech Examples - Only visible to creators/editors */}
+        {canEditBot && bot.speech_examples && bot.speech_examples.length > 0 && (
           <Card className="glass-rune mb-6">
             <CardHeader>
               <CardTitle className="text-gold-rich font-display">Speech Examples</CardTitle>
@@ -422,8 +421,8 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
           </Card>
         )}
 
-        {/* Knowledge Collections */}
-        {bot.knowledge_collections && bot.knowledge_collections.length > 0 && (
+        {/* Knowledge Collections - Only visible to creators/editors */}
+        {canEditBot && bot.knowledge_collections && bot.knowledge_collections.length > 0 && (
           <Card className="glass-rune">
             <CardHeader>
               <CardTitle className="text-gold-rich font-display flex items-center gap-2">

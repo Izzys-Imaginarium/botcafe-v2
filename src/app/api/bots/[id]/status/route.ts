@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPayloadHMR } from '@payloadcms/next/utilities'
 import { currentUser } from '@clerk/nextjs/server'
 import config from '@payload-config'
+import { checkResourceAccess } from '@/lib/permissions/check-access'
 
 export async function GET(
   request: NextRequest,
@@ -21,6 +22,7 @@ export async function GET(
       return NextResponse.json({
         liked: false,
         favorited: false,
+        permission: null,
       })
     }
 
@@ -39,10 +41,14 @@ export async function GET(
       return NextResponse.json({
         liked: false,
         favorited: false,
+        permission: null,
       })
     }
 
     const payloadUser = payloadUsers.docs[0]
+
+    // Check user's permission level for this bot
+    const accessResult = await checkResourceAccess(payload, payloadUser.id, 'bot', botId)
 
     // Check if interaction exists
     const interaction = await payload.find({
@@ -57,6 +63,7 @@ export async function GET(
       return NextResponse.json({
         liked: false,
         favorited: false,
+        permission: accessResult.permission,
       })
     }
 
@@ -65,6 +72,7 @@ export async function GET(
     return NextResponse.json({
       liked: interactionData.liked || false,
       favorited: interactionData.favorited || false,
+      permission: accessResult.permission,
     })
   } catch (error: any) {
     console.error('Error fetching interaction status:', error)

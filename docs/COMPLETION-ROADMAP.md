@@ -598,6 +598,25 @@ When you add new Payload collections or modify existing ones:
 
 ## 🔄 **Recent Changes**
 
+### **2026-02-01 Updates (Evening):**
+- ✅ **Bot Slug Case-Sensitivity Fix**
+  - Fixed "Bot not found" errors for legacy bots with mixed-case slugs (e.g., "Nyvarin" vs "nyvarin")
+  - Updated `/api/bots/by-path/[username]/[botSlug]` to try exact match first, then case-insensitive fallback
+  - Created `/api/admin/fix/slugs` endpoint to normalize all bot slugs to lowercase (239 bots normalized)
+- ✅ **Mobile Refresh Button Visibility Fix**
+  - Fixed regenerate/retry button not appearing on mobile devices in chat
+  - Changed from `opacity-0 group-hover:opacity-100` to `opacity-100 md:opacity-0 md:group-hover:opacity-100`
+  - Updated [chat-message.tsx](src/modules/chat/ui/components/chat-message.tsx)
+- ✅ **Empty Persona Collections Migration**
+  - Created `/api/admin/fix/empty-personas` endpoint to create personas from migrated user persona knowledge collections
+  - Uses knowledge entries for `description` (max 500 chars) and full content in `custom_instructions`
+  - Created 38 personas from empty-description collections for migrated users
+- ✅ **Admin Diagnostic Endpoint**
+  - Created `/api/admin/diagnostic/lookup` for investigating data issues
+  - Supports query params: `botName`, `username`, `botSlug`
+- ✅ **Documentation Updates**
+  - Updated SITEMAP.md with new admin endpoints (52 total API endpoints)
+
 ### **2026-02-01 Updates:**
 - ✅ **Lore Collection Cascade Delete**
   - Fixed bug where deleting a lore collection with entries would fail
@@ -1487,7 +1506,7 @@ const filtered = all.docs.filter(conv =>
 ---
 
 **Last Updated**: 2026-02-01
-**Version**: 3.28
+**Version**: 3.29
 **Total Tasks**: 184
 **Completed**: 178
 **Progress**: ~97% (Memory edit/delete for tomes complete)

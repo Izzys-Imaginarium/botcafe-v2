@@ -1,7 +1,7 @@
 # BotCafe v2 - Complete Sitemap
 
 **Last Updated**: 2026-02-01
-**Version**: 2.29
+**Version**: 2.30
 **Status**: ~98% Complete
 
 ---
@@ -211,6 +211,9 @@
 | `/api/admin/seed-legal` | POST | Seed legal documents (Terms, Privacy, AI Use) |
 | `/api/admin/seed-help` | POST | Seed help center articles (14 articles across categories) |
 | `/api/admin/vector-sync-check` | GET, POST | Check and fix vector/knowledge sync issues |
+| `/api/admin/fix/slugs` | GET, POST | GET: Preview bots with non-lowercase slugs. POST: Normalize all bot slugs to lowercase |
+| `/api/admin/fix/empty-personas` | GET, POST | GET: Preview user persona collections with empty descriptions. POST: Create personas from empty-description collections using knowledge content |
+| `/api/admin/diagnostic/lookup` | GET | Diagnostic lookup for bots, users, or creator profiles. Query params: `botName`, `username`, `botSlug` |
 
 ### File Upload
 
@@ -264,8 +267,8 @@
 | Help | 3 | 0 | 3 |
 | Chat | 2 | 0 | 2 |
 | **Frontend Total** | **32** | **2** | **34** |
-| API Endpoints | 49 | 0 | 49 |
-| **Grand Total** | **81** | **2** | **83** |
+| API Endpoints | 52 | 0 | 52 |
+| **Grand Total** | **84** | **2** | **86** |
 
 *Note: "Redirect" routes automatically redirect to the Account page with the appropriate tab.*
 

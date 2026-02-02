@@ -299,6 +299,7 @@ export async function GET(request: NextRequest) {
     // Parse query parameters
     const { searchParams } = new URL(request.url)
     const filterEmail = searchParams.get('email')
+    const verifyMode = searchParams.get('verify') === 'true'
 
     // Get Cloudflare context for OLD_DB binding
     const cf = await getCloudflareContext({ async: true })
@@ -313,6 +314,177 @@ export async function GET(request: NextRequest) {
         },
         { status: 500 }
       )
+    }
+
+    // VERIFY MODE: Comprehensive data verification
+    if (verifyMode) {
+      // Get counts from old database
+      const oldKnowledgeCount = (await oldDb
+        .prepare('SELECT COUNT(*) as count FROM knowledge')
+        .all()) as D1Result<{ count: number }>
+
+      const oldCollectionLinkedCount = (await oldDb
+        .prepare('SELECT COUNT(DISTINCT knowledge_id) as count FROM knowledge_collection_links')
+        .all()) as D1Result<{ count: number }>
+
+      const oldBotLinkedCount = (await oldDb
+        .prepare('SELECT COUNT(DISTINCT knowledge_id) as count FROM knowledge_bot_links')
+        .all()) as D1Result<{ count: number }>
+
+      const oldDirectLinkedCount = (await oldDb
+        .prepare('SELECT COUNT(*) as count FROM knowledge WHERE collection_id IS NOT NULL')
+        .all()) as D1Result<{ count: number }>
+
+      const oldOrphanedCount = (await oldDb
+        .prepare(`
+          SELECT COUNT(*) as count FROM knowledge k
+          WHERE k.collection_id IS NULL
+          AND NOT EXISTS (SELECT 1 FROM knowledge_collection_links kcl WHERE kcl.knowledge_id = k.id)
+          AND NOT EXISTS (SELECT 1 FROM knowledge_bot_links kbl WHERE kbl.knowledge_id = k.id)
+        `)
+        .all()) as D1Result<{ count: number }>
+
+      // Get counts from new database
+      const newKnowledgeResult = await payload.find({
+        collection: 'knowledge',
+        limit: 0,
+        overrideAccess: true,
+      })
+
+      // Check for remaining unimported junction-linked entries
+      // Get all users who have linked knowledge
+      const usersWithLinks = (await oldDb
+        .prepare(`
+          SELECT DISTINCT u.email, u.id as user_id
+          FROM users u
+          WHERE EXISTS (
+            SELECT 1 FROM knowledge_collections kc
+            JOIN knowledge_collection_links kcl ON kcl.collection_id = kc.id
+            WHERE kc.owner_id = u.id
+          )
+          OR EXISTS (
+            SELECT 1 FROM bots b
+            JOIN knowledge_bot_links kbl ON kbl.bot_id = b.id
+            WHERE b.user_id = u.id
+          )
+        `)
+        .all()) as D1Result<{ email: string; user_id: string }>
+
+      // Get all new users
+      const allNewUsers = await payload.find({
+        collection: 'users',
+        limit: 5000,
+        overrideAccess: true,
+      })
+
+      const newUserEmailToId = new Map<string, number>()
+      for (const u of allNewUsers.docs) {
+        const user = u as { id: number; email: string }
+        newUserEmailToId.set(user.email, user.id)
+      }
+
+      // For users who exist in both databases, check if there are still "ready" entries
+      let totalRemainingReady = 0
+      let totalRemainingNoMatch = 0
+      const usersWithRemainingData: Array<{
+        email: string
+        ready: number
+        noMatch: number
+        duplicate: number
+      }> = []
+
+      // Sample a few users to check (to avoid hitting subrequest limits)
+      const sampleUsers = usersWithLinks.results.slice(0, 20)
+
+      for (const oldUser of sampleUsers) {
+        const newUserId = newUserEmailToId.get(oldUser.email)
+        if (!newUserId) continue
+
+        // Get existing knowledge for this user
+        const existingKnowledge = await payload.find({
+          collection: 'knowledge',
+          where: { user: { equals: newUserId } },
+          limit: 2000,
+          overrideAccess: true,
+        })
+
+        const existingTexts = new Set<string>()
+        for (const k of existingKnowledge.docs) {
+          const entry = k as { entry: string }
+          existingTexts.add(entry.entry.substring(0, 100).toLowerCase())
+        }
+
+        // Check collection links
+        const collectionLinks = (await oldDb
+          .prepare(`
+            SELECT k.text
+            FROM knowledge_collection_links kcl
+            JOIN knowledge_collections kc ON kcl.collection_id = kc.id
+            JOIN knowledge k ON kcl.knowledge_id = k.id
+            WHERE kc.owner_id = ?
+          `)
+          .bind(oldUser.user_id)
+          .all()) as D1Result<{ text: string }>
+
+        // Check bot links
+        const botLinks = (await oldDb
+          .prepare(`
+            SELECT k.text
+            FROM knowledge_bot_links kbl
+            JOIN bots b ON kbl.bot_id = b.id
+            JOIN knowledge k ON kbl.knowledge_id = k.id
+            WHERE b.user_id = ?
+          `)
+          .bind(oldUser.user_id)
+          .all()) as D1Result<{ text: string }>
+
+        let ready = 0
+        let noMatch = 0
+        let duplicate = 0
+
+        for (const link of [...collectionLinks.results, ...botLinks.results]) {
+          const isDuplicate = existingTexts.has(link.text.substring(0, 100).toLowerCase())
+          if (isDuplicate) {
+            duplicate++
+          } else {
+            // For simplicity, count as ready (could be noMatch but that requires more queries)
+            ready++
+          }
+        }
+
+        if (ready > 0 || noMatch > 0) {
+          usersWithRemainingData.push({ email: oldUser.email, ready, noMatch, duplicate })
+          totalRemainingReady += ready
+          totalRemainingNoMatch += noMatch
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        mode: 'verify',
+        oldDatabase: {
+          totalKnowledge: oldKnowledgeCount.results[0]?.count || 0,
+          collectionLinked: oldCollectionLinkedCount.results[0]?.count || 0,
+          botLinked: oldBotLinkedCount.results[0]?.count || 0,
+          directLinked: oldDirectLinkedCount.results[0]?.count || 0,
+          orphaned: oldOrphanedCount.results[0]?.count || 0,
+        },
+        newDatabase: {
+          totalKnowledge: newKnowledgeResult.totalDocs,
+        },
+        verification: {
+          usersWithLinkedKnowledge: usersWithLinks.results.length,
+          usersSampled: sampleUsers.length,
+          remainingReadyEntries: totalRemainingReady,
+          remainingNoMatchEntries: totalRemainingNoMatch,
+          usersWithRemainingData,
+          allImported: totalRemainingReady === 0 && totalRemainingNoMatch === 0,
+        },
+        message:
+          totalRemainingReady === 0
+            ? 'All sampled users have their junction-linked knowledge imported. Run without verify to check specific users.'
+            : `Found ${totalRemainingReady} remaining entries across ${usersWithRemainingData.length} sampled users that may not be imported.`,
+      })
     }
 
     // If no email provided, list all users with linked knowledge

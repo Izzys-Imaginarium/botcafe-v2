@@ -714,34 +714,45 @@ export async function POST(request: NextRequest) {
 
     // BATCH MODE: Process all users
     if (processAll) {
-      // Get all users with collection-linked entries
-      const collectionLinkUsers = (await oldDb
+      // Get all users from old database with linked knowledge (with their old IDs)
+      const oldUsersWithLinks = (await oldDb
         .prepare(
           `
           SELECT DISTINCT u.email, u.id as user_id
           FROM users u
-          JOIN knowledge_collections kc ON kc.owner_id = u.id
-          JOIN knowledge_collection_links kcl ON kcl.collection_id = kc.id
+          WHERE EXISTS (
+            SELECT 1 FROM knowledge_collections kc
+            JOIN knowledge_collection_links kcl ON kcl.collection_id = kc.id
+            WHERE kc.owner_id = u.id
+          )
+          OR EXISTS (
+            SELECT 1 FROM bots b
+            JOIN knowledge_bot_links kbl ON kbl.bot_id = b.id
+            WHERE b.user_id = u.id
+          )
         `
         )
         .all()) as D1Result<{ email: string; user_id: string }>
 
-      // Get all users with bot-linked entries
-      const botLinkUsers = (await oldDb
-        .prepare(
-          `
-          SELECT DISTINCT u.email, u.id as user_id
-          FROM users u
-          JOIN bots b ON b.user_id = u.id
-          JOIN knowledge_bot_links kbl ON kbl.bot_id = b.id
-        `
-        )
-        .all()) as D1Result<{ email: string; user_id: string }>
+      // Build map of email -> old user ID
+      const oldUserEmailToId = new Map<string, string>()
+      for (const u of oldUsersWithLinks.results) {
+        oldUserEmailToId.set(u.email, u.user_id)
+      }
 
-      // Merge unique emails
-      const allEmails = new Set<string>()
-      for (const u of collectionLinkUsers.results) allEmails.add(u.email)
-      for (const u of botLinkUsers.results) allEmails.add(u.email)
+      // Get ALL users from new database in a single query
+      const allNewUsers = await payload.find({
+        collection: 'users',
+        limit: 5000,
+        overrideAccess: true,
+      })
+
+      // Build map of email -> new user ID
+      const newUserEmailToId = new Map<string, number>()
+      for (const u of allNewUsers.docs) {
+        const user = u as { id: number; email: string }
+        newUserEmailToId.set(user.email, user.id)
+      }
 
       const batchResults: Array<{
         email: string
@@ -758,15 +769,11 @@ export async function POST(request: NextRequest) {
       let totalErrors = 0
       let totalCollectionsCreated = 0
 
-      for (const email of allEmails) {
-        // Check if user exists in new database
-        const newUserCheck = await payload.find({
-          collection: 'users',
-          where: { email: { equals: email } },
-          overrideAccess: true,
-        })
+      for (const [email, oldUserId] of oldUserEmailToId) {
+        // Check if user exists in new database (using pre-fetched map)
+        const newUserId = newUserEmailToId.get(email)
 
-        if (!newUserCheck.docs.length) {
+        if (!newUserId) {
           batchResults.push({
             email,
             status: 'skipped',
@@ -775,27 +782,8 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        const newUserId = newUserCheck.docs[0].id
-
-        // Get old user ID
-        const oldUserCheck = (await oldDb
-          .prepare('SELECT id FROM users WHERE email = ?')
-          .bind(email)
-          .all()) as D1Result<{ id: string }>
-
-        if (!oldUserCheck.results.length) {
-          batchResults.push({
-            email,
-            status: 'skipped',
-            reason: 'User not found in old database',
-          })
-          continue
-        }
-
-        const oldUserId = oldUserCheck.results[0].id
-
         try {
-          // Process this user (reusing the single-user logic)
+          // Process this user
           const userResult = await processUserImport(
             payload,
             oldDb,

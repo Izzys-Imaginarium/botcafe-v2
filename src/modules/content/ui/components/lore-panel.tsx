@@ -20,6 +20,7 @@ import {
   Trash2,
   Settings2,
   Edit,
+  AlertCircle,
   ChevronDown,
   ChevronRight,
   BookMarked,
@@ -115,6 +116,52 @@ export const LorePanel = () => {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [r2FileKey, setR2FileKey] = useState<string>('')
+
+  // Edit entry state
+  const [isEditEntryOpen, setIsEditEntryOpen] = useState(false)
+  const [isUpdatingEntry, setIsUpdatingEntry] = useState(false)
+  const [isFetchingEntry, setIsFetchingEntry] = useState(false)
+  const [editingEntry, setEditingEntry] = useState<KnowledgeEntry | null>(null)
+  const [editEntryContent, setEditEntryContent] = useState('')
+  const [editEntryTags, setEditEntryTags] = useState('')
+  const [editEntryType, setEditEntryType] = useState('text')
+  const [showEditActivationSettings, setShowEditActivationSettings] = useState(false)
+
+  // Edit entry activation settings (separate from create)
+  const [editActivationSettings, setEditActivationSettings] = useState<ActivationSettingsValue>({
+    activation_mode: 'vector',
+    vector_similarity_threshold: 0.7,
+    max_vector_results: 5,
+    probability: 100,
+    use_probability: false,
+    scan_depth: 2,
+    match_in_user_messages: true,
+    match_in_bot_messages: true,
+    match_in_system_prompts: false,
+  })
+  const [editPositioning, setEditPositioning] = useState<PositioningValue>({
+    position: 'before_character',
+    depth: 0,
+    role: 'system',
+    order: 100,
+  })
+  const [editAdvancedActivation, setEditAdvancedActivation] = useState<AdvancedActivationValue>({
+    sticky: 0,
+    cooldown: 0,
+    delay: 0,
+  })
+  const [editFiltering, setEditFiltering] = useState<FilteringValue>({
+    filter_by_bots: false,
+    allowed_bot_ids: [],
+    excluded_bot_ids: [],
+    filter_by_personas: false,
+    allowed_persona_ids: [],
+    excluded_persona_ids: [],
+  })
+  const [editBudgetControl, setEditBudgetControl] = useState<BudgetControlValue>({
+    ignore_budget: false,
+    max_tokens: 1000,
+  })
 
   // Activation settings state
   const [activationSettings, setActivationSettings] = useState<ActivationSettingsValue>({
@@ -476,6 +523,153 @@ export const LorePanel = () => {
     } catch (error) {
       console.error('Error deleting entry:', error)
       toast.error('Failed to delete entry')
+    }
+  }
+
+  const openEditEntry = async (entry: KnowledgeEntry) => {
+    setEditingEntry(entry)
+    setEditEntryContent(entry.entry)
+    setEditEntryType(entry.type)
+    setEditEntryTags(entry.tags?.map(t => t.tag).join(', ') || '')
+    setIsFetchingEntry(true)
+    setIsEditEntryOpen(true)
+    setShowEditActivationSettings(false)
+
+    // Fetch full entry details to get activation settings
+    try {
+      const response = await fetch(`/api/knowledge/${entry.id}`)
+      const data = (await response.json()) as {
+        success?: boolean
+        knowledge?: any
+        message?: string
+      }
+
+      if (data.success && data.knowledge) {
+        const k = data.knowledge
+
+        // Set activation settings from fetched data
+        if (k.activation_settings) {
+          setEditActivationSettings({
+            activation_mode: k.activation_settings.activation_mode || 'vector',
+            primary_keys: k.activation_settings.primary_keys?.map((pk: any) => pk.keyword) || [],
+            secondary_keys: k.activation_settings.secondary_keys?.map((sk: any) => sk.keyword) || [],
+            keywords_logic: k.activation_settings.keywords_logic || 'AND_ANY',
+            case_sensitive: k.activation_settings.case_sensitive || false,
+            match_whole_words: k.activation_settings.match_whole_words || false,
+            use_regex: k.activation_settings.use_regex || false,
+            vector_similarity_threshold: k.activation_settings.vector_similarity_threshold ?? 0.7,
+            max_vector_results: k.activation_settings.max_vector_results ?? 5,
+            probability: k.activation_settings.probability ?? 100,
+            use_probability: k.activation_settings.use_probability || false,
+            scan_depth: k.activation_settings.scan_depth ?? 2,
+            match_in_user_messages: k.activation_settings.match_in_user_messages ?? true,
+            match_in_bot_messages: k.activation_settings.match_in_bot_messages ?? true,
+            match_in_system_prompts: k.activation_settings.match_in_system_prompts ?? false,
+          })
+        }
+
+        if (k.positioning) {
+          setEditPositioning({
+            position: k.positioning.position || 'before_character',
+            depth: k.positioning.depth ?? 0,
+            role: k.positioning.role || 'system',
+            order: k.positioning.order ?? 100,
+          })
+        }
+
+        if (k.advanced_activation) {
+          setEditAdvancedActivation({
+            sticky: k.advanced_activation.sticky ?? 0,
+            cooldown: k.advanced_activation.cooldown ?? 0,
+            delay: k.advanced_activation.delay ?? 0,
+          })
+        }
+
+        if (k.filtering) {
+          setEditFiltering({
+            filter_by_bots: k.filtering.filter_by_bots || false,
+            allowed_bot_ids: k.filtering.allowed_bot_ids?.map((b: any) => b.bot_id) || [],
+            excluded_bot_ids: k.filtering.excluded_bot_ids?.map((b: any) => b.bot_id) || [],
+            filter_by_personas: k.filtering.filter_by_personas || false,
+            allowed_persona_ids: k.filtering.allowed_persona_ids?.map((p: any) => p.persona_id) || [],
+            excluded_persona_ids: k.filtering.excluded_persona_ids?.map((p: any) => p.persona_id) || [],
+          })
+        }
+
+        if (k.budget_control) {
+          setEditBudgetControl({
+            ignore_budget: k.budget_control.ignore_budget || false,
+            max_tokens: k.budget_control.max_tokens ?? 1000,
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching entry details:', error)
+      // Continue with basic edit even if fetch fails
+    } finally {
+      setIsFetchingEntry(false)
+    }
+  }
+
+  const handleUpdateEntry = async () => {
+    if (!editingEntry || !editEntryContent) {
+      toast.error('Please enter content')
+      return
+    }
+
+    setIsUpdatingEntry(true)
+    try {
+      const tagArray = editEntryTags
+        ? editEntryTags.split(',').map((tag) => ({ tag: tag.trim() })).filter((t) => t.tag)
+        : []
+
+      const response = await fetch(`/api/knowledge/${editingEntry.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entry: editEntryContent,
+          type: editEntryType,
+          tags: tagArray,
+          activation_settings: editActivationSettings,
+          positioning: editPositioning,
+          advanced_activation: editAdvancedActivation,
+          filtering: editFiltering,
+          budget_control: editBudgetControl,
+        }),
+      })
+
+      const data = (await response.json()) as {
+        success?: boolean
+        knowledge?: KnowledgeEntry
+        message?: string
+        autoVectorized?: boolean
+        vectorCount?: number
+      }
+
+      if (data.success) {
+        if (data.autoVectorized) {
+          toast.success(`Entry updated and vectorized with ${data.vectorCount} chunks!`)
+        } else {
+          toast.success(data.message || 'Entry updated successfully!')
+        }
+        setIsEditEntryOpen(false)
+        setEditingEntry(null)
+
+        // Refresh entries for the tome
+        const tomeId = typeof editingEntry.knowledge_collection === 'string'
+          ? editingEntry.knowledge_collection
+          : editingEntry.knowledge_collection?.id
+        if (tomeId) {
+          await fetchEntriesForTome(tomeId)
+        }
+      } else {
+        toast.error(data.message || 'Failed to update entry')
+      }
+    } catch (error: any) {
+      console.error('Error updating entry:', error)
+      toast.error(error.message || 'Failed to update entry')
+    } finally {
+      setIsUpdatingEntry(false)
     }
   }
 
@@ -993,6 +1187,14 @@ export const LorePanel = () => {
                                 <Button
                                   variant="ghost"
                                   size="sm"
+                                  onClick={() => openEditEntry(entry)}
+                                  className="h-8 w-8 p-0 text-parchment/60 hover:text-gold-rich"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
                                   onClick={() => handleDeleteEntry(entry)}
                                   className="h-8 w-8 p-0 text-parchment/60 hover:text-red-400"
                                 >
@@ -1155,6 +1357,158 @@ export const LorePanel = () => {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Entry Dialog */}
+      <Dialog open={isEditEntryOpen} onOpenChange={setIsEditEntryOpen}>
+        <DialogContent className="glass-rune border-gold-ancient/30 text-parchment max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-gold-rich">Edit Entry</DialogTitle>
+            <DialogDescription className="text-parchment/60">
+              Update the entry content, type, tags, and activation settings.
+              {editingEntry?.is_vectorized && (
+                <span className="block mt-2 text-amber-400">
+                  <AlertCircle className="w-4 h-4 inline mr-1" />
+                  Changing the content will trigger re-vectorization.
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          {isFetchingEntry ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 text-gold-ancient animate-spin" />
+              <span className="ml-3 text-parchment/60">Loading entry details...</span>
+            </div>
+          ) : (
+            <div className="space-y-4 pt-4">
+              {/* Entry Type */}
+              <div className="space-y-2">
+                <Label className="text-parchment">Entry Type</Label>
+                <Select value={editEntryType} onValueChange={setEditEntryType}>
+                  <SelectTrigger className="glass-rune border-gold-ancient/30 text-parchment">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="glass-rune border-gold-ancient/30">
+                    <SelectItem value="text">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4" />
+                        Text Entry
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="document">
+                      <div className="flex items-center gap-2">
+                        <Upload className="w-4 h-4" />
+                        Document
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="url">
+                      <div className="flex items-center gap-2">
+                        <LinkIcon className="w-4 h-4" />
+                        URL/Link
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Content */}
+              <div className="space-y-2">
+                <Label className="text-parchment">
+                  Content <span className="text-red-400">*</span>
+                </Label>
+                <Textarea
+                  placeholder="Enter your knowledge content here..."
+                  value={editEntryContent}
+                  onChange={(e) => setEditEntryContent(e.target.value)}
+                  rows={8}
+                  className="glass-rune border-gold-ancient/30 text-parchment placeholder:text-parchment/40 font-lore"
+                />
+                <p className="text-xs text-parchment/50">
+                  {editEntryContent.length} characters • ~{Math.ceil(editEntryContent.length / 4)} tokens
+                </p>
+              </div>
+
+              {/* Tags */}
+              <div className="space-y-2">
+                <Label className="text-parchment">Tags</Label>
+                <Input
+                  placeholder="fantasy, lore, character (comma-separated)"
+                  value={editEntryTags}
+                  onChange={(e) => setEditEntryTags(e.target.value)}
+                  className="glass-rune border-gold-ancient/30 text-parchment placeholder:text-parchment/40"
+                />
+              </div>
+
+              {/* Activation Settings Toggle */}
+              <button
+                type="button"
+                onClick={() => setShowEditActivationSettings(!showEditActivationSettings)}
+                className="flex items-center gap-2 text-sm text-gold-rich hover:text-gold-ancient transition-colors"
+              >
+                <Settings2 className="w-4 h-4" />
+                {showEditActivationSettings ? 'Hide' : 'Show'} Activation Settings
+                <Badge variant="outline" className="border-gold-ancient/30 text-parchment/70 text-xs">
+                  {editActivationSettings.activation_mode}
+                </Badge>
+              </button>
+
+              {/* Activation Settings */}
+              {showEditActivationSettings && (
+                <div className="border border-gold-ancient/20 rounded-lg p-4 bg-[#0a140a]/30">
+                  <ActivationSettings
+                    activationSettings={editActivationSettings}
+                    positioning={editPositioning}
+                    advancedActivation={editAdvancedActivation}
+                    filtering={editFiltering}
+                    budgetControl={editBudgetControl}
+                    onActivationSettingsChange={setEditActivationSettings}
+                    onPositioningChange={setEditPositioning}
+                    onAdvancedActivationChange={setEditAdvancedActivation}
+                    onFilteringChange={setEditFiltering}
+                    onBudgetControlChange={setEditBudgetControl}
+                  />
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-2">
+                <Button
+                  onClick={handleUpdateEntry}
+                  disabled={isUpdatingEntry || !editEntryContent}
+                  className="bg-gold-rich hover:bg-gold-rich/90 text-[#0a140a] flex-1"
+                >
+                  {isUpdatingEntry ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Save Changes
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={() => setIsEditEntryOpen(false)}
+                  variant="outline"
+                  className="border-gold-ancient/30 text-parchment"
+                  disabled={isUpdatingEntry}
+                >
+                  Cancel
+                </Button>
+              </div>
+
+              {(editActivationSettings.activation_mode === 'vector' || editActivationSettings.activation_mode === 'hybrid') && (
+                <p className="text-xs text-parchment/50 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-gold-rich" />
+                  Changes to content will trigger automatic re-vectorization
+                </p>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

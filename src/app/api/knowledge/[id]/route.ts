@@ -312,9 +312,8 @@ export async function PATCH(
     if (body.entry !== undefined) {
       updateData.entry = body.entry
       updateData.tokens = Math.ceil(body.entry.length / 4)
+      // Only set specific content_metadata fields to avoid SQL variable overflow
       updateData.content_metadata = {
-        // @ts-ignore
-        ...existingKnowledge.content_metadata,
         word_count: body.entry.split(/\s+/).length,
         processing_status: contentChanged && wasVectorized ? 'pending' : 'completed',
       }
@@ -322,7 +321,8 @@ export async function PATCH(
       if (contentChanged) {
         updateData.is_vectorized = false
         updateData.chunk_count = 0
-        updateData.vector_records = []
+        // Note: Don't update vector_records relationship here to avoid "too many SQL variables" error
+        // VectorRecords are deleted separately and can be queried by source_id
       }
     }
 
@@ -330,7 +330,7 @@ export async function PATCH(
     if (shouldDeleteVectors) {
       updateData.is_vectorized = false
       updateData.chunk_count = 0
-      updateData.vector_records = []
+      // Note: Don't update vector_records relationship here to avoid SQL variable overflow
     }
 
     if (body.type !== undefined) {
@@ -343,81 +343,105 @@ export async function PATCH(
         : body.knowledge_collection
     }
 
-    if (body.tags !== undefined) {
+    // Only include tags if there are actual tags to avoid SQL variable overflow
+    if (body.tags !== undefined && body.tags.length > 0) {
       updateData.tags = body.tags
     }
 
-    if (body.applies_to_bots !== undefined) {
+    // Only include applies_to_bots if there are values
+    if (body.applies_to_bots !== undefined && body.applies_to_bots.length > 0) {
       updateData.applies_to_bots = body.applies_to_bots.map(id =>
         typeof id === 'string' ? parseInt(id) : id
       )
     }
 
     if (body.activation_settings) {
-      updateData.activation_settings = {
-        // @ts-ignore
-        ...existingKnowledge.activation_settings,
-        ...body.activation_settings,
-        // Handle array conversions
-        ...(body.activation_settings.primary_keys && {
-          primary_keys: convertToKeywordArray(body.activation_settings.primary_keys)
-        }),
-        ...(body.activation_settings.secondary_keys && {
-          secondary_keys: convertToKeywordArray(body.activation_settings.secondary_keys)
-        }),
+      // Build activation settings without arrays to avoid SQLite variable limits
+      // Arrays are only included if they have values
+      const activationData: Record<string, any> = {
+        activation_mode: body.activation_settings.activation_mode,
+        keywords_logic: body.activation_settings.keywords_logic,
+        case_sensitive: body.activation_settings.case_sensitive,
+        match_whole_words: body.activation_settings.match_whole_words,
+        use_regex: body.activation_settings.use_regex,
+        vector_similarity_threshold: body.activation_settings.vector_similarity_threshold,
+        max_vector_results: body.activation_settings.max_vector_results,
+        probability: body.activation_settings.probability,
+        use_probability: body.activation_settings.use_probability,
+        scan_depth: body.activation_settings.scan_depth,
+        match_in_user_messages: body.activation_settings.match_in_user_messages,
+        match_in_bot_messages: body.activation_settings.match_in_bot_messages,
+        match_in_system_prompts: body.activation_settings.match_in_system_prompts,
       }
+      // Only include keyword arrays if they have values
+      const primaryKeys = body.activation_settings.primary_keys || []
+      const secondaryKeys = body.activation_settings.secondary_keys || []
+      if (primaryKeys.length > 0) {
+        activationData.primary_keys = convertToKeywordArray(primaryKeys)
+      }
+      if (secondaryKeys.length > 0) {
+        activationData.secondary_keys = convertToKeywordArray(secondaryKeys)
+      }
+      updateData.activation_settings = activationData
     }
 
     if (body.positioning) {
       updateData.positioning = {
-        // @ts-ignore
-        ...existingKnowledge.positioning,
-        ...body.positioning,
+        position: body.positioning.position,
+        depth: body.positioning.depth,
+        role: body.positioning.role,
+        order: body.positioning.order,
       }
     }
 
     if (body.advanced_activation) {
       updateData.advanced_activation = {
-        // @ts-ignore
-        ...existingKnowledge.advanced_activation,
-        ...body.advanced_activation,
+        sticky: body.advanced_activation.sticky,
+        cooldown: body.advanced_activation.cooldown,
+        delay: body.advanced_activation.delay,
       }
     }
 
     if (body.filtering) {
-      updateData.filtering = {
-        // @ts-ignore
-        ...existingKnowledge.filtering,
-        ...body.filtering,
-        // Handle array conversions
-        ...(body.filtering.allowed_bot_ids && {
-          allowed_bot_ids: convertToBotIdArray(body.filtering.allowed_bot_ids)
-        }),
-        ...(body.filtering.excluded_bot_ids && {
-          excluded_bot_ids: convertToBotIdArray(body.filtering.excluded_bot_ids)
-        }),
-        ...(body.filtering.allowed_persona_ids && {
-          allowed_persona_ids: convertToPersonaIdArray(body.filtering.allowed_persona_ids)
-        }),
-        ...(body.filtering.excluded_persona_ids && {
-          excluded_persona_ids: convertToPersonaIdArray(body.filtering.excluded_persona_ids)
-        }),
+      // Build filtering without arrays to avoid SQLite variable limits
+      const filteringData: Record<string, any> = {
+        filter_by_bots: body.filtering.filter_by_bots,
+        filter_by_personas: body.filtering.filter_by_personas,
+        match_bot_description: body.filtering.match_bot_description,
+        match_bot_personality: body.filtering.match_bot_personality,
+        match_persona_description: body.filtering.match_persona_description,
       }
+      // Only include ID arrays if they have values
+      const allowedBots = body.filtering.allowed_bot_ids || []
+      const excludedBots = body.filtering.excluded_bot_ids || []
+      const allowedPersonas = body.filtering.allowed_persona_ids || []
+      const excludedPersonas = body.filtering.excluded_persona_ids || []
+      if (allowedBots.length > 0) {
+        filteringData.allowed_bot_ids = convertToBotIdArray(allowedBots)
+      }
+      if (excludedBots.length > 0) {
+        filteringData.excluded_bot_ids = convertToBotIdArray(excludedBots)
+      }
+      if (allowedPersonas.length > 0) {
+        filteringData.allowed_persona_ids = convertToPersonaIdArray(allowedPersonas)
+      }
+      if (excludedPersonas.length > 0) {
+        filteringData.excluded_persona_ids = convertToPersonaIdArray(excludedPersonas)
+      }
+      updateData.filtering = filteringData
     }
 
     if (body.budget_control) {
       updateData.budget_control = {
-        // @ts-ignore
-        ...existingKnowledge.budget_control,
-        ...body.budget_control,
+        ignore_budget: body.budget_control.ignore_budget,
+        max_tokens: body.budget_control.max_tokens,
       }
     }
 
     if (body.privacy_settings) {
       updateData.privacy_settings = {
-        // @ts-ignore
-        ...existingKnowledge.privacy_settings,
-        ...body.privacy_settings,
+        privacy_level: body.privacy_settings.privacy_level,
+        allow_sharing: body.privacy_settings.allow_sharing,
       }
     }
 

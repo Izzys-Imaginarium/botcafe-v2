@@ -428,32 +428,44 @@ export async function DELETE(
     // Access D1 client directly via payload.db.client
     const d1 = (payload.db as any).client as D1Database
 
-    try {
-      // Delete all FK-constrained records in a batch
-      // Note: memory.bot_id is NOT NULL with onDelete: set null - this is a schema bug
-      // We must DELETE memory records, not set them to NULL
-      await d1.batch([
-        d1.prepare('DELETE FROM memory WHERE bot_id = ?').bind(botIdNum),
-        d1.prepare('DELETE FROM bot_interactions WHERE bot_id = ?').bind(botIdNum),
-        d1.prepare('DELETE FROM memory_insights WHERE bot_id = ?').bind(botIdNum),
-        d1.prepare('DELETE FROM persona_analytics WHERE bot_id = ?').bind(botIdNum),
-        d1.prepare('DELETE FROM conversation_rels WHERE bot_id = ?').bind(botIdNum),
-        d1.prepare('DELETE FROM payload_locked_documents_rels WHERE bot_id = ?').bind(botIdNum),
-        d1.prepare('DELETE FROM knowledge_collections_rels WHERE bot_id = ?').bind(botIdNum),
-        d1.prepare('DELETE FROM bot_speech_examples WHERE _parent_id = ?').bind(botIdNum),
-        d1.prepare('DELETE FROM bot_rels WHERE parent_id = ?').bind(botIdNum),
-        d1.prepare('UPDATE message SET bot_id = NULL WHERE bot_id = ?').bind(botIdNum),
-      ])
-    } catch (e) {
-      console.warn('Failed to delete FK-constrained records:', e)
+    console.log(`[Bot Delete ${botIdNum}] Starting FK cleanup, D1 client available:`, !!d1)
+    console.log(`[Bot Delete ${botIdNum}] payload.db keys:`, Object.keys(payload.db as any))
+
+    if (d1) {
+      // Run each delete individually with logging
+      const tables = [
+        { name: 'memory', sql: 'DELETE FROM memory WHERE bot_id = ?' },
+        { name: 'bot_interactions', sql: 'DELETE FROM bot_interactions WHERE bot_id = ?' },
+        { name: 'memory_insights', sql: 'DELETE FROM memory_insights WHERE bot_id = ?' },
+        { name: 'persona_analytics', sql: 'DELETE FROM persona_analytics WHERE bot_id = ?' },
+        { name: 'conversation_rels', sql: 'DELETE FROM conversation_rels WHERE bot_id = ?' },
+        { name: 'payload_locked_documents_rels', sql: 'DELETE FROM payload_locked_documents_rels WHERE bot_id = ?' },
+        { name: 'knowledge_collections_rels', sql: 'DELETE FROM knowledge_collections_rels WHERE bot_id = ?' },
+        { name: 'bot_speech_examples', sql: 'DELETE FROM bot_speech_examples WHERE _parent_id = ?' },
+        { name: 'bot_rels', sql: 'DELETE FROM bot_rels WHERE parent_id = ?' },
+        { name: 'message (nullify)', sql: 'UPDATE message SET bot_id = NULL WHERE bot_id = ?' },
+      ]
+
+      for (const table of tables) {
+        try {
+          const result = await d1.prepare(table.sql).bind(botIdNum).run()
+          console.log(`[Bot Delete ${botIdNum}] ${table.name}: OK, rows affected:`, result.meta?.changes ?? 'unknown')
+        } catch (e: any) {
+          console.error(`[Bot Delete ${botIdNum}] ${table.name}: FAILED -`, e.message || e)
+        }
+      }
+    } else {
+      console.error(`[Bot Delete ${botIdNum}] D1 client not available!`)
     }
 
     // Now delete the bot
+    console.log(`[Bot Delete ${botIdNum}] Attempting to delete bot via Payload...`)
     await payload.delete({
       collection: 'bot',
       id,
       overrideAccess: true,
     })
+    console.log(`[Bot Delete ${botIdNum}] Bot deleted successfully`)
 
     return NextResponse.json({
       message: 'Bot deleted successfully',

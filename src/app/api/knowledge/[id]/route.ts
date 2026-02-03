@@ -442,13 +442,134 @@ export async function PATCH(
       }
     }
 
-    // Update the knowledge entry
-    const updatedKnowledge = await payload.update({
-      collection: 'knowledge',
-      id: numericId,
-      data: updateData,
-      overrideAccess: true,
-    })
+    // Update the knowledge entry using D1 directly to avoid "too many SQL variables" error
+    // Payload's update() expands nested groups into too many bind parameters for SQLite
+    let updatedKnowledge: any
+    try {
+      const { env } = await getCloudflareContext()
+      const d1 = (env as any).D1
+
+      if (d1) {
+        // Build SET clauses and values for D1 update
+        const setClauses: string[] = []
+        const values: any[] = []
+
+        if (body.entry !== undefined) {
+          setClauses.push('entry = ?')
+          values.push(body.entry)
+          setClauses.push('tokens = ?')
+          values.push(Math.ceil(body.entry.length / 4))
+        }
+
+        if (body.type !== undefined) {
+          setClauses.push('type = ?')
+          values.push(body.type)
+        }
+
+        if (body.knowledge_collection !== undefined) {
+          setClauses.push('knowledge_collection_id = ?')
+          values.push(typeof body.knowledge_collection === 'string'
+            ? parseInt(body.knowledge_collection)
+            : body.knowledge_collection)
+        }
+
+        if (contentChanged || shouldDeleteVectors) {
+          setClauses.push('is_vectorized = ?')
+          values.push(0)
+          setClauses.push('chunk_count = ?')
+          values.push(0)
+        }
+
+        // Handle nested groups as JSON - store as JSON strings
+        if (body.activation_settings) {
+          const activationData: Record<string, any> = {
+            activation_mode: body.activation_settings.activation_mode,
+            keywords_logic: body.activation_settings.keywords_logic,
+            case_sensitive: body.activation_settings.case_sensitive,
+            match_whole_words: body.activation_settings.match_whole_words,
+            use_regex: body.activation_settings.use_regex,
+            vector_similarity_threshold: body.activation_settings.vector_similarity_threshold,
+            max_vector_results: body.activation_settings.max_vector_results,
+            probability: body.activation_settings.probability,
+            use_probability: body.activation_settings.use_probability,
+            scan_depth: body.activation_settings.scan_depth,
+            match_in_user_messages: body.activation_settings.match_in_user_messages,
+            match_in_bot_messages: body.activation_settings.match_in_bot_messages,
+            match_in_system_prompts: body.activation_settings.match_in_system_prompts,
+            primary_keys: convertToKeywordArray(body.activation_settings.primary_keys || []),
+            secondary_keys: convertToKeywordArray(body.activation_settings.secondary_keys || []),
+          }
+          setClauses.push('activation_settings = ?')
+          values.push(JSON.stringify(activationData))
+        }
+
+        if (body.positioning) {
+          setClauses.push('positioning = ?')
+          values.push(JSON.stringify(body.positioning))
+        }
+
+        if (body.advanced_activation) {
+          setClauses.push('advanced_activation = ?')
+          values.push(JSON.stringify(body.advanced_activation))
+        }
+
+        if (body.filtering) {
+          const filteringData: Record<string, any> = {
+            filter_by_bots: body.filtering.filter_by_bots,
+            filter_by_personas: body.filtering.filter_by_personas,
+            allowed_bot_ids: convertToBotIdArray(body.filtering.allowed_bot_ids || []),
+            excluded_bot_ids: convertToBotIdArray(body.filtering.excluded_bot_ids || []),
+            allowed_persona_ids: convertToPersonaIdArray(body.filtering.allowed_persona_ids || []),
+            excluded_persona_ids: convertToPersonaIdArray(body.filtering.excluded_persona_ids || []),
+          }
+          setClauses.push('filtering = ?')
+          values.push(JSON.stringify(filteringData))
+        }
+
+        if (body.budget_control) {
+          setClauses.push('budget_control = ?')
+          values.push(JSON.stringify(body.budget_control))
+        }
+
+        if (body.tags !== undefined) {
+          setClauses.push('tags = ?')
+          values.push(JSON.stringify(body.tags))
+        }
+
+        // Add the ID for WHERE clause
+        values.push(numericId)
+
+        // Execute the update
+        if (setClauses.length > 0) {
+          const sql = `UPDATE knowledge SET ${setClauses.join(', ')} WHERE id = ?`
+          await d1.prepare(sql).bind(...values).run()
+        }
+
+        // Fetch the updated record
+        updatedKnowledge = await payload.findByID({
+          collection: 'knowledge',
+          id: numericId,
+          overrideAccess: true,
+        })
+      } else {
+        // Fallback to Payload if D1 not available (shouldn't happen in production)
+        updatedKnowledge = await payload.update({
+          collection: 'knowledge',
+          id: numericId,
+          data: updateData,
+          overrideAccess: true,
+        })
+      }
+    } catch (d1Error) {
+      console.error('D1 update error, falling back to Payload:', d1Error)
+      // Fallback to Payload update
+      updatedKnowledge = await payload.update({
+        collection: 'knowledge',
+        id: numericId,
+        data: updateData,
+        overrideAccess: true,
+      })
+    }
 
     // Determine appropriate message and flags for response
     const vectorsDeleted = shouldDeleteVectors

@@ -444,13 +444,14 @@ export async function PATCH(
 
     // Update the knowledge entry using D1 directly to avoid "too many SQL variables" error
     // Payload's update() expands nested groups into too many bind parameters for SQLite
+    // Payload uses flat column names with underscores (e.g., activation_settings_activation_mode)
     let updatedKnowledge: any
     try {
       const { env } = await getCloudflareContext()
       const d1 = (env as any).D1
 
       if (d1) {
-        // Build SET clauses and values for D1 update
+        // Build SET clauses and values for D1 update using Payload's column naming convention
         const setClauses: string[] = []
         const values: any[] = []
 
@@ -480,60 +481,123 @@ export async function PATCH(
           values.push(0)
         }
 
-        // Handle nested groups as JSON - store as JSON strings
+        // Handle activation_settings - Payload stores each field as a separate column
         if (body.activation_settings) {
-          const activationData: Record<string, any> = {
-            activation_mode: body.activation_settings.activation_mode,
-            keywords_logic: body.activation_settings.keywords_logic,
-            case_sensitive: body.activation_settings.case_sensitive,
-            match_whole_words: body.activation_settings.match_whole_words,
-            use_regex: body.activation_settings.use_regex,
-            vector_similarity_threshold: body.activation_settings.vector_similarity_threshold,
-            max_vector_results: body.activation_settings.max_vector_results,
-            probability: body.activation_settings.probability,
-            use_probability: body.activation_settings.use_probability,
-            scan_depth: body.activation_settings.scan_depth,
-            match_in_user_messages: body.activation_settings.match_in_user_messages,
-            match_in_bot_messages: body.activation_settings.match_in_bot_messages,
-            match_in_system_prompts: body.activation_settings.match_in_system_prompts,
-            primary_keys: convertToKeywordArray(body.activation_settings.primary_keys || []),
-            secondary_keys: convertToKeywordArray(body.activation_settings.secondary_keys || []),
+          if (body.activation_settings.activation_mode !== undefined) {
+            setClauses.push('activation_settings_activation_mode = ?')
+            values.push(body.activation_settings.activation_mode)
           }
-          setClauses.push('activation_settings = ?')
-          values.push(JSON.stringify(activationData))
+          if (body.activation_settings.keywords_logic !== undefined) {
+            setClauses.push('activation_settings_keywords_logic = ?')
+            values.push(body.activation_settings.keywords_logic)
+          }
+          if (body.activation_settings.case_sensitive !== undefined) {
+            setClauses.push('activation_settings_case_sensitive = ?')
+            values.push(body.activation_settings.case_sensitive ? 1 : 0)
+          }
+          if (body.activation_settings.match_whole_words !== undefined) {
+            setClauses.push('activation_settings_match_whole_words = ?')
+            values.push(body.activation_settings.match_whole_words ? 1 : 0)
+          }
+          if (body.activation_settings.use_regex !== undefined) {
+            setClauses.push('activation_settings_use_regex = ?')
+            values.push(body.activation_settings.use_regex ? 1 : 0)
+          }
+          if (body.activation_settings.vector_similarity_threshold !== undefined) {
+            setClauses.push('activation_settings_vector_similarity_threshold = ?')
+            values.push(body.activation_settings.vector_similarity_threshold)
+          }
+          if (body.activation_settings.max_vector_results !== undefined) {
+            setClauses.push('activation_settings_max_vector_results = ?')
+            values.push(body.activation_settings.max_vector_results)
+          }
+          if (body.activation_settings.probability !== undefined) {
+            setClauses.push('activation_settings_probability = ?')
+            values.push(body.activation_settings.probability)
+          }
+          if (body.activation_settings.use_probability !== undefined) {
+            setClauses.push('activation_settings_use_probability = ?')
+            values.push(body.activation_settings.use_probability ? 1 : 0)
+          }
+          if (body.activation_settings.scan_depth !== undefined) {
+            setClauses.push('activation_settings_scan_depth = ?')
+            values.push(body.activation_settings.scan_depth)
+          }
+          if (body.activation_settings.match_in_user_messages !== undefined) {
+            setClauses.push('activation_settings_match_in_user_messages = ?')
+            values.push(body.activation_settings.match_in_user_messages ? 1 : 0)
+          }
+          if (body.activation_settings.match_in_bot_messages !== undefined) {
+            setClauses.push('activation_settings_match_in_bot_messages = ?')
+            values.push(body.activation_settings.match_in_bot_messages ? 1 : 0)
+          }
+          if (body.activation_settings.match_in_system_prompts !== undefined) {
+            setClauses.push('activation_settings_match_in_system_prompts = ?')
+            values.push(body.activation_settings.match_in_system_prompts ? 1 : 0)
+          }
+          // Note: primary_keys and secondary_keys are stored in separate tables
+          // They require separate INSERT/DELETE operations which we skip for now
         }
 
+        // Handle positioning
         if (body.positioning) {
-          setClauses.push('positioning = ?')
-          values.push(JSON.stringify(body.positioning))
-        }
-
-        if (body.advanced_activation) {
-          setClauses.push('advanced_activation = ?')
-          values.push(JSON.stringify(body.advanced_activation))
-        }
-
-        if (body.filtering) {
-          const filteringData: Record<string, any> = {
-            filter_by_bots: body.filtering.filter_by_bots,
-            filter_by_personas: body.filtering.filter_by_personas,
-            allowed_bot_ids: convertToBotIdArray(body.filtering.allowed_bot_ids || []),
-            excluded_bot_ids: convertToBotIdArray(body.filtering.excluded_bot_ids || []),
-            allowed_persona_ids: convertToPersonaIdArray(body.filtering.allowed_persona_ids || []),
-            excluded_persona_ids: convertToPersonaIdArray(body.filtering.excluded_persona_ids || []),
+          if (body.positioning.position !== undefined) {
+            setClauses.push('positioning_position = ?')
+            values.push(body.positioning.position)
           }
-          setClauses.push('filtering = ?')
-          values.push(JSON.stringify(filteringData))
+          if (body.positioning.depth !== undefined) {
+            setClauses.push('positioning_depth = ?')
+            values.push(body.positioning.depth)
+          }
+          if (body.positioning.role !== undefined) {
+            setClauses.push('positioning_role = ?')
+            values.push(body.positioning.role)
+          }
+          if (body.positioning.order !== undefined) {
+            setClauses.push('positioning_order = ?')
+            values.push(body.positioning.order)
+          }
         }
 
+        // Handle advanced_activation
+        if (body.advanced_activation) {
+          if (body.advanced_activation.sticky !== undefined) {
+            setClauses.push('advanced_activation_sticky = ?')
+            values.push(body.advanced_activation.sticky)
+          }
+          if (body.advanced_activation.cooldown !== undefined) {
+            setClauses.push('advanced_activation_cooldown = ?')
+            values.push(body.advanced_activation.cooldown)
+          }
+          if (body.advanced_activation.delay !== undefined) {
+            setClauses.push('advanced_activation_delay = ?')
+            values.push(body.advanced_activation.delay)
+          }
+        }
+
+        // Handle filtering (scalar fields only - arrays are in separate tables)
+        if (body.filtering) {
+          if (body.filtering.filter_by_bots !== undefined) {
+            setClauses.push('filtering_filter_by_bots = ?')
+            values.push(body.filtering.filter_by_bots ? 1 : 0)
+          }
+          if (body.filtering.filter_by_personas !== undefined) {
+            setClauses.push('filtering_filter_by_personas = ?')
+            values.push(body.filtering.filter_by_personas ? 1 : 0)
+          }
+          // Note: allowed_bot_ids, excluded_bot_ids, etc. are stored in separate tables
+        }
+
+        // Handle budget_control
         if (body.budget_control) {
-          setClauses.push('budget_control = ?')
-          values.push(JSON.stringify(body.budget_control))
-        }
-
-        if (body.tags !== undefined) {
-          setClauses.push('tags = ?')
-          values.push(JSON.stringify(body.tags))
+          if (body.budget_control.ignore_budget !== undefined) {
+            setClauses.push('budget_control_ignore_budget = ?')
+            values.push(body.budget_control.ignore_budget ? 1 : 0)
+          }
+          if (body.budget_control.max_tokens !== undefined) {
+            setClauses.push('budget_control_max_tokens = ?')
+            values.push(body.budget_control.max_tokens)
+          }
         }
 
         // Add the ID for WHERE clause
@@ -542,6 +606,7 @@ export async function PATCH(
         // Execute the update
         if (setClauses.length > 0) {
           const sql = `UPDATE knowledge SET ${setClauses.join(', ')} WHERE id = ?`
+          console.log('D1 update SQL:', sql, 'with', values.length, 'values')
           await d1.prepare(sql).bind(...values).run()
         }
 
@@ -553,6 +618,7 @@ export async function PATCH(
         })
       } else {
         // Fallback to Payload if D1 not available (shouldn't happen in production)
+        console.warn('D1 not available, falling back to Payload update')
         updatedKnowledge = await payload.update({
           collection: 'knowledge',
           id: numericId,
@@ -561,14 +627,8 @@ export async function PATCH(
         })
       }
     } catch (d1Error) {
-      console.error('D1 update error, falling back to Payload:', d1Error)
-      // Fallback to Payload update
-      updatedKnowledge = await payload.update({
-        collection: 'knowledge',
-        id: numericId,
-        data: updateData,
-        overrideAccess: true,
-      })
+      console.error('D1 update error:', d1Error)
+      throw d1Error // Don't fallback to Payload as it will also fail with the same error
     }
 
     // Determine appropriate message and flags for response

@@ -423,50 +423,23 @@ export async function DELETE(
     // - creatorProfiles.featured_bots (hasMany - would require per-record updates)
     // These orphaned references don't cause errors and can be cleaned up later if needed
 
-    // 6. Delete conversation_rels entries (bot_participation FK constraint)
-    // SQLite CASCADE doesn't always work reliably in D1, so we delete explicitly
-    // Use payload.db.execute({ raw: '...' }).execute() for raw SQL queries
-    const dbAdapter = payload.db as any
+    // 6-11. Delete FK-constrained records before deleting the bot
+    // SQLite CASCADE doesn't work reliably in D1, so we delete explicitly
+    // Access D1 client directly via payload.db.client
+    const d1 = (payload.db as any).client as D1Database
 
     try {
-      await dbAdapter.execute({ raw: `DELETE FROM conversation_rels WHERE bot_id = ${botIdNum}` }).execute()
+      // Delete all FK-constrained records in a batch
+      await d1.batch([
+        d1.prepare('DELETE FROM conversation_rels WHERE bot_id = ?').bind(botIdNum),
+        d1.prepare('DELETE FROM payload_locked_documents_rels WHERE bot_id = ?').bind(botIdNum),
+        d1.prepare('DELETE FROM knowledge_collections_rels WHERE bot_id = ?').bind(botIdNum),
+        d1.prepare('DELETE FROM bot_speech_examples WHERE _parent_id = ?').bind(botIdNum),
+        d1.prepare('DELETE FROM bot_rels WHERE parent_id = ?').bind(botIdNum),
+        d1.prepare('UPDATE message SET bot_id = NULL WHERE bot_id = ?').bind(botIdNum),
+      ])
     } catch (e) {
-      console.warn('Failed to delete conversation_rels:', e)
-    }
-
-    // 7. Delete payload_locked_documents_rels entries (internal Payload FK)
-    try {
-      await dbAdapter.execute({ raw: `DELETE FROM payload_locked_documents_rels WHERE bot_id = ${botIdNum}` }).execute()
-    } catch (e) {
-      console.warn('Failed to delete payload_locked_documents_rels:', e)
-    }
-
-    // 8. Delete knowledge_collections_rels entries (FK constraint)
-    try {
-      await dbAdapter.execute({ raw: `DELETE FROM knowledge_collections_rels WHERE bot_id = ${botIdNum}` }).execute()
-    } catch (e) {
-      console.warn('Failed to delete knowledge_collections_rels:', e)
-    }
-
-    // 9. Delete bot_speech_examples entries (FK constraint)
-    try {
-      await dbAdapter.execute({ raw: `DELETE FROM bot_speech_examples WHERE _parent_id = ${botIdNum}` }).execute()
-    } catch (e) {
-      console.warn('Failed to delete bot_speech_examples:', e)
-    }
-
-    // 10. Delete bot_rels entries (FK constraint for knowledge_collections relationship)
-    try {
-      await dbAdapter.execute({ raw: `DELETE FROM bot_rels WHERE parent_id = ${botIdNum}` }).execute()
-    } catch (e) {
-      console.warn('Failed to delete bot_rels:', e)
-    }
-
-    // 11. Set message.bot_id to NULL (optional FK - SET NULL on delete)
-    try {
-      await dbAdapter.execute({ raw: `UPDATE message SET bot_id = NULL WHERE bot_id = ${botIdNum}` }).execute()
-    } catch (e) {
-      console.warn('Failed to nullify message.bot_id:', e)
+      console.warn('Failed to delete FK-constrained records:', e)
     }
 
     // Now delete the bot

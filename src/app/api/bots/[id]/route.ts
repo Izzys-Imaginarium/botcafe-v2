@@ -3,11 +3,7 @@ import { getPayloadHMR } from '@payloadcms/next/utilities'
 import { currentUser } from '@clerk/nextjs/server'
 import config from '@payload-config'
 import { checkResourceAccess, canUserAccess } from '@/lib/permissions/check-access'
-import { eq } from '@payloadcms/db-d1-sqlite/drizzle'
-import {
-  conversation_rels,
-  payload_locked_documents_rels,
-} from '@/payload-generated-schema'
+import { sql } from '@payloadcms/db-d1-sqlite/drizzle'
 
 type GenderOption = 'male' | 'female' | 'non-binary' | 'other'
 type ToneOption = 'friendly' | 'professional' | 'playful' | 'mysterious' | 'wise' | 'humorous' | 'empathetic' | 'authoritative'
@@ -431,20 +427,50 @@ export async function DELETE(
     // 6. Delete conversation_rels entries (bot_participation FK constraint)
     // SQLite CASCADE doesn't always work reliably in D1, so we delete explicitly
     try {
-      const db = (payload.db as any).drizzle
-      await db.delete(conversation_rels).where(eq(conversation_rels.botID, botIdNum))
+      const db = payload.db as any
+      await db.run(sql`DELETE FROM conversation_rels WHERE bot_id = ${botIdNum}`)
     } catch (e) {
       console.warn('Failed to delete conversation_rels:', e)
     }
 
     // 7. Delete payload_locked_documents_rels entries (internal Payload FK)
     try {
-      const db = (payload.db as any).drizzle
-      await db
-        .delete(payload_locked_documents_rels)
-        .where(eq(payload_locked_documents_rels.botID, botIdNum))
+      const db = payload.db as any
+      await db.run(sql`DELETE FROM payload_locked_documents_rels WHERE bot_id = ${botIdNum}`)
     } catch (e) {
       console.warn('Failed to delete payload_locked_documents_rels:', e)
+    }
+
+    // 8. Delete knowledge_collections_rels entries (FK constraint)
+    try {
+      const db = payload.db as any
+      await db.run(sql`DELETE FROM knowledge_collections_rels WHERE bot_id = ${botIdNum}`)
+    } catch (e) {
+      console.warn('Failed to delete knowledge_collections_rels:', e)
+    }
+
+    // 9. Delete bot_speech_examples entries (FK constraint)
+    try {
+      const db = payload.db as any
+      await db.run(sql`DELETE FROM bot_speech_examples WHERE _parent_id = ${botIdNum}`)
+    } catch (e) {
+      console.warn('Failed to delete bot_speech_examples:', e)
+    }
+
+    // 10. Delete bot_rels entries (FK constraint for knowledge_collections relationship)
+    try {
+      const db = payload.db as any
+      await db.run(sql`DELETE FROM bot_rels WHERE parent_id = ${botIdNum}`)
+    } catch (e) {
+      console.warn('Failed to delete bot_rels:', e)
+    }
+
+    // 11. Set message.bot_id to NULL (optional FK - SET NULL on delete)
+    try {
+      const db = payload.db as any
+      await db.run(sql`UPDATE message SET bot_id = NULL WHERE bot_id = ${botIdNum}`)
+    } catch (e) {
+      console.warn('Failed to nullify message.bot_id:', e)
     }
 
     // Now delete the bot

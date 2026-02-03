@@ -476,8 +476,10 @@ export async function DELETE(
         { name: 'memory_insights', sql: 'DELETE FROM memory_insights WHERE bot_id = ?' },
         { name: 'persona_analytics', sql: 'DELETE FROM persona_analytics WHERE bot_id = ?' },
         { name: 'usage_analytics', sql: 'UPDATE usage_analytics SET resource_details_bot_id_id = NULL WHERE resource_details_bot_id_id = ?' },
-        // Message table (SET NULL)
-        { name: 'message (nullify)', sql: 'UPDATE message SET bot_id = NULL WHERE bot_id = ?' },
+        // Message table - has TWO FKs to bot!
+        { name: 'message (nullify bot_id)', sql: 'UPDATE message SET bot_id = NULL WHERE bot_id = ?' },
+        // CRITICAL: message_attribution_source_bot_id_id has on_delete: NO ACTION!
+        { name: 'message (nullify attribution)', sql: 'UPDATE message SET message_attribution_source_bot_id_id = NULL WHERE message_attribution_source_bot_id_id = ?' },
       ]
 
       for (const table of tables) {

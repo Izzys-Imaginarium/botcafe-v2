@@ -650,7 +650,7 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
                   id="age"
                   type="number"
                   min="1"
-                  max="200"
+                  max="9999"
                   placeholder="Age"
                   value={botData.age}
                   onChange={(e) => handleInputChange('age', e.target.value)}

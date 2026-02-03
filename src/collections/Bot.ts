@@ -56,7 +56,7 @@ export const Bot: CollectionConfig = {
       name: 'age',
       type: 'number',
       min: 1,
-      max: 200,
+      max: 9999,
     },
     {
       name: 'description',

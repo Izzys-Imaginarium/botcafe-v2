@@ -1,7 +1,7 @@
 # BotCafe v2 - Database Schema
 
-**Last Updated**: 2026-02-01
-**Version**: 3.15
+**Last Updated**: 2026-02-02
+**Version**: 3.16
 **Database**: Cloudflare D1 (SQLite) via Payload CMS
 
 ---
@@ -135,17 +135,29 @@ AI companion definitions.
 
 > **Note**: Bots CAN be made public from the UI. The `is_public` field is maintained for backwards compatibility and is synced with `sharing.visibility`.
 
-> **Cascade Delete**: When a Bot is deleted, the following related records are automatically cleaned up:
-> - `BotInteraction` records (likes/favorites) are deleted
-> - `Memory` records referencing the bot are deleted
-> - `MemoryInsights` bot references are nullified
-> - `Message` bot references are nullified
-> - `PersonaAnalytics` records are deleted
-> - `Conversation` bot_participation entries are removed
-> - `Knowledge` applies_to_bots references are removed
-> - `KnowledgeCollections` bot references are removed
-> - `CreatorProfiles` featured_bots references are removed
-> - `AccessControl` permission records are deleted
+> **Bot Deletion**: When a Bot is deleted via the API, the following FK-constrained records are explicitly cleaned up (D1/SQLite CASCADE is unreliable):
+>
+> | Table | Column | Action | Notes |
+> |-------|--------|--------|-------|
+> | `memory_rels` | `bot_id` | DELETE | **on_delete: NO ACTION** - must delete first |
+> | `knowledge_rels` | `bot_id` | DELETE | CASCADE |
+> | `knowledge_collections_rels` | `bot_id` | DELETE | CASCADE |
+> | `creator_profiles_rels` | `bot_id` | DELETE | CASCADE |
+> | `payload_locked_documents_rels` | `bot_id` | DELETE | CASCADE |
+> | `bot_classifications` | `_parent_id` | DELETE | CASCADE (child array) |
+> | `bot_signature_phrases` | `_parent_id` | DELETE | CASCADE (child array) |
+> | `bot_tags` | `_parent_id` | DELETE | CASCADE (child array) |
+> | `bot_speech_examples` | `_parent_id` | DELETE | CASCADE (child array) |
+> | `bot_rels` | `parent_id` | DELETE | CASCADE |
+> | `conversation_bot_participation` | `bot_id_id` | DELETE | SET NULL |
+> | `bot_interactions` | `bot_id` | DELETE | SET NULL |
+> | `memory_insights` | `bot_id` | SET NULL | SET NULL |
+> | `persona_analytics` | `bot_id` | SET NULL | SET NULL |
+> | `usage_analytics` | `resource_details_bot_id_id` | SET NULL | SET NULL |
+> | `message` | `bot_id` | SET NULL | SET NULL |
+> | `message` | `message_attribution_source_bot_id_id` | SET NULL | **on_delete: NO ACTION** - must nullify |
+>
+> **Important**: The `memory_rels` and `message.message_attribution_source_bot_id_id` columns have `on_delete: NO ACTION`, which means SQLite will reject the bot deletion if these contain references. The API explicitly handles these before attempting the bot delete.
 
 ### BotInteraction
 

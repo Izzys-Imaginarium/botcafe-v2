@@ -407,9 +407,6 @@ export async function PATCH(
       const filteringData: Record<string, any> = {
         filter_by_bots: body.filtering.filter_by_bots,
         filter_by_personas: body.filtering.filter_by_personas,
-        match_bot_description: body.filtering.match_bot_description,
-        match_bot_personality: body.filtering.match_bot_personality,
-        match_persona_description: body.filtering.match_persona_description,
       }
       // Only include ID arrays if they have values
       const allowedBots = body.filtering.allowed_bot_ids || []

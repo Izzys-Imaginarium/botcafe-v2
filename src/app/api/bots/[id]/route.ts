@@ -454,16 +454,29 @@ export async function DELETE(
         console.error(`[Bot Delete ${botIdNum}] Diagnostic failed:`, e.message)
       }
 
-      // Run deletes for all possible tables/columns
+      // Run deletes for ALL tables with FK to bot (discovered via PRAGMA)
       const tables = [
-        { name: 'memory (by bot)', sql: 'DELETE FROM memory WHERE bot = ?' },
+        // CRITICAL: memory_rels has on_delete: NO ACTION - must delete first!
+        { name: 'memory_rels', sql: 'DELETE FROM memory_rels WHERE bot_id = ?' },
+        // Other _rels tables
+        { name: 'knowledge_rels', sql: 'DELETE FROM knowledge_rels WHERE bot_id = ?' },
+        { name: 'knowledge_collections_rels', sql: 'DELETE FROM knowledge_collections_rels WHERE bot_id = ?' },
+        { name: 'creator_profiles_rels', sql: 'DELETE FROM creator_profiles_rels WHERE bot_id = ?' },
+        { name: 'payload_locked_documents_rels', sql: 'DELETE FROM payload_locked_documents_rels WHERE bot_id = ?' },
+        // Bot child tables (CASCADE but let's be explicit)
+        { name: 'bot_classifications', sql: 'DELETE FROM bot_classifications WHERE _parent_id = ?' },
+        { name: 'bot_signature_phrases', sql: 'DELETE FROM bot_signature_phrases WHERE _parent_id = ?' },
+        { name: 'bot_tags', sql: 'DELETE FROM bot_tags WHERE _parent_id = ?' },
+        { name: 'bot_speech_examples', sql: 'DELETE FROM bot_speech_examples WHERE _parent_id = ?' },
+        { name: 'bot_rels', sql: 'DELETE FROM bot_rels WHERE parent_id = ?' },
+        // Conversation participation
+        { name: 'conversation_bot_participation', sql: 'DELETE FROM conversation_bot_participation WHERE bot_id_id = ?' },
+        // Analytics/insights tables
         { name: 'bot_interactions', sql: 'DELETE FROM bot_interactions WHERE bot_id = ?' },
         { name: 'memory_insights', sql: 'DELETE FROM memory_insights WHERE bot_id = ?' },
         { name: 'persona_analytics', sql: 'DELETE FROM persona_analytics WHERE bot_id = ?' },
-        { name: 'payload_locked_documents_rels', sql: 'DELETE FROM payload_locked_documents_rels WHERE bot_id = ?' },
-        { name: 'knowledge_collections_rels', sql: 'DELETE FROM knowledge_collections_rels WHERE bot_id = ?' },
-        { name: 'bot_speech_examples', sql: 'DELETE FROM bot_speech_examples WHERE _parent_id = ?' },
-        { name: 'bot_rels', sql: 'DELETE FROM bot_rels WHERE parent_id = ?' },
+        { name: 'usage_analytics', sql: 'UPDATE usage_analytics SET resource_details_bot_id_id = NULL WHERE resource_details_bot_id_id = ?' },
+        // Message table (SET NULL)
         { name: 'message (nullify)', sql: 'UPDATE message SET bot_id = NULL WHERE bot_id = ?' },
       ]
 

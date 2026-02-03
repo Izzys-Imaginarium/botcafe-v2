@@ -316,7 +316,7 @@ export async function PATCH(
         // @ts-ignore
         ...existingKnowledge.content_metadata,
         word_count: body.entry.split(/\s+/).length,
-        processing_status: contentChanged && wasVectorized ? 'pending' : 'processed',
+        processing_status: contentChanged && wasVectorized ? 'pending' : 'completed',
       }
       // Mark as not vectorized if content changed
       if (contentChanged) {

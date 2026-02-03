@@ -430,7 +430,13 @@ export async function DELETE(
 
     try {
       // Delete all FK-constrained records in a batch
+      // Note: memory.bot_id is NOT NULL with onDelete: set null - this is a schema bug
+      // We must DELETE memory records, not set them to NULL
       await d1.batch([
+        d1.prepare('DELETE FROM memory WHERE bot_id = ?').bind(botIdNum),
+        d1.prepare('DELETE FROM bot_interactions WHERE bot_id = ?').bind(botIdNum),
+        d1.prepare('DELETE FROM memory_insights WHERE bot_id = ?').bind(botIdNum),
+        d1.prepare('DELETE FROM persona_analytics WHERE bot_id = ?').bind(botIdNum),
         d1.prepare('DELETE FROM conversation_rels WHERE bot_id = ?').bind(botIdNum),
         d1.prepare('DELETE FROM payload_locked_documents_rels WHERE bot_id = ?').bind(botIdNum),
         d1.prepare('DELETE FROM knowledge_collections_rels WHERE bot_id = ?').bind(botIdNum),

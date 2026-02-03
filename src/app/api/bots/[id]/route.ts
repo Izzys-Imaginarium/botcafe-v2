@@ -429,16 +429,37 @@ export async function DELETE(
     const d1 = (payload.db as any).client as D1Database
 
     console.log(`[Bot Delete ${botIdNum}] Starting FK cleanup, D1 client available:`, !!d1)
-    console.log(`[Bot Delete ${botIdNum}] payload.db keys:`, Object.keys(payload.db as any))
 
     if (d1) {
-      // Run each delete individually with logging
+      // First, diagnose: find all tables that reference bot
+      try {
+        const allTables = await d1.prepare(`SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`).all()
+        console.log(`[Bot Delete ${botIdNum}] All tables:`, allTables.results?.map((r: any) => r.name).join(', '))
+
+        // Check what FKs reference the bot table
+        for (const tableRow of (allTables.results || []) as any[]) {
+          const tableName = tableRow.name
+          if (tableName.startsWith('_') || tableName.startsWith('sqlite')) continue
+          try {
+            const fks = await d1.prepare(`PRAGMA foreign_key_list(${tableName})`).all()
+            const botFks = (fks.results || []).filter((fk: any) => fk.table === 'bot')
+            if (botFks.length > 0) {
+              console.log(`[Bot Delete ${botIdNum}] FK to bot in ${tableName}:`, JSON.stringify(botFks))
+            }
+          } catch (e) {
+            // Ignore pragma errors
+          }
+        }
+      } catch (e: any) {
+        console.error(`[Bot Delete ${botIdNum}] Diagnostic failed:`, e.message)
+      }
+
+      // Run deletes for all possible tables/columns
       const tables = [
-        { name: 'memory', sql: 'DELETE FROM memory WHERE bot_id = ?' },
+        { name: 'memory (by bot)', sql: 'DELETE FROM memory WHERE bot = ?' },
         { name: 'bot_interactions', sql: 'DELETE FROM bot_interactions WHERE bot_id = ?' },
         { name: 'memory_insights', sql: 'DELETE FROM memory_insights WHERE bot_id = ?' },
         { name: 'persona_analytics', sql: 'DELETE FROM persona_analytics WHERE bot_id = ?' },
-        { name: 'conversation_rels', sql: 'DELETE FROM conversation_rels WHERE bot_id = ?' },
         { name: 'payload_locked_documents_rels', sql: 'DELETE FROM payload_locked_documents_rels WHERE bot_id = ?' },
         { name: 'knowledge_collections_rels', sql: 'DELETE FROM knowledge_collections_rels WHERE bot_id = ?' },
         { name: 'bot_speech_examples', sql: 'DELETE FROM bot_speech_examples WHERE _parent_id = ?' },

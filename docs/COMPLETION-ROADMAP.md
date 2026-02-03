@@ -598,6 +598,29 @@ When you add new Payload collections or modify existing ones:
 
 ## 🔄 **Recent Changes**
 
+### **2026-02-03 Updates:**
+- ✅ **Enhanced Debug Logging for LLM Providers**
+  - Added comprehensive error logging to all 7 LLM providers (GLM, OpenAI, Anthropic, Google, OpenRouter, ElectronHub, DeepSeek)
+  - Logs include: HTTP status, raw error body, parsed JSON, error codes/types, requested model
+  - Google provider masks API key in logged URLs for security
+  - GLM provider detects potential account balance/quota issues from error messages
+  - Updated files:
+    - `src/lib/llm/providers/*.ts` - All 7 provider files with enhanced error logging
+- ✅ **Enhanced Prompt Construction Logging**
+  - Added detailed logging to context builder for debugging prompt issues
+  - Logs conversation ID, bot/persona details, message counts
+  - Logs lore activation results (entry count, types, methods, token budget)
+  - Logs memory retrieval results (count, importance levels, emotional contexts)
+  - Logs final message breakdown with role and content preview
+  - Updated file: `src/lib/chat/context-builder.ts`
+- ✅ **Enhanced Chat Stream Request Logging**
+  - Added request summary logging before LLM calls (provider, model, context stats)
+  - Added detailed error logging when LLM calls fail
+  - Updated file: `src/app/api/chat/stream/[messageId]/route.ts`
+- ✅ **Documentation Updates**
+  - Updated GLM-STREAMING-ISSUE.md with debugging section explaining available logs
+  - Added common GLM error patterns table for troubleshooting
+
 ### **2026-02-02 Updates:**
 - ✅ **Message Pagination Fix**
   - Fixed long conversations only loading first 50 (oldest) messages instead of most recent
@@ -1518,8 +1541,8 @@ const filtered = all.docs.filter(conv =>
 
 ---
 
-**Last Updated**: 2026-02-02
-**Version**: 3.30
+**Last Updated**: 2026-02-03
+**Version**: 3.31
 **Total Tasks**: 184
 **Completed**: 179
-**Progress**: ~97% (Message pagination fix complete)
+**Progress**: ~97% (Enhanced debug logging for LLM troubleshooting)

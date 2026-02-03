@@ -5,7 +5,7 @@
 The GLM provider (Zhipu AI / Z.AI) experiences HTTP/2 protocol errors when streaming responses through Cloudflare Workers. This document explains the issue, current workaround, and potential future solutions.
 
 **Status**: Workaround implemented (non-streaming mode)
-**Last Updated**: 2026-01-24
+**Last Updated**: 2026-02-03
 **Affected Provider**: GLM (Z.AI)
 **Impact**: GLM responses appear all at once instead of streaming token-by-token
 
@@ -178,6 +178,56 @@ curl -X POST "https://api.z.ai/api/paas/v4/chat/completions" \
     "stream": false
   }'
 ```
+
+---
+
+## Debugging GLM Issues
+
+Enhanced debug logging was added on 2026-02-03 to help troubleshoot GLM API issues. When errors occur, the following information is logged:
+
+### GLM Provider Logs (glm.ts)
+
+**Request logging** (prefix: `[GLM]`):
+- Endpoint URL
+- Model being used
+- API key (first 8 characters only)
+- Message count and stream mode
+- Request body preview
+
+**Error logging** (prefix: `[GLM]`):
+- HTTP status and status text
+- Raw error body (before parsing)
+- Parsed error JSON with full details
+- Extracted error message
+- API error code (GLM-specific)
+
+### Context Builder Logs (context-builder.ts)
+
+**Prompt construction** (prefix: `[Context Builder]`):
+- Conversation ID, bot, persona, user details
+- System prompt length at each stage
+- Lore activation results (count, types, methods, token budget)
+- Memory retrieval results (count, importance levels, emotional contexts)
+- Final message breakdown with role and content preview
+
+### Chat Stream Logs (route.ts)
+
+**Request summary** (prefix: `[Chat Stream]`):
+- Provider and model
+- API key ID
+- Context stats (system prompt length, lore count, memory count, token estimate)
+
+**Error details** (prefix: `[Chat Stream]`):
+- Full error object with type, message, code, status code, and details
+
+### Common GLM Error Patterns
+
+| Error Message | Likely Cause | Solution |
+|--------------|--------------|----------|
+| "insufficient balance" / "not enough tokens" | Account has no credits for paid models | Use free models (glm-4.7-flash, glm-4.5-flash) or add credits |
+| "invalid api key" | Incorrect or expired API key | Regenerate key at z.ai |
+| "model not found" | Invalid model name | Check supported models list |
+| HTTP 429 | Rate limited | Wait and retry, or reduce request frequency |
 
 ---
 

@@ -1,7 +1,7 @@
 # BotCafe v2 - Complete Sitemap
 
-**Last Updated**: 2026-02-02
-**Version**: 2.32
+**Last Updated**: 2026-02-03
+**Version**: 2.33
 **Status**: ~98% Complete
 
 ---
@@ -112,6 +112,7 @@
 | `/api/bots` | GET, POST | List all bots, create new bot |
 | `/api/bots/explore` | GET | Bot discovery (public + owned + shared via AccessControl). Query params: `liked=true` (filter to liked bots), `favorited=true` (filter to favorited bots) |
 | `/api/bots/my-bots` | GET | Get current user's bots |
+| `/api/bots/by-path/[username]/[botSlug]` | GET | Internal: Get bot by creator username and slug (used by bot detail pages) |
 | `/api/bots/[id]` | GET, PUT, DELETE | Bot CRUD operations. DELETE cascades to remove all related data (interactions, memories, analytics, etc.) |
 | `/api/bots/[id]/like` | POST | Toggle like on bot |
 | `/api/bots/[id]/favorite` | POST | Toggle favorite on bot |
@@ -216,6 +217,25 @@
 | `/api/admin/fix/empty-collections` | GET, POST | GET: Preview knowledge collections with empty descriptions. POST: Populate descriptions from knowledge entries |
 | `/api/admin/fix/recover-linked-knowledge` | GET, POST | GET: Preview knowledge linked via junction tables in old DB. Query params: `email` (user filter), `verify=true` (verification mode - checks all users for remaining unimported data). POST: Import linked entries. Body params: `email` (single user), `all: true` (batch mode), `limit`/`offset` (pagination for batch), `createMissingCollections`, `skipDuplicates` |
 | `/api/admin/diagnostic/lookup` | GET | Diagnostic lookup for bots, users, or creator profiles. Query params: `botName`, `username`, `botSlug` |
+| `/api/admin/diagnostic/bots` | GET | Diagnostic: List bots with detailed info for troubleshooting |
+| `/api/admin/diagnostic/knowledge` | GET | Diagnostic: List knowledge entries with metadata |
+| `/api/admin/diagnostic/personas` | GET | Diagnostic: List personas with usage info |
+| `/api/admin/diagnostic/persona-collections` | GET | Diagnostic: List persona-related knowledge collections |
+| `/api/admin/diagnostic/user-data` | GET | Diagnostic: Get comprehensive user data overview |
+| `/api/admin/fix/bots` | GET, POST | Fix bot data issues (orphaned records, missing fields) |
+| `/api/admin/fix/knowledge` | GET, POST | Fix knowledge entry issues |
+| `/api/admin/fix/personas` | GET, POST | Fix persona data issues |
+| `/api/admin/migrate/persona-collections` | GET, POST | Migrate persona collections from legacy format |
+| `/api/admin/migration/compare` | GET | Compare local vs remote database for migration verification |
+
+### Migration (Internal)
+
+> **Note**: These endpoints are used for data migration from legacy systems and are not part of the public API.
+
+| Endpoint | Methods | Description |
+|----------|---------|-------------|
+| `/api/migrate/user` | GET, POST | Migrate individual user data from legacy database |
+| `/api/migrate/batch` | POST | Batch migrate multiple users from legacy database |
 
 ### File Upload
 
@@ -269,10 +289,11 @@
 | Help | 3 | 0 | 3 |
 | Chat | 2 | 0 | 2 |
 | **Frontend Total** | **32** | **2** | **34** |
-| API Endpoints | 54 | 0 | 54 |
-| **Grand Total** | **86** | **2** | **88** |
+| API Endpoints | 67 | 0 | 67 |
+| **Grand Total** | **99** | **2** | **101** |
 
 *Note: "Redirect" routes automatically redirect to the Account page with the appropriate tab.*
+*Note: API count includes 13 admin/migration endpoints for internal tooling.*
 
 ---
 

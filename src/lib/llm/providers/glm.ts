@@ -15,7 +15,12 @@ import type {
 import { LLMError } from '../types'
 import { estimateTokens } from '../token-counter'
 
-const GLM_API_URL = 'https://api.z.ai/api/paas/v4/chat/completions'
+// GLM has two different API endpoints:
+// - Standard endpoint: Works with pay-as-you-go credits
+// - Coding endpoint: Works with GLM Coding Plan subscriptions ($3/month)
+// We try standard first, then fallback to coding endpoint on error 1113
+const GLM_STANDARD_URL = 'https://api.z.ai/api/paas/v4/chat/completions'
+const GLM_CODING_URL = 'https://api.z.ai/api/coding/paas/v4/chat/completions'
 
 const SUPPORTED_MODELS = [
   // GLM-4.7 Series
@@ -48,8 +53,6 @@ export const glmProvider: LLMProvider = {
     params: SendMessageParams,
     config: ProviderConfig
   ): AsyncGenerator<StreamChunk, void, unknown> {
-    const url = config.baseUrl || GLM_API_URL
-
     // GLM uses standard OpenAI-compatible format but may not support all fields
     // Remove 'name' field as GLM doesn't support it
     // NOTE: Using non-streaming due to Cloudflare Workers H2 compatibility issues
@@ -66,134 +69,176 @@ export const glmProvider: LLMProvider = {
       ...(params.stop && { stop: params.stop }),
     }
 
-    console.log('[GLM] ========== REQUEST START ==========')
-    console.log('[GLM] Endpoint URL:', url)
-    console.log('[GLM] Model:', body.model)
-    console.log('[GLM] Message count:', body.messages.length)
-    console.log('[GLM] Stream mode:', body.stream)
-    console.log('[GLM] API Key (first 8 chars):', config.apiKey?.substring(0, 8) + '...')
-    console.log('[GLM] Request body preview:', JSON.stringify({
-      model: body.model,
-      stream: body.stream,
-      temperature: body.temperature,
-      max_tokens: body.max_tokens,
-      message_roles: body.messages.map(m => m.role),
-    }))
-    console.log('[GLM] ========== REQUEST END ============')
+    // Try endpoints in order: custom baseUrl > standard > coding (fallback)
+    // The coding endpoint is for GLM Coding Plan subscriptions
+    // Error 1113 means the key doesn't work with the current endpoint
+    const endpointsToTry = config.baseUrl
+      ? [config.baseUrl]
+      : [GLM_STANDARD_URL, GLM_CODING_URL]
 
-    let response: Response
+    let lastError: LLMError | null = null
 
-    try {
-      response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${config.apiKey}`,
-          ...config.headers,
-        },
-        body: JSON.stringify(body),
-      })
-    } catch (error) {
-      throw new LLMError(
-        'Network error connecting to GLM',
-        'NETWORK_ERROR',
-        'glm',
-        undefined,
-        true,
-        { error }
-      )
-    }
+    for (const url of endpointsToTry) {
+      const isLastEndpoint = url === endpointsToTry[endpointsToTry.length - 1]
 
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => '')
+      console.log('[GLM] ========== REQUEST START ==========')
+      console.log('[GLM] Endpoint URL:', url)
+      console.log('[GLM] Endpoint type:', url.includes('/coding/') ? 'CODING' : 'STANDARD')
+      console.log('[GLM] Model:', body.model)
+      console.log('[GLM] Message count:', body.messages.length)
+      console.log('[GLM] Stream mode:', body.stream)
+      console.log('[GLM] API Key (first 8 chars):', config.apiKey?.substring(0, 8) + '...')
+      console.log('[GLM] Request body preview:', JSON.stringify({
+        model: body.model,
+        stream: body.stream,
+        temperature: body.temperature,
+        max_tokens: body.max_tokens,
+        message_roles: body.messages.map(m => m.role),
+      }))
+      console.log('[GLM] ========== REQUEST END ============')
 
-      // Enhanced error logging for debugging
-      console.error('[GLM] ========== ERROR RESPONSE ==========')
-      console.error('[GLM] HTTP Status:', response.status)
-      console.error('[GLM] Status Text:', response.statusText)
-      console.error('[GLM] Response Headers:', JSON.stringify(Object.fromEntries(response.headers.entries())))
-      console.error('[GLM] Raw Error Body:', errorText)
-      console.error('[GLM] Request Model:', body.model)
-      console.error('[GLM] Request URL:', url)
+      let response: Response
 
-      let errorData: { error?: { message?: string; code?: string | number }; code?: string | number; message?: string; msg?: string } = {}
       try {
-        errorData = JSON.parse(errorText)
-        console.error('[GLM] Parsed Error JSON:', JSON.stringify(errorData, null, 2))
-      } catch {
-        console.error('[GLM] Error body is not valid JSON')
-      }
-
-      // GLM API can return errors in different formats:
-      // { error: { message, code } } or { code, message } or { code, msg }
-      const errorMessage = errorData.error?.message || errorData.message || errorData.msg || errorText || `HTTP ${response.status}`
-      const apiErrorCode = errorData.error?.code || errorData.code
-
-      console.error('[GLM] Extracted Error Message:', errorMessage)
-      console.error('[GLM] API Error Code:', apiErrorCode)
-      console.error('[GLM] ========== ERROR END ===============')
-
-      let errorCode: LLMError['code'] = 'UNKNOWN_ERROR'
-      let retryable = false
-
-      if (response.status === 401) {
-        errorCode = 'INVALID_API_KEY'
-      } else if (response.status === 429) {
-        errorCode = 'RATE_LIMITED'
-        retryable = true
-      } else if (response.status === 400 && errorMessage.includes('context')) {
-        errorCode = 'CONTEXT_LENGTH_EXCEEDED'
-      } else if (response.status === 400 && (errorMessage.includes('token') || errorMessage.includes('balance') || errorMessage.includes('quota') || errorMessage.includes('insufficient'))) {
-        // Likely an account balance/quota issue - provide clearer error
-        errorCode = 'RATE_LIMITED' // Using rate limited as closest match
-        console.error('[GLM] Detected possible account balance/quota issue')
-      } else if (response.status >= 500) {
-        retryable = true
-      }
-
-      throw new LLMError(
-        errorMessage,
-        errorCode,
-        'glm',
-        response.status,
-        retryable,
-        { errorData, apiErrorCode, requestedModel: body.model }
-      )
-    }
-
-    // Non-streaming response handling
-    // (Streaming disabled due to Cloudflare Workers H2 compatibility issues with GLM)
-    const responseData = await response.json() as {
-      choices?: Array<{
-        message?: { content?: string; role?: string }
-        finish_reason?: string
-      }>
-      usage?: {
-        prompt_tokens: number
-        completion_tokens: number
-        total_tokens: number
-      }
-    }
-
-    console.log('[GLM] Response received, choices:', responseData.choices?.length)
-
-    const choice = responseData.choices?.[0]
-    if (choice?.message?.content) {
-      yield {
-        content: choice.message.content,
-        done: true,
-        finishReason: (choice.finish_reason as StreamChunk['finishReason']) || 'stop',
-        ...(responseData.usage && {
-          usage: {
-            inputTokens: responseData.usage.prompt_tokens,
-            outputTokens: responseData.usage.completion_tokens,
-            totalTokens: responseData.usage.total_tokens,
+        response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${config.apiKey}`,
+            ...config.headers,
           },
-        }),
+          body: JSON.stringify(body),
+        })
+      } catch (error) {
+        throw new LLMError(
+          'Network error connecting to GLM',
+          'NETWORK_ERROR',
+          'glm',
+          undefined,
+          true,
+          { error }
+        )
       }
-    } else {
-      console.error('[GLM] No content in response:', JSON.stringify(responseData).substring(0, 500))
-      throw new LLMError('No content in GLM response', 'PARSE_ERROR', 'glm')
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => '')
+
+        let errorData: { error?: { message?: string; code?: string | number }; code?: string | number; message?: string; msg?: string } = {}
+        try {
+          errorData = JSON.parse(errorText)
+        } catch {
+          // Error body is not valid JSON
+        }
+
+        const errorMessage = errorData.error?.message || errorData.message || errorData.msg || errorText || `HTTP ${response.status}`
+        const apiErrorCode = String(errorData.error?.code || errorData.code || '')
+
+        // Check if this is error 1113 (wrong endpoint for this API key type)
+        // If so, try the next endpoint before giving up
+        if (apiErrorCode === '1113' && !isLastEndpoint) {
+          console.log('[GLM] ========== ENDPOINT FALLBACK ==========')
+          console.log('[GLM] Error 1113 detected - API key may be for different endpoint type')
+          console.log('[GLM] Trying next endpoint...')
+          console.log('[GLM] ========================================')
+
+          lastError = new LLMError(
+            errorMessage,
+            'RATE_LIMITED',
+            'glm',
+            response.status,
+            true,
+            { errorData, apiErrorCode, requestedModel: body.model, triedUrl: url }
+          )
+          continue // Try next endpoint
+        }
+
+        // Enhanced error logging for debugging
+        console.error('[GLM] ========== ERROR RESPONSE ==========')
+        console.error('[GLM] HTTP Status:', response.status)
+        console.error('[GLM] Status Text:', response.statusText)
+        console.error('[GLM] Response Headers:', JSON.stringify(Object.fromEntries(response.headers.entries())))
+        console.error('[GLM] Raw Error Body:', errorText)
+        console.error('[GLM] Request Model:', body.model)
+        console.error('[GLM] Request URL:', url)
+        console.error('[GLM] Parsed Error JSON:', JSON.stringify(errorData, null, 2))
+        console.error('[GLM] Extracted Error Message:', errorMessage)
+        console.error('[GLM] API Error Code:', apiErrorCode)
+        console.error('[GLM] ========== ERROR END ===============')
+
+        let errorCode: LLMError['code'] = 'UNKNOWN_ERROR'
+        let retryable = false
+
+        if (response.status === 401) {
+          errorCode = 'INVALID_API_KEY'
+        } else if (response.status === 429 || apiErrorCode === '1113') {
+          errorCode = 'RATE_LIMITED'
+          retryable = true
+        } else if (response.status === 400 && errorMessage.includes('context')) {
+          errorCode = 'CONTEXT_LENGTH_EXCEEDED'
+        } else if (response.status === 400 && (errorMessage.includes('token') || errorMessage.includes('balance') || errorMessage.includes('quota') || errorMessage.includes('insufficient'))) {
+          // Likely an account balance/quota issue - provide clearer error
+          errorCode = 'RATE_LIMITED' // Using rate limited as closest match
+          console.error('[GLM] Detected possible account balance/quota issue')
+        } else if (response.status >= 500) {
+          retryable = true
+        }
+
+        throw new LLMError(
+          errorMessage,
+          errorCode,
+          'glm',
+          response.status,
+          retryable,
+          { errorData, apiErrorCode, requestedModel: body.model }
+        )
+      }
+
+      // Success! Log which endpoint worked
+      console.log('[GLM] ========== SUCCESS ==========')
+      console.log('[GLM] Working endpoint:', url)
+      console.log('[GLM] Endpoint type:', url.includes('/coding/') ? 'CODING' : 'STANDARD')
+      console.log('[GLM] ==============================')
+
+      // Non-streaming response handling
+      // (Streaming disabled due to Cloudflare Workers H2 compatibility issues with GLM)
+      const responseData = await response.json() as {
+        choices?: Array<{
+          message?: { content?: string; role?: string }
+          finish_reason?: string
+        }>
+        usage?: {
+          prompt_tokens: number
+          completion_tokens: number
+          total_tokens: number
+        }
+      }
+
+      console.log('[GLM] Response received, choices:', responseData.choices?.length)
+
+      const choice = responseData.choices?.[0]
+      if (choice?.message?.content) {
+        yield {
+          content: choice.message.content,
+          done: true,
+          finishReason: (choice.finish_reason as StreamChunk['finishReason']) || 'stop',
+          ...(responseData.usage && {
+            usage: {
+              inputTokens: responseData.usage.prompt_tokens,
+              outputTokens: responseData.usage.completion_tokens,
+              totalTokens: responseData.usage.total_tokens,
+            },
+          }),
+        }
+        return // Successfully yielded response, we're done
+      } else {
+        console.error('[GLM] No content in response:', JSON.stringify(responseData).substring(0, 500))
+        throw new LLMError('No content in GLM response', 'PARSE_ERROR', 'glm')
+      }
+    }
+
+    // If we get here, all endpoints failed
+    if (lastError) {
+      throw lastError
     }
   },
 

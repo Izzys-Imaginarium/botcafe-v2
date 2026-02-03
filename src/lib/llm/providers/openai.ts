@@ -93,8 +93,29 @@ export const openaiProvider: LLMProvider = {
     }
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({})) as { error?: { message?: string } }
-      const errorMessage = errorData.error?.message || `HTTP ${response.status}`
+      const errorText = await response.text().catch(() => '')
+
+      // Enhanced error logging
+      console.error('[OpenAI] ========== ERROR RESPONSE ==========')
+      console.error('[OpenAI] HTTP Status:', response.status)
+      console.error('[OpenAI] Status Text:', response.statusText)
+      console.error('[OpenAI] Raw Error Body:', errorText)
+      console.error('[OpenAI] Request Model:', body.model)
+      console.error('[OpenAI] Request URL:', url)
+
+      let errorData: { error?: { message?: string; type?: string; code?: string } } = {}
+      try {
+        errorData = JSON.parse(errorText)
+        console.error('[OpenAI] Parsed Error JSON:', JSON.stringify(errorData, null, 2))
+      } catch {
+        console.error('[OpenAI] Error body is not valid JSON')
+      }
+
+      const errorMessage = errorData.error?.message || errorText || `HTTP ${response.status}`
+      console.error('[OpenAI] Extracted Error Message:', errorMessage)
+      console.error('[OpenAI] Error Type:', errorData.error?.type)
+      console.error('[OpenAI] Error Code:', errorData.error?.code)
+      console.error('[OpenAI] ========== ERROR END ===============')
 
       let errorCode: LLMError['code'] = 'UNKNOWN_ERROR'
       let retryable = false
@@ -122,7 +143,7 @@ export const openaiProvider: LLMProvider = {
         'openai',
         response.status,
         retryable,
-        { errorData }
+        { errorData, requestedModel: body.model }
       )
     }
 

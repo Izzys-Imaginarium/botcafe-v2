@@ -66,10 +66,20 @@ export const glmProvider: LLMProvider = {
       ...(params.stop && { stop: params.stop }),
     }
 
-    console.log('[GLM] Request to:', url)
+    console.log('[GLM] ========== REQUEST START ==========')
+    console.log('[GLM] Endpoint URL:', url)
     console.log('[GLM] Model:', body.model)
     console.log('[GLM] Message count:', body.messages.length)
     console.log('[GLM] Stream mode:', body.stream)
+    console.log('[GLM] API Key (first 8 chars):', config.apiKey?.substring(0, 8) + '...')
+    console.log('[GLM] Request body preview:', JSON.stringify({
+      model: body.model,
+      stream: body.stream,
+      temperature: body.temperature,
+      max_tokens: body.max_tokens,
+      message_roles: body.messages.map(m => m.role),
+    }))
+    console.log('[GLM] ========== REQUEST END ============')
 
     let response: Response
 
@@ -96,15 +106,32 @@ export const glmProvider: LLMProvider = {
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => '')
-      console.error('[GLM] Error response:', response.status, errorText)
 
-      let errorData: { error?: { message?: string; code?: string } } = {}
+      // Enhanced error logging for debugging
+      console.error('[GLM] ========== ERROR RESPONSE ==========')
+      console.error('[GLM] HTTP Status:', response.status)
+      console.error('[GLM] Status Text:', response.statusText)
+      console.error('[GLM] Response Headers:', JSON.stringify(Object.fromEntries(response.headers.entries())))
+      console.error('[GLM] Raw Error Body:', errorText)
+      console.error('[GLM] Request Model:', body.model)
+      console.error('[GLM] Request URL:', url)
+
+      let errorData: { error?: { message?: string; code?: string | number }; code?: string | number; message?: string; msg?: string } = {}
       try {
         errorData = JSON.parse(errorText)
+        console.error('[GLM] Parsed Error JSON:', JSON.stringify(errorData, null, 2))
       } catch {
-        // Not JSON, use raw text
+        console.error('[GLM] Error body is not valid JSON')
       }
-      const errorMessage = errorData.error?.message || errorText || `HTTP ${response.status}`
+
+      // GLM API can return errors in different formats:
+      // { error: { message, code } } or { code, message } or { code, msg }
+      const errorMessage = errorData.error?.message || errorData.message || errorData.msg || errorText || `HTTP ${response.status}`
+      const apiErrorCode = errorData.error?.code || errorData.code
+
+      console.error('[GLM] Extracted Error Message:', errorMessage)
+      console.error('[GLM] API Error Code:', apiErrorCode)
+      console.error('[GLM] ========== ERROR END ===============')
 
       let errorCode: LLMError['code'] = 'UNKNOWN_ERROR'
       let retryable = false
@@ -116,6 +143,10 @@ export const glmProvider: LLMProvider = {
         retryable = true
       } else if (response.status === 400 && errorMessage.includes('context')) {
         errorCode = 'CONTEXT_LENGTH_EXCEEDED'
+      } else if (response.status === 400 && (errorMessage.includes('token') || errorMessage.includes('balance') || errorMessage.includes('quota') || errorMessage.includes('insufficient'))) {
+        // Likely an account balance/quota issue - provide clearer error
+        errorCode = 'RATE_LIMITED' // Using rate limited as closest match
+        console.error('[GLM] Detected possible account balance/quota issue')
       } else if (response.status >= 500) {
         retryable = true
       }
@@ -126,7 +157,7 @@ export const glmProvider: LLMProvider = {
         'glm',
         response.status,
         retryable,
-        { errorData }
+        { errorData, apiErrorCode, requestedModel: body.model }
       )
     }
 

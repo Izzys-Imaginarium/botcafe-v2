@@ -214,6 +214,22 @@ export async function GET(
         let finalUsage = null
         let finishReason = null
 
+        // Log the LLM request details
+        console.log('[Chat Stream] ========== LLM REQUEST ==========')
+        console.log('[Chat Stream] Provider:', provider)
+        console.log('[Chat Stream] Model:', model)
+        console.log('[Chat Stream] API Key ID:', apiKey.id)
+        console.log('[Chat Stream] API Key (first 8 chars):', apiKey.key?.substring(0, 8) + '...')
+        console.log('[Chat Stream] Message count:', context.messages.length)
+        console.log('[Chat Stream] Temperature: 0.7')
+        console.log('[Chat Stream] Max tokens: 2048')
+        console.log('[Chat Stream] Context stats:')
+        console.log('[Chat Stream]   - System prompt:', context.systemPrompt.length, 'chars')
+        console.log('[Chat Stream]   - Activated lore:', context.activatedLoreCount)
+        console.log('[Chat Stream]   - Retrieved memories:', context.retrievedMemoriesCount)
+        console.log('[Chat Stream]   - Estimated tokens:', context.totalTokensEstimate)
+        console.log('[Chat Stream] ========== END REQUEST ==========')
+
         try {
           for await (const chunk of streamMessage(
             provider,
@@ -251,6 +267,24 @@ export async function GET(
             usage: finalUsage,
           })
         } catch (llmError: unknown) {
+          // Enhanced error logging for LLM failures
+          console.error('[Chat Stream] ========== LLM ERROR ==========')
+          console.error('[Chat Stream] Provider:', provider)
+          console.error('[Chat Stream] Model:', model)
+          console.error('[Chat Stream] Error type:', llmError?.constructor?.name)
+          console.error('[Chat Stream] Error message:', llmError instanceof Error ? llmError.message : String(llmError))
+          if (llmError && typeof llmError === 'object' && 'code' in llmError) {
+            console.error('[Chat Stream] Error code:', (llmError as { code?: string }).code)
+          }
+          if (llmError && typeof llmError === 'object' && 'statusCode' in llmError) {
+            console.error('[Chat Stream] Status code:', (llmError as { statusCode?: number }).statusCode)
+          }
+          if (llmError && typeof llmError === 'object' && 'details' in llmError) {
+            console.error('[Chat Stream] Error details:', JSON.stringify((llmError as { details?: unknown }).details))
+          }
+          console.error('[Chat Stream] Full error:', llmError)
+          console.error('[Chat Stream] ========== END ERROR ==========')
+
           const errorMessage = llmError instanceof Error ? llmError.message : 'LLM error'
           sendError(errorMessage, 'LLM_ERROR')
 

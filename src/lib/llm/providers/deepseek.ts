@@ -75,8 +75,29 @@ export const deepseekProvider: LLMProvider = {
     }
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({})) as { error?: { message?: string } }
-      const errorMessage = errorData.error?.message || `HTTP ${response.status}`
+      const errorText = await response.text().catch(() => '')
+
+      // Enhanced error logging
+      console.error('[DeepSeek] ========== ERROR RESPONSE ==========')
+      console.error('[DeepSeek] HTTP Status:', response.status)
+      console.error('[DeepSeek] Status Text:', response.statusText)
+      console.error('[DeepSeek] Raw Error Body:', errorText)
+      console.error('[DeepSeek] Request Model:', body.model)
+      console.error('[DeepSeek] Request URL:', url)
+
+      let errorData: { error?: { message?: string; type?: string; code?: string } } = {}
+      try {
+        errorData = JSON.parse(errorText)
+        console.error('[DeepSeek] Parsed Error JSON:', JSON.stringify(errorData, null, 2))
+      } catch {
+        console.error('[DeepSeek] Error body is not valid JSON')
+      }
+
+      const errorMessage = errorData.error?.message || errorText || `HTTP ${response.status}`
+      console.error('[DeepSeek] Extracted Error Message:', errorMessage)
+      console.error('[DeepSeek] Error Type:', errorData.error?.type)
+      console.error('[DeepSeek] Error Code:', errorData.error?.code)
+      console.error('[DeepSeek] ========== ERROR END ===============')
 
       let errorCode: LLMError['code'] = 'UNKNOWN_ERROR'
       let retryable = false
@@ -98,7 +119,7 @@ export const deepseekProvider: LLMProvider = {
         'deepseek',
         response.status,
         retryable,
-        { errorData }
+        { errorData, requestedModel: body.model }
       )
     }
 

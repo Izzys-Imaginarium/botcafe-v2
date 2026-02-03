@@ -93,8 +93,29 @@ export const openrouterProvider: LLMProvider = {
     }
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({})) as { error?: { message?: string } }
-      const errorMessage = errorData.error?.message || `HTTP ${response.status}`
+      const errorText = await response.text().catch(() => '')
+
+      // Enhanced error logging
+      console.error('[OpenRouter] ========== ERROR RESPONSE ==========')
+      console.error('[OpenRouter] HTTP Status:', response.status)
+      console.error('[OpenRouter] Status Text:', response.statusText)
+      console.error('[OpenRouter] Raw Error Body:', errorText)
+      console.error('[OpenRouter] Request Model:', body.model)
+      console.error('[OpenRouter] Request URL:', url)
+
+      let errorData: { error?: { message?: string; code?: string | number; metadata?: unknown } } = {}
+      try {
+        errorData = JSON.parse(errorText)
+        console.error('[OpenRouter] Parsed Error JSON:', JSON.stringify(errorData, null, 2))
+      } catch {
+        console.error('[OpenRouter] Error body is not valid JSON')
+      }
+
+      const errorMessage = errorData.error?.message || errorText || `HTTP ${response.status}`
+      console.error('[OpenRouter] Extracted Error Message:', errorMessage)
+      console.error('[OpenRouter] Error Code:', errorData.error?.code)
+      console.error('[OpenRouter] Error Metadata:', errorData.error?.metadata)
+      console.error('[OpenRouter] ========== ERROR END ===============')
 
       let errorCode: LLMError['code'] = 'UNKNOWN_ERROR'
       let retryable = false
@@ -120,7 +141,7 @@ export const openrouterProvider: LLMProvider = {
         'openrouter',
         response.status,
         retryable,
-        { errorData }
+        { errorData, requestedModel: body.model }
       )
     }
 

@@ -107,8 +107,30 @@ export const googleProvider: LLMProvider = {
     }
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({})) as { error?: { message?: string } }
-      const errorMessage = errorData.error?.message || `HTTP ${response.status}`
+      const errorText = await response.text().catch(() => '')
+
+      // Enhanced error logging (mask API key in URL)
+      const maskedUrl = url.replace(/key=[^&]+/, 'key=***')
+      console.error('[Google] ========== ERROR RESPONSE ==========')
+      console.error('[Google] HTTP Status:', response.status)
+      console.error('[Google] Status Text:', response.statusText)
+      console.error('[Google] Raw Error Body:', errorText)
+      console.error('[Google] Request Model:', model)
+      console.error('[Google] Request URL:', maskedUrl)
+
+      let errorData: { error?: { message?: string; code?: number; status?: string; details?: unknown[] } } = {}
+      try {
+        errorData = JSON.parse(errorText)
+        console.error('[Google] Parsed Error JSON:', JSON.stringify(errorData, null, 2))
+      } catch {
+        console.error('[Google] Error body is not valid JSON')
+      }
+
+      const errorMessage = errorData.error?.message || errorText || `HTTP ${response.status}`
+      console.error('[Google] Extracted Error Message:', errorMessage)
+      console.error('[Google] Error Code:', errorData.error?.code)
+      console.error('[Google] Error Status:', errorData.error?.status)
+      console.error('[Google] ========== ERROR END ===============')
 
       let errorCode: LLMError['code'] = 'UNKNOWN_ERROR'
       let retryable = false
@@ -134,7 +156,7 @@ export const googleProvider: LLMProvider = {
         'google',
         response.status,
         retryable,
-        { errorData }
+        { errorData, requestedModel: model }
       )
     }
 

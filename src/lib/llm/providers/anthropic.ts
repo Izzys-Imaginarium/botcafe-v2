@@ -118,8 +118,28 @@ export const anthropicProvider: LLMProvider = {
     }
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({})) as { error?: { message?: string } }
-      const errorMessage = errorData.error?.message || `HTTP ${response.status}`
+      const errorText = await response.text().catch(() => '')
+
+      // Enhanced error logging
+      console.error('[Anthropic] ========== ERROR RESPONSE ==========')
+      console.error('[Anthropic] HTTP Status:', response.status)
+      console.error('[Anthropic] Status Text:', response.statusText)
+      console.error('[Anthropic] Raw Error Body:', errorText)
+      console.error('[Anthropic] Request Model:', body.model)
+      console.error('[Anthropic] Request URL:', url)
+
+      let errorData: { error?: { message?: string; type?: string }; type?: string; message?: string } = {}
+      try {
+        errorData = JSON.parse(errorText)
+        console.error('[Anthropic] Parsed Error JSON:', JSON.stringify(errorData, null, 2))
+      } catch {
+        console.error('[Anthropic] Error body is not valid JSON')
+      }
+
+      const errorMessage = errorData.error?.message || errorData.message || errorText || `HTTP ${response.status}`
+      console.error('[Anthropic] Extracted Error Message:', errorMessage)
+      console.error('[Anthropic] Error Type:', errorData.error?.type || errorData.type)
+      console.error('[Anthropic] ========== ERROR END ===============')
 
       let errorCode: LLMError['code'] = 'UNKNOWN_ERROR'
       let retryable = false
@@ -145,7 +165,7 @@ export const anthropicProvider: LLMProvider = {
         'anthropic',
         response.status,
         retryable,
-        { errorData }
+        { errorData, requestedModel: body.model }
       )
     }
 

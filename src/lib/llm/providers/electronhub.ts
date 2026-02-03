@@ -81,8 +81,29 @@ export const electronhubProvider: LLMProvider = {
     }
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({})) as { error?: { message?: string } }
-      const errorMessage = errorData.error?.message || `HTTP ${response.status}`
+      const errorText = await response.text().catch(() => '')
+
+      // Enhanced error logging
+      console.error('[ElectronHub] ========== ERROR RESPONSE ==========')
+      console.error('[ElectronHub] HTTP Status:', response.status)
+      console.error('[ElectronHub] Status Text:', response.statusText)
+      console.error('[ElectronHub] Raw Error Body:', errorText)
+      console.error('[ElectronHub] Request Model:', body.model)
+      console.error('[ElectronHub] Request URL:', url)
+
+      let errorData: { error?: { message?: string; type?: string; code?: string } } = {}
+      try {
+        errorData = JSON.parse(errorText)
+        console.error('[ElectronHub] Parsed Error JSON:', JSON.stringify(errorData, null, 2))
+      } catch {
+        console.error('[ElectronHub] Error body is not valid JSON')
+      }
+
+      const errorMessage = errorData.error?.message || errorText || `HTTP ${response.status}`
+      console.error('[ElectronHub] Extracted Error Message:', errorMessage)
+      console.error('[ElectronHub] Error Type:', errorData.error?.type)
+      console.error('[ElectronHub] Error Code:', errorData.error?.code)
+      console.error('[ElectronHub] ========== ERROR END ===============')
 
       let errorCode: LLMError['code'] = 'UNKNOWN_ERROR'
       let retryable = false
@@ -108,7 +129,7 @@ export const electronhubProvider: LLMProvider = {
         'electronhub',
         response.status,
         retryable,
-        { errorData }
+        { errorData, requestedModel: body.model }
       )
     }
 

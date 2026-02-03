@@ -47,8 +47,17 @@ export interface ChatContext {
 export async function buildChatContext(params: BuildContextParams): Promise<ChatContext> {
   const { payload, userId, conversation, bot, persona, user, recentMessages, additionalBots, env } = params
 
+  console.log('[Context Builder] ========== CONTEXT BUILD START ==========')
+  console.log('[Context Builder] Conversation ID:', conversation.id)
+  console.log('[Context Builder] Bot:', bot.name, '(ID:', bot.id, ')')
+  console.log('[Context Builder] Persona:', persona ? `${persona.name} (ID: ${persona.id})` : 'None')
+  console.log('[Context Builder] User ID:', userId)
+  console.log('[Context Builder] Recent messages count:', recentMessages.length)
+  console.log('[Context Builder] Additional bots:', additionalBots?.map(b => b.name).join(', ') || 'None')
+
   // Build base system prompt from bot (includes user/persona context)
   let systemPrompt = buildBotSystemPrompt(bot, persona, user, additionalBots)
+  console.log('[Context Builder] Base system prompt length:', systemPrompt.length, 'chars')
 
   // Try to activate knowledge entries
   let activatedLoreCount = 0
@@ -86,6 +95,12 @@ export async function buildChatContext(params: BuildContextParams): Promise<Chat
 
       // If we have activated entries, insert them into the prompt
       if (activationResult.activatedEntries.length > 0) {
+        console.log('[Context Builder] Lore activation results:')
+        console.log('[Context Builder]   - Activated entries:', activationResult.activatedEntries.length)
+        console.log('[Context Builder]   - Entry types:', activationResult.activatedEntries.map(e => e.entry?.type || 'unknown').join(', '))
+        console.log('[Context Builder]   - Activation methods:', activationResult.activatedEntries.map(e => e.activationMethod).join(', '))
+        console.log('[Context Builder]   - Token budget used:', activationResult.totalTokens)
+
         const promptBuilder = new PromptBuilder()
         systemPrompt = promptBuilder.buildPrompt(
           systemPrompt,
@@ -94,10 +109,13 @@ export async function buildChatContext(params: BuildContextParams): Promise<Chat
           persona || undefined
         )
         activatedLoreCount = activationResult.activatedEntries.length
+        console.log('[Context Builder]   - System prompt after lore:', systemPrompt.length, 'chars')
+      } else {
+        console.log('[Context Builder] No lore entries activated')
       }
     }
   } catch (error) {
-    console.error('Knowledge activation error:', error)
+    console.error('[Context Builder] Knowledge activation error:', error)
     // Continue without lore - don't fail the chat
   }
 
@@ -112,7 +130,10 @@ export async function buildChatContext(params: BuildContextParams): Promise<Chat
 
     if (memories.length > 0) {
       retrievedMemoriesCount = memories.length
-      console.log(`[Context Builder] Retrieved ${memories.length} memories for bot ${bot.id}`)
+      console.log('[Context Builder] Memory retrieval results:')
+      console.log('[Context Builder]   - Retrieved memories:', memories.length)
+      console.log('[Context Builder]   - Memory importance levels:', memories.map(m => m.importance || 'n/a').join(', '))
+      console.log('[Context Builder]   - Emotional contexts:', memories.map(m => m.emotional_context || 'none').join(', '))
 
       // Format memories for injection into prompt
       const memorySection = formatMemoriesForPrompt(memories)
@@ -197,6 +218,21 @@ export async function buildChatContext(params: BuildContextParams): Promise<Chat
   for (const msg of messages) {
     totalTokensEstimate += Math.ceil(msg.content.length / 4) + 4
   }
+  totalTokensEstimate += 3 // Conversation overhead
+
+  // Final context summary
+  console.log('[Context Builder] ========== CONTEXT BUILD COMPLETE ==========')
+  console.log('[Context Builder] Final system prompt length:', systemPrompt.length, 'chars')
+  console.log('[Context Builder] Total messages:', messages.length)
+  console.log('[Context Builder] Activated lore entries:', activatedLoreCount)
+  console.log('[Context Builder] Retrieved memories:', retrievedMemoriesCount)
+  console.log('[Context Builder] Estimated tokens:', totalTokensEstimate)
+  console.log('[Context Builder] Message breakdown:')
+  messages.forEach((msg, i) => {
+    const preview = msg.content.substring(0, 100).replace(/\n/g, '\\n')
+    console.log(`[Context Builder]   [${i}] ${msg.role}: "${preview}${msg.content.length > 100 ? '...' : ''}" (${msg.content.length} chars)`)
+  })
+  console.log('[Context Builder] ========== END CONTEXT ==========')
 
   return {
     messages,

@@ -368,7 +368,7 @@ export async function POST(request: NextRequest) {
 
     // Fetch all valid bot IDs from the database
     const allBots = await payload.find({
-      collection: 'bots',
+      collection: 'bot',
       limit: 10000, // Get all bots
       depth: 0,
       overrideAccess: true,

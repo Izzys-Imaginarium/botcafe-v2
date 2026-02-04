@@ -126,6 +126,11 @@ export async function GET(request: NextRequest) {
       overrideAccess: true,
     })
 
+    // Track activation mode statistics
+    const activationModeStats: Record<string, number> = {}
+    const noActivationSettings: Array<{ id: number; title: string }> = []
+    const noActivationMode: Array<{ id: number; title: string }> = []
+
     // Analyze each knowledge entry
     const issues: Array<{
       knowledgeId: number
@@ -145,8 +150,24 @@ export async function GET(request: NextRequest) {
       const k = knowledge as {
         id: number
         entry: string
+        title?: string
         user: number | { id: number } | null
         knowledge_collection: number | { id: number } | null
+        activation_settings?: {
+          activation_mode?: string
+        }
+      }
+
+      // Track activation mode
+      const mode = k.activation_settings?.activation_mode
+      if (!k.activation_settings) {
+        noActivationSettings.push({ id: k.id, title: k.title || k.entry.substring(0, 50) })
+        activationModeStats['NO_SETTINGS'] = (activationModeStats['NO_SETTINGS'] || 0) + 1
+      } else if (!mode) {
+        noActivationMode.push({ id: k.id, title: k.title || k.entry.substring(0, 50) })
+        activationModeStats['NO_MODE'] = (activationModeStats['NO_MODE'] || 0) + 1
+      } else {
+        activationModeStats[mode] = (activationModeStats[mode] || 0) + 1
       }
 
       const userId = getRelationId(k.user)
@@ -245,12 +266,21 @@ export async function GET(request: NextRequest) {
         orphanedKnowledge: issues.filter((i) => i.issue.includes('orphaned')).length,
         userMismatch: issues.filter((i) => i.userMismatch).length,
       },
+      activationModes: {
+        byMode: activationModeStats,
+        entriesWithoutSettings: noActivationSettings.length,
+        entriesWithoutMode: noActivationMode.length,
+      },
     }
 
     return NextResponse.json({
       success: true,
       summary,
       issues: issues.slice(0, 100), // Limit to first 100 issues
+      activationIssues: {
+        noSettings: noActivationSettings.slice(0, 50),
+        noMode: noActivationMode.slice(0, 50),
+      },
       message:
         issues.length > 100
           ? `Showing first 100 of ${issues.length} issues. Use filters to narrow down.`

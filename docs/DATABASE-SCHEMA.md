@@ -1,7 +1,7 @@
 # BotCafe v2 - Database Schema
 
-**Last Updated**: 2026-02-02
-**Version**: 3.16
+**Last Updated**: 2026-02-04
+**Version**: 3.17
 **Database**: Cloudflare D1 (SQLite) via Payload CMS
 
 ---
@@ -547,9 +547,11 @@ Individual chat messages with full attribution and tracking.
 
 ### Memory
 
+> ⚠️ **DEPRECATED**: The Memory collection is deprecated in favor of storing memories as Knowledge entries with `is_legacy_memory: true`. New memories are now generated directly into the Knowledge collection. Use `/api/migrate/memories` to migrate existing Memory entries.
+
 Conversation memory storage with full CRUD API support.
 
-> **API Endpoints**: Memories support full CRUD operations via `/api/memories` (GET, POST) and `/api/memories/[id]` (GET, PATCH, DELETE). Users can create, view, edit, and delete memories from the Memory Library UI.
+> **API Endpoints**: Memories support full CRUD operations via `/api/memories` (GET, POST) and `/api/memories/[id]` (GET, PATCH, DELETE). The GET endpoint fetches from both Memory collection AND Knowledge entries where `is_legacy_memory=true` for unified display.
 
 | Field | Type | Description |
 |-------|------|-------------|

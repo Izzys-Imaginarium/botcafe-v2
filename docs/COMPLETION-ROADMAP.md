@@ -598,6 +598,20 @@ When you add new Payload collections or modify existing ones:
 
 ## 🔄 **Recent Changes**
 
+### **2026-02-04 Updates:**
+- ✅ **Memory System Collection Mismatch Fix**
+  - **Root cause**: Memories were being generated into `knowledge` collection (with `is_legacy_memory: true`) but retrieval was querying the deprecated `memory` collection
+  - Fixed `retrieveRelevantMemories()` in `memory-service.ts` to query `knowledge` collection
+  - Added helper functions: `extractImportanceFromTags()`, `extractEmotionalContextFromTags()`
+  - Added `RetrievedMemory` interface for normalized memory format
+  - Fixed `/api/memories/import` endpoint to write to `knowledge` collection (was writing to `memory`)
+  - Created `/api/migrate/memories` endpoint for bulk migration of old Memory entries
+    - GET: Returns migration status (pending vs migrated counts)
+    - POST: Executes bulk migration with `batchSize`, `userId`, `dryRun` params
+    - Handles orphaned bot references (adds `orphaned-bot` or `partial-orphan` tags)
+  - Updated documentation: DATABASE-SCHEMA.md, SITEMAP.md
+  - **Memory collection is now deprecated** - all new memories stored in Knowledge with `is_legacy_memory: true`
+
 ### **2026-02-03 Updates:**
 - ✅ **Enhanced Debug Logging for LLM Providers**
   - Added comprehensive error logging to all 7 LLM providers (GLM, OpenAI, Anthropic, Google, OpenRouter, ElectronHub, DeepSeek)
@@ -1541,8 +1555,8 @@ const filtered = all.docs.filter(conv =>
 
 ---
 
-**Last Updated**: 2026-02-03
-**Version**: 3.31
-**Total Tasks**: 184
-**Completed**: 179
-**Progress**: ~97% (Enhanced debug logging for LLM troubleshooting)
+**Last Updated**: 2026-02-04
+**Version**: 3.32
+**Total Tasks**: 185
+**Completed**: 180
+**Progress**: ~97% (Memory system collection mismatch fix)

@@ -1,7 +1,7 @@
 # BotCafe v2 - Complete Sitemap
 
-**Last Updated**: 2026-02-03
-**Version**: 2.33
+**Last Updated**: 2026-02-04
+**Version**: 2.34
 **Status**: ~98% Complete
 
 ---
@@ -236,6 +236,7 @@
 |----------|---------|-------------|
 | `/api/migrate/user` | GET, POST | Migrate individual user data from legacy database |
 | `/api/migrate/batch` | POST | Batch migrate multiple users from legacy database |
+| `/api/migrate/memories` | GET, POST | GET: Migration status (pending/migrated counts). POST: Bulk migrate Memory entries to Knowledge collection with `is_legacy_memory: true`. Params: `batchSize`, `userId`, `dryRun` |
 
 ### File Upload
 

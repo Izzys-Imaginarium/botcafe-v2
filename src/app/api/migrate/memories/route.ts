@@ -59,11 +59,13 @@ async function findOrCreateLegacyMemoriesTome(
 
 /**
  * Transform a Memory entry to Knowledge entry data
+ * validBotIds is the list of bot IDs that actually exist in the database
  */
 function transformMemoryToKnowledge(
   memory: Memory,
   tomeId: number,
-  userId: number
+  userId: number,
+  validBotIds: Set<number>
 ): Record<string, unknown> {
   // Build tags from importance and emotional_context
   const tags: { tag: string }[] = [
@@ -81,9 +83,19 @@ function transformMemoryToKnowledge(
   }
 
   // Extract bot IDs (hasMany -> array)
-  const botIds: number[] = (memory.bot || []).map(b =>
+  const allBotIds: number[] = (memory.bot || []).map(b =>
     typeof b === 'object' ? b.id : b
   ).filter((id): id is number => id != null)
+
+  // Filter to only valid (existing) bot IDs
+  const botIds = allBotIds.filter(id => validBotIds.has(id))
+
+  // Mark as orphaned if some bots were removed
+  if (allBotIds.length > 0 && botIds.length === 0) {
+    tags.push({ tag: 'orphaned-bot' })
+  } else if (allBotIds.length > botIds.length) {
+    tags.push({ tag: 'partial-orphan' })
+  }
 
   // Extract persona IDs (hasMany -> array)
   const personaIds: number[] = (memory.persona || []).map(p =>
@@ -105,6 +117,7 @@ function transformMemoryToKnowledge(
     source_memory_id: memory.id,
     source_conversation_id: conversationId || undefined,
     original_participants: memory.participants || { personas: [], bots: [] },
+    // Only include applies_to_bots if we have valid bot IDs
     applies_to_bots: botIds.length > 0 ? botIds : undefined,
     applies_to_personas: personaIds.length > 0 ? personaIds : undefined,
     tokens: memory.tokens || 0,
@@ -353,6 +366,15 @@ export async function POST(request: NextRequest) {
     let failed = 0
     const errors: string[] = []
 
+    // Fetch all valid bot IDs from the database
+    const allBots = await payload.find({
+      collection: 'bots',
+      limit: 10000, // Get all bots
+      depth: 0,
+      overrideAccess: true,
+    })
+    const validBotIds = new Set<number>(allBots.docs.map(b => b.id))
+
     // Process each user's memories
     for (const [memUserId, userMemories] of memoriesByUser) {
       try {
@@ -384,7 +406,7 @@ export async function POST(request: NextRequest) {
             }
 
             // Transform and create knowledge entry
-            const knowledgeData = transformMemoryToKnowledge(memory, tomeId, memUserId)
+            const knowledgeData = transformMemoryToKnowledge(memory, tomeId, memUserId, validBotIds)
             const knowledge = await payload.create({
               collection: 'knowledge',
               // @ts-expect-error - knowledgeData has all required fields, TypeScript just can't infer it

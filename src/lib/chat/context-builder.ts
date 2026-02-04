@@ -257,8 +257,12 @@ async function buildBotSystemPrompt(
 ): Promise<string> {
   const parts: string[] = []
 
+  // Determine user name for {{user}} placeholder
+  const userName = persona?.name || user?.nickname || 'the user'
+
   // Fetch all configurable prompts at once (cached)
-  const prompts = await getAllPrompts(payload, { bot_name: bot.name })
+  // Supports both {{bot_name}}/{{char}} and {{user_name}}/{{user}} placeholders
+  const prompts = await getAllPrompts(payload, { bot_name: bot.name, user_name: userName })
 
   // === ROLEPLAY INSTRUCTIONS (configurable) ===
   parts.push(prompts.roleplay_intro)

@@ -90,6 +90,33 @@ async function fetchActivePrompts(payload: Payload): Promise<Map<PromptType, str
 }
 
 /**
+ * Apply placeholder replacements to prompt content
+ * Supports both {{bot_name}}/{{user_name}} and {{char}}/{{user}} formats
+ */
+function applyReplacements(content: string, replacements?: Record<string, string>): string {
+  if (!replacements) return content
+
+  let result = content
+
+  // Apply direct replacements
+  for (const [key, value] of Object.entries(replacements)) {
+    result = result.replaceAll(`{{${key}}}`, value)
+  }
+
+  // Support common roleplay placeholder aliases
+  // {{char}} is an alias for {{bot_name}}
+  if (replacements.bot_name) {
+    result = result.replaceAll('{{char}}', replacements.bot_name)
+  }
+  // {{user}} is an alias for {{user_name}}
+  if (replacements.user_name) {
+    result = result.replaceAll('{{user}}', replacements.user_name)
+  }
+
+  return result
+}
+
+/**
  * Get a specific prompt by type with caching
  * Falls back to default if no custom prompt exists
  */
@@ -106,16 +133,9 @@ export async function getPrompt(
   }
 
   // Get prompt from cache or use default
-  let content = promptCache.get(type) || DEFAULT_PROMPTS[type]
+  const content = promptCache.get(type) || DEFAULT_PROMPTS[type]
 
-  // Apply replacements (e.g., {{bot_name}} -> actual bot name)
-  if (replacements) {
-    for (const [key, value] of Object.entries(replacements)) {
-      content = content.replaceAll(`{{${key}}}`, value)
-    }
-  }
-
-  return content
+  return applyReplacements(content, replacements)
 }
 
 /**
@@ -135,16 +155,8 @@ export async function getAllPrompts(
   const result: Record<PromptType, string> = {} as Record<PromptType, string>
 
   for (const type of Object.keys(DEFAULT_PROMPTS) as PromptType[]) {
-    let content = promptCache.get(type) || DEFAULT_PROMPTS[type]
-
-    // Apply replacements
-    if (replacements) {
-      for (const [key, value] of Object.entries(replacements)) {
-        content = content.replaceAll(`{{${key}}}`, value)
-      }
-    }
-
-    result[type] = content
+    const content = promptCache.get(type) || DEFAULT_PROMPTS[type]
+    result[type] = applyReplacements(content, replacements)
   }
 
   return result

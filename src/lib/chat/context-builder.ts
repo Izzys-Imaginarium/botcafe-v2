@@ -15,6 +15,7 @@ import type { ChatMessage } from '@/lib/llm'
 import { ActivationEngine } from '@/lib/knowledge-activation/activation-engine'
 import { PromptBuilder } from '@/lib/knowledge-activation/prompt-builder'
 import { retrieveRelevantMemories } from '@/lib/chat/memory-service'
+import { getAllPrompts, getPrompt, DEFAULT_PROMPTS, type PromptType } from '@/lib/chat/system-prompts'
 
 export interface BuildContextParams {
   payload: Payload
@@ -56,7 +57,7 @@ export async function buildChatContext(params: BuildContextParams): Promise<Chat
   console.log('[Context Builder] Additional bots:', additionalBots?.map(b => b.name).join(', ') || 'None')
 
   // Build base system prompt from bot (includes user/persona context)
-  let systemPrompt = buildBotSystemPrompt(bot, persona, user, additionalBots)
+  let systemPrompt = await buildBotSystemPrompt(payload, bot, persona, user, additionalBots)
   console.log('[Context Builder] Base system prompt length:', systemPrompt.length, 'chars')
 
   // Try to activate knowledge entries
@@ -245,13 +246,22 @@ export async function buildChatContext(params: BuildContextParams): Promise<Chat
 
 /**
  * Build the base system prompt from bot and persona/user
- * Incorporates proven prompt structure from original BotCafe
+ * Uses configurable prompts from the database with fallbacks to defaults
  */
-function buildBotSystemPrompt(bot: Bot, persona: Persona | null, user?: User | null, additionalBots?: Bot[]): string {
+async function buildBotSystemPrompt(
+  payload: Payload,
+  bot: Bot,
+  persona: Persona | null,
+  user?: User | null,
+  additionalBots?: Bot[]
+): Promise<string> {
   const parts: string[] = []
 
-  // === ROLEPLAY INSTRUCTIONS (from original BotCafe) ===
-  parts.push(`You are roleplaying as ${bot.name}. Stay in character at all times and respond as ${bot.name} would.`)
+  // Fetch all configurable prompts at once (cached)
+  const prompts = await getAllPrompts(payload, { bot_name: bot.name })
+
+  // === ROLEPLAY INSTRUCTIONS (configurable) ===
+  parts.push(prompts.roleplay_intro)
 
   // Bot description/backstory
   if (bot.description) {
@@ -394,45 +404,34 @@ function buildBotSystemPrompt(bot: Bot, persona: Persona | null, user?: User | n
     }
   }
 
-  // === MULTI-BOT CONTEXT (from original BotCafe) ===
+  // === MULTI-BOT CONTEXT (configurable) ===
   if (additionalBots && additionalBots.length > 0) {
     parts.push(`\n\n--- Other Characters ---`)
-    parts.push(`This is a group conversation. Other characters present:`)
-    for (const otherBot of additionalBots) {
-      parts.push(`- ${otherBot.name}${otherBot.description ? `: ${otherBot.description.slice(0, 100)}...` : ''}`)
-    }
-    parts.push(`\nWhen responding, only speak as ${bot.name}. Do not speak for the other characters or the user.`)
+    const otherBotsList = additionalBots
+      .map(otherBot => `- ${otherBot.name}${otherBot.description ? `: ${otherBot.description.slice(0, 100)}...` : ''}`)
+      .join('\n')
+    const multiBotPrompt = prompts.multibot_instructions.replace('{{other_bots}}', otherBotsList)
+    parts.push(multiBotPrompt)
   }
 
-  // === KNOWLEDGE INSTRUCTIONS (from original BotCafe) ===
+  // === KNOWLEDGE INSTRUCTIONS (configurable) ===
   parts.push(`\n\n--- Knowledge & Context ---`)
-  parts.push(`You have access to different types of knowledge that may be provided:
-- Memories: Specific memories or past interactions - prioritize these when relevant
-- Bot Persona: Your character traits, background, and personality details
-- User Persona: Traits and preferences of the person you're talking to
-- Lore: Worldbuilding context relevant to your setting
-- General: Supplementary information that doesn't fit other categories
+  parts.push(prompts.knowledge_instructions)
 
-When responding, naturally incorporate relevant memories, traits, lore, and knowledge. Do not explicitly reference these categories or say things like "according to my memories" or "based on the lore". Instead, speak as if this knowledge is simply part of who you are and what you know.`)
-
-  // === ROLEPLAY GUIDELINES ===
+  // === ROLEPLAY GUIDELINES (configurable) ===
   parts.push(`\n\n--- Roleplay Guidelines ---`)
-  parts.push(`- Stay in character as ${bot.name} throughout the conversation
-- Respond naturally to the user's messages as ${bot.name} would
-- Use your established personality, speech patterns, and mannerisms
-- If the user refers to you by a different name, gently correct them in character
-- Engage with the conversation topic while maintaining your character's perspective
-- Keep content appropriate and respectful`)
+  parts.push(prompts.roleplay_guidelines)
 
   return parts.join('\n')
 }
 
 /**
  * Build a greeting message from the bot
+ * Uses configurable AI disclaimer from database
  */
-export function buildGreeting(bot: Bot, persona: Persona | null): string {
-  // AI disclaimer to be added to the first message
-  const aiDisclaimer = '\n\n---\n*This is an AI character. All responses are generated by artificial intelligence.*'
+export async function buildGreeting(payload: Payload, bot: Bot, persona: Persona | null): Promise<string> {
+  // Get configurable AI disclaimer
+  const aiDisclaimer = '\n\n' + await getPrompt(payload, 'ai_disclaimer')
 
   if (bot.greeting) {
     let greeting = bot.greeting

@@ -11,6 +11,7 @@ import * as migration_20260126_210000_fix_citation_count from './20260126_210000
 import * as migration_20260127_000000_add_media_focal_columns from './20260127_000000_add_media_focal_columns';
 import * as migration_20260128_063625 from './20260128_063625';
 import * as migration_20260129_033113 from './20260129_033113';
+import * as migration_20260204_172029_system_prompts from './20260204_172029_system_prompts';
 
 export const migrations = [
   {
@@ -76,6 +77,11 @@ export const migrations = [
   {
     up: migration_20260129_033113.up,
     down: migration_20260129_033113.down,
-    name: '20260129_033113'
+    name: '20260129_033113',
+  },
+  {
+    up: migration_20260204_172029_system_prompts.up,
+    down: migration_20260204_172029_system_prompts.down,
+    name: '20260204_172029_system_prompts'
   },
 ];

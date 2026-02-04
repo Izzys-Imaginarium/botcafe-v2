@@ -38,6 +38,7 @@ import { LegalDocuments } from './collections/LegalDocuments'
 import { UserAgreements } from './collections/UserAgreements'
 import { Documentation } from './collections/Documentation'
 import { Tutorials } from './collections/Tutorials'
+import { SystemPrompts } from './collections/SystemPrompts'
 import { migrations } from './migrations'
 
 const filename = fileURLToPath(import.meta.url)
@@ -94,6 +95,8 @@ export default buildConfig({
     // Help & Support System (Phase 6)
     Documentation,
     Tutorials,
+    // System Configuration
+    SystemPrompts,
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

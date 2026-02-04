@@ -96,6 +96,7 @@ export interface Config {
     'user-agreements': UserAgreement;
     documentation: Documentation;
     tutorials: Tutorial;
+    'system-prompts': SystemPrompt;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -131,6 +132,7 @@ export interface Config {
     'user-agreements': UserAgreementsSelect<false> | UserAgreementsSelect<true>;
     documentation: DocumentationSelect<false> | DocumentationSelect<true>;
     tutorials: TutorialsSelect<false> | TutorialsSelect<true>;
+    'system-prompts': SystemPromptsSelect<false> | SystemPromptsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -2544,6 +2546,51 @@ export interface Tutorial {
   createdAt: string;
 }
 /**
+ * Configure the base prompts used by bots in chat conversations
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "system-prompts".
+ */
+export interface SystemPrompt {
+  id: number;
+  /**
+   * Internal name for this prompt template
+   */
+  name: string;
+  /**
+   * The type of prompt section this template represents
+   */
+  promptType:
+    | 'roleplay_intro'
+    | 'knowledge_instructions'
+    | 'roleplay_guidelines'
+    | 'multibot_instructions'
+    | 'ai_disclaimer'
+    | 'custom';
+  /**
+   * The prompt content. Use {{bot_name}} for bot name placeholder.
+   */
+  content: string;
+  /**
+   * Only active prompts are used. Only one prompt per type can be active.
+   */
+  isActive?: boolean | null;
+  /**
+   * Higher priority prompts are used first when multiple active prompts exist
+   */
+  priority?: number | null;
+  /**
+   * Internal notes about this prompt version
+   */
+  description?: string | null;
+  /**
+   * Version number for tracking changes
+   */
+  version?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
@@ -2665,6 +2712,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'tutorials';
         value: number | Tutorial;
+      } | null)
+    | ({
+        relationTo: 'system-prompts';
+        value: number | SystemPrompt;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -3995,6 +4046,21 @@ export interface TutorialsSelect<T extends boolean = true> {
         resourceType?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "system-prompts_select".
+ */
+export interface SystemPromptsSelect<T extends boolean = true> {
+  name?: T;
+  promptType?: T;
+  content?: T;
+  isActive?: T;
+  priority?: T;
+  description?: T;
+  version?: T;
   updatedAt?: T;
   createdAt?: T;
 }

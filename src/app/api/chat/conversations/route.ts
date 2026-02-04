@@ -273,7 +273,7 @@ export async function POST(request: NextRequest) {
     const primaryBot = bots.docs[0] as Bot
 
     // Build the bot's greeting message with persona context
-    const greetingContent = buildGreeting(primaryBot, persona)
+    const greetingContent = await buildGreeting(payload, primaryBot, persona)
 
     // Create the greeting message from the bot
     await payload.create({

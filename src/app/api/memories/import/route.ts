@@ -1,15 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
-import { getPayload } from 'payload'
+import { getPayload, Payload } from 'payload'
 import config from '@/payload.config'
 
 export const dynamic = 'force-dynamic'
 
 /**
+ * Find or create a memory tome (KnowledgeCollection) for imported memories
+ */
+async function findOrCreateImportTome(
+  payload: Payload,
+  userId: number,
+  botIds: number[],
+  collectionName?: string
+): Promise<number> {
+  const tomeName = collectionName || 'Imported Memories'
+
+  // Look for existing import tome
+  const existing = await payload.find({
+    collection: 'knowledgeCollections',
+    where: {
+      user: { equals: userId },
+      name: { equals: tomeName },
+    },
+    limit: 1,
+    overrideAccess: true,
+  })
+
+  if (existing.docs.length > 0) {
+    return existing.docs[0].id
+  }
+
+  // Create new tome
+  const newTome = await payload.create({
+    collection: 'knowledgeCollections',
+    data: {
+      name: tomeName,
+      user: userId,
+      bot: botIds.length > 0 ? botIds : undefined,
+      description: `Imported memories from external conversations`,
+      sharing_settings: {
+        sharing_level: 'private',
+        allow_collaboration: false,
+        allow_fork: false,
+        knowledge_count: 0,
+        is_public: false,
+      },
+      collection_metadata: {
+        collection_category: 'memories',
+        tags: [{ tag: 'imported' }, { tag: 'external-source' }],
+      },
+    },
+    overrideAccess: true,
+  })
+
+  return newTome.id
+}
+
+/**
  * POST /api/memories/import
  *
  * Import legacy conversations from external platforms (old BotCafe, Character.AI, etc.)
- * and convert them into Memory entries.
+ * and convert them into Knowledge entries (legacy memories).
  *
  * Request body:
  * - file: FormData with uploaded conversation file
@@ -142,27 +194,90 @@ export async function POST(request: NextRequest) {
       bots: botId ? [botId] : [],
     }
 
-    // Create memory entry
-    const memory = await payload.create({
-      collection: 'memory',
+    // Parse bot and persona IDs
+    const botIds = botId ? [parseInt(botId, 10)] : []
+    const personaIdNums = personaIds.map(id => parseInt(id, 10)).filter(id => !isNaN(id))
+
+    // Find or create import tome (KnowledgeCollection)
+    const importTomeId = await findOrCreateImportTome(
+      payload,
+      payloadUser.id,
+      botIds,
+      collectionName
+    )
+
+    // Extract emotional context for tags
+    const emotionalContext = extractEmotionalContext(parsedMessages)
+
+    // Build tags array (importance and mood stored as tags in Knowledge schema)
+    const tags: { tag: string }[] = [
+      { tag: 'imported' },
+      { tag: 'importance-7' }, // Higher importance for manually imported memories
+    ]
+    if (emotionalContext && emotionalContext !== 'neutral') {
+      emotionalContext.split(', ').forEach(emotion => {
+        tags.push({ tag: `mood-${emotion}` })
+      })
+    }
+
+    // Create as Knowledge entry (legacy memory) in the import tome
+    const knowledge = await payload.create({
+      collection: 'knowledge',
       data: {
         user: payloadUser.id,
-        bot: botId ? [parseInt(botId, 10)] : [],
-        conversation: undefined, // No associated conversation for imports
+        knowledge_collection: importTomeId,
+        type: 'legacy_memory',
         entry: summary,
+        tags,
+        is_legacy_memory: true,
+        original_participants: participants,
+        applies_to_bots: botIds.length > 0 ? botIds : undefined,
+        applies_to_personas: personaIdNums.length > 0 ? personaIdNums : undefined,
         tokens: tokenCount,
-        type: 'long_term', // Imported memories are long-term
-        participants: participants,
         is_vectorized: false,
-        importance: 7, // Higher importance for manually imported memories
-        emotional_context: extractEmotionalContext(parsedMessages),
+        activation_settings: {
+          activation_mode: 'vector',
+          vector_similarity_threshold: 0.6,
+          max_vector_results: 5,
+          probability: 100,
+        },
+        positioning: {
+          position: 'after_character',
+          order: 50,
+        },
+        privacy_settings: {
+          privacy_level: 'private',
+        },
       },
       overrideAccess: true,
     })
 
+    // Update tome's knowledge count
+    const tome = await payload.findByID({
+      collection: 'knowledgeCollections',
+      id: importTomeId,
+      overrideAccess: true,
+    })
+    if (tome) {
+      const currentCount = tome.sharing_settings?.knowledge_count || 0
+      await payload.update({
+        collection: 'knowledgeCollections',
+        id: importTomeId,
+        data: {
+          sharing_settings: {
+            ...tome.sharing_settings,
+            knowledge_count: currentCount + 1,
+            last_updated: new Date().toISOString(),
+          },
+        },
+        overrideAccess: true,
+      })
+    }
+
     return NextResponse.json({
       success: true,
-      memory: memory,
+      memory: knowledge, // Return the knowledge entry
+      collectionId: importTomeId,
       messagesImported: parsedMessages.length,
       summary: summary,
       message: `Successfully imported conversation with ${parsedMessages.length} messages`,

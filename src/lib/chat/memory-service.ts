@@ -1180,8 +1180,46 @@ CONSOLIDATED SUMMARY:`
 }
 
 /**
+ * Helper function to extract importance from knowledge entry tags
+ * Tags are stored as: { tag: 'importance-7' }
+ */
+function extractImportanceFromTags(tags?: { tag?: string | null }[] | null): number {
+  if (!tags) return 5
+  const importanceTag = tags.find(t => t.tag?.startsWith('importance-'))
+  if (!importanceTag?.tag) return 5
+  const importance = parseInt(importanceTag.tag.replace('importance-', ''), 10)
+  return isNaN(importance) ? 5 : importance
+}
+
+/**
+ * Helper function to extract emotional context from knowledge entry tags
+ * Tags are stored as: { tag: 'mood-joyful' }, { tag: 'mood-romantic' }
+ */
+function extractEmotionalContextFromTags(tags?: { tag?: string | null }[] | null): string | null {
+  if (!tags) return null
+  const moodTags = tags.filter(t => t.tag?.startsWith('mood-'))
+  if (moodTags.length === 0) return null
+  return moodTags.map(t => t.tag?.replace('mood-', '')).filter(Boolean).join(', ')
+}
+
+/**
+ * Interface for retrieved memories (normalized from Knowledge entries)
+ */
+export interface RetrievedMemory {
+  id: number
+  entry: string | null
+  importance: number
+  emotional_context: string | null
+  createdAt: string
+  tags?: Array<{ tag?: string | null }>
+  source_conversation_id?: number | null
+  applies_to_bots?: number[] | null
+}
+
+/**
  * Retrieve relevant memories for a conversation
- * Supports multi-bot memories - will find memories where botId is in the bot array
+ * Queries the knowledge collection for legacy memories (is_legacy_memory: true)
+ * These are auto-generated summaries from past conversations
  */
 export async function retrieveRelevantMemories(
   payload: Payload,
@@ -1192,31 +1230,69 @@ export async function retrieveRelevantMemories(
     limit?: number
     minImportance?: number // 1-10 scale
   } = {}
-): Promise<Memory[]> {
-  const { personaId, limit = 5, minImportance = 3 } = options // 3 = low threshold on 1-10 scale
+): Promise<RetrievedMemory[]> {
+  const { personaId, limit = 5, minImportance = 3 } = options
 
   const where: Record<string, unknown> = {
     user: { equals: userId },
+    is_legacy_memory: { equals: true },
     // 'contains' works with hasMany relationships - finds memories where botId is in the array
-    bot: { contains: botId },
+    applies_to_bots: { contains: botId },
   }
 
   // Optionally filter by persona
   if (personaId) {
-    where.persona = { contains: personaId }
-  }
-
-  if (minImportance > 0) {
-    where.importance = { greater_than_equal: minImportance }
+    where.applies_to_personas = { contains: personaId }
   }
 
   const memories = await payload.find({
-    collection: 'memory',
+    collection: 'knowledge',
     where,
-    sort: '-importance,-createdAt',
-    limit,
+    sort: '-createdAt',
+    limit: limit * 2, // Fetch extra to filter by importance
     overrideAccess: true,
   })
 
-  return memories.docs as Memory[]
+  // Transform knowledge entries to RetrievedMemory format
+  // Parse importance and emotional context from tags
+  const transformed: RetrievedMemory[] = memories.docs.map(doc => {
+    const importance = extractImportanceFromTags(doc.tags)
+    const emotional_context = extractEmotionalContextFromTags(doc.tags)
+
+    // Extract bot IDs from relationship
+    const botIds = doc.applies_to_bots?.map(b =>
+      typeof b === 'object' ? b.id : b
+    ).filter((id): id is number => id != null) || null
+
+    // Extract conversation ID
+    const conversationId = typeof doc.source_conversation_id === 'object'
+      ? doc.source_conversation_id?.id
+      : doc.source_conversation_id
+
+    return {
+      id: doc.id,
+      entry: doc.entry,
+      importance,
+      emotional_context,
+      createdAt: doc.createdAt,
+      tags: doc.tags,
+      source_conversation_id: conversationId,
+      applies_to_bots: botIds,
+    }
+  })
+
+  // Filter by minimum importance and sort by importance desc
+  const filtered = transformed
+    .filter(m => m.importance >= minImportance)
+    .sort((a, b) => {
+      // Sort by importance descending
+      if (b.importance !== a.importance) return b.importance - a.importance
+      // Secondary sort by date descending
+      const dateA = new Date(a.createdAt || 0).getTime()
+      const dateB = new Date(b.createdAt || 0).getTime()
+      return dateB - dateA
+    })
+    .slice(0, limit)
+
+  return filtered
 }

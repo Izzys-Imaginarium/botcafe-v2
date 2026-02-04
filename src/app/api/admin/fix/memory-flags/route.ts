@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
  *
  * Diagnose knowledge entries in memory tomes that are missing is_legacy_memory flag.
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const clerkUser = await currentUser()
     if (!clerkUser) {
@@ -53,14 +53,24 @@ export async function GET(request: NextRequest) {
     }
 
     // Find all knowledge entries in memory tomes that are missing is_legacy_memory flag
-    const entriesInTomes = await payload.find({
-      collection: 'knowledge',
-      where: {
-        knowledge_collection: { in: tomeIds },
-      },
-      limit: 1000,
-      overrideAccess: true,
-    })
+    // D1/SQLite has a limit on IN clause parameters, so batch in chunks of 20
+    const BATCH_SIZE = 20
+    let allEntriesInTomes: Array<Record<string, unknown>> = []
+
+    for (let i = 0; i < tomeIds.length; i += BATCH_SIZE) {
+      const batchIds = tomeIds.slice(i, i + BATCH_SIZE)
+      const batchResult = await payload.find({
+        collection: 'knowledge',
+        where: {
+          knowledge_collection: { in: batchIds },
+        },
+        limit: 1000,
+        overrideAccess: true,
+      })
+      allEntriesInTomes = allEntriesInTomes.concat(batchResult.docs as unknown as Array<Record<string, unknown>>)
+    }
+
+    const entriesInTomes = { docs: allEntriesInTomes }
 
     const missingFlag: Array<{
       id: number
@@ -183,24 +193,34 @@ export async function POST(request: NextRequest) {
     }
 
     // Find entries missing the flag
-    const entriesResult = await payload.find({
-      collection: 'knowledge',
-      where: {
-        and: [
-          { knowledge_collection: { in: tomeIds } },
-          {
-            or: [
-              { is_legacy_memory: { equals: false } },
-              { is_legacy_memory: { exists: false } },
-            ],
-          },
-        ],
-      },
-      limit: 1000,
-      overrideAccess: true,
-    })
+    // D1/SQLite has a limit on IN clause parameters, so batch in chunks of 20
+    const BATCH_SIZE = 20
+    let allEntriesToFix: Array<{ id: number; title?: string; entry?: string }> = []
 
-    const entriesToFix = entriesResult.docs as Array<{ id: number; title?: string; entry?: string }>
+    for (let i = 0; i < tomeIds.length; i += BATCH_SIZE) {
+      const batchIds = tomeIds.slice(i, i + BATCH_SIZE)
+      const batchResult = await payload.find({
+        collection: 'knowledge',
+        where: {
+          and: [
+            { knowledge_collection: { in: batchIds } },
+            {
+              or: [
+                { is_legacy_memory: { equals: false } },
+                { is_legacy_memory: { exists: false } },
+              ],
+            },
+          ],
+        },
+        limit: 1000,
+        overrideAccess: true,
+      })
+      allEntriesToFix = allEntriesToFix.concat(
+        batchResult.docs as unknown as Array<{ id: number; title?: string; entry?: string }>
+      )
+    }
+
+    const entriesToFix = allEntriesToFix
 
     if (entriesToFix.length === 0) {
       return NextResponse.json({

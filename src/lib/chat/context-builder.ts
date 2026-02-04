@@ -15,7 +15,7 @@ import type { ChatMessage } from '@/lib/llm'
 import { ActivationEngine } from '@/lib/knowledge-activation/activation-engine'
 import { PromptBuilder } from '@/lib/knowledge-activation/prompt-builder'
 import { retrieveRelevantMemories } from '@/lib/chat/memory-service'
-import { getAllPrompts, getPrompt, DEFAULT_PROMPTS, type PromptType } from '@/lib/chat/system-prompts'
+import { getAllPrompts, getPrompt } from '@/lib/chat/system-prompts'
 
 export interface BuildContextParams {
   payload: Payload
@@ -262,6 +262,12 @@ async function buildBotSystemPrompt(
 
   // === ROLEPLAY INSTRUCTIONS (configurable) ===
   parts.push(prompts.roleplay_intro)
+
+  // === BOT'S CUSTOM SYSTEM PROMPT ===
+  // This is the creator's core instruction for this specific bot
+  if (bot.system_prompt) {
+    parts.push(`\n\n${bot.system_prompt}`)
+  }
 
   // Bot description/backstory
   if (bot.description) {

@@ -1,7 +1,7 @@
 # BotCafe v2 - Complete Sitemap
 
 **Last Updated**: 2026-02-04
-**Version**: 2.34
+**Version**: 2.35
 **Status**: ~98% Complete
 
 ---
@@ -211,6 +211,7 @@
 |----------|---------|-------------|
 | `/api/admin/seed-legal` | POST | Seed legal documents (Terms, Privacy, AI Use) |
 | `/api/admin/seed-help` | POST | Seed help center articles (14 articles across categories) |
+| `/api/admin/seed-prompts` | GET, POST | GET: Preview prompts to seed. POST: Seed system prompts into database. Body: `force?: boolean` (overwrite existing) |
 | `/api/admin/vector-sync-check` | GET, POST | Check and fix vector/knowledge sync issues |
 | `/api/admin/fix/slugs` | GET, POST | GET: Preview bots with non-lowercase slugs. POST: Normalize all bot slugs to lowercase |
 | `/api/admin/fix/empty-personas` | GET, POST | GET: Preview user persona collections with empty descriptions. POST: Create personas from empty-description collections using knowledge content |
@@ -218,13 +219,14 @@
 | `/api/admin/fix/recover-linked-knowledge` | GET, POST | GET: Preview knowledge linked via junction tables in old DB. Query params: `email` (user filter), `verify=true` (verification mode - checks all users for remaining unimported data). POST: Import linked entries. Body params: `email` (single user), `all: true` (batch mode), `limit`/`offset` (pagination for batch), `createMissingCollections`, `skipDuplicates` |
 | `/api/admin/diagnostic/lookup` | GET | Diagnostic lookup for bots, users, or creator profiles. Query params: `botName`, `username`, `botSlug` |
 | `/api/admin/diagnostic/bots` | GET | Diagnostic: List bots with detailed info for troubleshooting |
-| `/api/admin/diagnostic/knowledge` | GET | Diagnostic: List knowledge entries with metadata |
+| `/api/admin/diagnostic/knowledge` | GET | Diagnostic: List knowledge entries with metadata, includes activation mode statistics (counts by mode, entries missing activation settings) |
 | `/api/admin/diagnostic/personas` | GET | Diagnostic: List personas with usage info |
 | `/api/admin/diagnostic/persona-collections` | GET | Diagnostic: List persona-related knowledge collections |
 | `/api/admin/diagnostic/user-data` | GET | Diagnostic: Get comprehensive user data overview |
 | `/api/admin/fix/bots` | GET, POST | Fix bot data issues (orphaned records, missing fields) |
 | `/api/admin/fix/knowledge` | GET, POST | Fix knowledge entry issues |
 | `/api/admin/fix/personas` | GET, POST | Fix persona data issues |
+| `/api/admin/fix/memory-flags` | GET, POST | GET: Diagnose knowledge entries in memory tomes missing `is_legacy_memory` flag. POST: Fix entries by setting flag. Body: `dryRun?: boolean` (default: true), `tomeId?: number` |
 | `/api/admin/migrate/persona-collections` | GET, POST | Migrate persona collections from legacy format |
 | `/api/admin/migration/compare` | GET | Compare local vs remote database for migration verification |
 
@@ -290,11 +292,11 @@
 | Help | 3 | 0 | 3 |
 | Chat | 2 | 0 | 2 |
 | **Frontend Total** | **32** | **2** | **34** |
-| API Endpoints | 67 | 0 | 67 |
-| **Grand Total** | **99** | **2** | **101** |
+| API Endpoints | 69 | 0 | 69 |
+| **Grand Total** | **101** | **2** | **103** |
 
 *Note: "Redirect" routes automatically redirect to the Account page with the appropriate tab.*
-*Note: API count includes 13 admin/migration endpoints for internal tooling.*
+*Note: API count includes 15 admin/migration endpoints for internal tooling.*
 
 ---
 

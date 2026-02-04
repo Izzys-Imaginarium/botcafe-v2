@@ -7,7 +7,7 @@ Based on the sitemap, style guide, and database schema analysis, BotCafé v2 is 
 ### ✅ **CURRENT COMPLETION STATUS: ~97%**
 - **Fantasy UI/UX Foundation**: ✅ Beautiful theme system, homepage, basic navigation
 - **Authentication**: ✅ Clerk integration working with catch-all routes
-- **Database Architecture**: ✅ 29 comprehensive collections for multi-tenant SaaS (added BotInteraction, VectorRecord, KnowledgeActivationLog)
+- **Database Architecture**: ✅ 30 comprehensive collections for multi-tenant SaaS (added BotInteraction, VectorRecord, KnowledgeActivationLog, SystemPrompts)
 - **Core Infrastructure**: ✅ Next.js, Payload CMS, Cloudflare Workers
 - **Bot Creation Wizard**: ✅ Multi-step form wizard with validation, image upload, and fantasy theme
 - **Bot Editing**: ✅ Reusable form component for both create and edit workflows
@@ -395,7 +395,7 @@ By building foundational systems first, we avoid rework and ensure chat has all 
 ### **Completed:**
 - ✅ **Home Page**: Complete splash page with magical effects
 - ✅ **Authentication**: Clerk integration with catch-all routes
-- ✅ **Database Schema**: All 29 collections configured (added BotInteraction, VectorRecord, KnowledgeActivationLog)
+- ✅ **Database Schema**: All 30 collections configured (added BotInteraction, VectorRecord, KnowledgeActivationLog, SystemPrompts)
 - ✅ **UI/UX Theme**: Fantasy theme system implemented
 - ✅ **Create Page**: Bot creation wizard with multi-step form
 - ✅ **Edit Workflow**: Reusable form component for create/edit
@@ -440,7 +440,7 @@ By building foundational systems first, we avoid rework and ensure chat has all 
 - **Effects**: Glass rune styling, ornate borders, floating animations, magical backgrounds
 - **Components**: All components must follow the established fantasy aesthetic
 
-### **Database Collections (30 total):**
+### **Database Collections (30 total, including SystemPrompts):**
 1. **Users** - Authentication and profile management
 2. **Media** - File uploads and media management
 3. **Bot** - AI companion definitions
@@ -470,6 +470,7 @@ By building foundational systems first, we avoid rework and ensure chat has all 
 27. **UserAgreements** - Legal acceptance tracking
 28. **Documentation** - Help documentation
 29. **Tutorials** - Interactive tutorials
+30. **SystemPrompts** - Configurable prompt templates for chat (admin-managed)
 
 ---
 
@@ -599,6 +600,13 @@ When you add new Payload collections or modify existing ones:
 ## 🔄 **Recent Changes**
 
 ### **2026-02-04 Updates:**
+- ✅ **Documentation Updates**
+  - Added SystemPrompts collection to DATABASE-SCHEMA.md (30 collections total)
+  - Added new admin endpoints to SITEMAP.md:
+    - `/api/admin/seed-prompts` - Seed system prompts into database
+    - `/api/admin/fix/memory-flags` - Fix is_legacy_memory flags on knowledge entries
+  - Enhanced `/api/admin/diagnostic/knowledge` description with activation mode stats
+  - Updated API endpoint count from 67 to 69
 - ✅ **Memory System Collection Mismatch Fix**
   - **Root cause**: Memories were being generated into `knowledge` collection (with `is_legacy_memory: true`) but retrieval was querying the deprecated `memory` collection
   - Fixed `retrieveRelevantMemories()` in `memory-service.ts` to query `knowledge` collection
@@ -1556,7 +1564,7 @@ const filtered = all.docs.filter(conv =>
 ---
 
 **Last Updated**: 2026-02-04
-**Version**: 3.32
+**Version**: 3.33
 **Total Tasks**: 185
 **Completed**: 180
 **Progress**: ~97% (Memory system collection mismatch fix)

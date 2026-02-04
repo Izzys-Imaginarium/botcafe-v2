@@ -1,14 +1,14 @@
 # BotCafe v2 - Database Schema
 
 **Last Updated**: 2026-02-04
-**Version**: 3.17
+**Version**: 3.18
 **Database**: Cloudflare D1 (SQLite) via Payload CMS
 
 ---
 
 ## Overview
 
-BotCafe v2 uses Payload CMS with 29 collections organized into functional groups:
+BotCafe v2 uses Payload CMS with 30 collections organized into functional groups:
 
 | Category | Collections | Count |
 |----------|-------------|-------|
@@ -22,6 +22,7 @@ BotCafe v2 uses Payload CMS with 29 collections organized into functional groups
 | Wellbeing | Mood, SelfModeration | 2 |
 | Analytics | UsageAnalytics, MemoryInsights, PersonaAnalytics | 3 |
 | Legal/Help | LegalDocuments, UserAgreements, Documentation, Tutorials | 4 |
+| Settings | SystemPrompts | 1 |
 
 ---
 
@@ -949,6 +950,34 @@ Interactive tutorials.
 | `estimated_time` | number | Estimated minutes |
 | `is_published` | checkbox | Published status |
 | `createdAt` | date | Auto-generated |
+
+---
+
+## Settings
+
+### SystemPrompts
+
+Configurable prompt templates for chat conversations. Allows admins to modify base prompts used by bots without code changes.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Primary key |
+| `name` | text | Internal name for prompt template (required) |
+| `promptType` | select | Template type: **roleplay_intro**, **knowledge_instructions**, **roleplay_guidelines**, **multibot_instructions**, **ai_disclaimer**, **custom** (required) |
+| `content` | textarea | Prompt content with placeholder support (required) |
+| `isActive` | checkbox | Only active prompts are used (default: true) |
+| `priority` | number | Higher priority prompts used first when multiple exist (default: 0) |
+| `description` | textarea | Internal notes about this prompt version |
+| `version` | text | Version number for tracking changes (default: "1.0") |
+| `createdAt` | date | Auto-generated |
+| `updatedAt` | date | Auto-generated |
+
+**Supported Placeholders:**
+- `{{bot_name}}` / `{{char}}` - Bot name
+- `{{user}}` - User name/persona name
+- `{{other_bots}}` - Other bots in multi-bot conversations
+
+> **Note**: Only one prompt per `promptType` can be active at a time. When activating a prompt, other prompts of the same type are automatically deactivated.
 
 ---
 

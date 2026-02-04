@@ -127,20 +127,71 @@ export class ActivationEngine {
   }
 
   /**
-   * Fetch all knowledge entries for the current user
+   * Fetch knowledge entries for the current user, filtered by bot's collections
+   *
+   * Knowledge isolation: Only returns entries that are:
+   * 1. In a collection linked to the current bot (via bot.knowledge_collections), OR
+   * 2. Explicitly allowed for this bot via filtering.allowed_bot_ids
+   *
+   * This prevents knowledge "bleed over" between bots.
    */
   private async fetchKnowledgeEntries(context: ActivationContext): Promise<Knowledge[]> {
     if (!context.payload) {
       throw new ActivationError('Payload instance required for fetching entries', 'PAYLOAD_REQUIRED')
     }
 
+    const { filters } = context
+    const botCollectionIds = filters.botKnowledgeCollectionIds || []
+    const currentBotId = filters.currentBotId
+
+    // Build the where clause based on bot's collections
+    let whereClause: Record<string, unknown>
+
+    if (botCollectionIds.length > 0) {
+      // Filter by bot's linked collections
+      // Also include entries that explicitly allow this bot via filtering
+      whereClause = {
+        and: [
+          { user: { equals: context.userId } },
+          {
+            or: [
+              // Entry is in one of the bot's linked collections
+              { knowledge_collection: { in: botCollectionIds } },
+              // OR entry explicitly allows this bot (for cross-bot shared lore)
+              ...(currentBotId ? [{
+                and: [
+                  { 'filtering.filter_by_bots': { equals: true } },
+                  { 'filtering.allowed_bot_ids': { contains: currentBotId } },
+                ]
+              }] : []),
+            ],
+          },
+        ],
+      }
+    } else {
+      // STRICT: No collections = no access (except explicitly allowed entries)
+      // This prevents knowledge bleed between bots
+      console.warn('[ActivationEngine] No bot knowledge collections specified - only fetching explicitly allowed entries')
+
+      if (currentBotId) {
+        // Only fetch entries that explicitly allow this bot via filtering.allowed_bot_ids
+        whereClause = {
+          and: [
+            { user: { equals: context.userId } },
+            { 'filtering.filter_by_bots': { equals: true } },
+            { 'filtering.allowed_bot_ids': { contains: currentBotId } },
+          ],
+        }
+      } else {
+        // No bot ID and no collections = no entries
+        console.warn('[ActivationEngine] No bot ID or collections - returning empty')
+        return []
+      }
+    }
+
     const result = await context.payload.find({
       collection: 'knowledge',
-      where: {
-        user: {
-          equals: context.userId,
-        },
-      },
+      where: whereClause,
       limit: 1000, // TODO: Consider pagination for users with many entries
     })
 

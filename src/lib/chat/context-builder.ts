@@ -72,6 +72,13 @@ export async function buildChatContext(params: BuildContextParams): Promise<Chat
     if (lastUserMessage) {
       const engine = new ActivationEngine()
 
+      // Extract bot's linked knowledge collection IDs for isolation
+      const botKnowledgeCollectionIds = (bot.knowledge_collections || []).map((col) =>
+        typeof col === 'object' && col !== null ? Number(col.id) : Number(col)
+      ).filter((id) => !isNaN(id))
+
+      console.log('[Context Builder] Bot knowledge collections:', botKnowledgeCollectionIds.length, 'collections')
+
       // Build activation context
       const activationResult = await engine.activate({
         payload,
@@ -83,6 +90,8 @@ export async function buildChatContext(params: BuildContextParams): Promise<Chat
           userId: userId,
           currentBotId: bot.id,
           currentPersonaId: persona ? persona.id : undefined,
+          // Knowledge isolation: only activate entries from bot's linked collections
+          botKnowledgeCollectionIds,
         },
         budgetConfig: {
           maxContextTokens: 8000,

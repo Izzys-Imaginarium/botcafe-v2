@@ -190,6 +190,8 @@ export interface FilterConfig {
   userId: number
   currentBotId?: number
   currentPersonaId?: number
+  /** Knowledge collection IDs linked to the current bot - entries must be in one of these collections */
+  botKnowledgeCollectionIds?: number[]
   filterByBots?: boolean
   allowedBotIds?: number[]
   excludedBotIds?: number[]

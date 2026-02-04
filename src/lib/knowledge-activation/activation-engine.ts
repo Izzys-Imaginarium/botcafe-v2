@@ -122,7 +122,12 @@ export class ActivationEngine {
         entriesExcludedByDelay: activatedEntries.filter((e) => e.exclusionReason === 'delay_not_met').length,
       }
     } catch (error) {
-      throw new ActivationError('Activation failed', 'ACTIVATION_FAILED', { error, context })
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      throw new ActivationError(
+        `Activation failed: ${errorMessage}`,
+        'ACTIVATION_FAILED',
+        { error, context }
+      )
     }
   }
 

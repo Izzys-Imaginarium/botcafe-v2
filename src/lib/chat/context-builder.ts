@@ -125,7 +125,16 @@ export async function buildChatContext(params: BuildContextParams): Promise<Chat
       }
     }
   } catch (error) {
-    console.error('[Context Builder] Knowledge activation error:', error)
+    // Extract underlying error from ActivationError wrapper
+    const underlyingError = (error as { details?: { error?: unknown } })?.details?.error
+    const errorCode = (error as { code?: string })?.code
+    console.error('[Context Builder] Knowledge activation error:', {
+      message: error instanceof Error ? error.message : String(error),
+      code: errorCode,
+      underlyingError: underlyingError instanceof Error
+        ? { message: underlyingError.message, stack: underlyingError.stack }
+        : underlyingError,
+    })
     // Continue without lore - don't fail the chat
   }
 

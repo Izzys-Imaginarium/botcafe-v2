@@ -134,9 +134,8 @@ export class ActivationEngine {
   /**
    * Fetch knowledge entries for the current user, filtered by bot's collections
    *
-   * Knowledge isolation: Only returns entries that are:
-   * 1. In a collection linked to the current bot (via bot.knowledge_collections), OR
-   * 2. Explicitly allowed for this bot via filtering.allowed_bot_ids
+   * Knowledge isolation: Only returns entries that are in a collection
+   * linked to the current bot (via bot.knowledge_collections).
    *
    * This prevents knowledge "bleed over" between bots.
    */
@@ -147,51 +146,19 @@ export class ActivationEngine {
 
     const { filters } = context
     const botCollectionIds = filters.botKnowledgeCollectionIds || []
-    const currentBotId = filters.currentBotId
 
-    // Build the where clause based on bot's collections
-    let whereClause: Record<string, unknown>
+    if (botCollectionIds.length === 0) {
+      // No collections linked to bot = no knowledge entries to fetch
+      console.warn('[ActivationEngine] No bot knowledge collections specified - returning empty')
+      return []
+    }
 
-    if (botCollectionIds.length > 0) {
-      // Filter by bot's linked collections
-      // Also include entries that explicitly allow this bot via filtering
-      whereClause = {
-        and: [
-          { user: { equals: context.userId } },
-          {
-            or: [
-              // Entry is in one of the bot's linked collections
-              { knowledge_collection: { in: botCollectionIds } },
-              // OR entry explicitly allows this bot (for cross-bot shared lore)
-              ...(currentBotId ? [{
-                and: [
-                  { 'filtering.filter_by_bots': { equals: true } },
-                  { 'filtering.allowed_bot_ids': { contains: currentBotId } },
-                ]
-              }] : []),
-            ],
-          },
-        ],
-      }
-    } else {
-      // STRICT: No collections = no access (except explicitly allowed entries)
-      // This prevents knowledge bleed between bots
-      console.warn('[ActivationEngine] No bot knowledge collections specified - only fetching explicitly allowed entries')
-
-      if (currentBotId) {
-        // Only fetch entries that explicitly allow this bot via filtering.allowed_bot_ids
-        whereClause = {
-          and: [
-            { user: { equals: context.userId } },
-            { 'filtering.filter_by_bots': { equals: true } },
-            { 'filtering.allowed_bot_ids': { contains: currentBotId } },
-          ],
-        }
-      } else {
-        // No bot ID and no collections = no entries
-        console.warn('[ActivationEngine] No bot ID or collections - returning empty')
-        return []
-      }
+    // Build simple where clause - entries must be in bot's linked collections
+    const whereClause: Record<string, unknown> = {
+      and: [
+        { user: { equals: context.userId } },
+        { knowledge_collection: { in: botCollectionIds } },
+      ],
     }
 
     const result = await context.payload.find({
@@ -422,12 +389,13 @@ export class ActivationEngine {
 
       // Bot filtering
       if (filterSettings?.filter_by_bots && filters.currentBotId) {
-        const allowedBots = (filterSettings.allowed_bot_ids ?? []).map((id) =>
-          typeof id === 'object' ? Number(id.id) : Number(id),
-        )
-        const excludedBots = (filterSettings.excluded_bot_ids ?? []).map((id) =>
-          typeof id === 'object' ? Number(id.id) : Number(id),
-        )
+        // Schema: allowed_bot_ids is array of { bot_id: number }
+        const allowedBots = (filterSettings.allowed_bot_ids ?? []).map((item) =>
+          typeof item === 'object' && item !== null ? Number((item as { bot_id?: number }).bot_id) : Number(item),
+        ).filter((id) => !isNaN(id))
+        const excludedBots = (filterSettings.excluded_bot_ids ?? []).map((item) =>
+          typeof item === 'object' && item !== null ? Number((item as { bot_id?: number }).bot_id) : Number(item),
+        ).filter((id) => !isNaN(id))
 
         if (allowedBots.length > 0 && !allowedBots.includes(Number(filters.currentBotId))) {
           excluded = true
@@ -442,12 +410,13 @@ export class ActivationEngine {
 
       // Persona filtering
       if (filterSettings?.filter_by_personas && filters.currentPersonaId) {
-        const allowedPersonas = (filterSettings.allowed_persona_ids ?? []).map((id) =>
-          typeof id === 'object' ? Number(id.id) : Number(id),
-        )
-        const excludedPersonas = (filterSettings.excluded_persona_ids ?? []).map((id) =>
-          typeof id === 'object' ? Number(id.id) : Number(id),
-        )
+        // Schema: allowed_persona_ids is array of { persona_id: number }
+        const allowedPersonas = (filterSettings.allowed_persona_ids ?? []).map((item) =>
+          typeof item === 'object' && item !== null ? Number((item as { persona_id?: number }).persona_id) : Number(item),
+        ).filter((id) => !isNaN(id))
+        const excludedPersonas = (filterSettings.excluded_persona_ids ?? []).map((item) =>
+          typeof item === 'object' && item !== null ? Number((item as { persona_id?: number }).persona_id) : Number(item),
+        ).filter((id) => !isNaN(id))
 
         if (allowedPersonas.length > 0 && !allowedPersonas.includes(Number(filters.currentPersonaId))) {
           excluded = true

@@ -1,10 +1,22 @@
 # Knowledge Entry Compatibility Fixes
 
 **Created:** 2026-02-05
+**Updated:** 2026-02-05
 **Status:** In Progress
 **Related Files:** activation-engine.ts, memory-service.ts, import routes
 
 This document tracks compatibility issues between legacy memories (migrated from `memory` collection) and new knowledge entries created directly in the `knowledge` collection.
+
+---
+
+## Fix Endpoints Available
+
+| Endpoint | Purpose | Method |
+|----------|---------|--------|
+| `/api/admin/diagnostic/knowledge` | Preview issues with knowledge entries | GET |
+| `/api/admin/fix/knowledge` | Fix orphaned knowledge (missing collections) | GET/POST |
+| `/api/admin/fix/knowledge-activation` | Fix missing activation settings | GET/POST |
+| `/api/admin/fix/memory-flags` | Fix is_legacy_memory flags on memory tomes | GET/POST |
 
 ---
 
@@ -13,11 +25,13 @@ This document tracks compatibility issues between legacy memories (migrated from
 | # | Issue | Severity | Status | File(s) |
 |---|-------|----------|--------|---------|
 | 1 | Missing `use_probability` in import route | HIGH | TODO | `memories/import/route.ts` |
-| 2 | `retrieveRelevantMemories` only gets legacy | CRITICAL | TODO | `memory-service.ts` |
+| 2 | `retrieveRelevantMemories` only gets legacy | CRITICAL | BY DESIGN | `memory-service.ts` |
 | 3 | `is_vectorized: false` with no query filter | CRITICAL | TODO | Multiple |
-| 4 | Hardcoded importance for imports | MEDIUM | TODO | `memories/import/route.ts` |
+| 4 | Hardcoded importance for imports | MEDIUM | ACCEPTABLE | `memories/import/route.ts` |
 | 5 | Duplicate detection only checks legacy | MEDIUM | TODO | `memory-service.ts` |
-| 6 | Advanced activation fields not set | LOW | TODO | All creation paths |
+| 6 | Advanced activation fields not set | LOW | **FIX AVAILABLE** | All creation paths |
+
+**Note:** Issue 6 can now be fixed via `/api/admin/fix/knowledge-activation`
 
 ---
 
@@ -182,24 +196,51 @@ Remove `is_legacy_memory` filter from duplicate detection, or check both legacy 
 ## Issue 6: Advanced Activation Fields Not Set
 
 **Severity:** LOW
-**Status:** TODO
+**Status:** FIX AVAILABLE
 **Files:** All creation paths (import, migrate, memory-service)
+**Fix Endpoint:** `/api/admin/fix/knowledge-activation`
 
 ### Problem
-Legacy memories are created without:
+Legacy knowledge entries are created without:
+- `activation_settings` (activation_mode, keywords, vector threshold)
 - `advanced_activation` (sticky, cooldown, delay)
 - `budget_control` (token_cost, ignore_budget)
 - `filtering` (bot/persona include/exclude lists)
+- `positioning` (where to insert in prompt)
 
 These fields default to schema defaults but can't be customized without manual editing.
 
 ### Impact
+- Activation engine may not properly activate legacy entries
 - Legacy entries can't use timed effects (sticky, cooldown, delay)
 - No budget control for legacy memories
 - Can't exclude specific bots/personas from seeing specific memories
 
 ### Fix
-This is acceptable if defaults work. Could add a migration to set sensible defaults explicitly.
+Use the `/api/admin/fix/knowledge-activation` endpoint:
+
+```bash
+# Preview which entries need fixes
+GET /api/admin/fix/knowledge-activation
+
+# Fix all entries (auto mode: legacy memories → keyword, lore → vector)
+POST /api/admin/fix/knowledge-activation
+{ "strategy": "auto" }
+
+# Fix specific user's entries
+POST /api/admin/fix/knowledge-activation
+{ "strategy": "auto", "userId": 1 }
+
+# Dry run to preview changes
+POST /api/admin/fix/knowledge-activation
+{ "strategy": "auto", "dryRun": true }
+```
+
+Strategy options:
+- `auto` (default): Legacy memories get `keyword` mode, regular lore gets `vector` mode
+- `keyword`: All entries use keyword activation
+- `vector`: All entries use vector activation
+- `hybrid`: All entries use hybrid (keyword + vector) activation
 
 ---
 

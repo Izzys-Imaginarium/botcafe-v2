@@ -153,21 +153,28 @@ export class ActivationEngine {
       return []
     }
 
-    // Build simple where clause - entries must be in bot's linked collections
-    const whereClause: Record<string, unknown> = {
-      and: [
-        { user: { equals: context.userId } },
-        { knowledge_collection: { in: botCollectionIds } },
-      ],
+    // Batch collection IDs to avoid D1 "too many SQL variables" error
+    const BATCH_SIZE = 20
+    const allEntries: Knowledge[] = []
+
+    for (let i = 0; i < botCollectionIds.length; i += BATCH_SIZE) {
+      const batchIds = botCollectionIds.slice(i, i + BATCH_SIZE)
+
+      const result = await context.payload.find({
+        collection: 'knowledge',
+        where: {
+          and: [
+            { user: { equals: context.userId } },
+            { knowledge_collection: { in: batchIds } },
+          ],
+        },
+        limit: 1000,
+      })
+
+      allEntries.push(...result.docs)
     }
 
-    const result = await context.payload.find({
-      collection: 'knowledge',
-      where: whereClause,
-      limit: 1000, // TODO: Consider pagination for users with many entries
-    })
-
-    return result.docs
+    return allEntries
   }
 
   /**

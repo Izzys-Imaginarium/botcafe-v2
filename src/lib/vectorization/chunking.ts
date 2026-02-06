@@ -97,9 +97,68 @@ function chunkByParagraph(text: string, chunkSize: number, overlap: number): Tex
   let currentChunk = ''
   let currentPosition = 0
 
+  // Helper: break an oversized paragraph into sentence-based sub-chunks
+  const breakOversizedParagraph = (paragraph: string): string[] => {
+    const sentences = splitIntoSentences(paragraph)
+    if (sentences.length <= 1) {
+      // Can't split by sentences, fall back to sliding window on words
+      const words = paragraph.split(/\s+/)
+      const wordsPerChunk = Math.floor(chunkSize * 0.75) // ~tokens to words
+      const subChunks: string[] = []
+      for (let i = 0; i < words.length; i += wordsPerChunk) {
+        subChunks.push(words.slice(i, i + wordsPerChunk).join(' '))
+      }
+      return subChunks
+    }
+    // Group sentences into sub-chunks that fit within chunkSize
+    const subChunks: string[] = []
+    let current = ''
+    for (const sentence of sentences) {
+      if (estimateTokens(current) + estimateTokens(sentence) > chunkSize && current.length > 0) {
+        subChunks.push(current.trim())
+        current = sentence
+      } else {
+        current += (current.length > 0 ? ' ' : '') + sentence
+      }
+    }
+    if (current.trim().length > 0) {
+      subChunks.push(current.trim())
+    }
+    return subChunks
+  }
+
   for (const paragraph of paragraphs) {
     const paragraphTokens = estimateTokens(paragraph)
     const currentTokens = estimateTokens(currentChunk)
+
+    // If a single paragraph exceeds chunkSize, break it into sub-chunks
+    if (paragraphTokens > chunkSize) {
+      // First, flush whatever is in the current chunk
+      if (currentChunk.trim().length > 0) {
+        chunks.push({
+          text: currentChunk.trim(),
+          index: chunks.length,
+          totalChunks: 0,
+          startPosition: currentPosition,
+          endPosition: currentPosition + currentChunk.length,
+        })
+        currentChunk = ''
+      }
+
+      // Break the oversized paragraph and add each sub-chunk
+      const subChunks = breakOversizedParagraph(paragraph)
+      for (const sub of subChunks) {
+        chunks.push({
+          text: sub.trim(),
+          index: chunks.length,
+          totalChunks: 0,
+          startPosition: currentPosition,
+          endPosition: currentPosition + sub.length,
+        })
+        currentPosition += sub.length
+      }
+      continue
+    }
 
     if (currentTokens + paragraphTokens > chunkSize && currentChunk.length > 0) {
       // Current chunk is full, save it

@@ -114,9 +114,16 @@ export class KeywordMatcher {
             }
             return ''
           }
-          return root.children.map(extractText).join('\n')
+          const lexicalText = root.children.map(extractText).join('\n')
+          if (lexicalText.trim()) return lexicalText
         }
       }
+
+      // Fall back to message.entry (plain text field)
+      if (typeof message.entry === 'string' && message.entry.trim()) {
+        return message.entry
+      }
+
       return ''
     } catch (error) {
       return ''

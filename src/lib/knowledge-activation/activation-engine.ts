@@ -283,15 +283,16 @@ export class ActivationEngine {
     }
 
     // Search vector database
+    // Note: No user_id filter here. Lore entries are bot-scoped, not user-scoped.
+    // The creator's lore should activate for ANY user chatting with the bot.
+    // Isolation is handled by: botKnowledgeCollectionIds (DB fetch) + entry matching step.
     const searchOptions: VectorSearchOptions = {
       similarityThreshold: 0.7, // Default, can be overridden
       maxResults: 20, // Get more than needed, filter per entry
-      filters: {
-        userId: filters.userId,
-      },
+      filters: {},
     }
 
-    console.log('[VectorActivation] Searching with userId filter:', filters.userId)
+    console.log('[VectorActivation] Searching without user filter (lore is bot-scoped)')
     const vectorResults = await this.vectorRetriever.retrieveRelevant(queryText, searchOptions, env)
     console.log('[VectorActivation] Vector search returned:', vectorResults.length, 'results')
     if (vectorResults.length > 0) {

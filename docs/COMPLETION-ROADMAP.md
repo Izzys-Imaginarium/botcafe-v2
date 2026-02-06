@@ -599,6 +599,27 @@ When you add new Payload collections or modify existing ones:
 
 ## 🔄 **Recent Changes**
 
+### **2026-02-06 Updates:**
+- ✅ **Knowledge Compatibility Fixes Complete**
+  - Fixed all compatibility issues between legacy memories and new knowledge entries
+  - Batch vectorized 2665 non-vectorized knowledge entries
+  - Created comprehensive documentation: `docs/KNOWLEDGE-COMPATIBILITY-FIXES.md`
+  - **Issues Fixed:**
+    - Issue 1: Added `use_probability: false` to import route and memory-service
+    - Issue 2: Confirmed as BY DESIGN - memories and lore use separate retrieval paths
+    - Issue 3: Batch vectorization completed - all entries now vectorized
+    - Issue 4: Hardcoded importance reviewed and marked ACCEPTABLE
+    - Issue 5: Duplicate detection now checks both legacy and non-legacy entries
+    - Issue 6: Fix endpoint available at `/api/admin/fix/knowledge-activation`
+  - **New Admin Endpoints:**
+    - `GET/POST /api/admin/fix/batch-vectorize` - Batch vectorize non-vectorized entries
+    - `GET /api/admin/diagnostic/vectorization` - Preview vectorization status
+    - `GET/POST /api/admin/fix/knowledge-activation` - Fix missing activation settings
+  - **Activation Engine Fixes:**
+    - Fixed batched collection queries to avoid D1 "too many SQL variables" error
+    - Fixed field paths in filtering logic (`bot_id`, `persona_id`)
+    - Improved error messaging for activation failures
+
 ### **2026-02-04 Updates:**
 - ✅ **Documentation Updates**
   - Added SystemPrompts collection to DATABASE-SCHEMA.md (30 collections total)
@@ -1563,8 +1584,8 @@ const filtered = all.docs.filter(conv =>
 
 ---
 
-**Last Updated**: 2026-02-04
-**Version**: 3.33
+**Last Updated**: 2026-02-06
+**Version**: 3.34
 **Total Tasks**: 185
 **Completed**: 180
 **Progress**: ~97% (Memory system collection mismatch fix)

@@ -96,12 +96,12 @@ async function checkForDuplicateMemory(
 ): Promise<{ isDuplicate: boolean; existingMemoryId?: number }> {
   try {
     // Get existing memories for this conversation from Knowledge collection
+    // Check both legacy and non-legacy entries to prevent any duplicates
     const existingMemories = await payload.find({
       collection: 'knowledge',
       where: {
         user: { equals: userId },
         source_conversation_id: { equals: conversationId },
-        is_legacy_memory: { equals: true },
       },
       limit: 10,
       sort: '-createdAt',
@@ -468,6 +468,7 @@ export async function generateConversationMemory(
           vector_similarity_threshold: 0.6,
           max_vector_results: 5,
           probability: 100,
+          use_probability: false,
         },
         positioning: {
           position: 'after_character',
@@ -1096,6 +1097,7 @@ export async function consolidateMemories(
               vector_similarity_threshold: 0.6,
               max_vector_results: 5,
               probability: 100,
+              use_probability: false,
             },
             positioning: {
               position: 'after_character',

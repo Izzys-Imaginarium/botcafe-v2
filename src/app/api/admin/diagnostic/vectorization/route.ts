@@ -207,9 +207,8 @@ export async function GET(request: NextRequest) {
       if (!k.entry || k.entry.trim().length < 10) {
         issues.push('Content too short (<10 chars)')
       }
-      if (linkedBots.length === 0 && collectionInfo?.category !== 'memories') {
-        issues.push('Collection not linked to any bot')
-      }
+      // Note: Collections don't need to be linked to bots - they're accessible in the lore UI
+      // Only entries that are linked to bots will activate during chat, but that's intentional
 
       if (issues.length > 0) {
         missingData.push({

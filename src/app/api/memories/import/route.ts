@@ -240,6 +240,7 @@ export async function POST(request: NextRequest) {
           vector_similarity_threshold: 0.6,
           max_vector_results: 5,
           probability: 100,
+          use_probability: false,
         },
         positioning: {
           position: 'after_character',

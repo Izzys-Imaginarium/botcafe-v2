@@ -14,9 +14,11 @@ This document tracks compatibility issues between legacy memories (migrated from
 | Endpoint | Purpose | Method |
 |----------|---------|--------|
 | `/api/admin/diagnostic/knowledge` | Preview issues with knowledge entries | GET |
+| `/api/admin/diagnostic/vectorization` | Preview vectorization status of entries | GET |
 | `/api/admin/fix/knowledge` | Fix orphaned knowledge (missing collections) | GET/POST |
 | `/api/admin/fix/knowledge-activation` | Fix missing activation settings | GET/POST |
 | `/api/admin/fix/memory-flags` | Fix is_legacy_memory flags on memory tomes | GET/POST |
+| `/api/admin/fix/batch-vectorize` | Batch vectorize non-vectorized entries | GET/POST |
 
 ---
 
@@ -24,14 +26,18 @@ This document tracks compatibility issues between legacy memories (migrated from
 
 | # | Issue | Severity | Status | File(s) |
 |---|-------|----------|--------|---------|
-| 1 | Missing `use_probability` in import route | HIGH | TODO | `memories/import/route.ts` |
+| 1 | Missing `use_probability` in import route | HIGH | **FIXED** | `memories/import/route.ts`, `memory-service.ts` |
 | 2 | `retrieveRelevantMemories` only gets legacy | CRITICAL | BY DESIGN | `memory-service.ts` |
-| 3 | `is_vectorized: false` with no query filter | CRITICAL | TODO | Multiple |
+| 3 | `is_vectorized: false` with no query filter | CRITICAL | **FIX AVAILABLE** | Multiple |
 | 4 | Hardcoded importance for imports | MEDIUM | ACCEPTABLE | `memories/import/route.ts` |
-| 5 | Duplicate detection only checks legacy | MEDIUM | TODO | `memory-service.ts` |
+| 5 | Duplicate detection only checks legacy | MEDIUM | **FIXED** | `memory-service.ts` |
 | 6 | Advanced activation fields not set | LOW | **FIX AVAILABLE** | All creation paths |
 
-**Note:** Issue 6 can now be fixed via `/api/admin/fix/knowledge-activation`
+**Notes:**
+- Issue 1: Added `use_probability: false` to all memory creation paths
+- Issue 3: Use `/api/admin/fix/batch-vectorize` to vectorize non-vectorized entries
+- Issue 5: Duplicate detection now checks all entries, not just legacy
+- Issue 6: Use `/api/admin/fix/knowledge-activation` to fix activation settings
 
 ---
 
@@ -246,12 +252,12 @@ Strategy options:
 
 ## Completion Checklist
 
-- [ ] Issue 1: Add `use_probability: false` to import route
-- [ ] Issue 2: Decide on memory/lore separation strategy
-- [ ] Issue 3: Decide on vectorization strategy for legacy memories
-- [ ] Issue 4: Review importance handling (may be acceptable as-is)
-- [ ] Issue 5: Fix duplicate detection to check both types
-- [ ] Issue 6: Review defaults (may be acceptable as-is)
+- [x] Issue 1: Add `use_probability: false` to import route - **DONE**
+- [x] Issue 2: Decide on memory/lore separation strategy - **BY DESIGN** (separate systems)
+- [x] Issue 3: Batch vectorization endpoint created - `/api/admin/fix/batch-vectorize`
+- [x] Issue 4: Review importance handling - **ACCEPTABLE** as-is
+- [x] Issue 5: Fix duplicate detection to check both types - **DONE**
+- [x] Issue 6: Fix endpoint available - `/api/admin/fix/knowledge-activation`
 
 ---
 

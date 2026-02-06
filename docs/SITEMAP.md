@@ -228,6 +228,8 @@
 | `/api/admin/fix/personas` | GET, POST | Fix persona data issues |
 | `/api/admin/fix/memory-flags` | GET, POST | GET: Diagnose knowledge entries in memory tomes missing `is_legacy_memory` flag. POST: Fix entries by setting flag. Body: `dryRun?: boolean` (default: true), `tomeId?: number` |
 | `/api/admin/fix/knowledge-activation` | GET, POST | GET: Preview knowledge entries missing activation settings. POST: Fix activation settings. Body: `strategy?: 'auto'\|'keyword'\|'vector'\|'hybrid'`, `userId?: number`, `dryRun?: boolean` |
+| `/api/admin/fix/batch-vectorize` | GET, POST | GET: Preview non-vectorized entries. POST: Batch vectorize entries. Body: `userId?: number`, `limit?: number`, `dryRun?: boolean` |
+| `/api/admin/diagnostic/vectorization` | GET | Preview vectorization status of knowledge entries. Query: `userId`, `onlyNonVectorized` |
 | `/api/admin/migrate/persona-collections` | GET, POST | Migrate persona collections from legacy format |
 | `/api/admin/migration/compare` | GET | Compare local vs remote database for migration verification |
 

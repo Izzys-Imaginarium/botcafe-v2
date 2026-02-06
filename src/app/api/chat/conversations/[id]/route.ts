@@ -111,6 +111,106 @@ export async function GET(
   }
 }
 
+// Helper: Build bot_participation update data from fresh conversation state
+function buildBotParticipationUpdate(
+  conversation: Record<string, any>,
+  addBotId?: number,
+  removeBotId?: number,
+): Record<string, unknown> | null {
+  const updateData: Record<string, unknown> = {}
+
+  if (addBotId) {
+    const currentBots = conversation.bot_participation || []
+    const alreadyInConvo = currentBots.some(
+      (bp: any) =>
+        (typeof bp.bot_id === 'object' ? bp.bot_id.id : bp.bot_id) === addBotId
+    )
+
+    if (!alreadyInConvo) {
+      const normalizedCurrentBots = currentBots.map((bp: any) => {
+        const normalized: Record<string, unknown> = {
+          bot_id: typeof bp.bot_id === 'object' ? bp.bot_id.id : bp.bot_id,
+          role: bp.role,
+          is_active: bp.is_active,
+          joined_at: bp.joined_at,
+        }
+        if (bp.id) {
+          normalized.id = bp.id
+        }
+        return normalized
+      })
+
+      updateData.bot_participation = [
+        ...normalizedCurrentBots,
+        {
+          bot_id: addBotId,
+          role: 'secondary',
+          is_active: true,
+          joined_at: new Date().toISOString(),
+        },
+      ]
+
+      if (currentBots.length === 1) {
+        updateData.conversation_type = 'multi-bot'
+      }
+
+      const participants = (conversation.participants || { bots: [], personas: [] }) as {
+        bots?: string[]
+        personas?: string[]
+        primary_persona?: string
+        persona_changes?: unknown[]
+      }
+      updateData.participants = {
+        ...participants,
+        bots: [...(participants.bots || []), String(addBotId)],
+      }
+    }
+  }
+
+  if (removeBotId) {
+    const currentBots = conversation.bot_participation || []
+
+    if (currentBots.length <= 1) {
+      return null // Signal that removal is invalid
+    }
+
+    updateData.bot_participation = currentBots
+      .filter(
+        (bp: any) =>
+          (typeof bp.bot_id === 'object' ? bp.bot_id.id : bp.bot_id) !== removeBotId
+      )
+      .map((bp: any) => {
+        const normalized: Record<string, unknown> = {
+          bot_id: typeof bp.bot_id === 'object' ? bp.bot_id.id : bp.bot_id,
+          role: bp.role,
+          is_active: bp.is_active,
+          joined_at: bp.joined_at,
+        }
+        if (bp.id) {
+          normalized.id = bp.id
+        }
+        return normalized
+      })
+
+    if (currentBots.length === 2) {
+      updateData.conversation_type = 'single-bot'
+    }
+
+    const participants = (conversation.participants || { bots: [], personas: [] }) as {
+      bots?: string[]
+      personas?: string[]
+      primary_persona?: string
+      persona_changes?: unknown[]
+    }
+    updateData.participants = {
+      ...participants,
+      bots: (participants.bots || []).filter((id: string) => id !== String(removeBotId)),
+    }
+  }
+
+  return updateData
+}
+
 // PATCH /api/chat/conversations/[id] - Update conversation
 export async function PATCH(
   request: NextRequest,
@@ -147,32 +247,6 @@ export async function PATCH(
 
     const payloadUser = payloadUsers.docs[0]
 
-    // Fetch conversation
-    const conversation = await payload.findByID({
-      collection: 'conversation',
-      id: parseInt(id),
-      overrideAccess: true,
-    })
-
-    if (!conversation) {
-      return NextResponse.json(
-        { message: 'Conversation not found' },
-        { status: 404 }
-      )
-    }
-
-    // Verify ownership
-    const conversationUserId = typeof conversation.user === 'object'
-      ? conversation.user.id
-      : conversation.user
-
-    if (conversationUserId !== payloadUser.id) {
-      return NextResponse.json(
-        { message: 'Not authorized to update this conversation' },
-        { status: 403 }
-      )
-    }
-
     const body = await request.json() as {
       title?: string
       status?: string
@@ -183,21 +257,7 @@ export async function PATCH(
     }
     const { title, status, addBotId, removeBotId, personaId, settings } = body
 
-    const updateData: Record<string, unknown> = {
-      modified_timestamp: new Date().toISOString(),
-    }
-
-    // Update title
-    if (title !== undefined) {
-      updateData.title = title || null // Allow clearing the title
-    }
-
-    // Update status
-    if (status) {
-      updateData.status = status
-    }
-
-    // Add bot
+    // Validate bot access upfront (doesn't depend on conversation state)
     if (addBotId) {
       const bot = await payload.findByID({
         collection: 'bot',
@@ -212,7 +272,6 @@ export async function PATCH(
         )
       }
 
-      // Verify user has access to this bot (public, owned, or shared)
       const accessResult = await checkResourceAccess(
         payload,
         payloadUser.id,
@@ -226,168 +285,145 @@ export async function PATCH(
           { status: 403 }
         )
       }
+    }
 
-      const currentBots = conversation.bot_participation || []
-      const alreadyInConvo = currentBots.some(
-        (bp) =>
-          (typeof bp.bot_id === 'object' ? bp.bot_id.id : bp.bot_id) === addBotId
-      )
-
-      if (!alreadyInConvo) {
-        // Normalize existing records to ensure proper format for Payload update
-        // Only include id if it exists - legacy/migrated records may be missing id
-        const normalizedCurrentBots = currentBots.map((bp) => {
-          const normalized: Record<string, unknown> = {
-            bot_id: typeof bp.bot_id === 'object' ? bp.bot_id.id : bp.bot_id,
-            role: bp.role,
-            is_active: bp.is_active,
-            joined_at: bp.joined_at,
-          }
-          // Only include id if it exists (preserves existing records, allows Payload to generate new ids for legacy records)
-          if (bp.id) {
-            normalized.id = bp.id
-          }
-          return normalized
+    // Retry loop to handle concurrent update conflicts on bot_participation.
+    // Payload's D1 adapter deletes and re-inserts array rows on update.
+    // Concurrent updates can race, causing UNIQUE constraint errors on the array id.
+    // Retrying with fresh conversation state resolves this.
+    const MAX_RETRIES = 3
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      try {
+        // Fetch conversation (re-read on each retry to get fresh state)
+        const conversation = await payload.findByID({
+          collection: 'conversation',
+          id: parseInt(id),
+          overrideAccess: true,
         })
 
-        updateData.bot_participation = [
-          ...normalizedCurrentBots,
-          {
-            bot_id: addBotId,
-            role: 'secondary',
-            is_active: true,
-            joined_at: new Date().toISOString(),
-          },
-        ]
-
-        // Update conversation type if going from single to multi
-        if (currentBots.length === 1) {
-          updateData.conversation_type = 'multi-bot'
+        if (!conversation) {
+          return NextResponse.json(
+            { message: 'Conversation not found' },
+            { status: 404 }
+          )
         }
 
-        // Update participants
-        const participants = (conversation.participants || { bots: [], personas: [] }) as {
-          bots?: string[]
-          personas?: string[]
-          primary_persona?: string
-          persona_changes?: unknown[]
-        }
-        updateData.participants = {
-          ...participants,
-          bots: [...(participants.bots || []), String(addBotId)],
-        }
-      }
-    }
+        // Verify ownership
+        if (attempt === 0) {
+          const conversationUserId = typeof conversation.user === 'object'
+            ? conversation.user.id
+            : conversation.user
 
-    // Remove bot
-    if (removeBotId) {
-      const currentBots = conversation.bot_participation || []
-
-      if (currentBots.length <= 1) {
-        return NextResponse.json(
-          { message: 'Cannot remove the last bot from conversation' },
-          { status: 400 }
-        )
-      }
-
-      // Normalize and filter records to ensure proper format for Payload update
-      // Only include id if it exists - legacy/migrated records may be missing id
-      updateData.bot_participation = currentBots
-        .filter(
-          (bp) =>
-            (typeof bp.bot_id === 'object' ? bp.bot_id.id : bp.bot_id) !== removeBotId
-        )
-        .map((bp) => {
-          const normalized: Record<string, unknown> = {
-            bot_id: typeof bp.bot_id === 'object' ? bp.bot_id.id : bp.bot_id,
-            role: bp.role,
-            is_active: bp.is_active,
-            joined_at: bp.joined_at,
+          if (conversationUserId !== payloadUser.id) {
+            return NextResponse.json(
+              { message: 'Not authorized to update this conversation' },
+              { status: 403 }
+            )
           }
-          // Only include id if it exists (preserves existing records, allows Payload to generate new ids for legacy records)
-          if (bp.id) {
-            normalized.id = bp.id
+        }
+
+        const updateData: Record<string, unknown> = {
+          modified_timestamp: new Date().toISOString(),
+        }
+
+        // Update title
+        if (title !== undefined) {
+          updateData.title = title || null
+        }
+
+        // Update status
+        if (status) {
+          updateData.status = status
+        }
+
+        // Build bot_participation changes from fresh conversation state
+        if (addBotId || removeBotId) {
+          const botUpdate = buildBotParticipationUpdate(conversation, addBotId, removeBotId)
+          if (botUpdate === null) {
+            // removeBotId on last bot
+            return NextResponse.json(
+              { message: 'Cannot remove the last bot from conversation' },
+              { status: 400 }
+            )
           }
-          return normalized
+          Object.assign(updateData, botUpdate)
+        }
+
+        // Switch persona
+        if (personaId !== undefined) {
+          const participants = (conversation.participants || { bots: [], personas: [], persona_changes: [] }) as {
+            bots?: string[]
+            personas?: string[]
+            primary_persona?: string
+            persona_changes?: unknown[]
+          }
+          const messageCount = conversation.conversation_metadata?.total_messages || 0
+
+          updateData.participants = {
+            ...participants,
+            ...(updateData.participants as object || {}),
+            primary_persona: personaId ? String(personaId) : undefined,
+            personas: personaId && !participants.personas?.includes(String(personaId))
+              ? [...(participants.personas || []), String(personaId)]
+              : participants.personas,
+            persona_changes: [
+              ...(participants.persona_changes || []),
+              {
+                persona_id: personaId ? String(personaId) : null,
+                switched_at: new Date().toISOString(),
+                message_index: messageCount,
+              },
+            ],
+          }
+        }
+
+        // Update settings
+        if (settings) {
+          updateData.conversation_settings = {
+            ...conversation.conversation_settings,
+            ...settings,
+          }
+        }
+
+        // Perform update
+        const updated = await payload.update({
+          collection: 'conversation',
+          id: parseInt(id),
+          data: updateData,
+          depth: 2,
+          overrideAccess: true,
         })
 
-      // Update conversation type if going from multi to single
-      if (currentBots.length === 2) {
-        updateData.conversation_type = 'single-bot'
-      }
-
-      // Update participants
-      const participants = (conversation.participants || { bots: [], personas: [] }) as {
-        bots?: string[]
-        personas?: string[]
-        primary_persona?: string
-        persona_changes?: unknown[]
-      }
-      updateData.participants = {
-        ...participants,
-        bots: (participants.bots || []).filter((id: string) => id !== String(removeBotId)),
-      }
-    }
-
-    // Switch persona
-    if (personaId !== undefined) {
-      const participants = (conversation.participants || { bots: [], personas: [], persona_changes: [] }) as {
-        bots?: string[]
-        personas?: string[]
-        primary_persona?: string
-        persona_changes?: unknown[]
-      }
-      const messageCount = conversation.conversation_metadata?.total_messages || 0
-
-      updateData.participants = {
-        ...participants,
-        primary_persona: personaId ? String(personaId) : undefined,
-        personas: personaId && !participants.personas?.includes(String(personaId))
-          ? [...(participants.personas || []), String(personaId)]
-          : participants.personas,
-        persona_changes: [
-          ...(participants.persona_changes || []),
-          {
-            persona_id: personaId ? String(personaId) : null,
-            switched_at: new Date().toISOString(),
-            message_index: messageCount,
+        return NextResponse.json({
+          success: true,
+          conversation: {
+            id: updated.id,
+            title: (updated as any).title || null,
+            type: updated.conversation_type,
+            status: updated.status,
+            bots: updated.bot_participation?.map((bp) => ({
+              bot: bp.bot_id,
+              role: bp.role,
+              isActive: bp.is_active,
+            })) || [],
+            participants: updated.participants,
           },
-        ],
+        })
+      } catch (error: unknown) {
+        const isConstraintError = error instanceof Error &&
+          error.message?.includes('SQLITE_CONSTRAINT') &&
+          error.message?.includes('conversation_bot_participation')
+
+        if (isConstraintError && attempt < MAX_RETRIES - 1) {
+          console.warn(`Retrying conversation ${id} update (attempt ${attempt + 2}/${MAX_RETRIES}) due to bot_participation constraint conflict`)
+          continue
+        }
+        throw error
       }
     }
 
-    // Update settings
-    if (settings) {
-      updateData.conversation_settings = {
-        ...conversation.conversation_settings,
-        ...settings,
-      }
-    }
-
-    // Perform update
-    const updated = await payload.update({
-      collection: 'conversation',
-      id: parseInt(id),
-      data: updateData,
-      depth: 2,
-      overrideAccess: true,
-    })
-
-    return NextResponse.json({
-      success: true,
-      conversation: {
-        id: updated.id,
-        title: (updated as any).title || null,
-        type: updated.conversation_type,
-        status: updated.status,
-        bots: updated.bot_participation?.map((bp) => ({
-          bot: bp.bot_id,
-          role: bp.role,
-          isActive: bp.is_active,
-        })) || [],
-        participants: updated.participants,
-      },
-    })
+    // Should never reach here
+    throw new Error('Max retries exceeded for conversation update')
   } catch (error: unknown) {
     console.error('Error updating conversation:', error)
     return NextResponse.json(

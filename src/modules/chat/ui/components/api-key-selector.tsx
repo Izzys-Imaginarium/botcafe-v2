@@ -6,7 +6,7 @@
  * Dropdown to select which API key to use for chat.
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -56,6 +56,12 @@ export function ApiKeySelector({
   const [isLoading, setIsLoading] = useState(true)
   const [isOpen, setIsOpen] = useState(false)
 
+  // Stable refs for callbacks to avoid re-triggering the fetch effect
+  const onSelectRef = useRef(onSelect)
+  const onProviderChangeRef = useRef(onProviderChange)
+  onSelectRef.current = onSelect
+  onProviderChangeRef.current = onProviderChange
+
   // Fetch user's API keys
   useEffect(() => {
     const fetchApiKeys = async () => {
@@ -69,9 +75,9 @@ export function ApiKeySelector({
 
           // Auto-select first key if none selected
           if (!currentKeyId && activeKeys.length > 0) {
-            onSelect(activeKeys[0].id)
-            if (onProviderChange) {
-              onProviderChange(activeKeys[0].provider)
+            onSelectRef.current(activeKeys[0].id)
+            if (onProviderChangeRef.current) {
+              onProviderChangeRef.current(activeKeys[0].provider)
             }
           }
         }
@@ -83,7 +89,7 @@ export function ApiKeySelector({
     }
 
     fetchApiKeys()
-  }, [currentKeyId, onSelect])
+  }, [currentKeyId])
 
   const currentKey = apiKeys.find((k) => k.id === currentKeyId)
   const provider = currentKey?.provider

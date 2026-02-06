@@ -461,17 +461,23 @@ export function useChat(options: UseChatOptions) {
     }
   }, [conversationId, fetchConversation])
 
-  // Update AI settings
-  const updateAISettings = useCallback(async (settings: {
-    api_key_id?: number | null
-    model?: string | null
-    provider?: string | null
-  }) => {
+  // Update AI settings - debounced to batch rapid changes (e.g. api key + provider + model)
+  // into a single PATCH request, preventing concurrent update conflicts on D1.
+  const pendingSettingsRef = useRef<Record<string, unknown>>({})
+  const settingsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const flushSettings = useCallback(async () => {
+    const pending = pendingSettingsRef.current
+    pendingSettingsRef.current = {}
+    settingsTimerRef.current = null
+
+    if (Object.keys(pending).length === 0) return
+
     try {
       const response = await fetch(`/api/chat/conversations/${conversationId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ settings }),
+        body: JSON.stringify({ settings: pending }),
       })
 
       if (!response.ok) {
@@ -480,9 +486,32 @@ export function useChat(options: UseChatOptions) {
       }
     } catch (err) {
       console.error('Failed to save AI settings:', err)
-      // Don't throw - silently fail for settings saves
     }
   }, [conversationId])
+
+  const updateAISettings = useCallback((settings: {
+    api_key_id?: number | null
+    model?: string | null
+    provider?: string | null
+  }) => {
+    // Merge with any pending settings
+    pendingSettingsRef.current = { ...pendingSettingsRef.current, ...settings }
+
+    // Reset debounce timer
+    if (settingsTimerRef.current) {
+      clearTimeout(settingsTimerRef.current)
+    }
+    settingsTimerRef.current = setTimeout(flushSettings, 100)
+  }, [flushSettings])
+
+  // Clean up debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (settingsTimerRef.current) {
+        clearTimeout(settingsTimerRef.current)
+      }
+    }
+  }, [])
 
   // Sync streaming state - when streaming stops, ensure message is updated
   // This is a safety net in case the onComplete callback doesn't fire properly

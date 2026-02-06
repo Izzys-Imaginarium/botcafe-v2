@@ -255,22 +255,26 @@ export function ModelSelector({
     return providerModels[provider].default
   }, [provider])
 
+  // Stable ref for onSelect to avoid re-triggering effects
+  const onSelectRef = useRef(onSelect)
+  onSelectRef.current = onSelect
+
   // Auto-select default model when provider changes
   useEffect(() => {
     if (provider && defaultModel && !currentModel) {
-      onSelect(defaultModel)
+      onSelectRef.current(defaultModel)
     }
-  }, [provider, defaultModel, currentModel, onSelect])
+  }, [provider, defaultModel, currentModel])
 
   // Reset model when provider changes and current model isn't in the list
   // But only for providers that don't support custom models
   useEffect(() => {
     if (provider && currentModel && availableModels.length > 0 && !supportsCustomModel) {
       if (!availableModels.includes(currentModel)) {
-        onSelect(defaultModel || availableModels[0])
+        onSelectRef.current(defaultModel || availableModels[0])
       }
     }
-  }, [provider, currentModel, availableModels, defaultModel, onSelect, supportsCustomModel])
+  }, [provider, currentModel, availableModels, defaultModel, supportsCustomModel])
 
   const handleSelect = (model: string) => {
     onSelect(model)

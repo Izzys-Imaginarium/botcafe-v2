@@ -473,7 +473,7 @@ export const Knowledge: CollectionConfig = {
         {
           name: 'vector_similarity_threshold',
           type: 'number',
-          defaultValue: 0.7,
+          defaultValue: 0.4,
           min: 0,
           max: 1,
           admin: {

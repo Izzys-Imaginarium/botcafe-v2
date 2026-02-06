@@ -103,9 +103,12 @@ export class VectorRetriever {
         filter.user_id = options.filters.userId
       }
 
-      // Note: Bot/persona filtering happens at the application level
-      // because Vectorize metadata doesn't store bot/persona associations
-      // Those are stored in the Knowledge collection's applies_to_bots/applies_to_personas fields
+      // Filter by entry IDs (source_id) to scope search to the bot's knowledge entries.
+      // This prevents results from other bots/users drowning out relevant matches.
+      // Requires a metadata index on source_id (string type) in Vectorize.
+      if (options.filters.entryIds && options.filters.entryIds.length > 0) {
+        filter.source_id = { $in: options.filters.entryIds }
+      }
 
       // Query Vectorize
       const queryFilter = Object.keys(filter).length > 0 ? filter : undefined

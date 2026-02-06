@@ -282,17 +282,19 @@ export class ActivationEngine {
       return []
     }
 
-    // Search vector database
-    // Note: No user_id filter here. Lore entries are bot-scoped, not user-scoped.
-    // The creator's lore should activate for ANY user chatting with the bot.
-    // Isolation is handled by: botKnowledgeCollectionIds (DB fetch) + entry matching step.
+    // Search vector database scoped to the bot's knowledge entries.
+    // We pass entryIds to filter at the Vectorize level so results aren't drowned
+    // out by vectors from other bots/users in the global index.
+    const entryIds = vectorEntries.map((e) => String(e.id))
     const searchOptions: VectorSearchOptions = {
-      similarityThreshold: 0.7, // Default, can be overridden
-      maxResults: 20, // Get more than needed, filter per entry
-      filters: {},
+      similarityThreshold: 0.4, // Default threshold - most RAG systems use 0.3-0.5
+      maxResults: 20,
+      filters: {
+        entryIds, // Scope vector search to this bot's knowledge entries only
+      },
     }
 
-    console.log('[VectorActivation] Searching without user filter (lore is bot-scoped)')
+    console.log('[VectorActivation] Searching with entryIds filter:', entryIds.join(','))
     const vectorResults = await this.vectorRetriever.retrieveRelevant(queryText, searchOptions, env)
     console.log('[VectorActivation] Vector search returned:', vectorResults.length, 'results')
     if (vectorResults.length > 0) {
@@ -312,7 +314,8 @@ export class ActivationEngine {
       }
 
       // Check entry-specific similarity threshold
-      const threshold = entry.activation_settings?.vector_similarity_threshold ?? 0.7
+      // Default to 0.4 - most RAG systems use 0.3-0.5 for semantic search
+      const threshold = entry.activation_settings?.vector_similarity_threshold ?? 0.4
       if (vectorResult.similarity < threshold) {
         console.log('[VectorActivation] Entry', entry.id, 'below threshold:',
           vectorResult.similarity.toFixed(3), '<', threshold)

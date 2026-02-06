@@ -63,6 +63,8 @@ export interface VectorSearchOptions {
     botId?: number
     personaId?: number
     userId?: number
+    /** Knowledge entry IDs to scope the vector search to (source_id filter) */
+    entryIds?: string[]
   }
 }
 

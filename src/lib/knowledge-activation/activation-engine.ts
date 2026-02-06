@@ -249,7 +249,7 @@ export class ActivationEngine {
     env?: { VECTORIZE?: any; AI?: any },
   ): Promise<ActivatedEntry[]> {
     if (!env?.VECTORIZE || !env?.AI) {
-      console.warn('Vectorize or AI binding not available, skipping vector activation')
+      console.warn('[VectorActivation] Vectorize or AI binding not available, skipping vector activation')
       return []
     }
 
@@ -262,6 +262,9 @@ export class ActivationEngine {
         entry.activation_settings?.activation_mode === 'hybrid',
     )
 
+    console.log('[VectorActivation] Vector/hybrid entries found:', vectorEntries.length,
+      'of', allEntries.length, 'total entries')
+
     if (vectorEntries.length === 0) {
       return []
     }
@@ -272,7 +275,10 @@ export class ActivationEngine {
       .map((m) => this.keywordMatcher['extractMessageText'](m))
       .join(' ')
 
+    console.log('[VectorActivation] Query text:', queryText.substring(0, 200))
+
     if (!queryText.trim()) {
+      console.log('[VectorActivation] Empty query text, skipping')
       return []
     }
 
@@ -285,17 +291,32 @@ export class ActivationEngine {
       },
     }
 
+    console.log('[VectorActivation] Searching with userId filter:', filters.userId)
     const vectorResults = await this.vectorRetriever.retrieveRelevant(queryText, searchOptions, env)
+    console.log('[VectorActivation] Vector search returned:', vectorResults.length, 'results')
+    if (vectorResults.length > 0) {
+      console.log('[VectorActivation] Top results:', vectorResults.slice(0, 5).map(r =>
+        `entryId=${r.entryId} sim=${r.similarity.toFixed(3)}`
+      ).join(', '))
+    }
 
     // Match vector results back to entries
     for (const vectorResult of vectorResults) {
       const entry = vectorEntries.find((e) => String(e.id) === vectorResult.entryId)
 
-      if (!entry) continue
+      if (!entry) {
+        console.log('[VectorActivation] No matching entry for vector result entryId:', vectorResult.entryId,
+          '(available entry IDs:', vectorEntries.map(e => String(e.id)).join(','), ')')
+        continue
+      }
 
       // Check entry-specific similarity threshold
       const threshold = entry.activation_settings?.vector_similarity_threshold ?? 0.7
-      if (vectorResult.similarity < threshold) continue
+      if (vectorResult.similarity < threshold) {
+        console.log('[VectorActivation] Entry', entry.id, 'below threshold:',
+          vectorResult.similarity.toFixed(3), '<', threshold)
+        continue
+      }
 
       results.push({
         entry,

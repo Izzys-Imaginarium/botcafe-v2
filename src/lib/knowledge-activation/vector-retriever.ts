@@ -28,18 +28,27 @@ export class VectorRetriever {
     try {
       // Generate embedding for query
       const embedding = await this.generateEmbedding(queryText, env)
+      console.log('[VectorRetriever] Generated embedding, dimensions:', embedding.length)
 
       // Search vector database
       const results = await this.searchVectorize(embedding, options, env)
+      console.log('[VectorRetriever] Raw search results:', results.length)
+      if (results.length > 0) {
+        console.log('[VectorRetriever] Raw results:', results.slice(0, 5).map(r =>
+          `id=${r.entryId} sim=${r.similarity.toFixed(3)} chunk=${r.chunkIndex}`
+        ).join(', '))
+      }
 
       // Filter by similarity threshold
       const filtered = results.filter((r) => r.similarity >= options.similarityThreshold)
+      console.log('[VectorRetriever] After threshold filter (>=' + options.similarityThreshold + '):', filtered.length)
 
       // Limit results
       const limited = filtered.slice(0, options.maxResults)
 
       return limited
     } catch (error) {
+      console.error('[VectorRetriever] Error:', error)
       throw new VectorSearchError('Failed to retrieve relevant knowledge', {
         error,
         queryText,
@@ -99,12 +108,18 @@ export class VectorRetriever {
       // Those are stored in the Knowledge collection's applies_to_bots/applies_to_personas fields
 
       // Query Vectorize
+      const queryFilter = Object.keys(filter).length > 0 ? filter : undefined
+      console.log('[VectorRetriever] Vectorize query - topK:', options.maxResults * 2,
+        'filter:', JSON.stringify(queryFilter))
       const results = await env.VECTORIZE.query(embedding, {
         topK: options.maxResults * 2, // Fetch more to account for filtering
-        filter: Object.keys(filter).length > 0 ? filter : undefined,
+        filter: queryFilter,
         returnMetadata: true,
         returnValues: false,
       })
+
+      console.log('[VectorRetriever] Vectorize raw response - matches:', results?.matches?.length ?? 0,
+        'count:', results?.count ?? 'n/a')
 
       if (!results?.matches) {
         return []

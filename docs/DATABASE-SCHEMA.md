@@ -233,7 +233,7 @@ Controls how knowledge entries are activated during conversations (hybrid keywor
 | `case_sensitive` | checkbox | Case-sensitive keyword matching |
 | `match_whole_words` | checkbox | Match whole words only |
 | `use_regex` | checkbox | Treat keywords as regex patterns |
-| `vector_similarity_threshold` | number | Min similarity score (0.0-1.0, default: 0.7) |
+| `vector_similarity_threshold` | number | Min similarity score (0.0-1.0, default: 0.4) |
 | `max_vector_results` | number | Max vector search results (1-20, default: 5) |
 | `probability` | number | Activation probability (0-100%, default: 100) |
 | `use_probability` | checkbox | Enable probability-based activation |
@@ -381,6 +381,7 @@ Vector embedding tracking for D1/Vectorize coordination.
 > - `metadata` must be stored as a JSON string (use `JSON.stringify(metadata)`) to avoid SQLite "too many SQL variables" errors
 > - VectorRecords are queried by `source_id` rather than using hasMany relationships to avoid parameter overflow
 > - The `embedding` field stores the actual vector values in D1, enabling future metadata-only updates without re-generating embeddings
+> - **Vectorize Metadata Indexes:** A `source_id` (string) metadata index exists on the Vectorize index to support filtered queries (e.g., scoping vector search to a bot's knowledge entries). Vectors must be inserted *after* the metadata index is created for filtering to work. Use `POST /api/vectors/reindex` to re-insert existing vectors if a new metadata index is added.
 
 ### KnowledgeActivationLog 🆕
 

@@ -49,9 +49,11 @@ export async function POST(request: NextRequest) {
     const offset = Number(url.searchParams.get('offset') || '0')
 
     // Fetch a batch of vector records from D1 with their embeddings
+    // Note: Payload CMS names relationship columns as `<field>_id` in SQLite,
+    // so the `user_id` relationship field becomes `user_id_id` in D1.
     const result = await d1
       .prepare(
-        `SELECT vector_id, source_type, source_id, user_id, tenant_id,
+        `SELECT vector_id, source_type, source_id, user_id_id, tenant_id,
                 chunk_index, total_chunks, embedding, metadata
          FROM vector_records
          ORDER BY id ASC
@@ -98,8 +100,8 @@ export async function POST(request: NextRequest) {
 
       const metadata = {
         type: existingMetadata.type || 'lore',
-        user_id: r.user_id,
-        tenant_id: r.tenant_id || String(r.user_id),
+        user_id: r.user_id_id,
+        tenant_id: r.tenant_id || String(r.user_id_id),
         source_type: r.source_type,
         source_id: String(r.source_id),
         chunk_index: r.chunk_index ?? 0,

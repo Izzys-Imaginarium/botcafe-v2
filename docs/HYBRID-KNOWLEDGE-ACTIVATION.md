@@ -1,7 +1,7 @@
 # Hybrid Knowledge Activation System - Design Document
 
-**Version:** 3.1
-**Last Updated:** 2026-01-10
+**Version:** 3.3
+**Last Updated:** 2026-02-10
 **Status:** Phase 3 Complete, Phase 4 Pending
 
 ## Implementation Progress
@@ -23,8 +23,8 @@
   - Lexical message content extraction
 - ✅ **vector-retriever.ts** (163 lines) - Vector search implementation with:
   - BGE-M3 embedding generation via Workers AI
-  - Vectorize index querying with filters
-  - Similarity threshold filtering
+  - Vectorize index querying with `source_id` metadata filtering (bot-scoped search)
+  - Similarity threshold filtering (default: 0.4)
 - ✅ **activation-engine.ts** (695 lines) - Main orchestrator with:
   - Combined keyword + vector + constant activation
   - Bot/persona filtering
@@ -108,6 +108,7 @@ This hybrid approach provides users with both precise control and intelligent di
          │  STAGE 2: Vector Retrieval         │
          │  - Embed current message           │
          │  - Search vectorized entries       │
+         │  - Filter by source_id (bot-scoped)│
          │  - Filter by relevance score       │
          │  - Return semantic matches         │
          └────────────┬───────────────────────┘
@@ -156,7 +157,7 @@ This hybrid approach provides users with both precise control and intelligent di
     use_regex: boolean,
 
     // Vector Activation (thresholds)
-    vector_similarity_threshold: number,  // 0.0-1.0, default: 0.7
+    vector_similarity_threshold: number,  // 0.0-1.0, default: 0.4
     max_vector_results: number,           // Max results from vector search
 
     // Activation Control
@@ -621,7 +622,7 @@ Content: "Combat in this world uses turn-based mechanics..."
 
 1. **Default Settings**
    - All existing entries: `activation_mode: 'vector'` (maintains current behavior)
-   - Default vector threshold: 0.7
+   - Default vector threshold: 0.4 (most RAG systems use 0.3-0.5)
    - Default position: 'before_character'
    - Default order: 100
 
@@ -825,7 +826,7 @@ const DEFAULT_ACTIVATION_SETTINGS = {
   case_sensitive: false,
   match_whole_words: false,
   use_regex: false,
-  vector_similarity_threshold: 0.7,
+  vector_similarity_threshold: 0.4,
   max_vector_results: 5,
   probability: 100,
   use_probability: false,
@@ -869,7 +870,7 @@ const DEFAULT_BUDGET_CONTROL = {
 
 ---
 
-**Document Version**: 3.2
-**Last Updated**: 2026-01-13
+**Document Version**: 3.3
+**Last Updated**: 2026-02-10
 **Author**: BotCafé Development Team
-**Status**: Phase 3 Complete - Group settings removed for simplicity
+**Status**: Phase 3 Complete - Vector search now bot-scoped via source_id metadata filtering

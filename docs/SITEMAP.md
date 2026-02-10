@@ -142,6 +142,7 @@
 | `/api/vectors/generate` | POST | Generate embeddings (BGE-M3) |
 | `/api/vectors/search` | POST | Semantic search |
 | `/api/vectors/[sourceId]` | DELETE | Delete vectors by source |
+| `/api/vectors/reindex` | POST | Re-insert existing D1 vectors into Vectorize (admin only). Used after creating new metadata indexes. Query params: `batch_size` (default 50, max 100), `offset` (default 0) |
 
 ### Memories
 

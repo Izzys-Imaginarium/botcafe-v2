@@ -599,6 +599,17 @@ When you add new Payload collections or modify existing ones:
 
 ## 🔄 **Recent Changes**
 
+### **2026-02-10 Updates:**
+- ✅ **Vector Activation Pipeline Fixes**
+  - Fixed bot-scoped vector search: added `source_id $in [entryIds]` metadata filter to scope Vectorize queries to the current bot's knowledge entries only (previously searched all vectors globally)
+  - Created `source_id` metadata index on Vectorize for filtered queries
+  - Lowered default similarity threshold from 0.7 to 0.4 (most RAG systems use 0.3-0.5)
+  - Fixed per-entry threshold fallback in activation-engine.ts (was defaulting to 0.7)
+  - Fixed message text extraction to use `message.entry` field (Lexical `text_content` was always empty)
+  - Created `/api/vectors/reindex` admin endpoint to re-insert D1-stored embeddings into Vectorize for metadata index pickup (no AI calls needed)
+  - Updated files: `activation-engine.ts`, `vector-retriever.ts`, `types.ts`, `Knowledge.ts` schema
+  - Updated documentation: SITEMAP.md, DATABASE-SCHEMA.md, RAG-ARCHITECTURE.md, KNOWLEDGE-ACTIVATION-GUIDE.md, VECTORIZE_SETUP.md, HYBRID-KNOWLEDGE-ACTIVATION.md
+
 ### **2026-02-06 Updates:**
 - ✅ **Knowledge Compatibility Fixes Complete**
   - Fixed all compatibility issues between legacy memories and new knowledge entries

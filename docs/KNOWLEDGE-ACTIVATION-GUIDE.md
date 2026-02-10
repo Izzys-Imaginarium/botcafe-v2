@@ -1,7 +1,7 @@
 # Knowledge Activation Guide
 
-**Last Updated**: 2026-01-14
-**Version**: 1.0
+**Last Updated**: 2026-02-10
+**Version**: 1.1
 
 This guide explains how to configure knowledge entries (lore) to activate during conversations with your bots.
 
@@ -72,14 +72,14 @@ Activates based on **semantic similarity** - the meaning of what's said, not exa
 
 | Setting | Description | Default |
 |---------|-------------|---------|
-| Similarity Threshold | 0.0-1.0 (higher = stricter matching) | 0.7 |
+| Similarity Threshold | 0.0-1.0 (higher = stricter matching) | 0.4 |
 | Max Results | How many vector matches to return | 5 |
 
 **Threshold Guide:**
-- **0.5-0.6**: Very loose matching (may get false positives)
-- **0.7**: Balanced (recommended starting point)
-- **0.8-0.9**: Strict matching (only very similar content)
-- **0.95+**: Near-exact semantic match
+- **0.3-0.4**: Broad matching (good for large/diverse lore entries, recommended starting point)
+- **0.5-0.6**: Moderate matching (balanced precision and recall)
+- **0.7-0.8**: Strict matching (only clearly relevant content)
+- **0.9+**: Near-exact semantic match (very few results)
 
 **Example Configuration:**
 ```
@@ -338,7 +338,7 @@ Ignore Budget: true
 Name: "Darkwood Forest"
 Mode: Hybrid
 Primary Keys: Darkwood, dark forest
-Threshold: 0.7
+Threshold: 0.4
 Position: before_character
 Order: 100
 ```
@@ -397,7 +397,7 @@ Order: 100
 
 1. **Start with Vector mode** if unsure - it's the most flexible
 2. **Use Hybrid for important lore** to catch both exact and semantic matches
-3. **Set appropriate thresholds** - start at 0.7 and adjust based on results
+3. **Set appropriate thresholds** - start at 0.4 and adjust based on results
 4. **Use Order to prioritize** critical information over nice-to-have details
 5. **Test your keywords** - check what actually triggers in conversations
 6. **Use Sticky for ongoing contexts** like combat, romance scenes, investigations
@@ -405,7 +405,7 @@ Order: 100
 ### Don'ts ❌
 
 1. **Don't set everything to Constant** - you'll bloat your prompts
-2. **Don't use very low thresholds** (< 0.5) - too many false positives
+2. **Don't use very low thresholds** (< 0.3) - too many false positives
 3. **Don't forget Ignore Budget is powerful** - use sparingly
 4. **Don't make keywords too generic** - "the", "is", "and" will match everything
 5. **Don't stack too many entries at system_top** - keep it for essentials
@@ -425,7 +425,7 @@ Order: 100
 
 ### Entry Activating Too Often
 
-1. **Increase vector threshold** (e.g., 0.7 → 0.85)
+1. **Increase vector threshold** (e.g., 0.4 → 0.7)
 2. **Use more specific keywords** (not generic words)
 3. **Add cooldown** to limit frequency
 4. **Switch from Hybrid to Keyword** for more control

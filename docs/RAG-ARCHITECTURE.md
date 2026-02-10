@@ -1,7 +1,7 @@
 # BotCafé RAG Architecture
 
-**Last Updated**: 2026-01-25
-**Version**: 2.3 (Added unified memory display, memory tome separation)
+**Last Updated**: 2026-02-10
+**Version**: 2.4 (Vector activation fixes: bot-scoped search, source_id filtering, threshold tuning, chunking fixes)
 
 ## Overview
 
@@ -70,7 +70,11 @@ interface VectorMetadata {
 > - `source_id` MUST be a string (use `String(sourceId)` when creating)
 > - When storing metadata in D1 VectorRecord, use `JSON.stringify(metadata)` to avoid SQLite "too many SQL variables" error
 
-> **Note**: The `is_public` field was removed from vector metadata. Privacy is controlled at the Knowledge/Memory collection level, not the vector level. All queries filter by `user_id` or `tenant_id` for isolation.
+> **Note**: The `is_public` field was removed from vector metadata. Privacy is controlled at the Knowledge/Memory collection level, not the vector level.
+
+> **Vectorize Metadata Indexes:** The `source_id` field has a metadata index (string type) on the Vectorize index. This enables filtering vector search results to specific knowledge entries (e.g., scoping results to a bot's entries). Lore entries are **bot-scoped, not user-scoped** — the creator's lore activates for ANY user chatting with the bot. Isolation is handled by `botKnowledgeCollectionIds` (DB fetch) + `source_id` filtering (Vectorize query).
+
+> **Important:** Vectors must be inserted *after* a metadata index is created for the filter to work on them. Use `POST /api/vectors/reindex` to re-insert existing vectors when new metadata indexes are added.
 
 ### Legacy Memory Extended Fields
 
@@ -250,10 +254,11 @@ Memory tomes (KnowledgeCollections with `collection_metadata.collection_category
 Different content types require different chunking approaches:
 
 ### Lore (Knowledge Entries)
-- **Chunk Size**: Up to 8192 tokens (BGE-M3 max context)
-- **Overlap**: Variable based on chunking strategy
-- **Method**: Paragraph-based splitting with 8192 token limit
-- **Rationale**: BGE-M3's large context window allows for bigger chunks with more context preservation
+- **Chunk Size**: 750 tokens (default for lore)
+- **Overlap**: 50 tokens
+- **Method**: Paragraph-based splitting with oversized paragraph handling
+- **Oversized Paragraphs**: If a paragraph exceeds the chunk size (e.g., web dumps with no `\n\n` breaks), it is split by sentences first, then falls back to a word-level sliding window
+- **Rationale**: Smaller chunks improve semantic search precision; oversized paragraph handling ensures large content is always properly chunked
 
 ### Memories (Conversation Summaries)
 - **Chunk Size**: 250-400 tokens
@@ -1066,8 +1071,8 @@ As their companion, let me tell you what really happened that day..."
 ### Vector Search
 - **Latency**: Cloudflare Vectorize ~10-50ms per query
 - **TopK**: Limit to 3-10 results to balance relevance and speed
-- **Metadata Filtering**: Use indexed fields (user_id, type, applies_to_bots)
-- **Query Optimization**: Pre-filter by user/tenant before semantic search
+- **Metadata Filtering**: Use indexed fields (`source_id` has a Vectorize metadata index)
+- **Query Optimization**: Filter by `source_id` (bot's entry IDs) to scope search to relevant entries
 
 ### Storage Costs
 - **Vectorize**: Free tier (10M vectors), then usage-based
@@ -1080,19 +1085,28 @@ As their companion, let me tell you what really happened that day..."
 ## Privacy & Security
 
 ### Multi-Tenant Isolation
+
+Knowledge isolation uses a two-layer approach:
+
+1. **Database layer**: `fetchKnowledgeEntries` only fetches entries from the bot's linked `knowledge_collections`, scoping to the correct bot
+2. **Vector layer**: The Vectorize query filters by `source_id` (`$in` filter with the bot's entry IDs), ensuring only the bot's vectors are searched
+
 ```typescript
-// ALWAYS include tenant/user filter
-const results = await vectorSearch(query, {
-  metadata: {
-    tenant_id: currentTenantId,
-    user_id: currentUserId,
-    // ... other filters
+// Vector search is scoped to the bot's knowledge entries
+const entryIds = vectorEntries.map(e => String(e.id))
+const searchOptions = {
+  similarityThreshold: 0.4,
+  maxResults: 20,
+  filters: {
+    entryIds, // source_id $in filter at Vectorize level
   },
-});
+}
 ```
 
+> **Note**: Lore entries are **bot-scoped, not user-scoped**. The creator's lore activates for ANY user chatting with the bot. There is no `user_id` filter on the Vectorize query for lore — isolation is fully handled by the entry IDs filter.
+
 ### Public vs Private Content
-- Private knowledge: `user_id` filter enforced
+- Private knowledge: Scoped by `botKnowledgeCollectionIds` (bot's linked collections)
 - Public knowledge: Additional `is_public: true` filter
 - Shared collections: Collection-level permissions checked
 

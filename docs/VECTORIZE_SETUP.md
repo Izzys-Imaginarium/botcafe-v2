@@ -312,6 +312,99 @@ Run the sync check:
 
 ---
 
+## Metadata Indexes
+
+Vectorize supports **metadata filtering** to scope queries to specific subsets of vectors. BotCafé uses the following metadata indexes:
+
+| Index Name | Type | Purpose |
+|------------|------|---------|
+| `source_id` | `String` | Filter vectors by knowledge entry ID for bot-scoped search |
+
+### Creating Metadata Indexes
+
+```bash
+# Create the source_id index (required for bot-scoped vector search)
+wrangler vectorize create-metadata-index botcafe-embeddings-dev \
+  --property-name=source_id \
+  --type=string
+
+# Repeat for staging/production
+wrangler vectorize create-metadata-index botcafe-embeddings-staging \
+  --property-name=source_id \
+  --type=string
+
+wrangler vectorize create-metadata-index botcafe-embeddings-prod \
+  --property-name=source_id \
+  --type=string
+```
+
+### Listing Metadata Indexes
+
+```bash
+wrangler vectorize list-metadata-index botcafe-embeddings-dev
+```
+
+> **Important:** Cloudflare Vectorize does **not** retroactively index existing vectors when a new metadata index is created. Vectors inserted before the index was created will not be filterable by that metadata property. Use the `/api/vectors/reindex` endpoint to re-insert existing vectors so they pick up new indexes.
+
+---
+
+## Vector Reindex Tool
+
+The `/api/vectors/reindex` endpoint re-inserts existing vectors from D1 into Vectorize so they pick up newly created metadata indexes. **No AI calls are needed** — it reads stored embeddings from D1.
+
+### Usage
+
+```bash
+# Reindex a batch of 50 vectors starting from offset 0
+curl -X POST "https://your-domain.com/api/vectors/reindex?batch_size=50&offset=0" \
+  -H "Cookie: your-auth-cookie"
+```
+
+### Query Parameters
+
+| Parameter | Default | Max | Description |
+|-----------|---------|-----|-------------|
+| `batch_size` | 50 | 100 | Number of vectors to process per call |
+| `offset` | 0 | — | Row offset for resuming from a previous batch |
+
+### Response
+
+```json
+{
+  "message": "Re-indexed 48 vectors",
+  "offset": 0,
+  "processed": 48,
+  "skipped": 2,
+  "nextOffset": 50,
+  "batchSize": 50,
+  "done": false
+}
+```
+
+### Batch Processing Script
+
+To reindex all vectors, run this in the browser console:
+
+```javascript
+async function reindexAll(batchSize = 50) {
+  let offset = 0, total = 0;
+  while (true) {
+    const res = await fetch(`/api/vectors/reindex?batch_size=${batchSize}&offset=${offset}`, { method: 'POST' });
+    const data = await res.json();
+    console.log(`Batch: offset=${offset}, processed=${data.processed}, skipped=${data.skipped}`);
+    total += data.processed;
+    if (data.done) break;
+    offset = data.nextOffset;
+  }
+  console.log(`Done! Total re-indexed: ${total}`);
+}
+reindexAll();
+```
+
+> **Access:** Admin only (user ID 1). Requires authentication.
+
+---
+
 ## Next Steps
 
 After creating the indexes:
@@ -322,6 +415,8 @@ After creating the indexes:
 4. Test semantic search via `/api/vectors/search`
 5. ✅ UI simplified to single "Save" button (auto-vectorizes based on mode)
 6. ✅ Vector sync check tool available at `/api/admin/vector-sync-check`
+7. ✅ Metadata indexes created for bot-scoped vector search
+8. ✅ Reindex tool available at `/api/vectors/reindex`
 
 ## References
 

@@ -93,20 +93,33 @@ export async function POST(request: NextRequest) {
       }
 
       // Reconstruct metadata (same as what the generate endpoint creates)
+      // Vectorize rejects null metadata values, so we must ensure every field has a value.
       let existingMetadata: Record<string, any> = {}
       try {
         if (r.metadata) existingMetadata = JSON.parse(r.metadata)
       } catch { /* ignore */ }
 
-      const metadata = {
+      // Skip records missing critical fields
+      if (!r.source_id || !r.source_type) {
+        skipped.push(r.vector_id)
+        continue
+      }
+
+      const metadata: Record<string, any> = {
         type: existingMetadata.type || 'lore',
-        user_id: r.user_id_id,
-        tenant_id: r.tenant_id || String(r.user_id_id),
         source_type: r.source_type,
         source_id: String(r.source_id),
         chunk_index: r.chunk_index ?? 0,
         total_chunks: r.total_chunks ?? 1,
         created_at: existingMetadata.created_at || new Date().toISOString(),
+      }
+
+      // Only include user_id and tenant_id if they're not null
+      if (r.user_id_id != null) {
+        metadata.user_id = r.user_id_id
+        metadata.tenant_id = r.tenant_id || String(r.user_id_id)
+      } else if (r.tenant_id) {
+        metadata.tenant_id = r.tenant_id
       }
 
       vectorRecords.push({ id: r.vector_id, values, metadata })

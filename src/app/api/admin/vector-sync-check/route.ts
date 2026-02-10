@@ -344,7 +344,7 @@ export async function POST(request: NextRequest) {
 
         // Delete from D1
         await d1
-          .prepare('DELETE FROM vector_records WHERE vector_id = ? AND user_id = ?')
+          .prepare('DELETE FROM vector_records WHERE vector_id = ? AND user_id_id = ?')
           .bind(vectorId, payloadUser.id)
           .run()
 
@@ -390,7 +390,7 @@ export async function POST(request: NextRequest) {
 
         // Delete existing vectors
         const existingVectors = await d1
-          .prepare('SELECT vector_id FROM vector_records WHERE source_id = ? AND user_id = ?')
+          .prepare('SELECT vector_id FROM vector_records WHERE source_id = ? AND user_id_id = ?')
           .bind(String(knowledgeId), payloadUser.id)
           .all()
 
@@ -402,7 +402,7 @@ export async function POST(request: NextRequest) {
             console.warn('Failed to delete old vectors from Vectorize:', e)
           }
           await d1
-            .prepare('DELETE FROM vector_records WHERE source_id = ? AND user_id = ?')
+            .prepare('DELETE FROM vector_records WHERE source_id = ? AND user_id_id = ?')
             .bind(String(knowledgeId), payloadUser.id)
             .run()
         }
@@ -444,7 +444,7 @@ export async function POST(request: NextRequest) {
             await d1
               .prepare(`
                 INSERT INTO vector_records
-                (vector_id, source_type, source_id, user_id, tenant_id, chunk_index, total_chunks, chunk_text, metadata, embedding_model, embedding_dimensions, embedding, created_at, updated_at)
+                (vector_id, source_type, source_id, user_id_id, tenant_id, chunk_index, total_chunks, chunk_text, metadata, embedding_model, embedding_dimensions, embedding, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
               `)
               .bind(
@@ -492,7 +492,7 @@ export async function POST(request: NextRequest) {
 
         // Count actual vectors
         const countResult = await d1
-          .prepare('SELECT COUNT(*) as count FROM vector_records WHERE source_id = ? AND user_id = ?')
+          .prepare('SELECT COUNT(*) as count FROM vector_records WHERE source_id = ? AND user_id_id = ?')
           .bind(String(knowledgeId), payloadUser.id)
           .first()
 

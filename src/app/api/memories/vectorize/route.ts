@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
       const tenantId = String(payloadUser.id)
       const metadata = {
         source_type: 'memory',
-        source_id: memoryId,
+        source_id: String(memoryId),
         user_id: payloadUser.id,
         tenant_id: tenantId,
         chunk_index: i,

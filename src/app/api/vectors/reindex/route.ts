@@ -157,15 +157,19 @@ export async function POST(request: NextRequest) {
 
       let values: number[]
       try {
-        values = JSON.parse(r.embedding)
-        // Validate: must be an array of finite numbers
+        let parsed = JSON.parse(r.embedding)
+        // Handle double-encoded embeddings: Payload's text field may add
+        // an extra layer of JSON encoding, so the first parse returns a
+        // string like "[-0.027, 0.012, ...]" instead of an actual array.
+        if (typeof parsed === 'string') {
+          parsed = JSON.parse(parsed)
+        }
+        values = parsed
         if (!Array.isArray(values) || values.length === 0) {
           console.warn(`[Reindex] Skipping ${r.vector_id}: embedding is not a valid array`)
           skipped.push(r.vector_id)
           continue
         }
-        // Filter out any null/NaN/Infinity values by replacing with 0
-        values = values.map((v) => (v != null && Number.isFinite(v) ? v : 0))
       } catch {
         skipped.push(r.vector_id)
         continue

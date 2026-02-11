@@ -106,7 +106,7 @@ export function MessageList({
     <div
       ref={scrollRef}
       onScroll={handleScroll}
-      className={cn('overflow-y-auto', className)}
+      className={cn('overflow-y-auto overflow-x-hidden', className)}
     >
       <div className="flex flex-col px-4 py-6">
         {/* Load more button */}

@@ -627,6 +627,16 @@ When you add new Payload collections or modify existing ones:
 - ✅ **Mobile/Tablet Chat Input**
   - Enter key no longer sends messages on mobile/tablet (<=1024px) — users must tap the Send button
   - Desktop (>1024px) retains Enter-to-send, Shift+Enter for newline
+- ✅ **Bot Edit Picture Preview Fix**
+  - Fixed bot profile picture not showing in edit wizard preview (API returns Media object at depth:1, preview only handled string type)
+  - Added `initialPictureUrl` prop to `BotWizardForm` and extracted URL separately in `EditBotForm`
+- ✅ **Image Upload Validation Improvements**
+  - Created shared `image-validation.ts` utility with format, size, and dimension checks
+  - Bot wizard, creator profile, and persona forms now validate image dimensions client-side (avatar: 100x100–4096x4096, banner: 400x100–6000x4096)
+  - Creator profile media uploads (previously had no client-side validation) now validate before uploading
+  - Server-side `/api/upload/image` now parses image headers for dimension validation without native dependencies (works on Cloudflare Workers)
+  - All file inputs narrowed from `accept="image/*"` to specific MIME types (JPEG, PNG, GIF, WebP)
+  - Improved error messages with specific details (actual file size, detected extension, actual dimensions)
 
 ### **2026-02-06 Updates:**
 - ✅ **Knowledge Compatibility Fixes Complete**

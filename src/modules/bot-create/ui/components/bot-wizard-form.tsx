@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Bot, Wand2, Image, MessageSquare, Settings, Sparkles, Sliders, Tag, Plus, X, BookMarked, Check, Loader2, Users, Globe, Lock, Share2, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -16,6 +16,8 @@ import { MagicalBackground } from '@/modules/home/ui/components/magical-backgrou
 import { ShareDialog } from '@/components/share-dialog'
 import { useUser } from '@clerk/nextjs'
 import { validateImageFile } from '@/lib/image-validation'
+import { useInfiniteList } from '@/hooks/use-infinite-list'
+import { InfiniteScrollTrigger } from '@/components/ui/infinite-scroll-trigger'
 
 type Visibility = 'private' | 'shared' | 'public'
 
@@ -153,52 +155,62 @@ export function BotWizardForm({ mode, initialData, botId, initialPictureUrl, onS
   // Creator username for URL display
   const [creatorUsername, setCreatorUsername] = useState<string | null>(null)
 
-  // Knowledge collections state
+  // Knowledge collections with infinite scroll
   interface KnowledgeCollection {
     id: string | number
     name: string
     description?: string
     entry_count?: number
   }
-  const [availableCollections, setAvailableCollections] = useState<KnowledgeCollection[]>([])
-  const [isLoadingCollections, setIsLoadingCollections] = useState(false)
   const [collectionSearchQuery, setCollectionSearchQuery] = useState('')
+  const collectionSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const collectionsLoadedRef = useRef(false)
 
-  // Filter collections based on search query
-  const filteredCollections = useMemo(() => {
-    if (!collectionSearchQuery.trim()) {
-      return availableCollections
-    }
-    const query = collectionSearchQuery.toLowerCase()
-    return availableCollections.filter(
-      (collection) =>
-        collection.name.toLowerCase().includes(query) ||
-        (collection.description && collection.description.toLowerCase().includes(query))
-    )
-  }, [availableCollections, collectionSearchQuery])
+  const {
+    items: availableCollections,
+    isLoading: isLoadingCollections,
+    isLoadingMore: isLoadingMoreCollections,
+    hasMore: hasMoreCollections,
+    loadMore: loadMoreCollections,
+    setParams: setCollectionParams,
+    refresh: refreshCollections,
+  } = useInfiniteList<KnowledgeCollection>({
+    endpoint: '/api/knowledge-collections',
+    limit: 20,
+    itemsKey: 'collections',
+    autoLoad: false,
+  })
 
-  // Fetch available knowledge collections
-  const fetchCollections = useCallback(async () => {
-    setIsLoadingCollections(true)
-    try {
-      const response = await fetch('/api/knowledge-collections')
-      const data = (await response.json()) as { success?: boolean; collections?: KnowledgeCollection[] }
-      if (data.success && data.collections) {
-        setAvailableCollections(data.collections)
-      }
-    } catch (error) {
-      console.error('Error fetching collections:', error)
-    } finally {
-      setIsLoadingCollections(false)
-    }
-  }, [])
-
-  // Fetch collections when reaching the knowledge step
+  // Load collections when reaching the knowledge step
   useEffect(() => {
-    if (currentStep === 4) {
-      fetchCollections()
+    if (currentStep === 4 && !collectionsLoadedRef.current) {
+      collectionsLoadedRef.current = true
+      refreshCollections()
     }
-  }, [currentStep, fetchCollections])
+  }, [currentStep, refreshCollections])
+
+  // Debounced server-side search
+  useEffect(() => {
+    if (!collectionsLoadedRef.current) return
+
+    if (collectionSearchDebounceRef.current) {
+      clearTimeout(collectionSearchDebounceRef.current)
+    }
+
+    collectionSearchDebounceRef.current = setTimeout(() => {
+      if (collectionSearchQuery.trim()) {
+        setCollectionParams({ search: collectionSearchQuery.trim() })
+      } else {
+        setCollectionParams({})
+      }
+    }, 300)
+
+    return () => {
+      if (collectionSearchDebounceRef.current) {
+        clearTimeout(collectionSearchDebounceRef.current)
+      }
+    }
+  }, [collectionSearchQuery, setCollectionParams])
 
   // Fetch creator profile to get username for URL display
   useEffect(() => {
@@ -990,49 +1002,57 @@ export function BotWizardForm({ mode, initialData, botId, initialPictureUrl, onS
 
                 {/* Collection list */}
                 <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-                {filteredCollections.length === 0 ? (
+                {!isLoadingCollections && availableCollections.length === 0 ? (
                   <div className="text-center py-6 text-muted-foreground">
                     <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>No tomes match "{collectionSearchQuery}"</p>
+                    <p>{collectionSearchQuery ? `No tomes match "${collectionSearchQuery}"` : 'No tomes found'}</p>
                   </div>
                 ) : (
-                  filteredCollections.map((collection) => (
-                  <div
-                    key={collection.id}
-                    onClick={() => toggleCollectionSelection(collection.id)}
-                    className={`
-                      p-4 rounded-lg border-2 cursor-pointer transition-all
-                      ${isCollectionSelected(collection.id)
-                        ? 'border-forest bg-forest/10 glass-rune'
-                        : 'border-gold-ancient/30 hover:border-gold-rich/50 glass-rune'
-                      }
-                    `}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3 min-w-0">
-                        <BookMarked className={`h-5 w-5 mt-0.5 shrink-0 ${isCollectionSelected(collection.id) ? 'text-forest' : 'text-gold-ancient'}`} />
-                        <div>
-                          <h4 className="font-medium text-parchment">{collection.name}</h4>
-                          {collection.description && (
-                            <p className="text-sm text-muted-foreground mt-1">{collection.description}</p>
-                          )}
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {collection.entry_count || 0} entries
-                          </p>
+                  <>
+                    {availableCollections.map((collection) => (
+                    <div
+                      key={collection.id}
+                      onClick={() => toggleCollectionSelection(collection.id)}
+                      className={`
+                        p-4 rounded-lg border-2 cursor-pointer transition-all
+                        ${isCollectionSelected(collection.id)
+                          ? 'border-forest bg-forest/10 glass-rune'
+                          : 'border-gold-ancient/30 hover:border-gold-rich/50 glass-rune'
+                        }
+                      `}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3 min-w-0">
+                          <BookMarked className={`h-5 w-5 mt-0.5 shrink-0 ${isCollectionSelected(collection.id) ? 'text-forest' : 'text-gold-ancient'}`} />
+                          <div>
+                            <h4 className="font-medium text-parchment">{collection.name}</h4>
+                            {collection.description && (
+                              <p className="text-sm text-muted-foreground mt-1">{collection.description}</p>
+                            )}
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {collection.entry_count || 0} entries
+                            </p>
+                          </div>
+                        </div>
+                        <div className={`
+                          w-6 h-6 shrink-0 rounded-full border-2 flex items-center justify-center transition-all
+                          ${isCollectionSelected(collection.id)
+                            ? 'border-forest bg-forest text-white'
+                            : 'border-gold-ancient/30'
+                          }
+                        `}>
+                          {isCollectionSelected(collection.id) && <Check className="h-4 w-4" />}
                         </div>
                       </div>
-                      <div className={`
-                        w-6 h-6 shrink-0 rounded-full border-2 flex items-center justify-center transition-all
-                        ${isCollectionSelected(collection.id)
-                          ? 'border-forest bg-forest text-white'
-                          : 'border-gold-ancient/30'
-                        }
-                      `}>
-                        {isCollectionSelected(collection.id) && <Check className="h-4 w-4" />}
-                      </div>
                     </div>
-                  </div>
-                  ))
+                    ))}
+                    <InfiniteScrollTrigger
+                      onLoadMore={loadMoreCollections}
+                      hasMore={hasMoreCollections}
+                      isLoading={isLoadingMoreCollections}
+                      showEndMessage={false}
+                    />
+                  </>
                 )}
                 </div>
 

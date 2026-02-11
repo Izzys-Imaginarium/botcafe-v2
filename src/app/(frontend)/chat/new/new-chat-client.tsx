@@ -6,7 +6,7 @@
  * Select a bot to start a new conversation.
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -30,37 +30,67 @@ export function NewChatClient() {
   const router = useRouter()
   const [bots, setBots] = useState<BotOption[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isSearching, setIsSearching] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   const [search, setSearch] = useState('')
   const [selectedBotId, setSelectedBotId] = useState<number | null>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Fetch available bots
-  useEffect(() => {
-    const fetchBots = async () => {
-      try {
-        // Fetch user's own bots and public bots
-        const response = await fetch('/api/bots/explore?limit=50')
-        const data = await response.json() as { bots?: BotOption[] }
-
-        if (response.ok) {
-          setBots(data.bots || [])
-        }
-      } catch (error) {
-        console.error('Failed to fetch bots:', error)
-        toast.error('Failed to load bots')
-      } finally {
-        setIsLoading(false)
-      }
+  // Fetch bots from API with optional search query
+  const fetchBots = useCallback(async (query: string) => {
+    const isInitialLoad = query === ''
+    if (isInitialLoad) {
+      setIsLoading(true)
+    } else {
+      setIsSearching(true)
     }
 
-    fetchBots()
+    try {
+      const params = new URLSearchParams({ limit: '50' })
+      if (query) {
+        params.set('search', query)
+      }
+
+      const response = await fetch(`/api/bots/explore?${params}`)
+      const data = await response.json() as { bots?: BotOption[] }
+
+      if (response.ok) {
+        setBots(data.bots || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch bots:', error)
+      if (isInitialLoad) {
+        toast.error('Failed to load bots')
+      }
+    } finally {
+      setIsLoading(false)
+      setIsSearching(false)
+    }
   }, [])
 
-  // Filter bots by search
-  const filteredBots = bots.filter((bot) =>
-    bot.name.toLowerCase().includes(search.toLowerCase()) ||
-    bot.description?.toLowerCase().includes(search.toLowerCase())
-  )
+  // Initial load
+  useEffect(() => {
+    fetchBots('')
+  }, [fetchBots])
+
+  // Debounced search — re-fetch from API when search changes
+  useEffect(() => {
+    // Skip the initial empty string (handled by initial load above)
+    if (search === '') {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      fetchBots('')
+      return
+    }
+
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      fetchBots(search)
+    }, 300)
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [search, fetchBots])
 
   // Start conversation with selected bot
   const handleStartChat = async () => {
@@ -123,6 +153,9 @@ export function NewChatClient() {
               placeholder="Search bots..."
               className="pl-10"
             />
+            {isSearching && (
+              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+            )}
           </div>
 
           {/* Bot list */}
@@ -131,7 +164,7 @@ export function NewChatClient() {
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
-            ) : filteredBots.length === 0 ? (
+            ) : bots.length === 0 ? (
               <div className="text-center py-12">
                 <Bot className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
                 <p className="text-muted-foreground">No bots found</p>
@@ -144,7 +177,7 @@ export function NewChatClient() {
               </div>
             ) : (
               <div className="space-y-3 pr-4">
-                {filteredBots.map((bot) => (
+                {bots.map((bot) => (
                   <Card
                     key={bot.id}
                     className={cn(

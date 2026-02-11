@@ -1009,8 +1009,8 @@ export function BotWizardForm({ mode, initialData, botId, initialPictureUrl, onS
                     `}
                   >
                     <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3">
-                        <BookMarked className={`h-5 w-5 mt-0.5 ${isCollectionSelected(collection.id) ? 'text-forest' : 'text-gold-ancient'}`} />
+                      <div className="flex items-start gap-3 min-w-0">
+                        <BookMarked className={`h-5 w-5 mt-0.5 shrink-0 ${isCollectionSelected(collection.id) ? 'text-forest' : 'text-gold-ancient'}`} />
                         <div>
                           <h4 className="font-medium text-parchment">{collection.name}</h4>
                           {collection.description && (
@@ -1022,7 +1022,7 @@ export function BotWizardForm({ mode, initialData, botId, initialPictureUrl, onS
                         </div>
                       </div>
                       <div className={`
-                        w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all
+                        w-6 h-6 shrink-0 rounded-full border-2 flex items-center justify-center transition-all
                         ${isCollectionSelected(collection.id)
                           ? 'border-forest bg-forest text-white'
                           : 'border-gold-ancient/30'
@@ -1036,11 +1036,16 @@ export function BotWizardForm({ mode, initialData, botId, initialPictureUrl, onS
                 )}
                 </div>
 
-                {botData.knowledge_collections.length > 0 && (
-                  <p className="text-sm text-forest mt-4">
-                    {botData.knowledge_collections.length} tome{botData.knowledge_collections.length !== 1 ? 's' : ''} selected
-                  </p>
-                )}
+                {(() => {
+                  const visibleSelectedCount = botData.knowledge_collections.filter(id =>
+                    availableCollections.some(c => String(c.id) === String(id))
+                  ).length
+                  return visibleSelectedCount > 0 ? (
+                    <p className="text-sm text-forest mt-4">
+                      {visibleSelectedCount} tome{visibleSelectedCount !== 1 ? 's' : ''} selected
+                    </p>
+                  ) : null
+                })()}
               </div>
             )}
           </div>

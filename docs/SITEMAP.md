@@ -1,7 +1,7 @@
 # BotCafe v2 - Complete Sitemap
 
-**Last Updated**: 2026-02-06
-**Version**: 2.37
+**Last Updated**: 2026-02-10
+**Version**: 2.38
 **Status**: ~98% Complete
 
 ---
@@ -98,8 +98,9 @@
 
 | Route | Status | Description |
 |-------|--------|-------------|
-| `/chat` | ✅ Complete | Chat interface hub (requires auth) |
-| `/chat/[conversationId]` | ✅ Complete | Real-time conversation interface |
+| `/chat` | ✅ Complete | Chat interface hub with Active/Archived tabs (requires auth) |
+| `/chat/new` | ✅ Complete | Start a new conversation (bot selection) |
+| `/chat/[conversationId]` | ✅ Complete | Real-time conversation interface with rename, archive/unarchive, delete, export, clear history |
 
 ---
 
@@ -294,10 +295,10 @@
 | Analytics | 2 | 1 | 3 |
 | Legal | 4 | 0 | 4 |
 | Help | 3 | 0 | 3 |
-| Chat | 2 | 0 | 2 |
-| **Frontend Total** | **32** | **2** | **34** |
+| Chat | 3 | 0 | 3 |
+| **Frontend Total** | **33** | **2** | **35** |
 | API Endpoints | 69 | 0 | 69 |
-| **Grand Total** | **101** | **2** | **103** |
+| **Grand Total** | **102** | **2** | **104** |
 
 *Note: "Redirect" routes automatically redirect to the Account page with the appropriate tab.*
 *Note: API count includes 15 admin/migration endpoints for internal tooling.*
@@ -324,7 +325,8 @@ BotCafe
 ├── Explore (/explore)
 │   └── Bot Detail (/<username>/<bot-slug>)
 │       └── Edit (/<username>/<bot-slug>/edit)
-├── Chat (/chat) [requires auth]
+├── Chat (/chat) [requires auth] — Active/Archived tabs
+│   ├── New Chat (/chat/new)
 │   └── Conversation (/chat/[conversationId])
 ├── Create (/create → /dashboard) [requires auth]
 ├── Creators (/creators)

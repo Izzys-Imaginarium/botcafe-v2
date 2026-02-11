@@ -607,8 +607,26 @@ When you add new Payload collections or modify existing ones:
   - Fixed per-entry threshold fallback in activation-engine.ts (was defaulting to 0.7)
   - Fixed message text extraction to use `message.entry` field (Lexical `text_content` was always empty)
   - Created `/api/vectors/reindex` admin endpoint to re-insert D1-stored embeddings into Vectorize for metadata index pickup (no AI calls needed)
+  - Fixed double-encoded embeddings in reindex endpoint (Payload CMS text fields add extra JSON layer)
+  - Fixed `user_id` → `user_id_id` in all raw D1 SQL queries (reindex route, vector-sync-check)
+  - Bulk reindexed all 4,107 vectors successfully
   - Updated files: `activation-engine.ts`, `vector-retriever.ts`, `types.ts`, `Knowledge.ts` schema
   - Updated documentation: SITEMAP.md, DATABASE-SCHEMA.md, RAG-ARCHITECTURE.md, KNOWLEDGE-ACTIVATION-GUIDE.md, VECTORIZE_SETUP.md, HYBRID-KNOWLEDGE-ACTIVATION.md
+- ✅ **Lore Faithfulness Improvement**
+  - Added explicit lore faithfulness instruction to system prompts (`system-prompts.ts`) to reduce bots "improvising" on lore entries
+  - Bots now instructed to treat provided lore as established canon and not embellish or contradict it
+- ✅ **Conversation Deletion Fix**
+  - Fixed FK constraint errors when deleting conversations
+  - Added cascade deletion of related records (message, knowledgeActivationLog, memory, memory-insights) before deleting conversation
+  - Added unlinking of knowledge entries that reference the conversation (nulls `source_conversation_id` instead of deleting)
+- ✅ **Unarchive Conversations**
+  - `archiveConversation` hook now toggles between 'active' and 'archived' based on current status
+  - Chat header dropdown shows "Unarchive" when viewing an archived conversation
+  - Chat home page now has Active/Archived tabs for filtering conversations by status
+  - Unarchive action from both the chat header and conversation list works correctly
+- ✅ **Mobile/Tablet Chat Input**
+  - Enter key no longer sends messages on mobile/tablet (<=1024px) — users must tap the Send button
+  - Desktop (>1024px) retains Enter-to-send, Shift+Enter for newline
 
 ### **2026-02-06 Updates:**
 - ✅ **Knowledge Compatibility Fixes Complete**

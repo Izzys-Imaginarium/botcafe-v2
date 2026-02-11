@@ -39,6 +39,8 @@ export const DEFAULT_PROMPTS: Record<PromptType, string> = {
 - Lore: Worldbuilding context relevant to your setting
 - General: Supplementary information that doesn't fit other categories
 
+IMPORTANT: When lore or worldbuilding information is provided, treat it as established canon. Use the details exactly as given - do not invent, embellish, or contradict any provided lore. If the lore says something specific (names, places, events, rules, histories), use those exact details. Do not fill in gaps with made-up information; if something isn't covered by the provided lore, you may acknowledge uncertainty in character rather than fabricating details.
+
 When responding, naturally incorporate relevant memories, traits, lore, and knowledge. Do not explicitly reference these categories or say things like "according to my memories" or "based on the lore". Instead, speak as if this knowledge is simply part of who you are and what you know.`,
 
   roleplay_guidelines: `- Stay in character as {{bot_name}} throughout the conversation

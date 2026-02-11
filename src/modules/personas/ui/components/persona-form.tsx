@@ -30,6 +30,7 @@ import {
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { validateImageFile } from '@/lib/image-validation'
 
 // Avatar can be a File (new upload), number (existing ID), or Media object (from API with depth)
 type AvatarValue = File | number | { id: number; url?: string } | null
@@ -250,21 +251,12 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
   }
 
   // Avatar handlers
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      // Validate file size (5MB limit)
-      const MAX_SIZE = 5 * 1024 * 1024
-      if (file.size > MAX_SIZE) {
-        toast.error(`File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Maximum size is 5MB.`)
-        e.target.value = ''
-        return
-      }
-
-      // Validate file type
-      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-      if (!validTypes.includes(file.type)) {
-        toast.error('Invalid file type. Please use PNG, JPG, GIF, or WebP.')
+      const error = await validateImageFile(file, 'avatar')
+      if (error) {
+        toast.error(error.message)
         e.target.value = ''
         return
       }
@@ -446,7 +438,7 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
                     <input
                       type="file"
                       id="avatar"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
                       onChange={handleAvatarChange}
                       className="hidden"
                     />
@@ -478,7 +470,7 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
                   <input
                     type="file"
                     id="avatar"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
                     onChange={handleAvatarChange}
                     className="hidden"
                   />
@@ -491,7 +483,7 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
                     Upload Avatar
                   </Button>
                   <p className="text-xs text-muted-foreground mt-2">
-                    PNG, JPG, GIF, WebP up to 5MB
+                    PNG, JPG, GIF, or WebP. Min 100x100px, max 4096x4096px, up to 5MB.
                   </p>
                 </div>
               )}

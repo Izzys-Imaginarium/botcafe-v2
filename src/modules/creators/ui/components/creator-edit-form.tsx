@@ -42,6 +42,7 @@ import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
+import { validateImageFile, type ImageType } from '@/lib/image-validation'
 
 interface BotData {
   id: number
@@ -425,6 +426,14 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
 
   // Handle image upload for avatar or banner
   const handleImageUpload = async (file: File, type: 'avatar' | 'banner') => {
+    // Validate client-side before uploading
+    const imageType: ImageType = type === 'banner' ? 'banner' : 'avatar'
+    const validationError = await validateImageFile(file, imageType)
+    if (validationError) {
+      toast.error(validationError.message)
+      return
+    }
+
     if (type === 'avatar') {
       setIsUploadingAvatar(true)
     } else {
@@ -624,7 +633,7 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
                       <input
                         ref={avatarInputRef}
                         type="file"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/gif,image/webp"
                         className="hidden"
                         onChange={(e) => {
                           const file = e.target.files?.[0]
@@ -650,7 +659,7 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
                         )}
                       </Button>
                       <p className="text-xs text-muted-foreground">
-                        Recommended: Square image, at least 200x200px
+                        PNG, JPG, GIF, or WebP. Min 100x100px, max 4096x4096px, up to 5MB.
                       </p>
                     </div>
                   </div>
@@ -673,7 +682,7 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
                     <input
                       ref={bannerInputRef}
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
                       className="hidden"
                       onChange={(e) => {
                         const file = e.target.files?.[0]
@@ -699,7 +708,7 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
                       )}
                     </Button>
                     <p className="text-xs text-muted-foreground">
-                      Recommended: 1200x300px or similar wide aspect ratio
+                      Recommended: 1200x300px or similar wide ratio. Min 400x100px, max 6000x4096px, up to 5MB.
                     </p>
                   </div>
                 </div>

@@ -15,6 +15,7 @@ import { toast } from 'sonner'
 import { MagicalBackground } from '@/modules/home/ui/components/magical-background'
 import { ShareDialog } from '@/components/share-dialog'
 import { useUser } from '@clerk/nextjs'
+import { validateImageFile } from '@/lib/image-validation'
 
 type Visibility = 'private' | 'shared' | 'public'
 
@@ -268,21 +269,12 @@ export function BotWizardForm({ mode, initialData, botId, initialPictureUrl, onS
     setBotData(prev => ({ ...prev, [field]: value }))
   }
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      // Validate file size (5MB limit)
-      const MAX_SIZE = 5 * 1024 * 1024
-      if (file.size > MAX_SIZE) {
-        toast.error(`File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Maximum size is 5MB.`)
-        e.target.value = '' // Reset the input
-        return
-      }
-
-      // Validate file type
-      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-      if (!validTypes.includes(file.type)) {
-        toast.error('Invalid file type. Please use PNG, JPG, GIF, or WebP.')
+      const error = await validateImageFile(file, 'avatar')
+      if (error) {
+        toast.error(error.message)
         e.target.value = ''
         return
       }
@@ -1076,7 +1068,7 @@ export function BotWizardForm({ mode, initialData, botId, initialPictureUrl, onS
                   <input
                     type="file"
                     id="picture"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
                     onChange={handleImageChange}
                     className="hidden"
                   />
@@ -1091,7 +1083,7 @@ export function BotWizardForm({ mode, initialData, botId, initialPictureUrl, onS
                     </label>
                   </Button>
                   <p className="text-sm text-parchment-dim mt-2">
-                    PNG, JPG, GIF, WebP up to 5MB
+                    PNG, JPG, GIF, or WebP. Min 100x100px, max 4096x4096px, up to 5MB.
                   </p>
                 </div>
               )}

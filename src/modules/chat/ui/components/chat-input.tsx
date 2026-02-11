@@ -90,6 +90,10 @@ export function ChatInput({
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
+      // On mobile/tablet (<=1024px), Enter inserts a newline — users tap Send instead
+      const isMobile = window.matchMedia('(max-width: 1024px)').matches
+      if (isMobile) return
+
       e.preventDefault()
       handleSend()
     }

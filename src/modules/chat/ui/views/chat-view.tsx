@@ -275,17 +275,17 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
       // For now, just send to the first bot - full "all bots" implementation
       // would require backend changes to handle multiple responses
       const firstBotId = botParticipants[0]?.id
-      sendMessage(content, firstBotId)
+      sendMessage(content, firstBotId, currentPersonaId)
       toast.info('All-bots mode: Currently responds with primary bot')
     } else {
       // Normal single-bot response
       const botId = effectiveTargetId || getNextBotId()
-      sendMessage(content, botId || undefined)
+      sendMessage(content, botId || undefined, currentPersonaId)
     }
 
     // Reset @mention target after sending
     setMentionedBotId(null)
-  }, [turnMode, targetBotId, botParticipants, sendMessage, getNextBotId])
+  }, [turnMode, targetBotId, botParticipants, sendMessage, getNextBotId, currentPersonaId])
 
   const handleAddBot = useCallback(async (botId: number) => {
     try {

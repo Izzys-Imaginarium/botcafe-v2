@@ -233,7 +233,8 @@ export function useChat(options: UseChatOptions) {
   // Send a message
   const sendMessage = useCallback(async (
     content: string,
-    targetBotId?: number
+    targetBotId?: number,
+    personaId?: number | null
   ) => {
     if (!content.trim() || isSending || streaming.isStreaming) {
       return
@@ -253,6 +254,7 @@ export function useChat(options: UseChatOptions) {
           apiKeyId: selectedApiKeyId,
           model: selectedModel,
           targetBotId,
+          personaId,
         }),
       })
 

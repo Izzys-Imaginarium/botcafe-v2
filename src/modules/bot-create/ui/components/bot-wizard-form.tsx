@@ -430,8 +430,15 @@ export function BotWizardForm({ mode, initialData, botId, initialPictureUrl, onS
           const uploadResult = await uploadResponse.json() as { doc: { id: string | number } }
           pictureId = uploadResult.doc.id
         } else {
-          const errorData = await uploadResponse.json() as { error?: string }
-          toast.error(errorData.error || `Failed to upload image. ${mode === 'create' ? 'Creating' : 'Updating'} bot without picture change.`)
+          // Handle non-JSON responses (e.g. 403 HTML from WAF/middleware)
+          let errorMessage = `Failed to upload image (${uploadResponse.status}).`
+          try {
+            const errorData = await uploadResponse.json() as { error?: string }
+            errorMessage = errorData.error || errorMessage
+          } catch {
+            // Response wasn't JSON (e.g. HTML error page)
+          }
+          toast.error(`${errorMessage} ${mode === 'create' ? 'Creating' : 'Updating'} bot without picture change.`)
         }
       } else if (typeof botData.picture === 'number' || typeof botData.picture === 'string') {
         // Existing picture ID
@@ -489,8 +496,14 @@ export function BotWizardForm({ mode, initialData, botId, initialPictureUrl, onS
           }
         }
       } else {
-        const error = await response.json() as { message: string }
-        toast.error(error.message || `Failed to ${mode} bot`)
+        let errorMessage = `Failed to ${mode} bot`
+        try {
+          const error = await response.json() as { message: string }
+          errorMessage = error.message || errorMessage
+        } catch {
+          // Response wasn't JSON
+        }
+        toast.error(errorMessage)
       }
     } catch (error) {
       console.error(`Error ${mode === 'create' ? 'creating' : 'updating'} bot:`, error)

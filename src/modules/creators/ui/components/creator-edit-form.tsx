@@ -449,10 +449,15 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
         body: formDataUpload,
       })
 
-      const data = (await response.json()) as {
+      let data: {
         doc?: { id: number; url: string }
         error?: string
         message?: string
+      } = {}
+      try {
+        data = (await response.json()) as typeof data
+      } catch {
+        // Response wasn't JSON (e.g. HTML error page from WAF)
       }
 
       if (data.doc && data.doc.id && data.doc.url) {
@@ -465,7 +470,7 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
         }
         toast.success(`${type === 'avatar' ? 'Profile picture' : 'Banner'} uploaded successfully`)
       } else {
-        toast.error(data.error || data.message || 'Failed to upload image')
+        toast.error(data.error || data.message || `Failed to upload image (${response.status}).`)
       }
     } catch (error) {
       console.error('Error uploading image:', error)

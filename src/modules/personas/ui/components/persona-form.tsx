@@ -158,8 +158,14 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
           const uploadData = (await uploadResponse.json()) as { doc?: { id: number } }
           avatarId = uploadData.doc?.id
         } else {
-          const errorData = (await uploadResponse.json()) as { error?: string }
-          toast.error(errorData.error || 'Failed to upload avatar')
+          let errorMessage = `Failed to upload avatar (${uploadResponse.status}).`
+          try {
+            const errorData = (await uploadResponse.json()) as { error?: string }
+            errorMessage = errorData.error || errorMessage
+          } catch {
+            // Response wasn't JSON (e.g. HTML error page)
+          }
+          toast.error(errorMessage)
           setIsSubmitting(false)
           return
         }
@@ -188,7 +194,12 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
         body: JSON.stringify(payload),
       })
 
-      const data = (await response.json()) as { success?: boolean; persona?: any; message?: string }
+      let data: { success?: boolean; persona?: any; message?: string } = {}
+      try {
+        data = (await response.json()) as typeof data
+      } catch {
+        // Response wasn't JSON
+      }
 
       if (data.success) {
         toast.success(mode === 'create' ? 'Persona created!' : 'Persona updated!')

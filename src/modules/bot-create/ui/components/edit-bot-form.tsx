@@ -16,6 +16,7 @@ export function EditBotForm({ username, botSlug }: EditBotFormProps) {
   const router = useRouter()
   const [botData, setBotData] = useState<Partial<BotFormData> | null>(null)
   const [botId, setBotId] = useState<string | number | null>(null)
+  const [existingPictureUrl, setExistingPictureUrl] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -41,6 +42,11 @@ export function EditBotForm({ username, botSlug }: EditBotFormProps) {
         // Store the bot ID for updates
         setBotId(data.id)
 
+        // Store existing picture URL for preview
+        if (typeof data.picture === 'object' && data.picture?.url) {
+          setExistingPictureUrl(data.picture.url)
+        }
+
         // Transform the API response to match BotFormData structure
         setBotData({
           name: data.name || '',
@@ -57,7 +63,8 @@ export function EditBotForm({ username, botSlug }: EditBotFormProps) {
           knowledge_collections: (data.knowledge_collections || []).map(
             (kc: number | { id: number }) => typeof kc === 'object' ? kc.id : kc
           ),
-          picture: data.picture || null,
+          // Extract media ID from the populated picture object (depth: 1 returns full object)
+          picture: typeof data.picture === 'object' ? data.picture?.id : (data.picture || null),
           personality_traits: {
             tone: data.personality_traits?.tone || '',
             formality_level: data.personality_traits?.formality_level || '',
@@ -123,6 +130,7 @@ export function EditBotForm({ username, botSlug }: EditBotFormProps) {
       mode="edit"
       botId={botId}
       initialData={botData}
+      initialPictureUrl={existingPictureUrl}
       onSuccess={(bot) => {
         const targetSlug = bot.slug || botData.slug
         router.push(`/${username}/${targetSlug}`)

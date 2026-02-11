@@ -52,6 +52,7 @@ interface BotWizardFormProps {
   mode: 'create' | 'edit'
   initialData?: Partial<BotFormData>
   botId?: string | number
+  initialPictureUrl?: string | null
   onSuccess?: (bot: any) => void
 }
 
@@ -100,7 +101,7 @@ const steps = [
   },
 ]
 
-export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizardFormProps) {
+export function BotWizardForm({ mode, initialData, botId, initialPictureUrl, onSuccess }: BotWizardFormProps) {
   const router = useRouter()
   const { user: clerkUser } = useUser()
   const [currentStep, setCurrentStep] = useState(0)
@@ -241,10 +242,14 @@ export function BotWizardForm({ mode, initialData, botId, onSuccess }: BotWizard
 
   // Load existing picture preview if in edit mode
   useEffect(() => {
-    if (mode === 'edit' && initialData?.picture && typeof initialData.picture === 'string') {
-      setPicturePreview(initialData.picture)
+    if (mode === 'edit') {
+      if (initialPictureUrl) {
+        setPicturePreview(initialPictureUrl)
+      } else if (initialData?.picture && typeof initialData.picture === 'string') {
+        setPicturePreview(initialData.picture)
+      }
     }
-  }, [mode, initialData?.picture])
+  }, [mode, initialPictureUrl, initialData?.picture])
 
   // Auto-generate slug from name only in create mode
   const handleNameChange = (value: string) => {

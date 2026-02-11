@@ -86,6 +86,14 @@ export function useChat(options: UseChatOptions) {
   const [selectedModel, setSelectedModel] = useState<string | null>(null)
 
   const streamingMessageIdRef = useRef<number | null>(null)
+  // Queue for sequential multi-bot streaming (all-bots mode)
+  const botStreamQueueRef = useRef<Array<{
+    botMessageId: number
+    bot: { id: number; name: string; picture?: { url: string } }
+    streamUrl: string
+  }>>([])
+  // Ref to access the streaming hook's startStream without stale closures
+  const streamingRef = useRef<{ startStream: (url: string) => void }>({ startStream: () => {} })
 
   const streaming = useStreaming({
     onChunk: (content) => {
@@ -126,15 +134,32 @@ export function useChat(options: UseChatOptions) {
         if (finalMessage) {
           onStreamComplete?.({ ...finalMessage, content: fullContent, isStreaming: false })
         }
+      }
 
+      // Check if there are more bots queued (all-bots mode)
+      const nextBot = botStreamQueueRef.current.shift()
+      if (nextBot) {
+        // Start streaming next bot's response
+        streamingMessageIdRef.current = nextBot.botMessageId
+        setMessages(prev => prev.map(m =>
+          m.id === nextBot.botMessageId ? { ...m, isStreaming: true } : m
+        ))
+        streamingRef.current.startStream(nextBot.streamUrl)
+      } else {
         streamingMessageIdRef.current = null
       }
     },
     onError: (err) => {
       setError(err)
       onError?.(err)
+      // Clear queue on error so remaining bots don't try to stream
+      botStreamQueueRef.current = []
+      streamingMessageIdRef.current = null
     },
   })
+
+  // Keep streamingRef in sync so onComplete can call startStream without stale closure
+  streamingRef.current = streaming
 
   // Fetch conversation details
   const fetchConversation = useCallback(async () => {
@@ -230,11 +255,12 @@ export function useChat(options: UseChatOptions) {
     }
   }, [conversationId])
 
-  // Send a message
+  // Send a message (supports single-bot and all-bots mode)
   const sendMessage = useCallback(async (
     content: string,
     targetBotId?: number,
-    personaId?: number | null
+    personaId?: number | null,
+    targetBotIds?: number[]
   ) => {
     if (!content.trim() || isSending || streaming.isStreaming) {
       return
@@ -253,7 +279,8 @@ export function useChat(options: UseChatOptions) {
           content,
           apiKeyId: selectedApiKeyId,
           model: selectedModel,
-          targetBotId,
+          targetBotId: targetBotIds ? undefined : targetBotId,
+          targetBotIds,
           personaId,
         }),
       })
@@ -261,10 +288,17 @@ export function useChat(options: UseChatOptions) {
       const data = await response.json() as {
         message?: string
         userMessageId?: number
+        // Single-bot response fields
         botMessageId?: number
         bot?: { id: number; name: string; picture?: { url: string } }
         model?: string
         streamUrl?: string
+        // Multi-bot response fields
+        botResponses?: Array<{
+          botMessageId: number
+          bot: { id: number; name: string; picture?: { url: string } }
+          streamUrl: string
+        }>
       }
 
       if (!response.ok) {
@@ -283,23 +317,50 @@ export function useChat(options: UseChatOptions) {
       setMessages(prev => [...prev, userMessage])
       onMessageSent?.(userMessage)
 
-      // Add placeholder for bot message
-      const botMessage: ChatMessage = {
-        id: data.botMessageId!,
-        type: 'text',
-        content: '',
-        createdAt: new Date().toISOString(),
-        isAI: true,
-        bot: data.bot ? { id: data.bot.id, name: data.bot.name, avatar: data.bot.picture } : undefined,
-        model: data.model,
-        isStreaming: true,
-        status: 'sent',
-      }
-      setMessages(prev => [...prev, botMessage])
-      streamingMessageIdRef.current = data.botMessageId!
+      if (data.botResponses && data.botResponses.length > 0) {
+        // Multi-bot mode: add all bot placeholders, stream sequentially
+        const botMessages: ChatMessage[] = data.botResponses.map((br) => ({
+          id: br.botMessageId,
+          type: 'text' as const,
+          content: '',
+          createdAt: new Date().toISOString(),
+          isAI: true,
+          bot: { id: br.bot.id, name: br.bot.name, avatar: br.bot.picture },
+          model: data.model,
+          isStreaming: false, // Will be set to true when their turn starts
+          status: 'sent',
+        }))
+        setMessages(prev => [...prev, ...botMessages])
 
-      // Start streaming
-      streaming.startStream(data.streamUrl!)
+        // Queue remaining bots, start first one immediately
+        const [firstBot, ...remainingBots] = data.botResponses
+        botStreamQueueRef.current = remainingBots
+        streamingMessageIdRef.current = firstBot.botMessageId
+
+        // Mark first bot as streaming
+        setMessages(prev => prev.map(m =>
+          m.id === firstBot.botMessageId ? { ...m, isStreaming: true } : m
+        ))
+
+        streaming.startStream(firstBot.streamUrl)
+      } else {
+        // Single-bot mode (original behavior)
+        const botMessage: ChatMessage = {
+          id: data.botMessageId!,
+          type: 'text',
+          content: '',
+          createdAt: new Date().toISOString(),
+          isAI: true,
+          bot: data.bot ? { id: data.bot.id, name: data.bot.name, avatar: data.bot.picture } : undefined,
+          model: data.model,
+          isStreaming: true,
+          status: 'sent',
+        }
+        setMessages(prev => [...prev, botMessage])
+        streamingMessageIdRef.current = data.botMessageId!
+
+        streaming.startStream(data.streamUrl!)
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       setError(errorMessage)
@@ -317,15 +378,24 @@ export function useChat(options: UseChatOptions) {
     onError,
   ])
 
-  // Stop streaming
+  // Stop streaming (also clears any queued bot streams)
   const stopStreaming = useCallback(() => {
     streaming.stopStream()
-    if (streamingMessageIdRef.current) {
-      setMessages(prev => prev.map(m =>
-        m.id === streamingMessageIdRef.current
-          ? { ...m, isStreaming: false }
-          : m
-      ))
+    // Clear the multi-bot queue so remaining bots don't start
+    const queuedIds = botStreamQueueRef.current.map(b => b.botMessageId)
+    botStreamQueueRef.current = []
+    if (streamingMessageIdRef.current || queuedIds.length > 0) {
+      const currentId = streamingMessageIdRef.current
+      setMessages(prev => prev.map(m => {
+        if (m.id === currentId) {
+          return { ...m, isStreaming: false }
+        }
+        // Mark queued (not-yet-started) bot messages as stopped
+        if (queuedIds.includes(m.id) && m.content === '') {
+          return { ...m, isStreaming: false, content: '(stopped)' }
+        }
+        return m
+      }))
       streamingMessageIdRef.current = null
     }
   }, [streaming])

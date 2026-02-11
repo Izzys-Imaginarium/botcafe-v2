@@ -271,12 +271,9 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
     const effectiveTargetId = mentionedId || (turnMode === 'manual' ? targetBotId : null)
 
     if (turnMode === 'all' && !effectiveTargetId && botParticipants.length > 1) {
-      // Send to all bots sequentially
-      // For now, just send to the first bot - full "all bots" implementation
-      // would require backend changes to handle multiple responses
-      const firstBotId = botParticipants[0]?.id
-      sendMessage(content, firstBotId, currentPersonaId)
-      toast.info('All-bots mode: Currently responds with primary bot')
+      // All-bots mode: every bot in the conversation responds sequentially
+      const allBotIds = botParticipants.map(b => b.id)
+      sendMessage(content, undefined, currentPersonaId, allBotIds)
     } else {
       // Normal single-bot response
       const botId = effectiveTargetId || getNextBotId()

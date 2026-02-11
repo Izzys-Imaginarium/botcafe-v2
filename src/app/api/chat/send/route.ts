@@ -5,8 +5,10 @@
  *
  * This endpoint:
  * 1. Creates the user's message
- * 2. Creates a placeholder for the bot's response
- * 3. Returns both message IDs so the client can connect to the stream
+ * 2. Creates placeholder(s) for bot response(s)
+ * 3. Returns message IDs so the client can connect to the stream(s)
+ *
+ * Supports single-bot (targetBotId) and all-bots (targetBotIds) modes.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -54,6 +56,7 @@ export async function POST(request: NextRequest) {
       apiKeyId?: number
       model?: string
       targetBotId?: number
+      targetBotIds?: number[] // For all-bots mode
       personaId?: number | null // Which persona is speaking (null = user themselves)
     }
     const {
@@ -62,6 +65,7 @@ export async function POST(request: NextRequest) {
       apiKeyId,
       model,
       targetBotId, // For multi-bot - which bot should respond
+      targetBotIds, // For all-bots mode - all bots respond
       personaId, // Which persona the user is acting as (null/undefined = themselves)
     } = body
 
@@ -214,8 +218,141 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Determine which bot should respond
+    // Determine which bot(s) should respond
     const botParticipants = conversation.bot_participation || []
+
+    // Helper to resolve a bot from a participation entry
+    const resolveBot = async (bp: typeof botParticipants[number]) => {
+      return typeof bp.bot_id === 'object'
+        ? bp.bot_id
+        : await payload.findByID({
+            collection: 'bot',
+            id: bp.bot_id as number,
+            overrideAccess: true,
+          })
+    }
+
+    // All-bots mode: resolve all target bots
+    if (targetBotIds && targetBotIds.length > 1) {
+      const respondingBots = []
+      for (const botId of targetBotIds) {
+        const targetId = Number(botId)
+        const bp = botParticipants.find((p) => {
+          const participantBotId = typeof p.bot_id === 'object'
+            ? Number(p.bot_id.id)
+            : Number(p.bot_id)
+          return participantBotId === targetId
+        })
+        if (bp) {
+          const bot = await resolveBot(bp)
+          if (bot) respondingBots.push(bot)
+        }
+      }
+
+      if (respondingBots.length === 0) {
+        return NextResponse.json(
+          { message: 'No bots available to respond' },
+          { status: 400 }
+        )
+      }
+
+      // Estimate tokens for user message
+      const estimatedTokens = Math.ceil(content.length / 4)
+
+      // Create user message (once)
+      const userMessage = await payload.create({
+        collection: 'message',
+        data: {
+          user: payloadUser.id,
+          conversation: conversationId,
+          message_type: 'text',
+          entry: content,
+          message_attribution: {
+            is_ai_generated: false,
+            persona_id: personaId || undefined,
+          },
+          token_tracking: {
+            input_tokens: estimatedTokens,
+            output_tokens: 0,
+            total_tokens: estimatedTokens,
+          },
+          byo_key: true,
+          message_status: {
+            delivery_status: 'sent',
+          },
+        },
+        overrideAccess: true,
+      })
+
+      // Create bot response placeholders for ALL bots
+      const botResponses = []
+      for (const bot of respondingBots) {
+        const botMessage = await payload.create({
+          collection: 'message',
+          data: {
+            user: payloadUser.id,
+            conversation: conversationId,
+            bot: bot.id,
+            message_type: 'text',
+            entry: '...',
+            message_attribution: {
+              source_bot_id: bot.id,
+              is_ai_generated: true,
+              model_used: model || null,
+            },
+            token_tracking: {
+              input_tokens: 0,
+              output_tokens: 0,
+              total_tokens: 0,
+            },
+            byo_key: true,
+            message_status: {
+              delivery_status: 'sent',
+            },
+          },
+          overrideAccess: true,
+        })
+
+        botResponses.push({
+          botMessageId: botMessage.id,
+          bot: {
+            id: bot.id,
+            name: bot.name,
+            picture: bot.picture,
+          },
+          streamUrl: `/api/chat/stream/${botMessage.id}?apiKeyId=${apiKey.id}${model ? `&model=${model}` : ''}`,
+        })
+      }
+
+      // Update conversation metadata
+      const currentMessageCount = conversation.conversation_metadata?.total_messages || 0
+      await payload.update({
+        collection: 'conversation',
+        id: conversationId,
+        data: {
+          modified_timestamp: new Date().toISOString(),
+          participants: updatedParticipants,
+          conversation_metadata: {
+            ...conversation.conversation_metadata,
+            total_messages: currentMessageCount + 1 + respondingBots.length,
+            last_activity: new Date().toISOString(),
+          },
+        },
+        overrideAccess: true,
+      })
+
+      return NextResponse.json({
+        success: true,
+        userMessageId: userMessage.id,
+        conversationId,
+        provider: apiKey.provider,
+        model: model || null,
+        // Multi-bot response
+        botResponses,
+      })
+    }
+
+    // Single-bot mode (original behavior)
     let respondingBot = null
 
     if (targetBotId) {
@@ -228,13 +365,7 @@ export async function POST(request: NextRequest) {
         return participantBotId === targetId
       })
       if (botParticipant) {
-        respondingBot = typeof botParticipant.bot_id === 'object'
-          ? botParticipant.bot_id
-          : await payload.findByID({
-              collection: 'bot',
-              id: botParticipant.bot_id as number,
-              overrideAccess: true,
-            })
+        respondingBot = await resolveBot(botParticipant)
       }
     } else {
       // Get primary bot
@@ -243,13 +374,7 @@ export async function POST(request: NextRequest) {
       ) || botParticipants[0]
 
       if (primaryParticipant) {
-        respondingBot = typeof primaryParticipant.bot_id === 'object'
-          ? primaryParticipant.bot_id
-          : await payload.findByID({
-              collection: 'bot',
-              id: primaryParticipant.bot_id as number,
-              overrideAccess: true,
-            })
+        respondingBot = await resolveBot(primaryParticipant)
       }
     }
 

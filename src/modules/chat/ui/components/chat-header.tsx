@@ -44,6 +44,7 @@ export interface ChatHeaderProps {
   onDelete?: () => void
   onClearHistory?: () => void
   onExport?: () => void
+  isArchived?: boolean
   className?: string
 }
 
@@ -61,6 +62,7 @@ export function ChatHeader({
   onDelete,
   onClearHistory,
   onExport,
+  isArchived,
   className,
 }: ChatHeaderProps) {
   const isMultiBot = conversationType !== 'single-bot' || botCount > 1
@@ -158,7 +160,7 @@ export function ChatHeader({
           {onArchive && (
             <DropdownMenuItem onClick={onArchive}>
               <Archive className="h-4 w-4 mr-2" />
-              Archive
+              {isArchived ? 'Unarchive' : 'Archive'}
             </DropdownMenuItem>
           )}
           <DropdownMenuSeparator />

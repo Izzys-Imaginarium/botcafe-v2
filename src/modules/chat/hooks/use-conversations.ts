@@ -153,25 +153,26 @@ export function useConversations(options: UseConversationsOptions = {}) {
     }
   }, [])
 
-  const archiveConversation = useCallback(async (conversationId: number) => {
+  const archiveConversation = useCallback(async (conversationId: number, currentStatus?: string) => {
+    const newStatus = currentStatus === 'archived' ? 'active' : 'archived'
     try {
       const response = await fetch(`/api/chat/conversations/${conversationId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'archived' }),
+        body: JSON.stringify({ status: newStatus }),
       })
 
       if (!response.ok) {
         const data = await response.json() as { message?: string }
-        throw new Error(data.message || 'Failed to archive conversation')
+        throw new Error(data.message || `Failed to ${newStatus === 'archived' ? 'archive' : 'unarchive'} conversation`)
       }
 
       // Update local state
       setConversations(prev =>
-        prev.map(c => c.id === conversationId ? { ...c, status: 'archived' as const } : c)
+        prev.map(c => c.id === conversationId ? { ...c, status: newStatus as 'active' | 'archived' } : c)
       )
 
-      return true
+      return newStatus
     } catch (err) {
       throw err
     }

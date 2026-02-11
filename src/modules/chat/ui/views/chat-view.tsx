@@ -310,16 +310,21 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
     setBotSidebarOpen(true)
   }, [])
 
-  // Handle archive conversation
+  // Handle archive/unarchive conversation
   const handleArchive = useCallback(async () => {
     try {
-      await archiveConversation(conversationId)
-      toast.success('Conversation archived')
-      router.push('/chat')
+      const currentStatus = conversation?.status || 'active'
+      const newStatus = await archiveConversation(conversationId, currentStatus)
+      if (newStatus === 'archived') {
+        toast.success('Conversation archived')
+        router.push('/chat')
+      } else {
+        toast.success('Conversation unarchived')
+      }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to archive conversation')
+      toast.error(err instanceof Error ? err.message : 'Failed to update conversation')
     }
-  }, [archiveConversation, conversationId, router])
+  }, [archiveConversation, conversationId, conversation?.status, router])
 
   // Handle delete conversation
   const handleDelete = useCallback(async () => {
@@ -453,6 +458,7 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
         onAddBot={handleOpenAddBot}
         onRename={handleOpenRename}
         onArchive={handleArchive}
+        isArchived={conversation?.status === 'archived'}
         onDelete={() => setDeleteDialogOpen(true)}
         onClearHistory={() => setClearHistoryDialogOpen(true)}
         onExport={handleExport}

@@ -637,6 +637,23 @@ When you add new Payload collections or modify existing ones:
   - Server-side `/api/upload/image` now parses image headers for dimension validation without native dependencies (works on Cloudflare Workers)
   - All file inputs narrowed from `accept="image/*"` to specific MIME types (JPEG, PNG, GIF, WebP)
   - Improved error messages with specific details (actual file size, detected extension, actual dimensions)
+- ✅ **Chat Scroll Fix**
+  - Fixed users unable to scroll back through long conversation history
+  - Root cause: scroll ref was attached to inner content div, not the actual scroll container (Radix ScrollArea Viewport) — `onScroll` never fired, `isNearBottomRef` stayed `true`, auto-scroll yanked users to bottom on every message change
+  - Replaced Radix ScrollArea with native scrollable div so scroll ref and events work correctly
+  - Auto-scroll now only triggers for 1-2 new messages when user is near bottom; preserves position when loading older messages
+  - Fixed `overflow-hidden` from parent conflicting with `overflow-y-auto` on scroll container
+- ✅ **Chat New Page: Server-Side Bot Search**
+  - Fixed bot search on `/chat/new` only searching first 50 bots (client-side filter)
+  - Now passes search query to `/api/bots/explore` endpoint for server-side search across all bots
+  - Added 300ms debounce and loading indicator in search input
+- ✅ **Bot Edit: Knowledge Tome Counter Fix**
+  - Fixed tome counter showing incorrect count when editing bots (included memory tomes in count)
+  - Counter now only counts tomes visible in the selection list (excludes memory tomes)
+  - Memory tome associations are still preserved on save
+- ✅ **Bot Edit: Knowledge Tome Icon/Circle Compression Fix**
+  - Fixed BookMarked icon and selection circle being compressed on tomes with long descriptions
+  - Added `shrink-0` to icon and circle, `min-w-0` to text container
 
 ### **2026-02-06 Updates:**
 - ✅ **Knowledge Compatibility Fixes Complete**

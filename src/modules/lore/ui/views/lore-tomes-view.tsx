@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -47,6 +47,8 @@ import {
   type BudgetControlValue,
 } from '../components/activation-settings'
 import { ShareDialog } from '@/components/share-dialog'
+import { useInfiniteList } from '@/hooks/use-infinite-list'
+import { InfiniteScrollTrigger } from '@/components/ui/infinite-scroll-trigger'
 
 interface Tome {
   id: string
@@ -75,21 +77,68 @@ interface KnowledgeEntry {
 }
 
 export const LoreTomesView = () => {
-  // Tome state
-  const [tomes, setTomes] = useState<Tome[]>([])
-  const [isLoadingTomes, setIsLoadingTomes] = useState(true)
+  // Tome state (infinite scroll)
   const [expandedTomeId, setExpandedTomeId] = useState<string | null>(null)
   const [tomeEntries, setTomeEntries] = useState<Record<string, KnowledgeEntry[]>>({})
+  const [tomeEntriesHasMore, setTomeEntriesHasMore] = useState<Record<string, boolean>>({})
+  const [tomeEntriesPage, setTomeEntriesPage] = useState<Record<string, number>>({})
   const [loadingEntriesForTome, setLoadingEntriesForTome] = useState<string | null>(null)
+  const [loadingMoreEntriesForTome, setLoadingMoreEntriesForTome] = useState<string | null>(null)
 
   // Search and sort state
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'name' | 'createdAt' | 'entry_count'>('createdAt')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Filter state
   const [filterHasEntries, setFilterHasEntries] = useState<'all' | 'with_entries' | 'empty'>('all')
   const [showFilters, setShowFilters] = useState(false)
+
+  // Build sort param for the API (e.g. "-createdAt", "name")
+  const apiSortParam = useMemo(() => {
+    const prefix = sortOrder === 'desc' ? '-' : ''
+    return `${prefix}${sortBy}`
+  }, [sortBy, sortOrder])
+
+  const {
+    items: tomes,
+    isLoading: isLoadingTomes,
+    isLoadingMore: isLoadingMoreTomes,
+    hasMore: hasMoreTomes,
+    loadMore: loadMoreTomes,
+    setParams: setTomeParams,
+    refresh: refreshTomes,
+  } = useInfiniteList<Tome>({
+    endpoint: '/api/knowledge-collections',
+    limit: 20,
+    itemsKey: 'collections',
+    initialParams: { sort: apiSortParam },
+  })
+
+  // Debounced search → update API params
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+    searchDebounceRef.current = setTimeout(() => {
+      const params: Record<string, string> = { sort: apiSortParam }
+      if (searchQuery.trim()) params.search = searchQuery.trim()
+      setTomeParams(params)
+    }, 300)
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+    }
+  }, [searchQuery, apiSortParam, setTomeParams])
+
+  // Update API params when sort changes (immediate, no debounce)
+  const prevSortRef = useRef(apiSortParam)
+  useEffect(() => {
+    if (prevSortRef.current !== apiSortParam) {
+      prevSortRef.current = apiSortParam
+      const params: Record<string, string> = { sort: apiSortParam }
+      if (searchQuery.trim()) params.search = searchQuery.trim()
+      setTomeParams(params)
+    }
+  }, [apiSortParam, searchQuery, setTomeParams])
 
   // Create tome state
   const [isCreateTomeOpen, setIsCreateTomeOpen] = useState(false)
@@ -202,51 +251,17 @@ export const LoreTomesView = () => {
     max_tokens: 1000,
   })
 
-  // Fetch tomes on mount
-  useEffect(() => {
-    fetchTomes()
-  }, [])
+  // (tomes are auto-loaded by useInfiniteList)
 
-  // Filter and sort tomes
-  const filteredAndSortedTomes = useMemo(() => {
-    let result = [...tomes]
-
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
-      result = result.filter(
-        (tome) =>
-          tome.name.toLowerCase().includes(query) ||
-          (tome.description && tome.description.toLowerCase().includes(query))
-      )
-    }
-
-    // Filter by has entries
+  // Client-side filter for entry count (search/sort handled by API)
+  const displayedTomes = useMemo(() => {
     if (filterHasEntries === 'with_entries') {
-      result = result.filter((tome) => (tome.entry_count || 0) > 0)
+      return tomes.filter((tome) => (tome.entry_count || 0) > 0)
     } else if (filterHasEntries === 'empty') {
-      result = result.filter((tome) => (tome.entry_count || 0) === 0)
+      return tomes.filter((tome) => (tome.entry_count || 0) === 0)
     }
-
-    // Sort
-    result.sort((a, b) => {
-      let comparison = 0
-      switch (sortBy) {
-        case 'name':
-          comparison = a.name.localeCompare(b.name)
-          break
-        case 'createdAt':
-          comparison = new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
-          break
-        case 'entry_count':
-          comparison = (a.entry_count || 0) - (b.entry_count || 0)
-          break
-      }
-      return sortOrder === 'asc' ? comparison : -comparison
-    })
-
-    return result
-  }, [tomes, searchQuery, sortBy, sortOrder, filterHasEntries])
+    return tomes
+  }, [tomes, filterHasEntries])
 
   // Count active filters
   const activeFilterCount = useMemo(() => {
@@ -255,37 +270,36 @@ export const LoreTomesView = () => {
     return count
   }, [filterHasEntries])
 
-  const fetchTomes = async () => {
-    setIsLoadingTomes(true)
-    try {
-      const response = await fetch('/api/knowledge-collections')
-      const data = (await response.json()) as { success?: boolean; collections?: Tome[]; message?: string }
 
-      if (data.success) {
-        setTomes(data.collections || [])
-      } else {
-        toast.error(data.message || 'Failed to fetch tomes')
-      }
-    } catch (error) {
-      console.error('Error fetching tomes:', error)
-      toast.error('Failed to fetch tomes')
-    } finally {
-      setIsLoadingTomes(false)
+  const ENTRIES_PER_PAGE = 20
+
+  const fetchEntriesForTome = async (tomeId: string, pageNum: number = 1, append: boolean = false) => {
+    if (append) {
+      setLoadingMoreEntriesForTome(tomeId)
+    } else {
+      setLoadingEntriesForTome(tomeId)
     }
-  }
-
-  const fetchEntriesForTome = async (tomeId: string) => {
-    setLoadingEntriesForTome(tomeId)
     try {
-      const response = await fetch(`/api/knowledge?collection=${tomeId}`)
+      const response = await fetch(`/api/knowledge?collection=${tomeId}&page=${pageNum}&limit=${ENTRIES_PER_PAGE}`)
       const data = (await response.json()) as {
         success?: boolean
         docs?: KnowledgeEntry[]
+        hasNextPage?: boolean
+        page?: number
         message?: string
       }
 
       if (data.success) {
-        setTomeEntries(prev => ({ ...prev, [tomeId]: data.docs || [] }))
+        if (append) {
+          setTomeEntries(prev => ({
+            ...prev,
+            [tomeId]: [...(prev[tomeId] || []), ...(data.docs || [])],
+          }))
+        } else {
+          setTomeEntries(prev => ({ ...prev, [tomeId]: data.docs || [] }))
+        }
+        setTomeEntriesHasMore(prev => ({ ...prev, [tomeId]: data.hasNextPage || false }))
+        setTomeEntriesPage(prev => ({ ...prev, [tomeId]: data.page || pageNum }))
       } else {
         toast.error(data.message || 'Failed to fetch entries')
       }
@@ -294,7 +308,13 @@ export const LoreTomesView = () => {
       toast.error('Failed to fetch entries')
     } finally {
       setLoadingEntriesForTome(null)
+      setLoadingMoreEntriesForTome(null)
     }
+  }
+
+  const loadMoreEntriesForTome = async (tomeId: string) => {
+    const currentPage = tomeEntriesPage[tomeId] || 1
+    await fetchEntriesForTome(tomeId, currentPage + 1, true)
   }
 
   const handleToggleTome = async (tomeId: string) => {
@@ -336,7 +356,7 @@ export const LoreTomesView = () => {
         setNewTomeName('')
         setNewTomeDescription('')
         setIsCreateTomeOpen(false)
-        fetchTomes()
+        refreshTomes()
       } else {
         toast.error(data.message || 'Failed to create tome')
       }
@@ -374,7 +394,7 @@ export const LoreTomesView = () => {
         toast.success('Tome updated successfully!')
         setIsEditTomeOpen(false)
         setEditingTome(null)
-        fetchTomes()
+        refreshTomes()
       } else {
         toast.error(data.message || 'Failed to update tome')
       }
@@ -403,7 +423,7 @@ export const LoreTomesView = () => {
         if (expandedTomeId === id) {
           setExpandedTomeId(null)
         }
-        fetchTomes()
+        refreshTomes()
       } else {
         toast.error(data.message || 'Failed to delete tome')
       }
@@ -498,7 +518,7 @@ export const LoreTomesView = () => {
         // Refresh entries for this tome
         await fetchEntriesForTome(tomeId)
         // Also refresh tomes to update entry counts
-        fetchTomes()
+        refreshTomes()
       } else {
         toast.error(data.message || 'Failed to create entry')
       }
@@ -595,7 +615,7 @@ export const LoreTomesView = () => {
           await fetchEntriesForTome(tomeId)
         }
         // Also refresh tomes to update entry counts
-        fetchTomes()
+        refreshTomes()
       } else {
         toast.error(data.message || 'Failed to delete entry')
       }
@@ -915,7 +935,7 @@ export const LoreTomesView = () => {
             </div>
           </CardContent>
         </Card>
-      ) : filteredAndSortedTomes.length === 0 ? (
+      ) : displayedTomes.length === 0 ? (
         <Card className="glass-rune border-gold-ancient/30">
           <CardContent className="py-8">
             <div className="flex flex-col items-center justify-center text-center">
@@ -936,7 +956,7 @@ export const LoreTomesView = () => {
         </Card>
       ) : (
         <div className="space-y-4">
-          {filteredAndSortedTomes.map((tome) => (
+          {displayedTomes.map((tome) => (
             <Card key={tome.id} className="glass-rune border-gold-ancient/30 overflow-hidden">
               {/* Tome Header */}
               <div
@@ -1272,6 +1292,28 @@ export const LoreTomesView = () => {
                             </div>
                           </div>
                         ))}
+
+                        {/* Load more entries */}
+                        {tomeEntriesHasMore[tome.id] && (
+                          <div className="flex justify-center pt-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => loadMoreEntriesForTome(tome.id)}
+                              disabled={loadingMoreEntriesForTome === tome.id}
+                              className="border-gold-ancient/30 text-parchment hover:bg-gold-ancient/10"
+                            >
+                              {loadingMoreEntriesForTome === tome.id ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  Loading...
+                                </>
+                              ) : (
+                                'Load More Entries'
+                              )}
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1279,6 +1321,13 @@ export const LoreTomesView = () => {
               )}
             </Card>
           ))}
+
+          <InfiniteScrollTrigger
+            onLoadMore={loadMoreTomes}
+            hasMore={hasMoreTomes}
+            isLoading={isLoadingMoreTomes}
+            endMessage="You've seen all your tomes!"
+          />
         </div>
       )}
 

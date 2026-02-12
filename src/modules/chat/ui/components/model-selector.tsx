@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/dialog'
 import { Cpu, ChevronDown, Pencil } from 'lucide-react'
 
-// Provider model info - updated January 2026
+// Provider model info - updated February 2026
 const providerModels: Record<string, { models: string[]; default: string; displayName: string }> = {
   openai: {
     displayName: 'OpenAI',
@@ -51,15 +51,18 @@ const providerModels: Record<string, { models: string[]; default: string; displa
       'gpt-4o',
       'gpt-4o-mini',
       // Reasoning models
-      'o1-preview',
-      'o1-mini',
+      'o3',
+      'o3-mini',
+      'o4-mini',
     ],
   },
   anthropic: {
     displayName: 'Anthropic',
     default: 'claude-sonnet-4-5-20250929',
     models: [
-      // Claude 4.5 Series (Latest)
+      // Claude 4.6 Series (Latest)
+      'claude-opus-4-6',
+      // Claude 4.5 Series
       'claude-opus-4-5-20251101',
       'claude-sonnet-4-5-20250929',
       'claude-haiku-4-5-20251001',
@@ -111,6 +114,8 @@ const providerModels: Record<string, { models: string[]; default: string; displa
     displayName: 'GLM (Zhipu AI)',
     default: 'glm-4.7-flash',
     models: [
+      // GLM-5 (Latest)
+      'glm-5',
       // GLM-4.7 Series
       'glm-4.7',
       'glm-4.7-flashx',
@@ -150,8 +155,11 @@ const modelDisplayNames: Record<string, string> = {
   'gpt-4.1-mini': 'GPT-4.1 Mini',
   'gpt-4o': 'GPT-4o',
   'gpt-4o-mini': 'GPT-4o Mini',
-  'o1-preview': 'o1 Preview',
-  'o1-mini': 'o1 Mini',
+  'o3': 'o3',
+  'o3-mini': 'o3 Mini',
+  'o4-mini': 'o4 Mini',
+  // Anthropic - Claude 4.6 Series
+  'claude-opus-4-6': 'Claude Opus 4.6',
   // Anthropic - Claude 4.5 Series
   'claude-opus-4-5-20251101': 'Claude Opus 4.5',
   'claude-sonnet-4-5-20250929': 'Claude Sonnet 4.5',
@@ -177,6 +185,8 @@ const modelDisplayNames: Record<string, string> = {
   // DeepSeek
   'deepseek-chat': 'DeepSeek Chat',
   'deepseek-reasoner': 'DeepSeek Reasoner',
+  // GLM (Zhipu AI) - 5 Series
+  'glm-5': 'GLM-5',
   // GLM (Zhipu AI) - 4.7 Series
   'glm-4.7': 'GLM-4.7',
   'glm-4.7-flashx': 'GLM-4.7 FlashX',

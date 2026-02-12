@@ -140,7 +140,7 @@ export function ImportCardDialog({ onImport }: ImportCardDialogProps) {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-md glass-rune">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md glass-rune overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-gold-rich font-display">
             Import Character Card
@@ -187,10 +187,10 @@ export function ImportCardDialog({ onImport }: ImportCardDialogProps) {
                 )}
 
                 {/* File Info */}
-                <div className="flex items-center justify-between p-3 bg-[#0a140a]/50 rounded-lg border border-gold-ancient/20">
-                  <div className="flex items-center gap-2 min-w-0">
+                <div className="flex items-center justify-between gap-2 p-3 bg-[#0a140a]/50 rounded-lg border border-gold-ancient/20 overflow-hidden">
+                  <div className="flex items-center gap-2 min-w-0 overflow-hidden">
                     <FileImage className="h-4 w-4 text-gold-ancient shrink-0" />
-                    <span className="text-sm text-parchment truncate">
+                    <span className="text-sm text-parchment truncate block">
                       {selectedFile.name}
                     </span>
                   </div>

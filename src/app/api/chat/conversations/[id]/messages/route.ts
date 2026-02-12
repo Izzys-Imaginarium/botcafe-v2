@@ -76,7 +76,7 @@ export async function GET(
     // Get query params
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '50')
+    const limit = parseInt(searchParams.get('limit') || '500')
     const before = searchParams.get('before') // Message ID to get messages before
     const after = searchParams.get('after') // Message ID to get messages after
 

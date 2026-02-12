@@ -184,7 +184,7 @@ export function useChat(options: UseChatOptions) {
         setIsLoadingMore(true)
       }
 
-      const params = new URLSearchParams({ limit: '50' })
+      const params = new URLSearchParams({ limit: '500' })
       if (before) {
         params.set('before', String(before))
       }

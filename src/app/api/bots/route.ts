@@ -39,6 +39,9 @@ interface BotCreateRequest {
   signature_phrases?: string[]
   tags?: string[]
   classifications?: string[]
+  sharing?: {
+    visibility?: 'private' | 'shared' | 'public'
+  }
 }
 
 // Helper function to generate a URL-safe username from display name or email
@@ -269,6 +272,9 @@ export async function POST(request: NextRequest) {
         classifications: transformedClassifications,
         knowledge_collections: (body.knowledge_collections || []) as number[],
         picture: body.picture ? Number(body.picture) : undefined,
+        sharing: {
+          visibility: body.sharing?.visibility || 'private',
+        },
         created_date: new Date().toISOString(),
         likes_count: 0,
         favorites_count: 0,

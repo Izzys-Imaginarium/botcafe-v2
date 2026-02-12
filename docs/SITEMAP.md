@@ -1,7 +1,7 @@
 # BotCafe v2 - Complete Sitemap
 
-**Last Updated**: 2026-02-10
-**Version**: 2.38
+**Last Updated**: 2026-02-11
+**Version**: 2.39
 **Status**: ~98% Complete
 
 ---
@@ -18,7 +18,7 @@
 | `/[username]/[botSlug]/edit` | ✅ Complete | Edit bot (owner only) |
 | `/bot/[slug]` | ⚠️ Legacy | Returns 404 - use `/<username>/<bot-slug>` instead |
 | `/bot/[slug]/edit` | ⚠️ Legacy | Returns 404 - legacy route removed |
-| `/create` | ✅ Complete | Multi-step bot creation wizard |
+| `/create` | ✅ Complete | Multi-step bot creation wizard with SillyTavern character card import |
 | `/creators` | ✅ Complete | Creator directory with filtering and search |
 | `/creators/[username]` | ✅ Complete | Individual creator profile page |
 | `/creators/[username]/edit` | ✅ Complete | Edit creator profile (owner only) |
@@ -118,6 +118,9 @@
 | `/api/bots/[id]/like` | POST | Toggle like on bot |
 | `/api/bots/[id]/favorite` | POST | Toggle favorite on bot |
 | `/api/bots/[id]/status` | GET | Get like/favorite status |
+| `/api/bots/[id]/export-card` | GET | Export bot as SillyTavern character card PNG (owner/editor only). Embeds V2 card data + character book from linked knowledge collections |
+| `/api/bots/[id]/import-lore` | POST | Import lore from a SillyTavern character book (owner only). Creates KnowledgeCollection + Knowledge entries with auto-vectorization. Body: `{ characterBook }` |
+| `/api/bots/import-card` | POST | Parse SillyTavern character card (PNG or JSON). Returns pre-filled form data for the bot creation wizard. Accepts multipart/form-data with `file` field |
 
 ### Knowledge (Lore)
 
@@ -125,7 +128,7 @@
 |----------|---------|-------------|
 | `/api/knowledge` | GET, POST | List and create knowledge entries. Query params: `collection`, `page`, `limit`, `includeMemories` (default: false - excludes legacy memory entries) |
 | `/api/knowledge/[id]` | GET, PATCH, DELETE | Get, update, or delete knowledge entry |
-| `/api/knowledge-collections` | GET, POST | List and create collections. Query params: `includeMemoryTomes` (default: false), `onlyMemoryTomes` (default: false) |
+| `/api/knowledge-collections` | GET, POST | List and create collections. Query params: `includeMemoryTomes` (default: false), `onlyMemoryTomes` (default: false), `limit` (default: 500, max: 500), `page`, `search`, `sort` |
 | `/api/knowledge-collections/[id]` | GET, PATCH, DELETE | Get, update, or delete collection. DELETE cascades to remove all entries in the collection |
 
 ### Sharing & Permissions
@@ -258,7 +261,7 @@
 |----------|---------|-------------|
 | `/api/chat/conversations` | GET, POST | List conversations, create new (with bot access check) |
 | `/api/chat/conversations/[id]` | GET, PATCH, DELETE | Get, update (add/remove bots with access check), or delete |
-| `/api/chat/conversations/[id]/messages` | GET, DELETE | Get messages (paginated), clear chat history. Query params: `page` (default: 1), `limit` (default: 50), `before` (message ID for loading older), `after` (message ID for loading newer). Returns most recent messages first with `hasPrevPage` indicating older messages exist. |
+| `/api/chat/conversations/[id]/messages` | GET, DELETE | Get messages (paginated), clear chat history. Query params: `page` (default: 1), `limit` (default: 500), `before` (message ID for loading older), `after` (message ID for loading newer). Returns most recent messages first with `hasPrevPage` indicating older messages exist. |
 | `/api/chat/send` | POST | Send message and trigger LLM response |
 | `/api/chat/regenerate` | POST | Regenerate/retry an AI message |
 | `/api/chat/stream/[messageId]` | GET | SSE endpoint for streaming LLM responses |
@@ -297,8 +300,8 @@
 | Help | 3 | 0 | 3 |
 | Chat | 3 | 0 | 3 |
 | **Frontend Total** | **33** | **2** | **35** |
-| API Endpoints | 69 | 0 | 69 |
-| **Grand Total** | **102** | **2** | **104** |
+| API Endpoints | 72 | 0 | 72 |
+| **Grand Total** | **105** | **2** | **107** |
 
 *Note: "Redirect" routes automatically redirect to the Account page with the appropriate tab.*
 *Note: API count includes 15 admin/migration endpoints for internal tooling.*
@@ -328,7 +331,7 @@ BotCafe
 ├── Chat (/chat) [requires auth] — Active/Archived tabs
 │   ├── New Chat (/chat/new)
 │   └── Conversation (/chat/[conversationId])
-├── Create (/create → /dashboard) [requires auth]
+├── Create (/create) [requires auth] — Create from Scratch or Import Character Card
 ├── Creators (/creators)
 │   ├── Profile (/creators/[username])
 │   │   └── Edit (/creators/[username]/edit)

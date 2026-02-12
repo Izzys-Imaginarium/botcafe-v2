@@ -341,10 +341,12 @@ Grouped knowledge for organization with sharing and collaboration features.
 
 | Field | Type | Options/Description |
 |-------|------|---------------------|
-| `collection_category` | select | Category: **general** (default), **memories**, **reference**, **worldbuilding** |
+| `collection_category` | select | Category: **lore** (default for tomes), **memories** (auto-generated memory tomes), **general** (fallback default) |
 | `size_estimate` | number | Total size estimate in bytes |
 | `tags` | array | Array of `{ tag: string }` for categorization |
 | `difficulty_level` | select | Content difficulty: beginner, intermediate, advanced |
+
+> **Migration Note**: All existing NULL `collection_category` values were migrated to `'lore'` (907 rows) to ensure consistent filtering. All code paths that create collections now set `collection_category` explicitly.
 
 > **Memory Tomes vs Regular Tomes**: Collections with `collection_category: 'memories'` are "Memory Tomes" - auto-generated collections that store conversation memories. These are:
 > - Hidden from the main Tomes/Lore section by default (use `includeMemoryTomes=true` query param to include)
@@ -1066,7 +1068,7 @@ payload.find({
   collection: 'bot',
   where: { is_public: { equals: true } },
   sort: '-createdAt',
-  limit: 20,
+  limit: 500,
   page: 1
 })
 

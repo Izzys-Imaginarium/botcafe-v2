@@ -27,6 +27,7 @@ Based on the sitemap, style guide, and database schema analysis, BotCafé v2 is 
 - **Mood Journal**: ✅ Mood tracking with emoji selection and notes (self-moderation planned as future enhancement)
 - **Analytics Dashboard**: ✅ Overview stats, bot performance metrics, usage statistics views
 - **Discord Integration**: 🆕 BotCafe Barista Discord bot with account linking
+- **SillyTavern Import/Export**: 🆕 Import character cards (PNG/JSON), export bots as character cards, auto-import lore books with vectorization
 
 ### ❌ **REMAINING WORK (~3%)**
 
@@ -34,7 +35,7 @@ Based on the sitemap, style guide, and database schema analysis, BotCafé v2 is 
 1. **Home** ✅ - Complete splash page with magical effects
 2. **Explore** ✅ - Real bot data fetching with filters and search
 3. **Lore** ✅ - Knowledge management system (UI + backend CRUD + real vectorization complete)
-4. **Create** ✅ - Bot creation/editing wizard (primary user flow)
+4. **Create** ✅ - Bot creation/editing wizard + SillyTavern character card import
 5. **Bot Detail** ✅ - Individual bot pages with stats, info, and interactions
 6. **Creators** ✅ - Multi-tenant creator profiles & showcase (directory, profile pages, setup wizard)
 7. **Account** ✅ - My Bots dashboard with CRUD operations and profile display
@@ -353,6 +354,29 @@ By building foundational systems first, we avoid rework and ensure chat has all 
   - [ ] Prototype streaming proxy Worker
   - [ ] Monitor GLM/Cloudflare updates for H2 fix
 
+### **PHASE 9B: SillyTavern Character Card Import/Export** 🆕 ✅ **COMPLETED (2026-02-11)**
+- [x] Created `src/lib/tavern-card/` library for parsing and encoding SillyTavern cards ✅
+  - [x] Support for V1 and V2 card formats (PNG tEXt chunk + plain JSON) ✅
+  - [x] Bidirectional field mapping (BotCafe <-> TavernCardV2) ✅
+  - [x] BotCafe-specific data preserved in `extensions.botcafe` for lossless round-tripping ✅
+- [x] Created `POST /api/bots/import-card` - Parse character card PNG/JSON, return pre-filled form data ✅
+- [x] Created `GET /api/bots/[id]/export-card` - Export bot as SillyTavern character card PNG ✅
+  - [x] Embeds character data + character book (from linked knowledge collections) ✅
+  - [x] Uses bot's profile picture as card image (falls back to minimal PNG) ✅
+  - [x] Owner/editor permission check via AccessControl ✅
+- [x] Created `POST /api/bots/[id]/import-lore` - Import character book as Knowledge Tome ✅
+  - [x] Creates KnowledgeCollection + Knowledge entries from CharacterBookEntry data ✅
+  - [x] Auto-vectorization with BGE-M3 embeddings for vector-mode entries ✅
+  - [x] Full activation settings, positioning, and metadata initialization ✅
+- [x] Created `ImportCardDialog` component for the `/create` page ✅
+  - [x] File picker accepting `.png` and `.json` files ✅
+  - [x] Image preview for PNG files ✅
+  - [x] Character book info banner when lore entries are present ✅
+- [x] Updated `/create` page with choice screen: "Create from Scratch" or "Import Character Card" ✅
+- [x] Added "Download Card" export button on bot detail page (visible to owners/editors) ✅
+- [x] Fixed pre-existing bug: `POST /api/bots` now passes through `sharing.visibility` field ✅
+- [x] Installed dependencies: `png-chunks-extract`, `png-chunks-encode`, `png-chunk-text` ✅
+
 ### **PHASE 10: Polish & Integration** (Week 19)
 - [ ] Replace all remaining mock data with real queries
 - [ ] Implement proper error handling throughout
@@ -598,6 +622,24 @@ When you add new Payload collections or modify existing ones:
 ---
 
 ## 🔄 **Recent Changes**
+
+### **2026-02-11 Updates:**
+- ✅ **Pagination Limit Overhaul**
+  - Increased default pagination limit from 20 to 500 across all user-owned content pages (lore tomes, personas, memories, bot wizard knowledge picker)
+  - Fixed knowledge-collections API server-side cap from `Math.min(limit, 100)` to `Math.min(limit, 500)` — this was the root cause of users only seeing up to 100 tomes
+  - Increased chat message history limit from 50 to 500 (both client-side hook and API default)
+  - Updated `useInfiniteList` hook default from 20 to 500
+  - Explore and creator directory pages kept at 12 per page (public browsing with potentially thousands of items)
+  - Added fallback "Load More Tomes" button on lore page alongside InfiniteScrollTrigger
+- ✅ **Knowledge Collection Category Data Migration**
+  - Migrated all 907 NULL `collection_category` values to `'lore'` in production D1 database
+  - Root cause: SQLite `not_equals: 'memories'` filter excluded NULL rows, hiding uncategorized tomes from lore page
+  - Fixed 4 code paths that created collections without `collection_category`: import-lore, migrate/user, migrate/batch, and knowledge-collections POST
+  - Verified 0 NULL categories remain (907 lore + 165 memories)
+- ✅ **Model Selector Updates**
+  - Updated AI model list with latest models (Claude 4.6, GPT-5.2, GLM-5, etc.)
+  - Added ElectronHub provider with custom model input
+  - Added GLM (Zhipu AI) provider
 
 ### **2026-02-10 Updates:**
 - ✅ **Vector Activation Pipeline Fixes**

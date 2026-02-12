@@ -313,7 +313,7 @@ import { InfiniteScrollTrigger } from '@/components/ui/infinite-scroll-trigger'
 
 const { items, isLoading, isLoadingMore, hasMore, loadMore, setParams } = useInfiniteList<Item>({
   endpoint: '/api/items',
-  limit: 20,
+  limit: 500,
   itemsKey: 'items',
 })
 

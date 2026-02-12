@@ -90,6 +90,7 @@ export const LoreTomesView = () => {
   const [sortBy, setSortBy] = useState<'name' | 'createdAt' | 'entry_count'>('createdAt')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const hasMountedRef = useRef(false)
 
   // Filter state
   const [filterHasEntries, setFilterHasEntries] = useState<'all' | 'with_entries' | 'empty'>('all')
@@ -116,18 +117,26 @@ export const LoreTomesView = () => {
     initialParams: { sort: apiSortParam },
   })
 
-  // Debounced search → update API params
+  // Keep a ref to apiSortParam so the debounce callback always reads the latest value
+  const apiSortParamRef = useRef(apiSortParam)
+  apiSortParamRef.current = apiSortParam
+
+  // Debounced search → update API params (skip on mount to avoid clearing auto-loaded items)
   useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true
+      return
+    }
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
     searchDebounceRef.current = setTimeout(() => {
-      const params: Record<string, string> = { sort: apiSortParam }
+      const params: Record<string, string> = { sort: apiSortParamRef.current }
       if (searchQuery.trim()) params.search = searchQuery.trim()
       setTomeParams(params)
     }, 300)
     return () => {
       if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
     }
-  }, [searchQuery, apiSortParam, setTomeParams])
+  }, [searchQuery, setTomeParams])
 
   // Update API params when sort changes (immediate, no debounce)
   const prevSortRef = useRef(apiSortParam)
@@ -346,6 +355,9 @@ export const LoreTomesView = () => {
         body: JSON.stringify({
           name: newTomeName,
           description: newTomeDescription,
+          collection_metadata: {
+            collection_category: 'lore',
+          },
         }),
       })
 

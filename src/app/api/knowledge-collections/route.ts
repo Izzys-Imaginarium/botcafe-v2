@@ -139,27 +139,43 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     const sort = searchParams.get('sort') || '-createdAt'
 
-    // Build where clause for owned collections
-    const ownedWhere: Record<string, unknown> = {
-      user: { equals: payloadUser.id },
-    }
+    // Build where clause for owned collections using 'and' to safely combine filters
+    // Note: In SQLite/D1, `not_equals` excludes NULL values, so we must use
+    // an OR condition to include tomes with NULL collection_category
+    const ownedConditions: Record<string, unknown>[] = [
+      { user: { equals: payloadUser.id } },
+    ]
 
     // Add search filter
     if (search) {
-      ownedWhere.or = [
-        { name: { contains: search } },
-        { description: { contains: search } },
-      ]
+      ownedConditions.push({
+        or: [
+          { name: { contains: search } },
+          { description: { contains: search } },
+        ],
+      })
     }
 
     // By default, exclude memory tomes from the main tome list
     // Memory tomes are managed in the Memories section
     // Use includeMemoryTomes=true to include them, or onlyMemoryTomes=true to only show memory tomes
     if (onlyMemoryTomes) {
-      ownedWhere['collection_metadata.collection_category'] = { equals: 'memories' }
+      ownedConditions.push({
+        'collection_metadata.collection_category': { equals: 'memories' },
+      })
     } else if (!includeMemoryTomes) {
-      ownedWhere['collection_metadata.collection_category'] = { not_equals: 'memories' }
+      // Include tomes where category is NOT 'memories' OR category is NULL/unset
+      ownedConditions.push({
+        or: [
+          { 'collection_metadata.collection_category': { not_equals: 'memories' } },
+          { 'collection_metadata.collection_category': { exists: false } },
+        ],
+      })
     }
+
+    const ownedWhere = ownedConditions.length === 1
+      ? ownedConditions[0]
+      : { and: ownedConditions }
 
     // Fetch owned knowledge collections with pagination
     const ownedCollections = await payload.find({
@@ -203,24 +219,36 @@ export async function GET(request: NextRequest) {
         for (let i = 0; i < numericIds.length; i += BATCH_SIZE) {
           const batchIds = numericIds.slice(i, i + BATCH_SIZE)
 
-          // Build where clause for shared collections with same memory tome filter
-          const sharedWhere: Record<string, unknown> = {
-            id: { in: batchIds },
-          }
+          // Build where clause for shared collections with same NULL-safe memory tome filter
+          const sharedConditions: Record<string, unknown>[] = [
+            { id: { in: batchIds } },
+          ]
 
           if (onlyMemoryTomes) {
-            sharedWhere['collection_metadata.collection_category'] = { equals: 'memories' }
+            sharedConditions.push({
+              'collection_metadata.collection_category': { equals: 'memories' },
+            })
           } else if (!includeMemoryTomes) {
-            sharedWhere['collection_metadata.collection_category'] = { not_equals: 'memories' }
+            sharedConditions.push({
+              or: [
+                { 'collection_metadata.collection_category': { not_equals: 'memories' } },
+                { 'collection_metadata.collection_category': { exists: false } },
+              ],
+            })
           }
 
-          // Apply same search filter to shared collections
           if (search) {
-            sharedWhere.or = [
-              { name: { contains: search } },
-              { description: { contains: search } },
-            ]
+            sharedConditions.push({
+              or: [
+                { name: { contains: search } },
+                { description: { contains: search } },
+              ],
+            })
           }
+
+          const sharedWhere = sharedConditions.length === 1
+            ? sharedConditions[0]
+            : { and: sharedConditions }
 
           const sharedCollectionsResult = await payload.find({
             collection: 'knowledgeCollections',

@@ -253,14 +253,12 @@ export function BotWizardForm({ mode, initialData, botId, initialPictureUrl, onS
     return botData.knowledge_collections.some(id => String(id) === String(collectionId))
   }
 
-  // Load existing picture preview if in edit mode
+  // Load existing picture preview (edit mode or imported card)
   useEffect(() => {
-    if (mode === 'edit') {
-      if (initialPictureUrl) {
-        setPicturePreview(initialPictureUrl)
-      } else if (initialData?.picture && typeof initialData.picture === 'string') {
-        setPicturePreview(initialData.picture)
-      }
+    if (initialPictureUrl) {
+      setPicturePreview(initialPictureUrl)
+    } else if (mode === 'edit' && initialData?.picture && typeof initialData.picture === 'string') {
+      setPicturePreview(initialData.picture)
     }
   }, [mode, initialPictureUrl, initialData?.picture])
 

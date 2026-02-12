@@ -76,8 +76,14 @@ function classifyAndReturn(parsed: unknown, imageBuffer: Buffer | null): ParsedC
 
   const obj = parsed as Record<string, unknown>
 
-  // V2: has spec field and data object
-  if (obj.spec === 'chara_card_v2' && obj.data && typeof obj.data === 'object') {
+  // V2/V3+: has spec field starting with 'chara_card_v' and a data object
+  // V3 uses the same data structure as V2, so we treat them identically
+  if (
+    typeof obj.spec === 'string' &&
+    obj.spec.startsWith('chara_card_v') &&
+    obj.data &&
+    typeof obj.data === 'object'
+  ) {
     const v2 = obj as unknown as TavernCardV2
     return { version: 'v2', data: v2.data, imageBuffer }
   }
@@ -96,6 +102,6 @@ function classifyAndReturn(parsed: unknown, imageBuffer: Buffer | null): ParsedC
   }
 
   throw new Error(
-    'Unrecognized character card format. Expected SillyTavern V1 or V2 format.',
+    'Unrecognized character card format. Expected a SillyTavern/TavernAI character card.',
   )
 }

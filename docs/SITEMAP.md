@@ -120,7 +120,7 @@
 | `/api/bots/[id]/status` | GET | Get like/favorite status |
 | `/api/bots/[id]/export-card` | GET | Export bot as SillyTavern character card PNG (owner/editor only). Embeds V2 card data + character book from linked knowledge collections |
 | `/api/bots/[id]/import-lore` | POST | Import lore from a SillyTavern character book (owner only). Creates KnowledgeCollection + Knowledge entries with auto-vectorization. Body: `{ characterBook }` |
-| `/api/bots/import-card` | POST | Parse SillyTavern character card (PNG or JSON). Returns pre-filled form data for the bot creation wizard. Accepts multipart/form-data with `file` field |
+| `/api/bots/import-card` | POST | Parse SillyTavern character card (PNG or JSON). Returns pre-filled form data for the bot creation wizard. Accepts JSON body: `{ file: string (base64), filename: string, mimeType: string }` |
 
 ### Knowledge (Lore)
 

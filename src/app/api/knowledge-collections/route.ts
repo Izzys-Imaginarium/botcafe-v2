@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
     const includeMemoryTomes = searchParams.get('includeMemoryTomes') === 'true'
     const onlyMemoryTomes = searchParams.get('onlyMemoryTomes') === 'true'
     const page = parseInt(searchParams.get('page') || '1', 10)
-    const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10), 100)
+    const limit = Math.min(parseInt(searchParams.get('limit') || '500', 10), 500)
     const search = searchParams.get('search')
     const sort = searchParams.get('sort') || '-createdAt'
 

@@ -163,8 +163,8 @@ export function ImportCardDialog({ onImport }: ImportCardDialogProps) {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md glass-rune overflow-hidden">
-        <DialogHeader>
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md glass-rune">
+        <DialogHeader className="min-w-0">
           <DialogTitle className="text-gold-rich font-display">
             Import Character Card
           </DialogTitle>
@@ -173,7 +173,7 @@ export function ImportCardDialog({ onImport }: ImportCardDialogProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-4 min-w-0">
           {/* File Input */}
           <div className="space-y-2">
             <input

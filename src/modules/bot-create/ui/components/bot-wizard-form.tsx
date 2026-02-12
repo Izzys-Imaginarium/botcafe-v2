@@ -176,7 +176,7 @@ export function BotWizardForm({ mode, initialData, botId, initialPictureUrl, onS
     refresh: refreshCollections,
   } = useInfiniteList<KnowledgeCollection>({
     endpoint: '/api/knowledge-collections',
-    limit: 20,
+    limit: 500,
     itemsKey: 'collections',
     autoLoad: false,
   })

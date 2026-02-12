@@ -112,7 +112,7 @@ export const LoreTomesView = () => {
     refresh: refreshTomes,
   } = useInfiniteList<Tome>({
     endpoint: '/api/knowledge-collections',
-    limit: 100,
+    limit: 500,
     itemsKey: 'collections',
     initialParams: { sort: apiSortParam },
   })

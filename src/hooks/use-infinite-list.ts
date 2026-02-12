@@ -55,7 +55,7 @@ interface PaginatedResponse {
 export function useInfiniteList<T extends { id: string | number }>(
   options: UseInfiniteListOptions
 ): UseInfiniteListReturn<T> {
-  const { endpoint, limit = 20, initialParams = {}, autoLoad = true, itemsKey } = options
+  const { endpoint, limit = 500, initialParams = {}, autoLoad = true, itemsKey } = options
 
   const [items, setItems] = useState<T[]>([])
   const [isLoading, setIsLoading] = useState(false)

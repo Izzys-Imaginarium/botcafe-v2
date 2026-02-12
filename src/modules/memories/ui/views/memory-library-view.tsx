@@ -92,7 +92,7 @@ export const MemoryLibraryView = () => {
     setParams,
   } = useInfiniteList<Memory>({
     endpoint: '/api/memories',
-    limit: 20,
+    limit: 500,
     initialParams: {},
     itemsKey: 'memories',
   })

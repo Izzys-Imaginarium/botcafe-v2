@@ -60,7 +60,7 @@ export const PersonaLibraryView = () => {
     setParams,
   } = useInfiniteList<Persona>({
     endpoint: '/api/personas',
-    limit: 20,
+    limit: 500,
     initialParams: {},
     itemsKey: 'personas',
   })

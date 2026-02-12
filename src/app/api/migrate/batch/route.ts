@@ -380,6 +380,7 @@ export async function POST(request: NextRequest) {
                   is_public: collection.is_public,
                 },
                 collection_metadata: {
+                  collection_category: 'lore',
                   tags: collection.type ? [{ tag: `migrated:${collection.type}` }] : [],
                   language: 'en',
                 },

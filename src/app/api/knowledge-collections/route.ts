@@ -74,9 +74,9 @@ export async function POST(request: NextRequest) {
           last_updated: new Date().toISOString(),
           is_public: false,
         },
-        collection_metadata: body.collection_metadata ? {
-          collection_category: body.collection_metadata.collection_category || 'general',
-        } : undefined,
+        collection_metadata: {
+          collection_category: body.collection_metadata?.collection_category || 'general',
+        },
       },
       overrideAccess: true,
     })

@@ -283,6 +283,7 @@ export async function POST(_request: NextRequest) {
               is_public: collection.is_public,
             },
             collection_metadata: {
+              collection_category: 'lore',
               // Store the old type as a tag for reference
               tags: collection.type ? [{ tag: `migrated:${collection.type}` }] : [],
               language: 'en',

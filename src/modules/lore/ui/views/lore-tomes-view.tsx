@@ -112,7 +112,7 @@ export const LoreTomesView = () => {
     refresh: refreshTomes,
   } = useInfiniteList<Tome>({
     endpoint: '/api/knowledge-collections',
-    limit: 20,
+    limit: 100,
     itemsKey: 'collections',
     initialParams: { sort: apiSortParam },
   })
@@ -1340,6 +1340,20 @@ export const LoreTomesView = () => {
             isLoading={isLoadingMoreTomes}
             endMessage="You've seen all your tomes!"
           />
+
+          {/* Fallback button in case IntersectionObserver doesn't trigger */}
+          {hasMoreTomes && !isLoadingMoreTomes && (
+            <div className="flex justify-center pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={loadMoreTomes}
+                className="border-gold-ancient/30 text-parchment hover:bg-gold-ancient/10"
+              >
+                Load More Tomes
+              </Button>
+            </div>
+          )}
         </div>
       )}
 

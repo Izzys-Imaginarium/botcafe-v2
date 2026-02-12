@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { MessageSquare, Heart, Star, Edit, User, Calendar, Sparkles, Loader2 } from 'lucide-react'
+import { MessageSquare, Heart, Star, Edit, User, Calendar, Sparkles, Loader2, Download } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface BotDetailViewProps {
@@ -197,6 +197,38 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
     router.push(`/${username}/${botSlug}/edit`)
   }
 
+  const [isExporting, setIsExporting] = useState(false)
+
+  const handleExportCard = async () => {
+    if (!bot) return
+
+    setIsExporting(true)
+    try {
+      const response = await fetch(`/api/bots/${bot.id}/export-card`)
+
+      if (!response.ok) {
+        const errorData = await response.json().catch((): null => null) as { error?: string } | null
+        throw new Error(errorData?.error || 'Failed to export character card')
+      }
+
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${bot.name.replace(/[^a-zA-Z0-9_-]/g, '_')}.png`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      toast.success('Character card downloaded!')
+    } catch (error) {
+      console.error('Error exporting card:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to export character card')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   const getGenderIcon = (gender?: string) => {
     switch (gender) {
       case 'male':
@@ -365,6 +397,23 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
                   >
                     <Edit className="mr-2 h-4 w-4" />
                     Edit Bot
+                  </Button>
+                )}
+
+                {canEditBot && (
+                  <Button
+                    onClick={handleExportCard}
+                    variant="outline"
+                    className="ornate-border"
+                    size="default"
+                    disabled={isExporting}
+                  >
+                    {isExporting ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="mr-2 h-4 w-4" />
+                    )}
+                    {isExporting ? 'Exporting...' : 'Download Card'}
                   </Button>
                 )}
               </div>

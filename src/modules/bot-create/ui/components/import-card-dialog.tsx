@@ -70,13 +70,36 @@ export function ImportCardDialog({ onImport }: ImportCardDialogProps) {
     setError(null)
 
     try {
-      const formData = new FormData()
-      formData.append('file', selectedFile)
+      // Base64-encode the file to avoid Cloudflare WAF blocking character card
+      // content that contains template tokens ({{user}}) and fantasy RPG text
+      const fileBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => {
+          const dataUrl = reader.result as string
+          resolve(dataUrl.split(',')[1])
+        }
+        reader.onerror = reject
+        reader.readAsDataURL(selectedFile)
+      })
 
       const response = await fetch('/api/bots/import-card', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          file: fileBase64,
+          filename: selectedFile.name,
+          mimeType: selectedFile.type,
+        }),
       })
+
+      if (!response.ok) {
+        const contentType = response.headers.get('content-type') || ''
+        if (contentType.includes('application/json')) {
+          const errBody = await response.json() as { error?: string }
+          throw new Error(errBody.error || `Import failed (${response.status})`)
+        }
+        throw new Error(`Import failed with status ${response.status}. Please try again.`)
+      }
 
       const result = await response.json() as {
         success?: boolean
@@ -88,7 +111,7 @@ export function ImportCardDialog({ onImport }: ImportCardDialogProps) {
         characterBookSummary?: { name: string; entryCount: number } | null
       }
 
-      if (!response.ok || !result.success) {
+      if (!result.success) {
         throw new Error(result.error || 'Failed to import character card.')
       }
 

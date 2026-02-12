@@ -9,6 +9,12 @@ export const dynamic = 'force-dynamic'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
+interface ImportCardBody {
+  file: string // base64-encoded file content
+  filename: string
+  mimeType: string
+}
+
 export async function POST(request: NextRequest) {
   try {
     const clerkUser = await currentUser()
@@ -16,23 +22,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Please sign in to import character cards.' }, { status: 401 })
     }
 
-    const formData = await request.formData()
-    const file = formData.get('file') as File | null
+    const body = (await request.json()) as ImportCardBody
 
-    if (!file) {
+    if (!body.file || !body.filename) {
       return NextResponse.json({ error: 'No file provided.' }, { status: 400 })
     }
 
-    if (file.size > MAX_FILE_SIZE) {
-      const sizeMB = (file.size / 1024 / 1024).toFixed(1)
+    // Decode base64 file content
+    const buffer = Buffer.from(body.file, 'base64')
+
+    if (buffer.length > MAX_FILE_SIZE) {
+      const sizeMB = (buffer.length / 1024 / 1024).toFixed(1)
       return NextResponse.json(
         { error: `File is too large (${sizeMB}MB). Maximum size is 10MB.` },
         { status: 400 },
       )
     }
 
-    const arrayBuffer = await file.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
+    const filename = body.filename
 
     // Detect file type and parse accordingly
     const isPng =
@@ -43,7 +50,7 @@ export async function POST(request: NextRequest) {
       buffer[3] === 0x47
 
     const isJson =
-      file.name.toLowerCase().endsWith('.json') || file.type === 'application/json'
+      filename.toLowerCase().endsWith('.json') || body.mimeType === 'application/json'
 
     let parsed
     if (isPng) {
@@ -90,7 +97,7 @@ export async function POST(request: NextRequest) {
             file: {
               data: parsed.imageBuffer,
               mimetype: 'image/png',
-              name: file.name || 'character-card.png',
+              name: filename || 'character-card.png',
               size: parsed.imageBuffer.length,
             },
             user: payloadUser,
@@ -105,7 +112,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Extract character book info if present (V2 only)
+    // Extract character book info if present (V2+)
     let characterBook = undefined
     if (parsed.version === 'v2') {
       const v2data = parsed.data as TavernCardV2Data

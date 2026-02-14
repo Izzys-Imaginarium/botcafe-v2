@@ -110,7 +110,7 @@ export const Knowledge: CollectionConfig = {
       name: 'knowledge_collection',
       type: 'relationship',
       relationTo: 'knowledgeCollections',
-      // Not required — ON DELETE SET NULL needs the column to be nullable
+      required: true,
     },
     // RAG System Fields
     {

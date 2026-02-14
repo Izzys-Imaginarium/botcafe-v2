@@ -44,6 +44,7 @@ import {
   type BudgetControlValue,
 } from '@/modules/lore/ui/components/activation-settings'
 import { ShareDialog } from '@/components/share-dialog'
+import { ImportWorldBookDialog } from '@/modules/lore/ui/components/import-worldbook-dialog'
 
 interface Tome {
   id: string
@@ -733,13 +734,16 @@ export const LorePanel = () => {
             {tomes.length} {tomes.length === 1 ? 'tome' : 'tomes'} • Organize your knowledge
           </p>
         </div>
-        <Button
-          onClick={() => setIsCreateTomeOpen(true)}
-          className="bg-gold-rich hover:bg-gold-rich/90 text-[#0a140a]"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          New Tome
-        </Button>
+        <div className="flex items-center gap-2">
+          <ImportWorldBookDialog onImport={() => fetchTomes()} />
+          <Button
+            onClick={() => setIsCreateTomeOpen(true)}
+            className="bg-gold-rich hover:bg-gold-rich/90 text-[#0a140a]"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Tome
+          </Button>
+        </div>
       </div>
 
       {/* Search, Filter, and Sort Controls */}
@@ -852,13 +856,16 @@ export const LorePanel = () => {
               <p className="text-parchment/60 font-lore italic mb-4 max-w-md">
                 Tomes are collections of knowledge entries. Create your first tome to start organizing your lore.
               </p>
-              <Button
-                onClick={() => setIsCreateTomeOpen(true)}
-                className="bg-gold-rich hover:bg-gold-rich/90 text-[#0a140a]"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Your First Tome
-              </Button>
+              <div className="flex items-center gap-2">
+                <ImportWorldBookDialog onImport={() => fetchTomes()} />
+                <Button
+                  onClick={() => setIsCreateTomeOpen(true)}
+                  className="bg-gold-rich hover:bg-gold-rich/90 text-[#0a140a]"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Your First Tome
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

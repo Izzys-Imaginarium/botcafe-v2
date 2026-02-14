@@ -879,6 +879,40 @@ export async function DELETE(
       }
     }
 
+    // Clean up FK constraints before deletion using D1 SQL directly
+    // SQLite CASCADE doesn't work reliably in D1, so we delete explicitly
+    const d1 = (payload.db as any).client as D1Database
+
+    if (d1) {
+      const tables = [
+        // Required FK: knowledge_activation_log.knowledge_entry_id -> delete logs
+        { name: 'knowledge_activation_log', sql: 'DELETE FROM knowledge_activation_log WHERE knowledge_entry_id_id = ?' },
+        // Optional FK: memory.lore_entry -> nullify
+        { name: 'memory (nullify lore_entry)', sql: 'UPDATE memory SET lore_entry_id = NULL WHERE lore_entry_id = ?' },
+        // Clean up locked documents
+        { name: 'payload_locked_documents_rels', sql: 'DELETE FROM payload_locked_documents_rels WHERE knowledge_id = ?' },
+        // Child tables (CASCADE may not work in D1)
+        { name: 'knowledge_tags', sql: 'DELETE FROM knowledge_tags WHERE _parent_id = ?' },
+        { name: 'knowledge_activation_settings_primary_keys', sql: 'DELETE FROM knowledge_activation_settings_primary_keys WHERE _parent_id = ?' },
+        { name: 'knowledge_activation_settings_secondary_keys', sql: 'DELETE FROM knowledge_activation_settings_secondary_keys WHERE _parent_id = ?' },
+        { name: 'knowledge_filtering_allowed_bot_ids', sql: 'DELETE FROM knowledge_filtering_allowed_bot_ids WHERE _parent_id = ?' },
+        { name: 'knowledge_filtering_excluded_bot_ids', sql: 'DELETE FROM knowledge_filtering_excluded_bot_ids WHERE _parent_id = ?' },
+        { name: 'knowledge_filtering_allowed_persona_ids', sql: 'DELETE FROM knowledge_filtering_allowed_persona_ids WHERE _parent_id = ?' },
+        { name: 'knowledge_filtering_excluded_persona_ids', sql: 'DELETE FROM knowledge_filtering_excluded_persona_ids WHERE _parent_id = ?' },
+        // Own _rels table
+        { name: 'knowledge_rels', sql: 'DELETE FROM knowledge_rels WHERE parent_id = ?' },
+      ]
+
+      for (const table of tables) {
+        try {
+          const result = await d1.prepare(table.sql).bind(numericId).run()
+          console.log(`[Knowledge Delete ${numericId}] ${table.name}: OK, rows affected:`, result.meta?.changes ?? 'unknown')
+        } catch (e: any) {
+          console.error(`[Knowledge Delete ${numericId}] ${table.name}: FAILED -`, e.message || e)
+        }
+      }
+    }
+
     // Delete the knowledge entry
     await payload.delete({
       collection: 'knowledge',

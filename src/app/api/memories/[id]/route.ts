@@ -397,6 +397,30 @@ export async function DELETE(
       }
     }
 
+    // Clean up FK constraints before deletion using D1 SQL directly
+    // SQLite CASCADE doesn't work reliably in D1, so we delete explicitly
+    const d1 = (payload.db as any).client as D1Database
+
+    if (d1 && parsed.collection === 'memory') {
+      const tables = [
+        // Optional FK: knowledge.source_memory_id -> nullify
+        { name: 'knowledge (nullify source_memory_id)', sql: 'UPDATE knowledge SET source_memory_id_id = NULL WHERE source_memory_id_id = ?' },
+        // Clean up locked documents
+        { name: 'payload_locked_documents_rels', sql: 'DELETE FROM payload_locked_documents_rels WHERE memory_id = ?' },
+        // Own _rels table
+        { name: 'memory_rels', sql: 'DELETE FROM memory_rels WHERE parent_id = ?' },
+      ]
+
+      for (const table of tables) {
+        try {
+          const result = await d1.prepare(table.sql).bind(parsed.numericId).run()
+          console.log(`[Memory Delete ${parsed.numericId}] ${table.name}: OK, rows affected:`, result.meta?.changes ?? 'unknown')
+        } catch (e: any) {
+          console.error(`[Memory Delete ${parsed.numericId}] ${table.name}: FAILED -`, e.message || e)
+        }
+      }
+    }
+
     // Delete the memory from appropriate collection
     await payload.delete({
       collection: parsed.collection,

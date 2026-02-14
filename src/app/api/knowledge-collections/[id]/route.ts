@@ -316,29 +316,69 @@ export async function DELETE(
       )
     }
 
-    // Delete all entries in the collection first (cascade delete)
-    const entriesInCollection = await payload.find({
-      collection: 'knowledge',
-      where: {
-        knowledge_collection: {
-          equals: numericId,
-        },
-      },
-      limit: 0, // Get all entries
-      overrideAccess: true,
-    })
+    // Clean up FK constraints before deletion using D1 SQL directly
+    // SQLite CASCADE doesn't work reliably in D1, so we delete explicitly
+    const d1 = (payload.db as any).client as D1Database
 
-    if (entriesInCollection.totalDocs > 0) {
-      // Delete all entries in the collection
-      await payload.delete({
-        collection: 'knowledge',
-        where: {
-          knowledge_collection: {
-            equals: numericId,
-          },
-        },
-        overrideAccess: true,
-      })
+    console.log(`[KnowledgeCollection Delete ${numericId}] Starting FK cleanup`)
+
+    if (d1) {
+      // First: clean up FKs pointing to knowledge entries in this collection
+      const knowledgeCleanup = [
+        // Required FK: knowledge_activation_log.knowledge_entry_id -> delete logs
+        { name: 'knowledge_activation_log', sql: 'DELETE FROM knowledge_activation_log WHERE knowledge_entry_id_id IN (SELECT id FROM knowledge WHERE knowledge_collection_id = ?)' },
+        // Optional FK: memory.lore_entry -> nullify
+        { name: 'memory (nullify lore_entry)', sql: 'UPDATE memory SET lore_entry_id = NULL WHERE lore_entry_id IN (SELECT id FROM knowledge WHERE knowledge_collection_id = ?)' },
+        // Knowledge entry child tables
+        { name: 'knowledge_tags', sql: 'DELETE FROM knowledge_tags WHERE _parent_id IN (SELECT id FROM knowledge WHERE knowledge_collection_id = ?)' },
+        { name: 'knowledge_activation_settings_primary_keys', sql: 'DELETE FROM knowledge_activation_settings_primary_keys WHERE _parent_id IN (SELECT id FROM knowledge WHERE knowledge_collection_id = ?)' },
+        { name: 'knowledge_activation_settings_secondary_keys', sql: 'DELETE FROM knowledge_activation_settings_secondary_keys WHERE _parent_id IN (SELECT id FROM knowledge WHERE knowledge_collection_id = ?)' },
+        { name: 'knowledge_filtering_allowed_bot_ids', sql: 'DELETE FROM knowledge_filtering_allowed_bot_ids WHERE _parent_id IN (SELECT id FROM knowledge WHERE knowledge_collection_id = ?)' },
+        { name: 'knowledge_filtering_excluded_bot_ids', sql: 'DELETE FROM knowledge_filtering_excluded_bot_ids WHERE _parent_id IN (SELECT id FROM knowledge WHERE knowledge_collection_id = ?)' },
+        { name: 'knowledge_filtering_allowed_persona_ids', sql: 'DELETE FROM knowledge_filtering_allowed_persona_ids WHERE _parent_id IN (SELECT id FROM knowledge WHERE knowledge_collection_id = ?)' },
+        { name: 'knowledge_filtering_excluded_persona_ids', sql: 'DELETE FROM knowledge_filtering_excluded_persona_ids WHERE _parent_id IN (SELECT id FROM knowledge WHERE knowledge_collection_id = ?)' },
+        // Knowledge _rels and locked docs
+        { name: 'knowledge_rels', sql: 'DELETE FROM knowledge_rels WHERE parent_id IN (SELECT id FROM knowledge WHERE knowledge_collection_id = ?)' },
+        { name: 'payload_locked_documents_rels (knowledge)', sql: 'DELETE FROM payload_locked_documents_rels WHERE knowledge_id IN (SELECT id FROM knowledge WHERE knowledge_collection_id = ?)' },
+        // Delete knowledge entries themselves
+        { name: 'knowledge', sql: 'DELETE FROM knowledge WHERE knowledge_collection_id = ?' },
+      ]
+
+      for (const table of knowledgeCleanup) {
+        try {
+          const result = await d1.prepare(table.sql).bind(numericId).run()
+          console.log(`[KnowledgeCollection Delete ${numericId}] ${table.name}: OK, rows affected:`, result.meta?.changes ?? 'unknown')
+        } catch (e: any) {
+          console.error(`[KnowledgeCollection Delete ${numericId}] ${table.name}: FAILED -`, e.message || e)
+        }
+      }
+
+      // Second: clean up FKs pointing to this collection
+      const collectionCleanup = [
+        // hasMany _rels: bot.knowledge_collections
+        { name: 'bot_rels (knowledge_collections)', sql: 'DELETE FROM bot_rels WHERE knowledge_collections_id = ?' },
+        // Optional FK: conversation.memory_tome -> nullify
+        { name: 'conversation (nullify memory_tome)', sql: 'UPDATE conversation SET memory_tome_id = NULL WHERE memory_tome_id = ?' },
+        // Access control entries for this collection
+        { name: 'access_control', sql: `DELETE FROM access_control WHERE resource_type = 'knowledgeCollection' AND resource_id = ?` },
+        // Clean up locked documents
+        { name: 'payload_locked_documents_rels', sql: 'DELETE FROM payload_locked_documents_rels WHERE knowledge_collections_id = ?' },
+        // Own _rels table
+        { name: 'knowledge_collections_rels', sql: 'DELETE FROM knowledge_collections_rels WHERE parent_id = ?' },
+      ]
+
+      for (const table of collectionCleanup) {
+        try {
+          // access_control.resource_id is stored as text
+          const bindValue = table.name === 'access_control' ? String(numericId) : numericId
+          const result = await d1.prepare(table.sql).bind(bindValue).run()
+          console.log(`[KnowledgeCollection Delete ${numericId}] ${table.name}: OK, rows affected:`, result.meta?.changes ?? 'unknown')
+        } catch (e: any) {
+          console.error(`[KnowledgeCollection Delete ${numericId}] ${table.name}: FAILED -`, e.message || e)
+        }
+      }
+    } else {
+      console.error(`[KnowledgeCollection Delete ${numericId}] D1 client not available!`)
     }
 
     // Delete the collection
@@ -347,6 +387,7 @@ export async function DELETE(
       id: numericId,
       overrideAccess: true,
     })
+    console.log(`[KnowledgeCollection Delete ${numericId}] Collection deleted successfully`)
 
     return NextResponse.json({
       success: true,

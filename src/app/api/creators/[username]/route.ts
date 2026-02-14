@@ -526,12 +526,62 @@ export async function DELETE(
       )
     }
 
+    // Clean up FK constraints before deletion using D1 SQL directly
+    // SQLite CASCADE doesn't work reliably in D1, so we delete explicitly
+    const creatorIdNum = typeof creator.id === 'string' ? parseInt(creator.id, 10) : creator.id
+    const d1 = (payload.db as any).client as D1Database
+
+    console.log(`[Creator Delete ${creatorIdNum}] Starting FK cleanup`)
+
+    // Check if there are bots linked to this creator profile.
+    // bot.creator_profile is a required (NOT NULL) FK, so we can't nullify it.
+    // Cascading through bot deletion is very deep, so require bots to be deleted first.
+    if (d1) {
+      try {
+        const botCheck = await d1.prepare('SELECT COUNT(*) as count FROM bot WHERE creator_profile_id = ?').bind(creatorIdNum).first<{ count: number }>()
+        if (botCheck && botCheck.count > 0) {
+          return NextResponse.json(
+            { success: false, message: `Cannot delete creator profile: ${botCheck.count} bot(s) are still linked to it. Please delete your bots first.` },
+            { status: 409 }
+          )
+        }
+      } catch (e: any) {
+        console.error(`[Creator Delete ${creatorIdNum}] Bot check failed:`, e.message || e)
+      }
+
+      const tables = [
+        // Required FK: creator_follows.following -> delete follow records
+        { name: 'creator_follows', sql: 'DELETE FROM creator_follows WHERE following_id = ?' },
+        // Clean up locked documents
+        { name: 'payload_locked_documents_rels', sql: 'DELETE FROM payload_locked_documents_rels WHERE creator_profiles_id = ?' },
+        // Child tables (CASCADE may not work in D1)
+        { name: 'creator_profiles_social_links_other_links', sql: 'DELETE FROM creator_profiles_social_links_other_links WHERE _parent_id = ?' },
+        { name: 'creator_profiles_creator_info_specialties', sql: 'DELETE FROM creator_profiles_creator_info_specialties WHERE _parent_id = ?' },
+        { name: 'creator_profiles_creator_info_languages', sql: 'DELETE FROM creator_profiles_creator_info_languages WHERE _parent_id = ?' },
+        { name: 'creator_profiles_tags', sql: 'DELETE FROM creator_profiles_tags WHERE _parent_id = ?' },
+        // Own _rels table
+        { name: 'creator_profiles_rels', sql: 'DELETE FROM creator_profiles_rels WHERE parent_id = ?' },
+      ]
+
+      for (const table of tables) {
+        try {
+          const result = await d1.prepare(table.sql).bind(creatorIdNum).run()
+          console.log(`[Creator Delete ${creatorIdNum}] ${table.name}: OK, rows affected:`, result.meta?.changes ?? 'unknown')
+        } catch (e: any) {
+          console.error(`[Creator Delete ${creatorIdNum}] ${table.name}: FAILED -`, e.message || e)
+        }
+      }
+    } else {
+      console.error(`[Creator Delete ${creatorIdNum}] D1 client not available!`)
+    }
+
     // Delete creator profile
     await payload.delete({
       collection: 'creatorProfiles',
       id: creator.id,
       overrideAccess: true,
     })
+    console.log(`[Creator Delete ${creatorIdNum}] Creator profile deleted successfully`)
 
     return NextResponse.json({
       success: true,

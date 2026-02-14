@@ -300,12 +300,53 @@ export async function DELETE(
       )
     }
 
+    // Clean up FK constraints before deletion using D1 SQL directly
+    // SQLite CASCADE doesn't work reliably in D1, so we delete explicitly
+    const personaIdNum = parseInt(id, 10)
+    const d1 = (payload.db as any).client as D1Database
+
+    console.log(`[Persona Delete ${personaIdNum}] Starting FK cleanup`)
+
+    if (d1) {
+      const tables = [
+        // Required FK: persona_analytics.persona -> must delete
+        { name: 'persona_analytics', sql: 'DELETE FROM persona_analytics WHERE persona_id = ?' },
+        // hasMany _rels: knowledge.applies_to_personas
+        { name: 'knowledge_rels (personas)', sql: 'DELETE FROM knowledge_rels WHERE personas_id = ?' },
+        // hasMany _rels: memory.persona
+        { name: 'memory_rels (personas)', sql: 'DELETE FROM memory_rels WHERE personas_id = ?' },
+        // Optional FK: message.message_attribution.persona_id -> nullify
+        { name: 'message (nullify persona)', sql: 'UPDATE message SET message_attribution_persona_id_id = NULL WHERE message_attribution_persona_id_id = ?' },
+        // Optional FK: usage_analytics.resource_details.persona_id -> nullify
+        { name: 'usage_analytics (nullify persona)', sql: 'UPDATE usage_analytics SET resource_details_persona_id_id = NULL WHERE resource_details_persona_id_id = ?' },
+        // Clean up locked documents
+        { name: 'payload_locked_documents_rels', sql: 'DELETE FROM payload_locked_documents_rels WHERE personas_id = ?' },
+        // Child tables (CASCADE may not work in D1)
+        { name: 'personas_interaction_preferences_preferred_topics', sql: 'DELETE FROM personas_interaction_preferences_preferred_topics WHERE _parent_id = ?' },
+        { name: 'personas_interaction_preferences_avoid_topics', sql: 'DELETE FROM personas_interaction_preferences_avoid_topics WHERE _parent_id = ?' },
+        // Own _rels table
+        { name: 'personas_rels', sql: 'DELETE FROM personas_rels WHERE parent_id = ?' },
+      ]
+
+      for (const table of tables) {
+        try {
+          const result = await d1.prepare(table.sql).bind(personaIdNum).run()
+          console.log(`[Persona Delete ${personaIdNum}] ${table.name}: OK, rows affected:`, result.meta?.changes ?? 'unknown')
+        } catch (e: any) {
+          console.error(`[Persona Delete ${personaIdNum}] ${table.name}: FAILED -`, e.message || e)
+        }
+      }
+    } else {
+      console.error(`[Persona Delete ${personaIdNum}] D1 client not available!`)
+    }
+
     // Delete persona
     await payload.delete({
       collection: 'personas',
       id,
       overrideAccess: true,
     })
+    console.log(`[Persona Delete ${personaIdNum}] Persona deleted successfully`)
 
     return NextResponse.json({
       success: true,

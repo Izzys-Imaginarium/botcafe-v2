@@ -386,28 +386,31 @@ export async function DELETE(
     }
 
     // Delete the collection
-    try {
+    // Note: The knowledge table has a schema contradiction —
+    // knowledge_collection_id is NOT NULL but the FK action is ON DELETE SET NULL.
+    // This causes D1/SQLite to fail even when no child rows exist.
+    // We disable foreign keys for the final delete since we've already cleaned up
+    // all references manually above.
+    if (d1) {
+      try {
+        await d1.prepare('PRAGMA foreign_keys = OFF').run()
+        await d1.prepare('DELETE FROM knowledge_collections WHERE id = ?').bind(numericId).run()
+        await d1.prepare('PRAGMA foreign_keys = ON').run()
+        console.log(`[KnowledgeCollection Delete ${numericId}] Collection deleted successfully via D1 (FK disabled)`)
+      } catch (d1Error: any) {
+        // Re-enable foreign keys even on failure
+        try { await d1.prepare('PRAGMA foreign_keys = ON').run() } catch {}
+        console.error(`[KnowledgeCollection Delete ${numericId}] D1 delete failed:`, d1Error.message)
+        throw d1Error
+      }
+    } else {
+      // Fallback to Payload delete if D1 client not available
       await payload.delete({
         collection: 'knowledgeCollections',
         id: numericId,
         overrideAccess: true,
       })
       console.log(`[KnowledgeCollection Delete ${numericId}] Collection deleted successfully via Payload`)
-    } catch (payloadDeleteError: any) {
-      // Payload delete failed — likely an uncovered FK constraint
-      // Fall back to direct D1 delete
-      console.warn(`[KnowledgeCollection Delete ${numericId}] Payload delete failed: ${payloadDeleteError.message}. Attempting D1 direct delete...`)
-      if (d1) {
-        try {
-          await d1.prepare('DELETE FROM knowledge_collections WHERE id = ?').bind(numericId).run()
-          console.log(`[KnowledgeCollection Delete ${numericId}] Collection deleted successfully via D1 fallback`)
-        } catch (d1Error: any) {
-          console.error(`[KnowledgeCollection Delete ${numericId}] D1 fallback also failed:`, d1Error.message)
-          throw payloadDeleteError
-        }
-      } else {
-        throw payloadDeleteError
-      }
     }
 
     return NextResponse.json({

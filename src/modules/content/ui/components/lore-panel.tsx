@@ -68,6 +68,9 @@ interface KnowledgeEntry {
   chunk_count?: number
   embedding_model?: string
   vector_dimensions?: number
+  activation_settings?: {
+    activation_mode?: 'keyword' | 'vector' | 'hybrid' | 'constant' | 'disabled'
+  }
   createdAt: string
 }
 
@@ -1158,6 +1161,10 @@ export const LorePanel = () => {
                                     <Badge variant="secondary" className="bg-forest/20 text-forest-light">
                                       <Sparkles className="w-3 h-3 mr-1" />
                                       Vectorized
+                                    </Badge>
+                                  ) : entry.activation_settings?.activation_mode === 'keyword' || entry.activation_settings?.activation_mode === 'constant' ? (
+                                    <Badge variant="secondary" className="bg-parchment/10 text-parchment/60">
+                                      Keyword
                                     </Badge>
                                   ) : (
                                     <Badge variant="secondary" className="bg-amber-900/20 text-amber-400">

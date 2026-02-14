@@ -199,6 +199,36 @@ export async function buildChatContext(params: BuildContextParams): Promise<Chat
     console.log('[Context Builder] Injected conversation summary:', conversationSummary.length, 'chars')
   }
 
+  // Detect persona switches within the message window
+  const personaNamesInWindow = new Set<string>()
+  for (const msg of recentMessages) {
+    if (!msg.message_attribution?.is_ai_generated) {
+      const msgPersona = msg.message_attribution?.persona_id
+      if (typeof msgPersona === 'object' && msgPersona !== null) {
+        personaNamesInWindow.add(msgPersona.name)
+      } else if (!msgPersona) {
+        personaNamesInWindow.add('themselves (no persona)')
+      }
+    }
+  }
+
+  // If messages were sent by different personas, add a note to the system prompt
+  if (personaNamesInWindow.size > 1) {
+    const currentName = persona?.name || 'themselves (no persona)'
+    const previousNames = [...personaNamesInWindow].filter(n => n !== currentName)
+    const switchNote = `\nNote: The user has changed personas during this conversation. They previously spoke as ${previousNames.join(', ')}, and are now speaking as ${currentName}. Messages in the history may be from different personas — treat them all as the same user.`
+
+    // Inject after User Context section
+    const knowledgeMarker = '--- Knowledge & Context ---'
+    const knowledgeIndex = systemPrompt.indexOf(knowledgeMarker)
+    if (knowledgeIndex !== -1) {
+      systemPrompt = systemPrompt.slice(0, knowledgeIndex) + switchNote + '\n\n' + systemPrompt.slice(knowledgeIndex)
+    } else {
+      systemPrompt += '\n' + switchNote
+    }
+    console.log('[Context Builder] Persona switch detected:', [...personaNamesInWindow].join(' → '))
+  }
+
   // Build message array
   const messages: ChatMessage[] = [
     {
@@ -244,11 +274,23 @@ export async function buildChatContext(params: BuildContextParams): Promise<Chat
         })
       }
     } else {
-      // User message
+      // User message — use the persona that was active when this message was sent
+      const msgPersona = msg.message_attribution?.persona_id
+      let msgPersonaName: string | undefined
+
+      if (typeof msgPersona === 'object' && msgPersona !== null) {
+        // Persona object populated by depth: 1 — use its name
+        msgPersonaName = msgPersona.name
+      } else if (typeof msgPersona === 'number') {
+        // Persona ID present but not populated — use current persona as best guess
+        msgPersonaName = persona?.name
+      }
+      // If msgPersona is null/undefined — no persona was used, leave name undefined
+
       messages.push({
         role: 'user',
         content,
-        name: persona?.name,
+        name: msgPersonaName || undefined,
       })
     }
   }

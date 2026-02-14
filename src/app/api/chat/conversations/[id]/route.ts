@@ -497,81 +497,75 @@ export async function DELETE(
 
     const convId = parseInt(id)
 
-    // Clean up all related records that have foreign keys to this conversation.
-    // These must be cleaned up before the conversation itself to avoid FK constraint errors.
-    // Each operation is wrapped in try/catch so a failure in one doesn't block the others.
+    // Use direct D1 SQL for cascade cleanup to avoid loading all records into memory.
+    // Payload's ORM loads every matching doc as a full object, which causes
+    // "Worker exceeded memory limit" on conversations with many messages.
+    const d1 = (payload.db as any).client as D1Database
+
+    if (!d1) {
+      console.error(`[Conversation Delete ${convId}] D1 client not available, falling back to Payload`)
+      // Minimal fallback - just delete conversation and let FK errors happen
+      await payload.delete({ collection: 'conversation', id: convId, overrideAccess: true })
+      return NextResponse.json({ success: true, message: 'Conversation deleted' })
+    }
 
     // 1. Delete records that have no value without the conversation
     const deleteOps = [
-      payload.delete({
-        collection: 'message',
-        where: { conversation: { equals: convId } },
-        overrideAccess: true,
-      }).catch((e: unknown) => console.error('[Conversation Delete] Failed to delete messages:', e)),
-
-      payload.delete({
-        collection: 'knowledgeActivationLog',
-        where: { conversation_id: { equals: convId } },
-        overrideAccess: true,
-      }).catch((e: unknown) => console.error('[Conversation Delete] Failed to delete activation logs:', e)),
-
-      payload.delete({
-        collection: 'memory',
-        where: { conversation: { equals: convId } },
-        overrideAccess: true,
-      }).catch((e: unknown) => console.error('[Conversation Delete] Failed to delete memories:', e)),
-
-      payload.delete({
-        collection: 'memory-insights',
-        where: { conversation: { equals: convId } },
-        overrideAccess: true,
-      }).catch((e: unknown) => console.error('[Conversation Delete] Failed to delete memory insights:', e)),
+      { name: 'message', sql: 'DELETE FROM message WHERE conversation_id = ?' },
+      { name: 'knowledge_activation_log', sql: 'DELETE FROM knowledge_activation_log WHERE conversation_id_id = ?' },
+      { name: 'memory', sql: 'DELETE FROM memory WHERE conversation_id = ?' },
+      { name: 'memory_insights', sql: 'DELETE FROM memory_insights WHERE conversation_id = ?' },
     ]
 
-    await Promise.all(deleteOps)
-
-    // 2. Unlink records that should be preserved (null out the conversation FK)
-    const unlinkCollection = async (
-      collection: string,
-      field: string,
-      label: string,
-    ) => {
+    for (const op of deleteOps) {
       try {
-        const slug = collection as import('payload').CollectionSlug
-        const linked = await payload.find({
-          collection: slug,
-          where: { [field]: { equals: convId } },
-          limit: 500,
-          overrideAccess: true,
-        })
-        if (linked.docs.length > 0) {
-          await Promise.all(
-            linked.docs.map((doc) =>
-              payload.update({
-                collection: slug,
-                id: doc.id,
-                data: { [field]: null } as any,
-                overrideAccess: true,
-              })
-            )
-          )
-        }
-      } catch (e: unknown) {
-        console.error(`[Conversation Delete] Failed to unlink ${label}:`, e)
+        const result = await d1.prepare(op.sql).bind(convId).run()
+        console.log(`[Conversation Delete ${convId}] ${op.name}: OK, rows: ${result.meta?.changes ?? '?'}`)
+      } catch (e: any) {
+        console.error(`[Conversation Delete ${convId}] ${op.name}: FAILED -`, e.message || e)
       }
     }
 
-    await Promise.all([
-      unlinkCollection('knowledge', 'source_conversation_id', 'knowledge entries'),
-      unlinkCollection('usage-analytics', 'resource_details.conversation_id', 'usage analytics'),
-    ])
+    // 2. Unlink records that should be preserved (null out the conversation FK)
+    const unlinkOps = [
+      { name: 'knowledge', sql: 'UPDATE knowledge SET source_conversation_id_id = NULL WHERE source_conversation_id_id = ?' },
+      { name: 'usage_analytics', sql: 'UPDATE usage_analytics SET resource_details_conversation_id_id = NULL WHERE resource_details_conversation_id_id = ?' },
+    ]
 
-    // 3. Delete the conversation itself
-    await payload.delete({
-      collection: 'conversation',
-      id: convId,
-      overrideAccess: true,
-    })
+    for (const op of unlinkOps) {
+      try {
+        const result = await d1.prepare(op.sql).bind(convId).run()
+        console.log(`[Conversation Delete ${convId}] unlink ${op.name}: OK, rows: ${result.meta?.changes ?? '?'}`)
+      } catch (e: any) {
+        console.error(`[Conversation Delete ${convId}] unlink ${op.name}: FAILED -`, e.message || e)
+      }
+    }
+
+    // 3. Clean up _rels tables and child tables
+    const relOps = [
+      { name: 'conversation_rels', sql: 'DELETE FROM conversation_rels WHERE parent_id = ?' },
+      { name: 'conversation_bot_participation', sql: 'DELETE FROM conversation_bot_participation WHERE _parent_id = ?' },
+      { name: 'payload_locked_documents_rels', sql: 'DELETE FROM payload_locked_documents_rels WHERE conversation_id = ?' },
+    ]
+
+    for (const op of relOps) {
+      try {
+        await d1.prepare(op.sql).bind(convId).run()
+      } catch (e: any) {
+        // These tables may not exist or have different column names - non-fatal
+        console.warn(`[Conversation Delete ${convId}] ${op.name}: ${e.message || e}`)
+      }
+    }
+
+    // 4. Delete the conversation itself
+    try {
+      await d1.prepare('DELETE FROM conversation WHERE id = ?').bind(convId).run()
+      console.log(`[Conversation Delete ${convId}] Conversation deleted successfully`)
+    } catch (e: any) {
+      console.error(`[Conversation Delete ${convId}] Final delete failed:`, e.message || e)
+      // Fallback to Payload delete which will give a better error
+      await payload.delete({ collection: 'conversation', id: convId, overrideAccess: true })
+    }
 
     return NextResponse.json({
       success: true,

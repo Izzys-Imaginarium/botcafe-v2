@@ -224,19 +224,30 @@ export async function DELETE(
       )
     }
 
-    // Delete all messages in the conversation
-    const result = await payload.delete({
-      collection: 'message',
-      where: {
-        conversation: { equals: parseInt(id) },
-      },
-      overrideAccess: true,
-    })
+    // Use direct D1 SQL to avoid loading all messages into memory.
+    // Payload's ORM loads every matching doc as a full object, which causes
+    // "Worker exceeded memory limit" on conversations with many messages.
+    const convId = parseInt(id)
+    const d1 = (payload.db as any).client as D1Database
+
+    let deletedCount = 0
+    if (d1) {
+      const result = await d1.prepare('DELETE FROM message WHERE conversation_id = ?').bind(convId).run()
+      deletedCount = result.meta?.changes ?? 0
+    } else {
+      // Fallback to Payload ORM if D1 client unavailable
+      const result = await payload.delete({
+        collection: 'message',
+        where: { conversation: { equals: convId } },
+        overrideAccess: true,
+      })
+      deletedCount = result.docs?.length || 0
+    }
 
     // Reset conversation metadata
     await payload.update({
       collection: 'conversation',
-      id: parseInt(id),
+      id: convId,
       data: {
         conversation_metadata: {
           total_messages: 0,
@@ -249,7 +260,7 @@ export async function DELETE(
 
     return NextResponse.json({
       message: 'Chat history cleared',
-      deletedCount: result.docs?.length || 0,
+      deletedCount,
     })
   } catch (error: unknown) {
     console.error('Error clearing messages:', error)

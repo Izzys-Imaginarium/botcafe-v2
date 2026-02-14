@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPayloadHMR } from '@payloadcms/next/utilities'
+import { getPayload } from 'payload'
 import { currentUser } from '@clerk/nextjs/server'
 import config from '@payload-config'
 
@@ -41,7 +41,7 @@ export async function DELETE(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await getPayloadHMR({ config })
+    const payload = await getPayload({ config })
 
     // Find Payload user by email
     const payloadUsers = await payload.find({
@@ -58,35 +58,42 @@ export async function DELETE(
 
     const payloadUser = payloadUsers.docs[0]
 
-    // Find all vector records for this source
-    const vectorRecords = await payload.find({
-      collection: 'vectorRecords' as any,
-      where: {
-        and: [
-          { source_type: { equals: source_type } },
-          { source_id: { equals: sourceId } },
-          { user_id: { equals: payloadUser.id } }, // Security: only delete user's own vectors
-        ],
-      },
-    })
+    // Use direct D1 SQL to avoid loading all vector records into memory.
+    // A heavily chunked knowledge entry can have thousands of vector records.
+    const d1 = (payload.db as any).client as D1Database
 
-    if (vectorRecords.docs.length === 0) {
+    let deletedCount = 0
+    if (d1) {
+      // Security: only delete user's own vectors by checking user_id
+      const result = await d1.prepare(
+        'DELETE FROM vector_records WHERE source_type = ? AND source_id = ? AND user_id = ?'
+      ).bind(source_type, sourceId, payloadUser.id).run()
+      deletedCount = result.meta?.changes ?? 0
+    } else {
+      // Fallback to Payload ORM
+      const vectorRecords = await payload.find({
+        collection: 'vectorRecords' as any,
+        where: {
+          and: [
+            { source_type: { equals: source_type } },
+            { source_id: { equals: sourceId } },
+            { user_id: { equals: payloadUser.id } },
+          ],
+        },
+        limit: 500,
+      })
+      for (const record of vectorRecords.docs) {
+        await payload.delete({ collection: 'vectorRecords' as any, id: record.id })
+        deletedCount++
+      }
+    }
+
+    if (deletedCount === 0) {
       return NextResponse.json({ message: 'No vectors found for this source' }, { status: 404 })
     }
 
     // TODO: In production, delete from Vectorize database first
-    // const vectorIds = vectorRecords.docs.map((vr: any) => vr.vector_id)
-    // await deleteFromVectorize(vectorIds)
-
-    // Delete vector records from D1
-    const deletedIds = []
-    for (const record of vectorRecords.docs) {
-      await payload.delete({
-        collection: 'vectorRecords' as any,
-        id: record.id,
-      })
-      deletedIds.push(record.id)
-    }
+    // Need vector_ids for Vectorize cleanup - fetch them via SQL if needed
 
     // Update source document to mark as not vectorized
     const sourceCollection = source_type === 'knowledge' ? 'knowledge' : 'memory'
@@ -102,8 +109,7 @@ export async function DELETE(
 
     return NextResponse.json({
       message: 'Vectors deleted successfully',
-      deleted_count: deletedIds.length,
-      deleted_record_ids: deletedIds,
+      deleted_count: deletedCount,
     })
   } catch (error: any) {
     console.error('Error deleting vectors:', error)

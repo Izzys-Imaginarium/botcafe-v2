@@ -82,6 +82,9 @@ export const LorePanel = () => {
   const [expandedTomeId, setExpandedTomeId] = useState<string | null>(null)
   const [tomeEntries, setTomeEntries] = useState<Record<string, KnowledgeEntry[]>>({})
   const [loadingEntriesForTome, setLoadingEntriesForTome] = useState<string | null>(null)
+  const [loadingMoreEntriesForTome, setLoadingMoreEntriesForTome] = useState<string | null>(null)
+  const [tomeEntriesHasMore, setTomeEntriesHasMore] = useState<Record<string, boolean>>({})
+  const [tomeEntriesPage, setTomeEntriesPage] = useState<Record<string, number>>({})
 
   // Search and sort state
   const [searchQuery, setSearchQuery] = useState('')
@@ -271,18 +274,35 @@ export const LorePanel = () => {
     }
   }
 
-  const fetchEntriesForTome = async (tomeId: string) => {
-    setLoadingEntriesForTome(tomeId)
+  const ENTRIES_PER_PAGE = 20
+
+  const fetchEntriesForTome = async (tomeId: string, pageNum: number = 1, append: boolean = false) => {
+    if (append) {
+      setLoadingMoreEntriesForTome(tomeId)
+    } else {
+      setLoadingEntriesForTome(tomeId)
+    }
     try {
-      const response = await fetch(`/api/knowledge?collection=${tomeId}`)
+      const response = await fetch(`/api/knowledge?collection=${tomeId}&page=${pageNum}&limit=${ENTRIES_PER_PAGE}`)
       const data = (await response.json()) as {
         success?: boolean
         docs?: KnowledgeEntry[]
+        hasNextPage?: boolean
+        page?: number
         message?: string
       }
 
       if (data.success) {
-        setTomeEntries(prev => ({ ...prev, [tomeId]: data.docs || [] }))
+        if (append) {
+          setTomeEntries(prev => ({
+            ...prev,
+            [tomeId]: [...(prev[tomeId] || []), ...(data.docs || [])],
+          }))
+        } else {
+          setTomeEntries(prev => ({ ...prev, [tomeId]: data.docs || [] }))
+        }
+        setTomeEntriesHasMore(prev => ({ ...prev, [tomeId]: data.hasNextPage || false }))
+        setTomeEntriesPage(prev => ({ ...prev, [tomeId]: data.page || pageNum }))
       } else {
         toast.error(data.message || 'Failed to fetch entries')
       }
@@ -291,7 +311,13 @@ export const LorePanel = () => {
       toast.error('Failed to fetch entries')
     } finally {
       setLoadingEntriesForTome(null)
+      setLoadingMoreEntriesForTome(null)
     }
+  }
+
+  const loadMoreEntriesForTome = async (tomeId: string) => {
+    const currentPage = tomeEntriesPage[tomeId] || 1
+    await fetchEntriesForTome(tomeId, currentPage + 1, true)
   }
 
   const handleToggleTome = async (tomeId: string) => {
@@ -1218,6 +1244,28 @@ export const LorePanel = () => {
                             </div>
                           </div>
                         ))}
+
+                        {/* Load more entries */}
+                        {tomeEntriesHasMore[tome.id] && (
+                          <div className="flex justify-center pt-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => loadMoreEntriesForTome(tome.id)}
+                              disabled={loadingMoreEntriesForTome === tome.id}
+                              className="border-gold-ancient/30 text-parchment hover:bg-gold-ancient/10"
+                            >
+                              {loadingMoreEntriesForTome === tome.id ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  Loading...
+                                </>
+                              ) : (
+                                'Load More Entries'
+                              )}
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

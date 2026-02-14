@@ -429,6 +429,11 @@ async function buildBotSystemPrompt(
         if (topics) parts.push(`Topics to avoid with this user: ${topics}`)
       }
     }
+
+    // Custom instructions from persona creator
+    if (persona.custom_instructions) {
+      parts.push(`\nAdditional instructions for interacting with ${persona.name}:\n${persona.custom_instructions}`)
+    }
   } else if (user) {
     // User is speaking as themselves (no persona) - use profile info
     // IMPORTANT: Only use nickname (user-set display name), never user.name

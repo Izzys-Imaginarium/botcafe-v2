@@ -537,8 +537,9 @@ export async function DELETE(
       label: string,
     ) => {
       try {
+        const slug = collection as import('payload').CollectionSlug
         const linked = await payload.find({
-          collection,
+          collection: slug,
           where: { [field]: { equals: convId } },
           limit: 500,
           overrideAccess: true,
@@ -547,7 +548,7 @@ export async function DELETE(
           await Promise.all(
             linked.docs.map((doc) =>
               payload.update({
-                collection,
+                collection: slug,
                 id: doc.id,
                 data: { [field]: null } as any,
                 overrideAccess: true,

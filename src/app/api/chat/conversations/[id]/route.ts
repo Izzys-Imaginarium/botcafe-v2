@@ -558,9 +558,12 @@ export async function DELETE(
     }
 
     // 4. Delete the conversation itself
+    // Use exec() with PRAGMA foreign_keys=OFF to bypass NOT NULL + SET NULL FK contradictions.
+    // D1 doesn't honor PRAGMA via prepare().run() or batch() (ignored inside implicit transactions).
+    // exec() runs raw SQL outside transaction context, same mechanism migrations use.
     try {
-      await d1.prepare('DELETE FROM conversation WHERE id = ?').bind(convId).run()
-      console.log(`[Conversation Delete ${convId}] Conversation deleted successfully`)
+      await d1.exec(`PRAGMA foreign_keys = OFF; DELETE FROM conversation WHERE id = ${convId}; PRAGMA foreign_keys = ON;`)
+      console.log(`[Conversation Delete ${convId}] Conversation deleted successfully via D1 exec (FK disabled)`)
     } catch (e: any) {
       console.error(`[Conversation Delete ${convId}] Final delete failed:`, e.message || e)
       // Fallback to Payload delete which will give a better error

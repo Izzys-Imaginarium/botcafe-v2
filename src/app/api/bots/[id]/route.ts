@@ -495,13 +495,24 @@ export async function DELETE(
     }
 
     // Now delete the bot
-    console.log(`[Bot Delete ${botIdNum}] Attempting to delete bot via Payload...`)
-    await payload.delete({
-      collection: 'bot',
-      id,
-      overrideAccess: true,
-    })
-    console.log(`[Bot Delete ${botIdNum}] Bot deleted successfully`)
+    // Use exec() with PRAGMA foreign_keys=OFF to bypass NOT NULL + SET NULL FK contradictions.
+    // D1 doesn't honor PRAGMA via prepare().run() or batch() (ignored inside implicit transactions).
+    // exec() runs raw SQL outside transaction context, same mechanism migrations use.
+    console.log(`[Bot Delete ${botIdNum}] Attempting to delete bot via D1 exec (FK disabled)...`)
+    if (d1) {
+      try {
+        await d1.exec(`PRAGMA foreign_keys = OFF; DELETE FROM bot WHERE id = ${botIdNum}; PRAGMA foreign_keys = ON;`)
+        console.log(`[Bot Delete ${botIdNum}] Bot deleted successfully via D1 exec (FK disabled)`)
+      } catch (d1Error: any) {
+        console.error(`[Bot Delete ${botIdNum}] D1 exec delete failed:`, d1Error.message)
+        // Fallback to Payload delete
+        await payload.delete({ collection: 'bot', id, overrideAccess: true })
+        console.log(`[Bot Delete ${botIdNum}] Bot deleted successfully via Payload fallback`)
+      }
+    } else {
+      await payload.delete({ collection: 'bot', id, overrideAccess: true })
+      console.log(`[Bot Delete ${botIdNum}] Bot deleted successfully via Payload (no D1 client)`)
+    }
 
     return NextResponse.json({
       message: 'Bot deleted successfully',

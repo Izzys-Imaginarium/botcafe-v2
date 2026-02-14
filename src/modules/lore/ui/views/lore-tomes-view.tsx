@@ -47,6 +47,7 @@ import {
   type BudgetControlValue,
 } from '../components/activation-settings'
 import { ShareDialog } from '@/components/share-dialog'
+import { ImportWorldBookDialog } from '../components/import-worldbook-dialog'
 import { useInfiniteList } from '@/hooks/use-infinite-list'
 import { InfiniteScrollTrigger } from '@/components/ui/infinite-scroll-trigger'
 
@@ -779,13 +780,16 @@ export const LoreTomesView = () => {
             Organize your knowledge into tomes
           </p>
         </div>
-        <Button
-          onClick={() => setIsCreateTomeOpen(true)}
-          className="bg-gold-rich hover:bg-gold-rich/90 text-[#0a140a]"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          New Tome
-        </Button>
+        <div className="flex items-center gap-2">
+          <ImportWorldBookDialog onImport={() => refreshTomes()} />
+          <Button
+            onClick={() => setIsCreateTomeOpen(true)}
+            className="bg-gold-rich hover:bg-gold-rich/90 text-[#0a140a]"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Tome
+          </Button>
+        </div>
       </div>
 
       {/* Overview Section */}

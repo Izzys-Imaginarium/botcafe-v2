@@ -88,3 +88,54 @@ export interface ParsedCardResult {
   data: TavernCardV1 | TavernCardV2Data
   imageBuffer: Buffer | null
 }
+
+// SillyTavern World Book Entry (standalone lorebook format)
+// Richer than CharacterBookEntry — includes activation, positioning, and timing fields
+export interface WorldBookEntry {
+  uid: number
+  key: string[]
+  keysecondary: string[]
+  comment: string
+  content: string
+  constant: boolean
+  vectorized: boolean
+  selective: boolean
+  selectiveLogic: number // 0=AND_ANY, 1=AND_ALL, 2=NOT_ALL, 3=NOT_ANY
+  order: number
+  position: number // 0=before_char, 1=after_char, 2=before_examples, 3=after_examples, 4=at_depth
+  disable: boolean
+  ignoreBudget: boolean
+  excludeRecursion: boolean
+  preventRecursion: boolean
+  probability: number
+  useProbability: boolean
+  depth: number
+  scanDepth: number | null
+  caseSensitive: boolean | null
+  matchWholeWords: boolean | null
+  sticky: number
+  cooldown: number
+  delay: number
+  role: number | null // 0=system, 1=user, 2=assistant
+  group: string
+  groupOverride: boolean
+  groupWeight: number
+  displayIndex: number
+  characterFilter: {
+    isExclude: boolean
+    names: string[]
+    tags: string[]
+  }
+  addMemo: boolean
+  matchPersonaDescription: boolean
+  matchCharacterDescription: boolean
+  matchCharacterPersonality: boolean
+  matchCharacterDepthPrompt: boolean
+  matchScenario: boolean
+  matchCreatorNotes: boolean
+}
+
+// SillyTavern World Book (standalone lorebook JSON file)
+export interface WorldBook {
+  entries: Record<string, WorldBookEntry>
+}

@@ -274,7 +274,7 @@ export const LorePanel = () => {
     }
   }
 
-  const ENTRIES_PER_PAGE = 20
+  const ENTRIES_PER_PAGE = 50
 
   const fetchEntriesForTome = async (tomeId: string, pageNum: number = 1, append: boolean = false) => {
     if (append) {

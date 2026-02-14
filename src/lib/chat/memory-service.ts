@@ -18,14 +18,14 @@ import { sendMessage, type ProviderName } from '@/lib/llm'
  */
 
 export interface MemoryTriggerConfig {
-  messageThreshold: number // Generate every N messages
-  tokenThreshold: number // Or when tokens exceed
+  firstMemoryThreshold: number // Generate first memory after N messages
+  messageThreshold: number // Generate subsequent memories every N messages
   importanceThreshold: number // Minimum importance to save (0-1)
 }
 
 const DEFAULT_CONFIG: MemoryTriggerConfig = {
+  firstMemoryThreshold: 5,
   messageThreshold: 20,
-  tokenThreshold: 4000,
   importanceThreshold: 0.5,
 }
 
@@ -38,7 +38,7 @@ export async function checkMemoryTrigger(
   config: Partial<MemoryTriggerConfig> = {}
 ): Promise<{
   shouldGenerate: boolean
-  reason?: 'message_threshold' | 'token_threshold'
+  reason?: 'message_threshold'
   messagesSinceLast: number
 }> {
   const mergedConfig = { ...DEFAULT_CONFIG, ...config }
@@ -58,8 +58,10 @@ export async function checkMemoryTrigger(
   const totalMessages = conversation.conversation_metadata?.total_messages || 0
   const messagesSinceLast = totalMessages - lastSummarizedIndex
 
-  // Check message threshold (primary trigger for subsequent memories)
-  if (messagesSinceLast >= mergedConfig.messageThreshold) {
+  const hasEverSummarized = lastSummarizedIndex > 0
+
+  // First memory: trigger after firstMemoryThreshold messages
+  if (!hasEverSummarized && messagesSinceLast >= mergedConfig.firstMemoryThreshold) {
     return {
       shouldGenerate: true,
       reason: 'message_threshold',
@@ -67,15 +69,11 @@ export async function checkMemoryTrigger(
     }
   }
 
-  // Check token threshold only if we haven't summarized yet
-  // This ensures the first memory is created when hitting token limit
-  // Subsequent memories are triggered by message count to avoid duplicates
-  const totalTokens = conversation.total_tokens || 0
-  const hasEverSummarized = lastSummarizedIndex > 0
-  if (!hasEverSummarized && totalTokens >= mergedConfig.tokenThreshold) {
+  // Subsequent memories: trigger every messageThreshold messages
+  if (hasEverSummarized && messagesSinceLast >= mergedConfig.messageThreshold) {
     return {
       shouldGenerate: true,
-      reason: 'token_threshold',
+      reason: 'message_threshold',
       messagesSinceLast,
     }
   }

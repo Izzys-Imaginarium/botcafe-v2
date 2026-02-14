@@ -328,42 +328,38 @@ export async function GET(
           overrideAccess: true,
         })
 
-        // Update conversation token count
+        // Update conversation token count (total_messages already incremented by send route)
         const currentTokens = conversation.total_tokens || 0
         const newTokens = currentTokens + (finalUsage?.totalTokens || 0)
+        const totalMessages = conversation.conversation_metadata?.total_messages || 0
 
         await payload.update({
           collection: 'conversation',
           id: conversation.id,
           data: {
             total_tokens: newTokens,
-            requires_summarization: newTokens > 4000, // Flag for summarization
             modified_timestamp: new Date().toISOString(),
           },
           overrideAccess: true,
         })
 
         // Trigger memory auto-generation with timeout protection for Cloudflare Workers
-        // First memory: Force generate when tokens first exceed threshold
-        // Subsequent memories: Let the message count threshold (20 messages) decide
-        const hasEverSummarized = (conversation.last_summarized_message_index || 0) > 0
-        const shouldCheck = newTokens > 4000
+        // First memory: after 5 messages, subsequent: every 20 messages
+        // checkMemoryTrigger handles the threshold logic, so we always attempt it
+        console.log(`[Memory Trigger] Conversation ${conversation.id}: tokens=${newTokens}, totalMessages=${totalMessages}`)
 
-        console.log(`[Memory Trigger] Conversation ${conversation.id}: tokens=${newTokens}, threshold=4000, shouldCheck=${shouldCheck}, hasEverSummarized=${hasEverSummarized}`)
-
-        if (shouldCheck) {
-          console.log(`[Memory Trigger] Attempting memory generation for conversation ${conversation.id}, forceGenerate=${!hasEverSummarized}`)
+        {
+          console.log(`[Memory Trigger] Checking memory generation for conversation ${conversation.id}`)
 
           // Create a timeout wrapper to prevent waitUntil() timeouts in Cloudflare Workers
           // Memory generation can involve LLM calls which may take too long
           const MEMORY_TIMEOUT_MS = 15000 // 15 seconds max
 
           const memoryPromise = generateConversationMemory(payload, conversation.id, {
-            forceGenerate: !hasEverSummarized, // Force first memory, use checks for subsequent
             summarization: {
               apiKey: apiKey.key,
               provider: provider,
-              model: model, // Use same model as chat for consistency
+              model: model,
             },
           })
 
@@ -381,7 +377,6 @@ export async function GET(
               console.log(`[Memory Trigger] SKIPPED - Conversation ${conversation.id}:`, result.error)
             }
           } catch (memoryError) {
-            // Log but don't propagate - this prevents any process.exit from bubbling up
             console.error('[Memory Trigger] ERROR (caught and contained):', memoryError instanceof Error ? memoryError.message : 'Unknown error')
           }
         }

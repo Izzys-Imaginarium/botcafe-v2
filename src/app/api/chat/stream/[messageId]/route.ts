@@ -14,7 +14,7 @@ import { currentUser } from '@clerk/nextjs/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
-import { streamMessage, getDefaultModel, type ProviderName, type ChatMessage } from '@/lib/llm'
+import { streamMessage, getDefaultModel, getMaxOutputTokens, type ProviderName, type ChatMessage } from '@/lib/llm'
 import { buildChatContext } from '@/lib/chat/context-builder'
 import { generateConversationMemory } from '@/lib/chat/memory-service'
 
@@ -221,8 +221,10 @@ export async function GET(
         console.log('[Chat Stream] API Key ID:', apiKey.id)
         console.log('[Chat Stream] API Key (first 8 chars):', apiKey.key?.substring(0, 8) + '...')
         console.log('[Chat Stream] Message count:', context.messages.length)
+        const maxOutputTokens = getMaxOutputTokens(model)
+
         console.log('[Chat Stream] Temperature: 0.7')
-        console.log('[Chat Stream] Max tokens: 2048')
+        console.log('[Chat Stream] Max tokens:', maxOutputTokens)
         console.log('[Chat Stream] Context stats:')
         console.log('[Chat Stream]   - System prompt:', context.systemPrompt.length, 'chars')
         console.log('[Chat Stream]   - Activated lore:', context.activatedLoreCount)
@@ -237,7 +239,7 @@ export async function GET(
               messages: context.messages as ChatMessage[],
               model,
               temperature: 0.7,
-              maxTokens: 2048,
+              maxTokens: maxOutputTokens,
             },
             {
               apiKey: apiKey.key,

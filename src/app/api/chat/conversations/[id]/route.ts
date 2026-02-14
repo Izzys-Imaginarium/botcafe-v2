@@ -497,48 +497,75 @@ export async function DELETE(
 
     const convId = parseInt(id)
 
-    // Delete all related records that have foreign keys to this conversation.
-    // These must be deleted before the conversation itself to avoid FK constraint errors.
-    await Promise.all([
+    // Clean up all related records that have foreign keys to this conversation.
+    // These must be cleaned up before the conversation itself to avoid FK constraint errors.
+    // Each operation is wrapped in try/catch so a failure in one doesn't block the others.
+
+    // 1. Delete records that have no value without the conversation
+    const deleteOps = [
       payload.delete({
         collection: 'message',
         where: { conversation: { equals: convId } },
         overrideAccess: true,
-      }),
+      }).catch((e: unknown) => console.error('[Conversation Delete] Failed to delete messages:', e)),
+
       payload.delete({
         collection: 'knowledgeActivationLog',
         where: { conversation_id: { equals: convId } },
         overrideAccess: true,
-      }),
+      }).catch((e: unknown) => console.error('[Conversation Delete] Failed to delete activation logs:', e)),
+
       payload.delete({
         collection: 'memory',
         where: { conversation: { equals: convId } },
         overrideAccess: true,
-      }),
+      }).catch((e: unknown) => console.error('[Conversation Delete] Failed to delete memories:', e)),
+
       payload.delete({
         collection: 'memory-insights',
         where: { conversation: { equals: convId } },
         overrideAccess: true,
-      }),
-    ])
+      }).catch((e: unknown) => console.error('[Conversation Delete] Failed to delete memory insights:', e)),
+    ]
 
-    // Unlink knowledge entries that reference this conversation (don't delete the entries)
-    const linkedKnowledge = await payload.find({
-      collection: 'knowledge',
-      where: { source_conversation_id: { equals: convId } },
-      limit: 500,
-      overrideAccess: true,
-    })
-    for (const entry of linkedKnowledge.docs) {
-      await payload.update({
-        collection: 'knowledge',
-        id: entry.id,
-        data: { source_conversation_id: null } as any,
-        overrideAccess: true,
-      })
+    await Promise.all(deleteOps)
+
+    // 2. Unlink records that should be preserved (null out the conversation FK)
+    const unlinkCollection = async (
+      collection: string,
+      field: string,
+      label: string,
+    ) => {
+      try {
+        const linked = await payload.find({
+          collection,
+          where: { [field]: { equals: convId } },
+          limit: 500,
+          overrideAccess: true,
+        })
+        if (linked.docs.length > 0) {
+          await Promise.all(
+            linked.docs.map((doc) =>
+              payload.update({
+                collection,
+                id: doc.id,
+                data: { [field]: null } as any,
+                overrideAccess: true,
+              })
+            )
+          )
+        }
+      } catch (e: unknown) {
+        console.error(`[Conversation Delete] Failed to unlink ${label}:`, e)
+      }
     }
 
-    // Delete conversation
+    await Promise.all([
+      unlinkCollection('knowledge', 'source_conversation_id', 'knowledge entries'),
+      unlinkCollection('usage-analytics', 'resource_details.conversation_id', 'usage analytics'),
+    ])
+
+    // 3. Delete the conversation itself
     await payload.delete({
       collection: 'conversation',
       id: convId,

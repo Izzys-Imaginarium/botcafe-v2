@@ -181,7 +181,7 @@ export async function POST(
               access_count: 0,
             },
             content_metadata: {
-              processing_status: 'pending',
+              processing_status: activationMode === 'vector' ? 'pending' : 'completed',
               word_count: entry.content.split(/\s+/).length,
             },
             usage_analytics: {
@@ -256,8 +256,8 @@ export async function POST(
               // Update knowledge entry as vectorized
               if (d1) {
                 await d1
-                  .prepare('UPDATE knowledge SET is_vectorized = 1, chunk_count = ? WHERE id = ?')
-                  .bind(chunks.length, newKnowledge.id)
+                  .prepare('UPDATE knowledge SET is_vectorized = 1, chunk_count = ?, content_metadata_processing_status = ? WHERE id = ?')
+                  .bind(chunks.length, 'completed', newKnowledge.id)
                   .run()
               }
 

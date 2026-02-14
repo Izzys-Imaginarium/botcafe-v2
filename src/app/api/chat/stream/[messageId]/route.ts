@@ -14,7 +14,7 @@ import { currentUser } from '@clerk/nextjs/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
-import { streamMessage, getDefaultModel, getMaxOutputTokens, type ProviderName, type ChatMessage } from '@/lib/llm'
+import { streamMessage, getDefaultModel, getMaxOutputTokens, getContextWindow, type ProviderName, type ChatMessage } from '@/lib/llm'
 import { buildChatContext } from '@/lib/chat/context-builder'
 import { extractThinkTags } from '@/lib/llm/reasoning-utils'
 import { generateConversationMemory } from '@/lib/chat/memory-service'
@@ -168,6 +168,22 @@ export async function GET(
           }
         }
 
+        // Determine model early so we can size the message window
+        const modelPreference = apiKey.key_configuration?.model_preferences?.[0]
+        const modelPrefString = typeof modelPreference === 'object' ? modelPreference?.model : modelPreference
+        const model = modelOverride || modelPrefString || getDefaultModel(provider)
+        const contextWindow = getContextWindow(model)
+
+        // Scale message limit to model's context window
+        // Small context (4K): 20, Medium (32K): 40, Large (128K): 60, Very large (200K+): 80
+        let messageLimit: number
+        if (contextWindow >= 200000) messageLimit = 80
+        else if (contextWindow >= 100000) messageLimit = 60
+        else if (contextWindow >= 32000) messageLimit = 40
+        else messageLimit = 20
+
+        console.log(`[Chat Stream] Dynamic message limit: ${messageLimit} (model: ${model}, context: ${contextWindow})`)
+
         // Get recent messages
         const recentMessages = await payload.find({
           collection: 'message',
@@ -176,7 +192,7 @@ export async function GET(
             id: { not_equals: parseInt(messageId) }, // Exclude current bot message
           },
           sort: '-created_timestamp',
-          limit: 20, // Get last 20 messages for context
+          limit: messageLimit,
           depth: 1,
           overrideAccess: true,
         })
@@ -196,11 +212,6 @@ export async function GET(
           recentMessages: recentMessages.docs.reverse(), // Oldest first
           env: { VECTORIZE: env.VECTORIZE, AI: env.AI },
         })
-
-        // Determine model to use
-        const modelPreference = apiKey.key_configuration?.model_preferences?.[0]
-        const modelPrefString = typeof modelPreference === 'object' ? modelPreference?.model : modelPreference
-        const model = modelOverride || modelPrefString || getDefaultModel(provider)
 
         // Send initial event
         sendEvent({

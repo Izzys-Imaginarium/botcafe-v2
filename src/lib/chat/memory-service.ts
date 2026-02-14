@@ -1227,48 +1227,23 @@ export async function retrieveRelevantMemories(
   botId: number,
   options: {
     personaId?: number
+    conversationId?: number // Prioritize memories from this conversation
     limit?: number
     minImportance?: number // 1-10 scale
   } = {}
 ): Promise<RetrievedMemory[]> {
-  const { personaId, limit = 5, minImportance = 3 } = options
+  const { personaId, conversationId, limit = 5, minImportance = 3 } = options
 
-  const where: Record<string, unknown> = {
-    user: { equals: userId },
-    is_legacy_memory: { equals: true },
-    // 'contains' works with hasMany relationships - finds memories where botId is in the array
-    applies_to_bots: { contains: botId },
-  }
-
-  // Optionally filter by persona
-  if (personaId) {
-    where.applies_to_personas = { contains: personaId }
-  }
-
-  const memories = await payload.find({
-    collection: 'knowledge',
-    where,
-    sort: '-createdAt',
-    limit: limit * 2, // Fetch extra to filter by importance
-    overrideAccess: true,
-  })
-
-  // Transform knowledge entries to RetrievedMemory format
-  // Parse importance and emotional context from tags
-  const transformed: RetrievedMemory[] = memories.docs.map(doc => {
+  // Helper to transform knowledge docs to RetrievedMemory format
+  const transformDoc = (doc: Knowledge): RetrievedMemory => {
     const importance = extractImportanceFromTags(doc.tags)
     const emotional_context = extractEmotionalContextFromTags(doc.tags)
-
-    // Extract bot IDs from relationship
-    const botIds = doc.applies_to_bots?.map(b =>
+    const docBotIds = doc.applies_to_bots?.map((b: number | { id: number }) =>
       typeof b === 'object' ? b.id : b
-    ).filter((id): id is number => id != null) || null
-
-    // Extract conversation ID
-    const conversationId = typeof doc.source_conversation_id === 'object'
+    ).filter((id: number | null | undefined): id is number => id != null) || null
+    const docConvId = typeof doc.source_conversation_id === 'object'
       ? doc.source_conversation_id?.id
       : doc.source_conversation_id
-
     return {
       id: doc.id,
       entry: doc.entry,
@@ -1276,18 +1251,65 @@ export async function retrieveRelevantMemories(
       emotional_context,
       createdAt: doc.createdAt,
       tags: doc.tags,
-      source_conversation_id: conversationId,
-      applies_to_bots: botIds,
+      source_conversation_id: docConvId,
+      applies_to_bots: docBotIds,
     }
-  })
+  }
+
+  // PRIMARY: Memories from THIS conversation (bot-agnostic — fixes bot-switching issue)
+  const sameConvResult = conversationId
+    ? await payload.find({
+        collection: 'knowledge',
+        where: {
+          user: { equals: userId },
+          is_legacy_memory: { equals: true },
+          source_conversation_id: { equals: conversationId },
+        },
+        sort: '-createdAt',
+        limit: limit,
+        overrideAccess: true,
+      })
+    : { docs: [] as Knowledge[] }
+
+  const sameConvIds = new Set(sameConvResult.docs.map(d => d.id))
+
+  // SECONDARY: Bot-scoped memories from OTHER conversations (cross-conversation knowledge)
+  const remainingSlots = limit - sameConvResult.docs.length
+  let crossConvDocs: Knowledge[] = []
+
+  if (remainingSlots > 0) {
+    const crossConvWhere: Record<string, unknown> = {
+      user: { equals: userId },
+      is_legacy_memory: { equals: true },
+      applies_to_bots: { contains: botId },
+    }
+    // Exclude same-conversation memories we already fetched
+    if (conversationId) {
+      crossConvWhere.source_conversation_id = { not_equals: conversationId }
+    }
+    if (personaId) {
+      crossConvWhere.applies_to_personas = { contains: personaId }
+    }
+
+    const crossConvResult = await payload.find({
+      collection: 'knowledge',
+      where: crossConvWhere,
+      sort: '-createdAt',
+      limit: remainingSlots * 2, // Fetch extra to filter by importance
+      overrideAccess: true,
+    })
+    crossConvDocs = crossConvResult.docs.filter(d => !sameConvIds.has(d.id))
+  }
+
+  // Merge: same-conversation first (most relevant), then cross-conversation
+  const allDocs = [...sameConvResult.docs, ...crossConvDocs]
+  const transformed = allDocs.map(transformDoc)
 
   // Filter by minimum importance and sort by importance desc
   const filtered = transformed
     .filter(m => m.importance >= minImportance)
     .sort((a, b) => {
-      // Sort by importance descending
       if (b.importance !== a.importance) return b.importance - a.importance
-      // Secondary sort by date descending
       const dateA = new Date(a.createdAt || 0).getTime()
       const dateB = new Date(b.createdAt || 0).getTime()
       return dateB - dateA

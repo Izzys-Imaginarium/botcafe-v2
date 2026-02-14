@@ -143,8 +143,9 @@ export async function buildChatContext(params: BuildContextParams): Promise<Chat
   try {
     const memories = await retrieveRelevantMemories(payload, userId, bot.id, {
       personaId: persona?.id,
-      limit: 5, // Get top 5 most relevant memories
-      minImportance: 3, // Only memories with importance >= 3
+      conversationId: conversation.id,
+      limit: 5,
+      minImportance: 3,
     })
 
     if (memories.length > 0) {
@@ -174,6 +175,28 @@ export async function buildChatContext(params: BuildContextParams): Promise<Chat
   } catch (error) {
     console.error('Memory retrieval error:', error)
     // Continue without memories - don't fail the chat
+  }
+
+  // Inject conversation summary (bot-agnostic bridge to content outside message window)
+  const conversationSummary = (conversation.conversation_metadata as Record<string, unknown>)?.conversation_summary as string | undefined
+  if (conversationSummary) {
+    const summarySection = [
+      '--- Previous Conversation Context ---',
+      'Here is a summary of what happened earlier in this conversation (before the messages shown below):',
+      '',
+      conversationSummary,
+      '',
+      'Use this context naturally. The messages below are the most recent part of the conversation.',
+    ].join('\n')
+
+    const knowledgeMarker = '--- Knowledge & Context ---'
+    const knowledgeIndex = systemPrompt.indexOf(knowledgeMarker)
+    if (knowledgeIndex !== -1) {
+      systemPrompt = systemPrompt.slice(0, knowledgeIndex) + summarySection + '\n\n' + systemPrompt.slice(knowledgeIndex)
+    } else {
+      systemPrompt += '\n\n' + summarySection
+    }
+    console.log('[Context Builder] Injected conversation summary:', conversationSummary.length, 'chars')
   }
 
   // Build message array
@@ -449,6 +472,12 @@ async function buildBotSystemPrompt(
   // === ROLEPLAY GUIDELINES (configurable) ===
   parts.push(`\n\n--- Roleplay Guidelines ---`)
   parts.push(prompts.roleplay_guidelines)
+
+  // === PERSONA REMINDER (reinforcement for long conversations) ===
+  // Placing at the end of system prompt ensures it gets high attention weight
+  if (persona?.name) {
+    parts.push(`\nRemember: You are interacting with ${persona.name}. Address them by name when appropriate.`)
+  }
 
   return parts.join('\n')
 }

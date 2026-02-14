@@ -393,18 +393,13 @@ export async function DELETE(
     // all references manually above.
     if (d1) {
       try {
-        // PRAGMA foreign_keys cannot be changed inside a transaction (SQLite silently
-        // ignores it), and d1.batch() wraps everything in an implicit transaction.
-        // So we must run PRAGMA as separate calls outside the batch.
-        // Within a single Workers request, d1 uses the same connection.
-        await d1.prepare('PRAGMA foreign_keys = OFF').run()
-        await d1.prepare('DELETE FROM knowledge_collections WHERE id = ?').bind(numericId).run()
-        await d1.prepare('PRAGMA foreign_keys = ON').run()
-        console.log(`[KnowledgeCollection Delete ${numericId}] Collection deleted successfully via D1 (FK disabled)`)
+        // D1 doesn't honor PRAGMA foreign_keys=OFF via prepare().run() or batch().
+        // Use exec() which runs raw SQL outside transaction context (like migrations).
+        // numericId is already validated as a number above, so interpolation is safe.
+        await d1.exec(`PRAGMA foreign_keys = OFF; DELETE FROM knowledge_collections WHERE id = ${numericId}; PRAGMA foreign_keys = ON;`)
+        console.log(`[KnowledgeCollection Delete ${numericId}] Collection deleted successfully via D1 exec (FK disabled)`)
       } catch (d1Error: any) {
-        // Re-enable foreign keys even on failure
-        try { await d1.prepare('PRAGMA foreign_keys = ON').run() } catch {}
-        console.error(`[KnowledgeCollection Delete ${numericId}] D1 delete failed:`, d1Error.message)
+        console.error(`[KnowledgeCollection Delete ${numericId}] D1 exec delete failed:`, d1Error.message)
         throw d1Error
       }
     } else {

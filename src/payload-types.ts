@@ -787,7 +787,7 @@ export interface Knowledge {
     | null;
   tokens?: number | null;
   entry: string;
-  knowledge_collection: number | KnowledgeCollection;
+  knowledge_collection?: (number | null) | KnowledgeCollection;
   /**
    * Whether this is a converted memory from conversations
    */

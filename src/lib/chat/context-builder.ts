@@ -319,6 +319,14 @@ async function buildBotSystemPrompt(
     parts.push(`\n${bot.description}`)
   }
 
+  // Bot demographics
+  if (bot.gender || bot.age) {
+    const details: string[] = []
+    if (bot.gender) details.push(`gender: ${bot.gender}`)
+    if (bot.age) details.push(`age: ${bot.age}`)
+    parts.push(`\n${bot.name}'s ${details.join(', ')}.`)
+  }
+
   // === CHARACTER PERSONALITY ===
   if (bot.personality_traits) {
     const traits: string[] = []
@@ -350,6 +358,9 @@ async function buildBotSystemPrompt(
     }
     if (bot.behavior_settings.creativity_level) {
       behaviors.push(`Be ${bot.behavior_settings.creativity_level} in your responses.`)
+    }
+    if (bot.behavior_settings.knowledge_sharing) {
+      behaviors.push(`Be ${bot.behavior_settings.knowledge_sharing} with sharing information and knowledge.`)
     }
 
     if (behaviors.length > 0) {

@@ -1,7 +1,7 @@
 # BotCafe v2 - Database Schema
 
-**Last Updated**: 2026-02-04
-**Version**: 3.18
+**Last Updated**: 2026-02-14
+**Version**: 3.19
 **Database**: Cloudflare D1 (SQLite) via Payload CMS
 
 ---
@@ -90,8 +90,8 @@ AI companion definitions.
 | `slug` | text | URL-friendly identifier (unique per creator) |
 | `description` | textarea | Bot description |
 | `picture` | relationship (Media) | Bot profile image |
-| `gender` | select | Bot gender (male, female, non-binary, other) |
-| `age` | number | Bot age (1-200) |
+| `gender` | select | Bot gender (male, female, non-binary, other) — **injected into system prompt** |
+| `age` | number | Bot age (1-200) — **injected into system prompt** |
 | `system_prompt` | textarea | System instructions (required) |
 | `greeting` | textarea | Initial greeting message |
 | `speech_examples` | array | Example speech patterns |
@@ -126,7 +126,7 @@ AI companion definitions.
 |-------|------|---------|
 | `response_length` | select | very-short, short, medium, long, very-long |
 | `creativity_level` | select | conservative, moderate, creative, highly-creative |
-| `knowledge_sharing` | select | very-limited, limited, balanced, generous, very-generous |
+| `knowledge_sharing` | select | very-limited, limited, balanced, generous, very-generous — **injected into system prompt** |
 
 #### Bot Sharing Settings (group)
 
@@ -604,7 +604,7 @@ User personas/masks for conversations. Personas are always private to the user.
 | `interaction_preferences` | group | Topics preferences (see below) |
 | `is_default` | checkbox | Default persona flag |
 | `usage_count` | number | Number of times this persona has been used |
-| `custom_instructions` | textarea | Custom instructions for how bots should interact |
+| `custom_instructions` | textarea | Custom instructions for how bots should interact — **injected into system prompt** |
 | `createdAt` | date | Auto-generated |
 | `updatedAt` | date | Auto-generated |
 
@@ -620,6 +620,8 @@ User personas/masks for conversations. Personas are always private to the user.
 |-------|------|-------------|
 | `preferred_topics` | array | Topics the user enjoys discussing (each item has `topic` text field) |
 | `avoid_topics` | array | Topics the user prefers to avoid (each item has `topic` text field) |
+
+> **Context Builder Note**: The `custom_instructions` field is injected into the system prompt after interaction preferences. Per-message persona attribution uses `message_attribution.persona_id` to label each message with the correct persona name, and persona switches mid-conversation are detected and noted in the system prompt.
 
 > **Note**: The `is_public` field was removed - personas are always private. Personality traits, behavior settings, tags, and signature phrases were moved to the Bot collection instead.
 

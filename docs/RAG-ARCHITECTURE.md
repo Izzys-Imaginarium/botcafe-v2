@@ -1,7 +1,7 @@
 # BotCafé RAG Architecture
 
-**Last Updated**: 2026-02-10
-**Version**: 2.4 (Vector activation fixes: bot-scoped search, source_id filtering, threshold tuning, chunking fixes)
+**Last Updated**: 2026-02-14
+**Version**: 2.5 (Context builder fixes: per-message persona attribution, persona switch detection, missing bot/persona fields, World Book import)
 
 ## Overview
 
@@ -436,12 +436,16 @@ The order matters for context window management:
 
 1. **System Prompt** (Required, ~200-500 tokens)
    - Bot's core personality and instructions
+   - Includes bot `gender`, `age`, and `behavior_settings.knowledge_sharing` 🆕
    - Always included, non-negotiable
 
 2. **Persona Context** (If active, ~300-800 tokens)
    - Direct injection from D1 database
    - No vectorization needed (small, always relevant)
    - Defines who the user is playing as
+   - Includes `custom_instructions` field 🆕
+   - **Per-message attribution**: Each message in the window is labeled with the correct persona name from `message_attribution.persona_id` (not a single persona for all) 🆕
+   - **Persona switch detection**: If multiple distinct personas appear in the message window, a switch note is added to the system prompt 🆕
 
 3. **Lore Knowledge** (~1,000-2,000 tokens)
    - Vectorized, semantically relevant to current message

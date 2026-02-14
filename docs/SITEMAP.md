@@ -1,7 +1,7 @@
 # BotCafe v2 - Complete Sitemap
 
-**Last Updated**: 2026-02-11
-**Version**: 2.39
+**Last Updated**: 2026-02-14
+**Version**: 2.40
 **Status**: ~98% Complete
 
 ---
@@ -130,6 +130,7 @@
 | `/api/knowledge/[id]` | GET, PATCH, DELETE | Get, update, or delete knowledge entry |
 | `/api/knowledge-collections` | GET, POST | List and create collections. Query params: `includeMemoryTomes` (default: false), `onlyMemoryTomes` (default: false), `limit` (default: 500, max: 500), `page`, `search`, `sort` |
 | `/api/knowledge-collections/[id]` | GET, PATCH, DELETE | Get, update, or delete collection. DELETE cascades to remove all entries in the collection |
+| `/api/knowledge-collections/import-worldbook` | POST | Import SillyTavern World Book (.json) as standalone Knowledge Collection. Creates KnowledgeCollection + Knowledge entries with full field mapping (activation settings, positioning, advanced activation, budget control). Auto-vectorizes vector/hybrid mode entries. Body: `{ file: string (base64), filename: string }`. Returns: `{ success, collectionId, collectionName, totalEntries, importedEntries, skippedEntries, vectorizedEntries }` |
 
 ### Sharing & Permissions
 
@@ -300,8 +301,8 @@
 | Help | 3 | 0 | 3 |
 | Chat | 3 | 0 | 3 |
 | **Frontend Total** | **33** | **2** | **35** |
-| API Endpoints | 72 | 0 | 72 |
-| **Grand Total** | **105** | **2** | **107** |
+| API Endpoints | 73 | 0 | 73 |
+| **Grand Total** | **106** | **2** | **108** |
 
 *Note: "Redirect" routes automatically redirect to the Account page with the appropriate tab.*
 *Note: API count includes 15 admin/migration endpoints for internal tooling.*

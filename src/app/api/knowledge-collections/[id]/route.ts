@@ -365,6 +365,10 @@ export async function DELETE(
         { name: 'payload_locked_documents_rels', sql: 'DELETE FROM payload_locked_documents_rels WHERE knowledge_collections_id = ?' },
         // Own _rels table
         { name: 'knowledge_collections_rels', sql: 'DELETE FROM knowledge_collections_rels WHERE parent_id = ?' },
+        // Child array tables (Payload creates these for array fields with _parent_id FK)
+        { name: 'knowledge_collections_collaborators_collab_user_ids', sql: 'DELETE FROM knowledge_collections_collaborators_collab_user_ids WHERE _parent_id = ?' },
+        { name: 'knowledge_collections_collaborators_collab_perms', sql: 'DELETE FROM knowledge_collections_collaborators_collab_perms WHERE _parent_id = ?' },
+        { name: 'knowledge_collections_collection_metadata_tags', sql: 'DELETE FROM knowledge_collections_collection_metadata_tags WHERE _parent_id = ?' },
       ]
 
       for (const table of collectionCleanup) {
@@ -382,12 +386,29 @@ export async function DELETE(
     }
 
     // Delete the collection
-    await payload.delete({
-      collection: 'knowledgeCollections',
-      id: numericId,
-      overrideAccess: true,
-    })
-    console.log(`[KnowledgeCollection Delete ${numericId}] Collection deleted successfully`)
+    try {
+      await payload.delete({
+        collection: 'knowledgeCollections',
+        id: numericId,
+        overrideAccess: true,
+      })
+      console.log(`[KnowledgeCollection Delete ${numericId}] Collection deleted successfully via Payload`)
+    } catch (payloadDeleteError: any) {
+      // Payload delete failed — likely an uncovered FK constraint
+      // Fall back to direct D1 delete
+      console.warn(`[KnowledgeCollection Delete ${numericId}] Payload delete failed: ${payloadDeleteError.message}. Attempting D1 direct delete...`)
+      if (d1) {
+        try {
+          await d1.prepare('DELETE FROM knowledge_collections WHERE id = ?').bind(numericId).run()
+          console.log(`[KnowledgeCollection Delete ${numericId}] Collection deleted successfully via D1 fallback`)
+        } catch (d1Error: any) {
+          console.error(`[KnowledgeCollection Delete ${numericId}] D1 fallback also failed:`, d1Error.message)
+          throw payloadDeleteError
+        }
+      } else {
+        throw payloadDeleteError
+      }
+    }
 
     return NextResponse.json({
       success: true,

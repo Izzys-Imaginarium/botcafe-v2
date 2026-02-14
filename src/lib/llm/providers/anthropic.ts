@@ -82,13 +82,25 @@ export const anthropicProvider: LLMProvider = {
     const url = config.baseUrl || ANTHROPIC_API_URL
     const { system, messages } = convertMessages(params.messages)
 
+    // Enable extended thinking for models that support it
+    // Anthropic requires temperature=1 when thinking is enabled
+    const supportsThinking = (params.model || this.defaultModel).includes('claude-3-7') ||
+      (params.model || this.defaultModel).includes('claude-4') ||
+      (params.model || this.defaultModel).includes('claude-opus-4') ||
+      (params.model || this.defaultModel).includes('claude-sonnet-4')
+
     const body: Record<string, unknown> = {
       model: params.model || this.defaultModel,
       messages,
       stream: true,
       max_tokens: params.maxTokens || 4096,
       ...(system && { system }),
-      ...(params.temperature !== undefined && { temperature: params.temperature }),
+      ...(supportsThinking
+        ? { thinking: { type: 'enabled', budget_tokens: 10000 }, temperature: 1 }
+        : {
+            ...(params.temperature !== undefined && { temperature: params.temperature }),
+          }
+      ),
       ...(params.topP !== undefined && { top_p: params.topP }),
       ...(params.stop && { stop_sequences: params.stop }),
     }
@@ -178,6 +190,7 @@ export const anthropicProvider: LLMProvider = {
     let buffer = ''
     let totalInputTokens = 0
     let totalOutputTokens = 0
+    let currentBlockType: 'thinking' | 'text' | null = null
 
     try {
       while (true) {
@@ -201,7 +214,10 @@ export const anthropicProvider: LLMProvider = {
           if (!data) continue
 
           try {
-            const parsed: AnthropicStreamResponse = JSON.parse(data)
+            const parsed = JSON.parse(data) as AnthropicStreamResponse & {
+              content_block?: { type?: string }
+              delta?: { type?: string; thinking?: string; text?: string; stop_reason?: string }
+            }
 
             switch (parsed.type) {
               case 'message_start':
@@ -210,13 +226,29 @@ export const anthropicProvider: LLMProvider = {
                 }
                 break
 
+              case 'content_block_start':
+                // Track whether this block is thinking or text
+                currentBlockType = parsed.content_block?.type === 'thinking' ? 'thinking' : 'text'
+                break
+
               case 'content_block_delta':
-                if (parsed.delta?.text) {
+                if (currentBlockType === 'thinking' && parsed.delta?.thinking) {
+                  // Yield thinking content as reasoning
+                  yield {
+                    content: '',
+                    reasoning: parsed.delta.thinking,
+                    done: false,
+                  }
+                } else if (parsed.delta?.text) {
                   yield {
                     content: parsed.delta.text,
                     done: false,
                   }
                 }
+                break
+
+              case 'content_block_stop':
+                currentBlockType = null
                 break
 
               case 'message_delta':

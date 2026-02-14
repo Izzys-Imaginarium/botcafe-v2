@@ -161,10 +161,12 @@ export const deepseekProvider: LLMProvider = {
               const choice = parsed.choices?.[0]
               if (choice) {
                 const content = choice.delta?.content || ''
+                const reasoning = (choice.delta as Record<string, unknown>)?.reasoning_content as string || ''
                 const isDone = choice.finish_reason !== null
 
                 yield {
                   content,
+                  reasoning: reasoning || undefined,
                   done: isDone,
                   finishReason: choice.finish_reason as StreamChunk['finishReason'],
                   ...(parsed.usage && {

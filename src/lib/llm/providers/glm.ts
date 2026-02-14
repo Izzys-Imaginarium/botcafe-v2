@@ -2,7 +2,7 @@
  * GLM Provider (Zhipu AI / Z.AI)
  *
  * Implements the LLMProvider interface for GLM's API
- * Uses OpenAI-compatible API format
+ * Uses OpenAI-compatible API format with reasoning/thinking support
  * Documentation: https://docs.z.ai/guides/develop/http/introduction
  */
 
@@ -12,7 +12,7 @@ import type {
   ProviderConfig,
   StreamChunk,
 } from '../types'
-import { LLMError } from '../types'
+import { LLMError, parseSSELine } from '../types'
 import { estimateTokens } from '../token-counter'
 
 // GLM has two different API endpoints:
@@ -43,6 +43,18 @@ const SUPPORTED_MODELS = [
   'glm-4-32b-0414-128k',
 ]
 
+// Models that support thinking mode
+// GLM-4.7 and GLM-5 think compulsorily, GLM-4.5/4.6 auto-determine
+const THINKING_MODELS = [
+  'glm-4.7', 'glm-4.7-flashx', 'glm-4.7-flash',
+  'glm-4.6', 'glm-4.6v', 'glm-4.6v-flashx', 'glm-4.6v-flash',
+  'glm-4.5', 'glm-4.5v', 'glm-4.5-x', 'glm-4.5-air', 'glm-4.5-airx', 'glm-4.5-flash',
+]
+
+function supportsThinking(model: string): boolean {
+  return THINKING_MODELS.some(m => model.startsWith(m))
+}
+
 export const glmProvider: LLMProvider = {
   name: 'glm',
   displayName: 'GLM (Zhipu AI)',
@@ -53,20 +65,24 @@ export const glmProvider: LLMProvider = {
     params: SendMessageParams,
     config: ProviderConfig
   ): AsyncGenerator<StreamChunk, void, unknown> {
+    const modelName = params.model || this.defaultModel
+
     // GLM uses standard OpenAI-compatible format but may not support all fields
     // Remove 'name' field as GLM doesn't support it
-    // NOTE: Using non-streaming due to Cloudflare Workers H2 compatibility issues
-    const body = {
-      model: params.model || this.defaultModel,
+    const body: Record<string, unknown> = {
+      model: modelName,
       messages: params.messages.map((m) => ({
         role: m.role,
         content: m.content,
       })),
-      stream: false, // Disabled streaming due to CF Workers H2 issues
+      stream: true,
+      stream_options: { include_usage: true },
       ...(params.temperature !== undefined && { temperature: params.temperature }),
       ...(params.maxTokens && { max_tokens: params.maxTokens }),
       ...(params.topP !== undefined && { top_p: params.topP }),
       ...(params.stop && { stop: params.stop }),
+      // Enable thinking for models that support it
+      ...(supportsThinking(modelName) && { thinking: { type: 'enabled' } }),
     }
 
     // Try endpoints in order: custom baseUrl > standard > coding (fallback)
@@ -84,17 +100,11 @@ export const glmProvider: LLMProvider = {
       console.log('[GLM] ========== REQUEST START ==========')
       console.log('[GLM] Endpoint URL:', url)
       console.log('[GLM] Endpoint type:', url.includes('/coding/') ? 'CODING' : 'STANDARD')
-      console.log('[GLM] Model:', body.model)
-      console.log('[GLM] Message count:', body.messages.length)
+      console.log('[GLM] Model:', modelName)
+      console.log('[GLM] Message count:', (body.messages as unknown[]).length)
       console.log('[GLM] Stream mode:', body.stream)
+      console.log('[GLM] Thinking enabled:', !!body.thinking)
       console.log('[GLM] API Key (first 8 chars):', config.apiKey?.substring(0, 8) + '...')
-      console.log('[GLM] Request body preview:', JSON.stringify({
-        model: body.model,
-        stream: body.stream,
-        temperature: body.temperature,
-        max_tokens: body.max_tokens,
-        message_roles: body.messages.map(m => m.role),
-      }))
       console.log('[GLM] ========== REQUEST END ============')
 
       let response: Response
@@ -147,7 +157,7 @@ export const glmProvider: LLMProvider = {
             'glm',
             response.status,
             true,
-            { errorData, apiErrorCode, requestedModel: body.model, triedUrl: url }
+            { errorData, apiErrorCode, requestedModel: modelName, triedUrl: url }
           )
           continue // Try next endpoint
         }
@@ -158,7 +168,7 @@ export const glmProvider: LLMProvider = {
         console.error('[GLM] Status Text:', response.statusText)
         console.error('[GLM] Response Headers:', JSON.stringify(Object.fromEntries(response.headers.entries())))
         console.error('[GLM] Raw Error Body:', errorText)
-        console.error('[GLM] Request Model:', body.model)
+        console.error('[GLM] Request Model:', modelName)
         console.error('[GLM] Request URL:', url)
         console.error('[GLM] Parsed Error JSON:', JSON.stringify(errorData, null, 2))
         console.error('[GLM] Extracted Error Message:', errorMessage)
@@ -176,8 +186,7 @@ export const glmProvider: LLMProvider = {
         } else if (response.status === 400 && errorMessage.includes('context')) {
           errorCode = 'CONTEXT_LENGTH_EXCEEDED'
         } else if (response.status === 400 && (errorMessage.includes('token') || errorMessage.includes('balance') || errorMessage.includes('quota') || errorMessage.includes('insufficient'))) {
-          // Likely an account balance/quota issue - provide clearer error
-          errorCode = 'RATE_LIMITED' // Using rate limited as closest match
+          errorCode = 'RATE_LIMITED'
           console.error('[GLM] Detected possible account balance/quota issue')
         } else if (response.status >= 500) {
           retryable = true
@@ -189,7 +198,7 @@ export const glmProvider: LLMProvider = {
           'glm',
           response.status,
           retryable,
-          { errorData, apiErrorCode, requestedModel: body.model }
+          { errorData, apiErrorCode, requestedModel: modelName }
         )
       }
 
@@ -199,41 +208,85 @@ export const glmProvider: LLMProvider = {
       console.log('[GLM] Endpoint type:', url.includes('/coding/') ? 'CODING' : 'STANDARD')
       console.log('[GLM] ==============================')
 
-      // Non-streaming response handling
-      // (Streaming disabled due to Cloudflare Workers H2 compatibility issues with GLM)
-      const responseData = await response.json() as {
-        choices?: Array<{
-          message?: { content?: string; role?: string }
-          finish_reason?: string
-        }>
-        usage?: {
-          prompt_tokens: number
-          completion_tokens: number
-          total_tokens: number
-        }
+      // Streaming response handling
+      if (!response.body) {
+        throw new LLMError('No response body', 'STREAM_ERROR', 'glm')
       }
 
-      console.log('[GLM] Response received, choices:', responseData.choices?.length)
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
 
-      const choice = responseData.choices?.[0]
-      if (choice?.message?.content) {
-        yield {
-          content: choice.message.content,
-          done: true,
-          finishReason: (choice.finish_reason as StreamChunk['finishReason']) || 'stop',
-          ...(responseData.usage && {
-            usage: {
-              inputTokens: responseData.usage.prompt_tokens,
-              outputTokens: responseData.usage.completion_tokens,
-              totalTokens: responseData.usage.total_tokens,
-            },
-          }),
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          buffer += decoder.decode(value, { stream: true })
+
+          const lines = buffer.split('\n')
+          buffer = lines.pop() || ''
+
+          for (const line of lines) {
+            const trimmed = line.trim()
+            if (!trimmed) continue
+
+            const data = parseSSELine(trimmed)
+            if (data === null) {
+              // [DONE] signal
+              yield { content: '', done: true }
+              return
+            }
+
+            if (data) {
+              try {
+                const parsed = JSON.parse(data) as {
+                  choices?: Array<{
+                    delta?: { content?: string; reasoning_content?: string; role?: string }
+                    finish_reason?: string | null
+                  }>
+                  usage?: {
+                    prompt_tokens: number
+                    completion_tokens: number
+                    total_tokens: number
+                  }
+                }
+
+                const choice = parsed.choices?.[0]
+                const content = choice?.delta?.content || ''
+                const reasoning = choice?.delta?.reasoning_content || ''
+                const isDone = choice?.finish_reason !== null && choice?.finish_reason !== undefined
+
+                if (content || reasoning || isDone || parsed.usage) {
+                  yield {
+                    content,
+                    reasoning: reasoning || undefined,
+                    done: isDone || !!parsed.usage,
+                    finishReason: choice?.finish_reason as StreamChunk['finishReason'],
+                    ...(parsed.usage && {
+                      usage: {
+                        inputTokens: parsed.usage.prompt_tokens,
+                        outputTokens: parsed.usage.completion_tokens,
+                        totalTokens: parsed.usage.total_tokens,
+                      },
+                    }),
+                  }
+
+                  if (parsed.usage) {
+                    return
+                  }
+                }
+              } catch {
+                continue
+              }
+            }
+          }
         }
-        return // Successfully yielded response, we're done
-      } else {
-        console.error('[GLM] No content in response:', JSON.stringify(responseData).substring(0, 500))
-        throw new LLMError('No content in GLM response', 'PARSE_ERROR', 'glm')
+      } finally {
+        reader.releaseLock()
       }
+
+      return // Successfully processed streaming response
     }
 
     // If we get here, all endpoints failed

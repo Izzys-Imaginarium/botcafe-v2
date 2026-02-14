@@ -73,6 +73,9 @@ export const googleProvider: LLMProvider = {
 
     const { systemInstruction, contents } = convertMessages(params.messages)
 
+    // Enable thinking for Gemini 2.5+ models
+    const supportsThinking = model.includes('gemini-2.5') || model.includes('gemini-3')
+
     const body: Record<string, unknown> = {
       contents,
       ...(systemInstruction && { systemInstruction }),
@@ -81,6 +84,7 @@ export const googleProvider: LLMProvider = {
         ...(params.maxTokens && { maxOutputTokens: params.maxTokens }),
         ...(params.topP !== undefined && { topP: params.topP }),
         ...(params.stop && { stopSequences: params.stop }),
+        ...(supportsThinking && { thinkingConfig: { thinkingBudget: 8192 } }),
       },
     }
 
@@ -183,11 +187,14 @@ export const googleProvider: LLMProvider = {
         if (parsed.candidates?.[0]) {
           const candidate = parsed.candidates[0]
 
-          // Gemini can have multiple parts, concatenate them all
+          // Gemini can have multiple parts - separate thought parts from text
           let text = ''
+          let thoughtText = ''
           if (candidate.content?.parts) {
-            for (const part of candidate.content.parts) {
-              if (part.text) {
+            for (const part of candidate.content.parts as Array<{ text?: string; thought?: boolean }>) {
+              if (part.thought && part.text) {
+                thoughtText += part.text
+              } else if (part.text) {
                 text += part.text
               }
             }
@@ -206,7 +213,18 @@ export const googleProvider: LLMProvider = {
           // Track content
           allContent += text
 
-          // Always yield if there's content, regardless of finish reason
+          // Yield thought content as reasoning
+          if (thoughtText) {
+            yield {
+              content: '',
+              reasoning: thoughtText,
+              done: false,
+              finishReason: null,
+              usage: undefined,
+            }
+          }
+
+          // Yield regular content
           if (text) {
             yield {
               content: text,

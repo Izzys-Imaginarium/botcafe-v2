@@ -267,6 +267,10 @@ export const Message: CollectionConfig = {
       required: true,
     },
     {
+      name: 'reasoning_content',
+      type: 'textarea',
+    },
+    {
       name: 'metadata',
       type: 'group',
       fields: [

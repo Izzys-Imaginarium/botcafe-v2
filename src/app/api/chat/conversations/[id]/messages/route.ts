@@ -120,6 +120,7 @@ export async function GET(
         id: msg.id,
         type: msg.message_type,
         content: msg.entry,
+        reasoning: msg.reasoning_content || null,
         richContent: msg.message_content?.text_content,
         createdAt: msg.created_timestamp,
         isAI: msg.message_attribution?.is_ai_generated,

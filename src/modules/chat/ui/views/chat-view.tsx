@@ -187,8 +187,10 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
     return messages.map((msg) => ({
       id: msg.id,
       content: msg.content,
+      reasoning: msg.reasoning,
       isAI: msg.isAI,
       isStreaming: msg.isStreaming,
+      isReasoningStreaming: msg.isStreaming && !!msg.reasoning && !msg.content,
       botName: msg.bot?.name,
       botAvatar: msg.bot?.avatar?.url,
       timestamp: msg.createdAt,

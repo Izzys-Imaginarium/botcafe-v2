@@ -4,25 +4,33 @@
  * ChatMessage Component
  *
  * Renders a single message in the chat, handling both user and bot messages.
- * Supports Discord-style markdown formatting.
+ * Supports Discord-style markdown formatting and collapsible reasoning display.
  */
 
+import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from '@/components/ui/collapsible'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { Loader2, Bot, User, RefreshCw, AlertCircle } from 'lucide-react'
+import { Loader2, Bot, User, RefreshCw, AlertCircle, Brain, ChevronRight } from 'lucide-react'
 import { DiscordMarkdown } from './discord-markdown'
 
 export interface ChatMessageProps {
   content: string
+  reasoning?: string
   isAI: boolean
   isStreaming?: boolean
+  isReasoningStreaming?: boolean
   botName?: string
   botAvatar?: string
   userName?: string
@@ -44,8 +52,10 @@ export interface ChatMessageProps {
 
 export function ChatMessage({
   content,
+  reasoning,
   isAI,
   isStreaming = false,
+  isReasoningStreaming = false,
   botName,
   botAvatar,
   userName,
@@ -68,6 +78,17 @@ export function ChatMessage({
 
   const isFailed = status === 'failed'
   const showRegenerateButton = isAI && !isStreaming && onRegenerate && messageId && canRegenerate
+
+  // Auto-expand reasoning while it's actively streaming, collapse when content starts
+  const [isReasoningOpen, setIsReasoningOpen] = useState(false)
+  useEffect(() => {
+    if (isReasoningStreaming) {
+      setIsReasoningOpen(true)
+    } else if (isStreaming && content) {
+      // Content has started arriving, collapse reasoning
+      setIsReasoningOpen(false)
+    }
+  }, [isReasoningStreaming, isStreaming, content])
 
   return (
     <div
@@ -114,6 +135,27 @@ export function ChatMessage({
           )}
         </div>
 
+        {/* Collapsible reasoning/thinking box */}
+        {reasoning && (
+          <Collapsible open={isReasoningOpen} onOpenChange={setIsReasoningOpen}>
+            <CollapsibleTrigger asChild>
+              <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-1 transition-colors">
+                <Brain className="h-3 w-3" />
+                <span>Thinking{isReasoningStreaming ? '...' : ''}</span>
+                <ChevronRight className={cn('h-3 w-3 transition-transform duration-200', isReasoningOpen && 'rotate-90')} />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="mb-3 p-3 rounded-md bg-muted/30 border border-border/50 text-xs text-muted-foreground leading-relaxed max-h-96 overflow-y-auto">
+                <DiscordMarkdown content={reasoning} />
+                {isReasoningStreaming && (
+                  <span className="inline-block w-1.5 h-3 bg-muted-foreground/50 ml-0.5 animate-pulse" />
+                )}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+
         {/* Message content with Discord-style markdown */}
         <div className="text-foreground/90 break-words">
           {content ? (
@@ -127,7 +169,7 @@ export function ChatMessage({
             isStreaming && (
               <span className="inline-flex items-center gap-1 text-muted-foreground">
                 <Loader2 className="h-3 w-3 animate-spin" />
-                Thinking...
+                {reasoning ? 'Thinking...' : 'Generating...'}
               </span>
             )
           )}

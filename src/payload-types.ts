@@ -1525,6 +1525,7 @@ export interface Message {
     edited_at?: string | null;
   };
   entry: string;
+  reasoning_content?: string | null;
   metadata?: {
     processing_time_ms?: number | null;
     priority_level?: ('low' | 'normal' | 'high' | 'urgent') | null;
@@ -3373,6 +3374,7 @@ export interface MessageSelect<T extends boolean = true> {
         edited_at?: T;
       };
   entry?: T;
+  reasoning_content?: T;
   metadata?:
     | T
     | {

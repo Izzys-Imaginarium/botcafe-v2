@@ -136,7 +136,8 @@ User + Persona(s) ←→ Bot(s)
 
 ### Phase 2: Memory Generation
 ```
-Conversation ends or reaches token threshold
+Conversation reaches message threshold
+  (5 messages for first memory, 20 for subsequent)
          ↓
    AI Summarization
          ↓

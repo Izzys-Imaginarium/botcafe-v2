@@ -14,6 +14,7 @@ export interface ChatMessage {
   id: number
   type: 'text' | 'image' | 'file' | 'system' | 'voice' | 'code'
   content: string
+  reasoning?: string
   createdAt: string
   isAI: boolean
   model?: string
@@ -108,7 +109,17 @@ export function useChat(options: UseChatOptions) {
         ))
       }
     },
-    onComplete: (fullContent, usage) => {
+    onReasoning: (reasoning) => {
+      const messageId = streamingMessageIdRef.current
+      if (messageId) {
+        setMessages(prev => prev.map(m =>
+          m.id === messageId
+            ? { ...m, reasoning: (m.reasoning || '') + reasoning }
+            : m
+        ))
+      }
+    },
+    onComplete: (fullContent, usage, fullReasoning) => {
       // Finalize the streaming message
       // IMPORTANT: Capture message ID before setMessages because React batches state updates.
       // The mapper function runs later, and by then streamingMessageIdRef.current would be null.
@@ -119,6 +130,7 @@ export function useChat(options: UseChatOptions) {
             ? {
                 ...m,
                 content: fullContent,
+                reasoning: fullReasoning || undefined,
                 isStreaming: false,
                 tokens: usage ? {
                   input: usage.inputTokens,
@@ -132,7 +144,7 @@ export function useChat(options: UseChatOptions) {
 
         const finalMessage = messages.find(m => m.id === messageId)
         if (finalMessage) {
-          onStreamComplete?.({ ...finalMessage, content: fullContent, isStreaming: false })
+          onStreamComplete?.({ ...finalMessage, content: fullContent, reasoning: fullReasoning || undefined, isStreaming: false })
         }
       }
 
@@ -198,6 +210,7 @@ export function useChat(options: UseChatOptions) {
           id: number
           type: string
           content: string
+          reasoning?: string | null
           createdAt: string
           isAI: boolean
           model?: string
@@ -221,6 +234,7 @@ export function useChat(options: UseChatOptions) {
         id: msg.id,
         type: msg.type as ChatMessage['type'],
         content: msg.content,
+        reasoning: msg.reasoning || undefined,
         createdAt: msg.createdAt,
         isAI: msg.isAI,
         model: msg.model,

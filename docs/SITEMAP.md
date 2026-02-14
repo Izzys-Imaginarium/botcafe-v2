@@ -264,7 +264,7 @@
 | `/api/chat/conversations/[id]/messages` | GET, DELETE | Get messages (paginated), clear chat history. Query params: `page` (default: 1), `limit` (default: 500), `before` (message ID for loading older), `after` (message ID for loading newer). Returns most recent messages first with `hasPrevPage` indicating older messages exist. |
 | `/api/chat/send` | POST | Send message and trigger LLM response |
 | `/api/chat/regenerate` | POST | Regenerate/retry an AI message |
-| `/api/chat/stream/[messageId]` | GET | SSE endpoint for streaming LLM responses |
+| `/api/chat/stream/[messageId]` | GET | SSE endpoint for streaming LLM responses. Events: `start` (model/provider info), `reasoning` (thinking/reasoning content), `chunk` (response content), `end` (usage/finishReason). |
 
 ### API Keys
 

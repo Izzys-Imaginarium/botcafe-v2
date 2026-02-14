@@ -27,6 +27,7 @@ export interface ChatMessage {
 // Streaming chunk from provider
 export interface StreamChunk {
   content: string
+  reasoning?: string // Reasoning/thinking content (if model supports it)
   done: boolean
   finishReason?: 'stop' | 'length' | 'content_filter' | 'tool_calls' | null
   usage?: TokenUsage

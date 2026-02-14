@@ -186,12 +186,14 @@ export const openaiProvider: LLMProvider = {
 
               const choice = parsed.choices?.[0]
               const content = choice?.delta?.content || ''
+              const reasoning = (choice?.delta as Record<string, unknown>)?.reasoning_content as string || ''
               const isDone = choice?.finish_reason !== null && choice?.finish_reason !== undefined
 
-              // Yield chunk if we have content, finish reason, or usage data
-              if (content || isDone || parsed.usage) {
+              // Yield chunk if we have content, reasoning, finish reason, or usage data
+              if (content || reasoning || isDone || parsed.usage) {
                 yield {
                   content,
+                  reasoning: reasoning || undefined,
                   done: isDone || !!parsed.usage,
                   finishReason: choice?.finish_reason as StreamChunk['finishReason'],
                   ...(parsed.usage && {

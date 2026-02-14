@@ -158,8 +158,10 @@ export function MessageList({
               key={message.id}
               messageId={message.id}
               content={message.content}
+              reasoning={message.reasoning}
               isAI={message.isAI}
               isStreaming={message.isStreaming}
+              isReasoningStreaming={message.isReasoningStreaming}
               botName={message.botName}
               botAvatar={message.botAvatar}
               userName={userName}

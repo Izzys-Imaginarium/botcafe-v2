@@ -4,6 +4,7 @@
  * useStreaming Hook
  *
  * Manages SSE connection for streaming LLM responses.
+ * Supports both content and reasoning/thinking streams.
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react'
@@ -11,6 +12,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 export interface StreamingState {
   isStreaming: boolean
   content: string
+  reasoning: string
   error: string | null
   usage: {
     inputTokens: number
@@ -22,7 +24,8 @@ export interface StreamingState {
 
 export interface UseStreamingOptions {
   onChunk?: (content: string) => void
-  onComplete?: (fullContent: string, usage: StreamingState['usage']) => void
+  onReasoning?: (reasoning: string) => void
+  onComplete?: (fullContent: string, usage: StreamingState['usage'], fullReasoning: string) => void
   onError?: (error: string) => void
 }
 
@@ -30,6 +33,7 @@ export function useStreaming(options: UseStreamingOptions = {}) {
   const [state, setState] = useState<StreamingState>({
     isStreaming: false,
     content: '',
+    reasoning: '',
     error: null,
     usage: null,
     finishReason: null,
@@ -37,18 +41,21 @@ export function useStreaming(options: UseStreamingOptions = {}) {
 
   const eventSourceRef = useRef<EventSource | null>(null)
   const contentRef = useRef('')
+  const reasoningRef = useRef('')
 
   // Use refs to always call the latest callbacks (avoids stale closure issues)
   const onChunkRef = useRef(options.onChunk)
+  const onReasoningRef = useRef(options.onReasoning)
   const onCompleteRef = useRef(options.onComplete)
   const onErrorRef = useRef(options.onError)
 
   // Keep refs updated with latest callbacks
   useEffect(() => {
     onChunkRef.current = options.onChunk
+    onReasoningRef.current = options.onReasoning
     onCompleteRef.current = options.onComplete
     onErrorRef.current = options.onError
-  }, [options.onChunk, options.onComplete, options.onError])
+  }, [options.onChunk, options.onReasoning, options.onComplete, options.onError])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -67,12 +74,14 @@ export function useStreaming(options: UseStreamingOptions = {}) {
 
     // Reset state
     contentRef.current = ''
+    reasoningRef.current = ''
     let hasCompleted = false
     let lastUsage: StreamingState['usage'] = null
 
     setState({
       isStreaming: true,
       content: '',
+      reasoning: '',
       error: null,
       usage: null,
       finishReason: null,
@@ -102,6 +111,17 @@ export function useStreaming(options: UseStreamingOptions = {}) {
             // Stream started, we can show model info if needed
             break
 
+          case 'reasoning':
+            if (data.content) {
+              reasoningRef.current += data.content
+              setState(prev => ({
+                ...prev,
+                reasoning: reasoningRef.current,
+              }))
+              onReasoningRef.current?.(data.content)
+            }
+            break
+
           case 'chunk':
             if (data.content) {
               contentRef.current += data.content
@@ -122,7 +142,7 @@ export function useStreaming(options: UseStreamingOptions = {}) {
               finishReason: data.finishReason,
               usage: data.usage || null,
             }))
-            onCompleteRef.current?.(contentRef.current, data.usage || null)
+            onCompleteRef.current?.(contentRef.current, data.usage || null, reasoningRef.current)
             eventSource.close()
             break
         }
@@ -136,7 +156,7 @@ export function useStreaming(options: UseStreamingOptions = {}) {
         // Normal closure - call onComplete if we haven't already
         if (!hasCompleted && contentRef.current) {
           hasCompleted = true
-          onCompleteRef.current?.(contentRef.current, lastUsage)
+          onCompleteRef.current?.(contentRef.current, lastUsage, reasoningRef.current)
         }
         setState(prev => ({
           ...prev,
@@ -173,9 +193,11 @@ export function useStreaming(options: UseStreamingOptions = {}) {
   const reset = useCallback(() => {
     stopStream()
     contentRef.current = ''
+    reasoningRef.current = ''
     setState({
       isStreaming: false,
       content: '',
+      reasoning: '',
       error: null,
       usage: null,
       finishReason: null,

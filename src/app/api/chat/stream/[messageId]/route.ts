@@ -16,6 +16,7 @@ import config from '@payload-config'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { streamMessage, getDefaultModel, getMaxOutputTokens, type ProviderName, type ChatMessage } from '@/lib/llm'
 import { buildChatContext } from '@/lib/chat/context-builder'
+import { extractThinkTags } from '@/lib/llm/reasoning-utils'
 import { generateConversationMemory } from '@/lib/chat/memory-service'
 
 export const dynamic = 'force-dynamic'
@@ -211,6 +212,7 @@ export async function GET(
 
         // Stream from LLM
         let fullContent = ''
+        let fullReasoning = ''
         let finalUsage = null
         let finishReason = null
 
@@ -245,6 +247,14 @@ export async function GET(
               apiKey: apiKey.key,
             }
           )) {
+            if (chunk.reasoning) {
+              fullReasoning += chunk.reasoning
+              sendEvent({
+                type: 'reasoning',
+                content: chunk.reasoning,
+              })
+            }
+
             if (chunk.content) {
               fullContent += chunk.content
               sendEvent({
@@ -259,6 +269,15 @@ export async function GET(
 
             if (chunk.finishReason) {
               finishReason = chunk.finishReason
+            }
+          }
+
+          // Fallback: extract <think> tags from content if no structured reasoning received
+          if (!fullReasoning && fullContent.startsWith('<think>')) {
+            const extracted = extractThinkTags(fullContent)
+            if (extracted.reasoning) {
+              fullReasoning = extracted.reasoning
+              fullContent = extracted.content
             }
           }
 
@@ -306,12 +325,13 @@ export async function GET(
           return
         }
 
-        // Update the message with final content
+        // Update the message with final content and reasoning
         await payload.update({
           collection: 'message',
           id: parseInt(messageId),
           data: {
             entry: fullContent,
+            ...(fullReasoning && { reasoning_content: fullReasoning }),
             message_attribution: {
               source_bot_id: bot.id,
               is_ai_generated: true,

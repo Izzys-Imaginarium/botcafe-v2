@@ -487,6 +487,7 @@ Individual chat messages with full attribution and tracking.
 | `message_type` | select | Type: text, image, file, system, voice, code |
 | `bot` | relationship (Bot) | Bot that sent this message (if AI-generated) |
 | `entry` | textarea | Message text content (required) |
+| `reasoning_content` | textarea | Model reasoning/thinking content (if model supports reasoning tokens) |
 | `message_attribution` | group | Attribution details (see below) |
 | `message_content` | group | Rich content (see below) |
 | `message_thread` | group | Threading info (see below) |

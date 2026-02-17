@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Loader2, Heart, Star, Link2, Copy, Check } from 'lucide-react'
+import { Loader2, Heart, Star, Link2, Copy, Check, Eye } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@clerk/nextjs'
 import { useInfiniteList } from '@/hooks/use-infinite-list'
@@ -367,19 +367,32 @@ const BotCard = ({ bot }: BotCardProps) => {
             </button>
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="ornate-border hover:bg-gold-ancient/20 hover:border-gold-rich"
-            onClick={handleStartChat}
-            disabled={isStartingChat}
-          >
-            {isStartingChat ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              'Chat'
-            )}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="ornate-border hover:bg-gold-ancient/20 hover:border-gold-rich"
+              asChild
+            >
+              <Link href={botUrl}>
+                <Eye className="mr-1 h-3.5 w-3.5" />
+                View
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="ornate-border hover:bg-gold-ancient/20 hover:border-gold-rich"
+              onClick={handleStartChat}
+              disabled={isStartingChat}
+            >
+              {isStartingChat ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                'Chat'
+              )}
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

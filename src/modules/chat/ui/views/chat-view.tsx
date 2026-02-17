@@ -71,6 +71,11 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
   const [newTitle, setNewTitle] = useState('')
   const [conversationTitle, setConversationTitle] = useState<string | null>(null)
 
+  // Message-level dialog state
+  const [deleteMessageDialogOpen, setDeleteMessageDialogOpen] = useState(false)
+  const [messageToDelete, setMessageToDelete] = useState<number | null>(null)
+  const [isDeletingMessage, setIsDeletingMessage] = useState(false)
+
   // Available bots for adding to conversation
   const [availableBots, setAvailableBots] = useState<Array<{
     id: number
@@ -121,6 +126,8 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
     sendMessage,
     stopStreaming,
     regenerateMessage,
+    editMessage,
+    deleteMessage,
     addBot,
     removeBot,
     switchPersona,
@@ -197,6 +204,7 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
       model: msg.model,
       tokens: msg.tokens,
       status: msg.status,
+      isEdited: msg.isEdited,
     }))
   }, [messages])
 
@@ -424,6 +432,38 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
     }
   }, [conversationId, conversation, messages])
 
+  // Handle edit message
+  const handleEditMessage = useCallback(async (messageId: number, newContent: string) => {
+    try {
+      await editMessage(messageId, newContent)
+      toast.success('Message edited')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to edit message')
+    }
+  }, [editMessage])
+
+  // Handle delete message - opens confirmation dialog
+  const handleDeleteMessageRequest = useCallback((messageId: number) => {
+    setMessageToDelete(messageId)
+    setDeleteMessageDialogOpen(true)
+  }, [])
+
+  // Confirm delete message
+  const handleDeleteMessage = useCallback(async () => {
+    if (!messageToDelete) return
+    setIsDeletingMessage(true)
+    try {
+      await deleteMessage(messageToDelete)
+      toast.success('Message deleted')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete message')
+    } finally {
+      setIsDeletingMessage(false)
+      setDeleteMessageDialogOpen(false)
+      setMessageToDelete(null)
+    }
+  }, [messageToDelete, deleteMessage])
+
   // Loading state
   if (isLoading && !conversation) {
     return (
@@ -512,6 +552,10 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
         className="flex-1 min-h-0"
         onRegenerateMessage={regenerateMessage}
         canRegenerate={!isSending && !isStreaming}
+        onEditMessage={handleEditMessage}
+        canEdit={!isSending && !isStreaming}
+        onDeleteMessage={handleDeleteMessageRequest}
+        canDelete={!isSending && !isStreaming}
       />
 
       {/* Input */}
@@ -615,6 +659,28 @@ export function ChatView({ conversationId, className }: ChatViewProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete message confirmation dialog */}
+      <AlertDialog open={deleteMessageDialogOpen} onOpenChange={setDeleteMessageDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Message</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this message? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletingMessage}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteMessage}
+              disabled={isDeletingMessage}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeletingMessage ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -31,6 +31,8 @@ export interface ChatMessage {
   }
   status?: string
   isStreaming?: boolean
+  isEdited?: boolean
+  editedAt?: string
 }
 
 export interface ConversationSettings {
@@ -217,6 +219,8 @@ export function useChat(options: UseChatOptions) {
           bot?: { id: number; name: string; picture?: { url: string } }
           tokens?: { input: number; output: number; total: number; cost: number }
           status?: string
+          isEdited?: boolean
+          editedAt?: string
         }>
         total?: number
         page?: number
@@ -245,6 +249,8 @@ export function useChat(options: UseChatOptions) {
         } : undefined,
         tokens: msg.tokens,
         status: msg.status,
+        isEdited: msg.isEdited,
+        editedAt: msg.editedAt,
       }))
 
       if (before) {
@@ -475,6 +481,61 @@ export function useChat(options: UseChatOptions) {
     }
   }, [isSending, streaming, selectedApiKeyId, selectedModel, onError])
 
+  // Edit a message (user messages only)
+  const editMessage = useCallback(async (messageId: number, newContent: string) => {
+    if (streaming.isStreaming) return
+
+    try {
+      const response = await fetch(`/api/chat/messages/${messageId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: newContent }),
+      })
+
+      const data = await response.json() as { message?: string; success?: boolean }
+
+      if (!response.ok) {
+        throw new Error(typeof data.message === 'string' ? data.message : 'Failed to edit message')
+      }
+
+      // Update local state
+      setMessages(prev => prev.map(m =>
+        m.id === messageId
+          ? { ...m, content: newContent, isEdited: true, editedAt: new Date().toISOString() }
+          : m
+      ))
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      setError(errorMessage)
+      onError?.(errorMessage)
+      throw err
+    }
+  }, [streaming.isStreaming, onError])
+
+  // Delete a single message
+  const deleteMessage = useCallback(async (messageId: number) => {
+    if (streaming.isStreaming) return
+
+    try {
+      const response = await fetch(`/api/chat/messages/${messageId}`, {
+        method: 'DELETE',
+      })
+
+      const data = await response.json() as { message?: string; success?: boolean }
+
+      if (!response.ok) {
+        throw new Error(typeof data.message === 'string' ? data.message : 'Failed to delete message')
+      }
+
+      // Remove from local state
+      setMessages(prev => prev.filter(m => m.id !== messageId))
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      setError(errorMessage)
+      onError?.(errorMessage)
+    }
+  }, [streaming.isStreaming, onError])
+
   // Add a bot to the conversation
   const addBot = useCallback(async (botId: number) => {
     try {
@@ -672,6 +733,8 @@ export function useChat(options: UseChatOptions) {
     sendMessage,
     stopStreaming,
     regenerateMessage,
+    editMessage,
+    deleteMessage,
     addBot,
     removeBot,
     switchPersona,

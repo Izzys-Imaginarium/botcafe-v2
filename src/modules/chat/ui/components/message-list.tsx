@@ -28,6 +28,12 @@ export interface MessageListProps {
   // Regenerate support
   onRegenerateMessage?: (messageId: number) => void
   canRegenerate?: boolean
+  // Edit support
+  onEditMessage?: (messageId: number, newContent: string) => void
+  canEdit?: boolean
+  // Delete support
+  onDeleteMessage?: (messageId: number) => void
+  canDelete?: boolean
 }
 
 export function MessageList({
@@ -41,6 +47,10 @@ export function MessageList({
   className,
   onRegenerateMessage,
   canRegenerate = true,
+  onEditMessage,
+  canEdit = true,
+  onDeleteMessage,
+  canDelete = true,
 }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -172,6 +182,11 @@ export function MessageList({
               status={message.status}
               onRegenerate={onRegenerateMessage}
               canRegenerate={canRegenerate && !message.isStreaming}
+              isEdited={message.isEdited}
+              onEdit={onEditMessage}
+              canEdit={canEdit && !message.isStreaming}
+              onDelete={onDeleteMessage}
+              canDelete={canDelete && !message.isStreaming}
             />
           ))}
         </div>

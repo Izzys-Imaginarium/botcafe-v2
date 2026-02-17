@@ -256,14 +256,14 @@ export function useChat(options: UseChatOptions) {
       if (before) {
         // Loading older messages - prepend to existing
         setMessages(prev => [...transformedMessages, ...prev])
-        // After loading older messages, check if there are even older ones
-        // hasPrevPage from the API indicates if there are more messages before these
-        setHasMore(data.hasPrevPage ?? false)
+        // Messages are sorted descending (newest first) on page 1, so
+        // hasNextPage indicates whether older messages exist beyond this batch
+        setHasMore(data.hasNextPage ?? false)
       } else {
         // Initial load - replace all
         setMessages(transformedMessages)
-        // For initial load sorted descending then reversed, hasPrevPage indicates older messages exist
-        setHasMore(data.hasPrevPage ?? false)
+        // Same logic: descending sort on page 1, hasNextPage = older messages exist
+        setHasMore(data.hasNextPage ?? false)
       }
 
       return data

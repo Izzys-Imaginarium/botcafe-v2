@@ -55,3 +55,6 @@ node_modules/
 
 # Migration data files (temporary, not needed after migration complete)
 /migration-data/
+
+# Bot import scripts and generated files
+/scripts/

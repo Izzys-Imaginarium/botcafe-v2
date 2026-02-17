@@ -275,48 +275,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Batch fetch conversations that involve these bots
-    // Note: Nested array field queries don't work reliably with D1/SQLite,
-    // so we fetch all recent conversations and filter in code
-    let allConversations: any[] = []
-    if (allBotIds.length > 0) {
-      try {
-        const allBotIdStrings = allBotIds.map(String)
-        const conversationsResult = await payload.find({
-          collection: 'conversation',
-          limit: 2000,
-          depth: 1,
-          overrideAccess: true,
-        })
-        // Filter to only conversations that include any of our bots
-        allConversations = conversationsResult.docs.filter((conv) => {
-          const botParticipation = (conv as any).bot_participation || []
-          const hasInParticipation = botParticipation.some((bp: any) => {
-            const botId = typeof bp.bot_id === 'object' && bp.bot_id !== null
-              ? String(bp.bot_id.id)
-              : String(bp.bot_id)
-            return allBotIdStrings.includes(botId)
-          })
-          if (hasInParticipation) return true
-
-          let participants = (conv as any).participants
-          if (typeof participants === 'string') {
-            try {
-              participants = JSON.parse(participants)
-            } catch {
-              participants = null
-            }
-          }
-          if (participants && Array.isArray(participants.bots)) {
-            return participants.bots.some((botId: any) => allBotIdStrings.includes(String(botId)))
-          }
-          return false
-        })
-      } catch (e: any) {
-        console.warn('Could not fetch conversations:', e?.message || e)
-      }
-    }
-
     // First, compute stats for ALL filtered creators (before pagination) for proper sorting
     const allCreatorsWithStats = filteredCreators.map((creator: any) => {
       // Get creator's user ID for matching
@@ -343,26 +301,6 @@ export async function GET(request: NextRequest) {
       const creatorBotIds = creatorBots.map((bot) => String(bot.id))
       const realBotCount = creatorBots.length
 
-      // Count conversations
-      const realTotalConversations = allConversations.filter((conv) => {
-        const botParticipation = conv.bot_participation || []
-        const hasInParticipation = botParticipation.some((bp: any) => {
-          const botId = typeof bp.bot_id === 'object' && bp.bot_id !== null
-            ? bp.bot_id.id
-            : bp.bot_id
-          return creatorBotIds.includes(String(botId))
-        })
-        if (hasInParticipation) return true
-        let participants = conv.participants
-        if (typeof participants === 'string') {
-          try { participants = JSON.parse(participants) } catch { participants = null }
-        }
-        if (participants && Array.isArray(participants.bots)) {
-          return participants.bots.some((botId: any) => creatorBotIds.includes(String(botId)))
-        }
-        return false
-      }).length
-
       const realTotalLikes = allLikes.filter((like) => {
         const likeBotId = typeof like.bot === 'object' && like.bot !== null
           ? like.bot.id
@@ -382,7 +320,7 @@ export async function GET(request: NextRequest) {
         portfolio: {
           ...creator.portfolio,
           bot_count: realBotCount,
-          total_conversations: realTotalConversations,
+          total_conversations: creator.portfolio?.total_conversations || 0,
         },
         community_stats: {
           ...creator.community_stats,

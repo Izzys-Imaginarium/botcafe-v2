@@ -113,50 +113,11 @@ export async function GET(
     // Calculate real bot count
     const realBotCount = userBots.totalDocs
 
-    // Get bot IDs for interaction and conversation lookup
+    // Get bot IDs for interaction lookup
     const botIds = userBots.docs.map((bot) => bot.id)
 
-    // Count actual conversations that include these bots
-    // We need to query differently because array field queries don't work reliably in D1/SQLite
-    let realTotalConversations = 0
-    if (botIds.length > 0) {
-      // Fetch conversations with depth to get bot_participation data
-      const conversations = await payload.find({
-        collection: 'conversation',
-        depth: 1,
-        limit: 1000, // Get a reasonable sample
-        overrideAccess: true,
-      })
-
-      // Count conversations that have any of the creator's bots
-      // Check both bot_participation array AND participants.bots JSON field
-      const botIdSet = new Set(botIds.map(id => String(id)))
-      realTotalConversations = conversations.docs.filter(conv => {
-        // Check bot_participation array (newer format)
-        const participation = conv.bot_participation as Array<{ bot_id: number | { id: number } }> | undefined
-        if (participation && Array.isArray(participation)) {
-          const found = participation.some(p => {
-            const botId = typeof p.bot_id === 'object' ? String(p.bot_id?.id) : String(p.bot_id)
-            return botIdSet.has(botId)
-          })
-          if (found) return true
-        }
-        // Check participants.bots JSON field (older format)
-        // Note: JSON fields in D1/SQLite may be stored as strings
-        let participants = (conv as any).participants
-        if (typeof participants === 'string') {
-          try {
-            participants = JSON.parse(participants)
-          } catch {
-            participants = null
-          }
-        }
-        if (participants && Array.isArray(participants.bots)) {
-          return participants.bots.some((id: any) => botIdSet.has(String(id)))
-        }
-        return false
-      }).length
-    }
+    // total_conversations is now a lifetime counter incremented on conversation creation
+    // (not computed from live conversations, so deleted conversations still count)
 
     // Get all likes/favorites on the creator's bots
     // D1/SQLite has a limit on IN clause parameters
@@ -268,7 +229,7 @@ export async function GET(
       portfolio: {
         ...creator.portfolio,
         bot_count: realBotCount,
-        total_conversations: realTotalConversations,
+        // total_conversations is a stored lifetime counter, not overwritten here
       },
       community_stats: {
         ...creator.community_stats,

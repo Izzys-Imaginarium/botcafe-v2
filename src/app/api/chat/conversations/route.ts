@@ -297,6 +297,38 @@ export async function POST(request: NextRequest) {
       overrideAccess: true,
     })
 
+    // Increment total_conversations on creator profiles for participating bots (fire-and-forget)
+    // This is a lifetime counter that persists even if the conversation is later deleted
+    const creatorUserIds = new Set(bots.docs.map((b: any) => typeof b.user === 'object' ? b.user?.id : b.user).filter(Boolean))
+    for (const creatorUserId of creatorUserIds) {
+      try {
+        const creatorProfile = await payload.find({
+          collection: 'creatorProfiles',
+          where: { user: { equals: creatorUserId } },
+          limit: 1,
+          overrideAccess: true,
+        })
+        if (creatorProfile.docs[0]) {
+          const profile = creatorProfile.docs[0] as any
+          const currentCount = profile.portfolio?.total_conversations || 0
+          await payload.update({
+            collection: 'creatorProfiles',
+            id: profile.id,
+            data: {
+              portfolio: {
+                ...profile.portfolio,
+                total_conversations: currentCount + 1,
+              },
+            },
+            overrideAccess: true,
+          })
+        }
+      } catch (e) {
+        // Non-critical — don't fail conversation creation if counter update fails
+        console.warn('[Conversation Create] Failed to increment creator conversation count:', e)
+      }
+    }
+
     // Fetch with depth to include bot details
     const fullConversation = await payload.findByID({
       collection: 'conversation',

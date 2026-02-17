@@ -635,6 +635,24 @@ When you add new Payload collections or modify existing ones:
 
 ## 🔄 **Recent Changes**
 
+### **2026-02-16 Updates:**
+- ✅ **Streaming `<think>` Tag Fix for Proxy Providers (ElectronHub)**
+  - Fixed `<think>...</think>` tags appearing as visible text in chat when using ElectronHub API keys
+  - Root cause: ElectronHub (and similar proxy providers) embed model thinking inline in the `content` field rather than using a separate `reasoning_content` SSE field
+  - Previously, a post-streaming fallback extracted think tags only after the full response — but the raw tags were already sent to the client as visible `chunk` events during streaming
+  - Implemented real-time think tag interception in the streaming loop (`src/app/api/chat/stream/[messageId]/route.ts`) with three states: `detecting` (buffers first chars), `inside_think` (routes to reasoning events), `normal` (regular pass-through)
+  - Handles edge case of `</think>` split across chunk boundaries via tail buffer
+  - Direct provider keys (e.g., GLM with native `reasoning_content` field) continue to work as before
+- ✅ **FK Constraint Fix for Bot & Conversation Deletion**
+  - Applied `d1.exec()` with `PRAGMA foreign_keys = OFF` to bot and conversation delete handlers (same pattern as knowledge collection delete fix)
+  - Root cause: `NOT NULL` column + `ON DELETE SET NULL` FK action causes D1 failures
+  - Updated: `src/app/api/bots/[id]/route.ts`, `src/app/api/chat/conversations/[id]/route.ts`
+- ✅ **Dashboard Lore Panel Pagination Fix**
+  - Fixed dashboard Lore tab only showing 10 entries per tome
+  - Added pagination support to `lore-panel.tsx` with "Load More Entries" button
+  - Changed `/api/knowledge` default limit from 10 to 50
+  - Updated `lore-tomes-view.tsx` entries per page from 20 to 50
+
 ### **2026-02-11 Updates:**
 - ✅ **Pagination Limit Overhaul**
   - Increased default pagination limit from 20 to 500 across all user-owned content pages (lore tomes, personas, memories, bot wizard knowledge picker)

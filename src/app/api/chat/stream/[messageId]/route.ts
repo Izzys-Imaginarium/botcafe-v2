@@ -16,7 +16,7 @@ import config from '@payload-config'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { streamMessage, getDefaultModel, getMaxOutputTokens, getContextWindow, type ProviderName, type ChatMessage } from '@/lib/llm'
 import { buildChatContext } from '@/lib/chat/context-builder'
-import { extractThinkTags } from '@/lib/llm/reasoning-utils'
+
 import { generateConversationMemory } from '@/lib/chat/memory-service'
 
 export const dynamic = 'force-dynamic'
@@ -246,6 +246,12 @@ export async function GET(
         console.log('[Chat Stream] ========== END REQUEST ==========')
 
         try {
+          // State for real-time <think> tag extraction from providers (like ElectronHub)
+          // that embed thinking in the content field instead of a separate reasoning field
+          let thinkState: 'detecting' | 'inside_think' | 'normal' = 'detecting'
+          let detectBuffer = '' // Buffer first chars to detect opening <think>
+          let thinkTailBuffer = '' // Buffer trailing chars to handle </think> across chunk boundaries
+
           for await (const chunk of streamMessage(
             provider,
             {
@@ -258,20 +264,95 @@ export async function GET(
               apiKey: apiKey.key,
             }
           )) {
+            // Handle structured reasoning (from providers with native support like GLM direct)
             if (chunk.reasoning) {
               fullReasoning += chunk.reasoning
               sendEvent({
                 type: 'reasoning',
                 content: chunk.reasoning,
               })
+              // Native reasoning support detected, skip think tag detection
+              thinkState = 'normal'
             }
 
             if (chunk.content) {
-              fullContent += chunk.content
-              sendEvent({
-                type: 'chunk',
-                content: chunk.content,
-              })
+              if (thinkState === 'detecting') {
+                // Buffer initial content to check for <think> tag
+                detectBuffer += chunk.content
+
+                if (detectBuffer.startsWith('<think>')) {
+                  // Found opening tag — enter think mode
+                  thinkState = 'inside_think'
+                  const afterTag = detectBuffer.slice('<think>'.length)
+
+                  // Check if </think> is already in the buffer
+                  const closeIdx = afterTag.indexOf('</think>')
+                  if (closeIdx !== -1) {
+                    const reasoning = afterTag.slice(0, closeIdx)
+                    const content = afterTag.slice(closeIdx + '</think>'.length).trimStart()
+                    if (reasoning) {
+                      fullReasoning += reasoning
+                      sendEvent({ type: 'reasoning', content: reasoning })
+                    }
+                    if (content) {
+                      fullContent += content
+                      sendEvent({ type: 'chunk', content })
+                    }
+                    thinkState = 'normal'
+                  } else if (afterTag) {
+                    // Still inside think block, send buffered reasoning
+                    fullReasoning += afterTag
+                    sendEvent({ type: 'reasoning', content: afterTag })
+                  }
+                  detectBuffer = ''
+                } else if (detectBuffer.length >= 7 || !'<think>'.startsWith(detectBuffer)) {
+                  // Not a think block — flush buffer as regular content
+                  fullContent += detectBuffer
+                  sendEvent({ type: 'chunk', content: detectBuffer })
+                  detectBuffer = ''
+                  thinkState = 'normal'
+                }
+                // Otherwise keep buffering (partial '<think>' tag)
+              } else if (thinkState === 'inside_think') {
+                // Inside think block — look for closing </think> tag
+                // Prepend any trailing buffer from previous chunk to handle tag split across chunks
+                const combined = thinkTailBuffer + chunk.content
+                thinkTailBuffer = ''
+
+                const closeIdx = combined.indexOf('</think>')
+                if (closeIdx !== -1) {
+                  // Found closing tag
+                  const reasoning = combined.slice(0, closeIdx)
+                  const content = combined.slice(closeIdx + '</think>'.length).trimStart()
+                  if (reasoning) {
+                    fullReasoning += reasoning
+                    sendEvent({ type: 'reasoning', content: reasoning })
+                  }
+                  if (content) {
+                    fullContent += content
+                    sendEvent({ type: 'chunk', content })
+                  }
+                  thinkState = 'normal'
+                } else {
+                  // No closing tag yet — send safe portion as reasoning, keep tail buffer
+                  // '</think>' is 8 chars, so keep last 7 chars in buffer for partial tag detection
+                  if (combined.length > 7) {
+                    const safeToSend = combined.slice(0, -7)
+                    thinkTailBuffer = combined.slice(-7)
+                    fullReasoning += safeToSend
+                    sendEvent({ type: 'reasoning', content: safeToSend })
+                  } else {
+                    thinkTailBuffer = combined
+                  }
+                }
+              } else {
+                // Normal mode — pass through as regular content
+                fullContent += chunk.content
+                sendEvent({
+                  type: 'chunk',
+                  content: chunk.content,
+                })
+              }
             }
 
             if (chunk.usage) {
@@ -283,13 +364,15 @@ export async function GET(
             }
           }
 
-          // Fallback: extract <think> tags from content if no structured reasoning received
-          if (!fullReasoning && fullContent.startsWith('<think>')) {
-            const extracted = extractThinkTags(fullContent)
-            if (extracted.reasoning) {
-              fullReasoning = extracted.reasoning
-              fullContent = extracted.content
-            }
+          // Flush any remaining buffers after streaming completes
+          if (detectBuffer) {
+            fullContent += detectBuffer
+            sendEvent({ type: 'chunk', content: detectBuffer })
+          }
+          if (thinkTailBuffer) {
+            // Remaining tail buffer is reasoning that never got a closing tag
+            fullReasoning += thinkTailBuffer
+            sendEvent({ type: 'reasoning', content: thinkTailBuffer })
           }
 
           // Send end event after loop completes (ensures we have all data)

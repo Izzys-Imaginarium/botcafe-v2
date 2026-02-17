@@ -494,7 +494,7 @@ export function BotWizardForm({ mode, initialData, botId, initialPictureUrl, onS
         toast.success(result.message || `Bot ${mode === 'create' ? 'created' : 'updated'} successfully!`)
 
         if (onSuccess) {
-          onSuccess(result.bot || result)
+          await onSuccess(result.bot || result)
         } else {
           // Use new URL format if available, otherwise fall back to explore
           if (result.url) {
@@ -1421,9 +1421,14 @@ export function BotWizardForm({ mode, initialData, botId, initialPictureUrl, onS
               disabled={isSubmitting || !validateCurrentStep()}
               className="bg-forest hover:bg-forest/90 text-white"
             >
-              {isSubmitting
-                ? `${mode === 'create' ? 'Creating' : 'Saving'} Bot...`
-                : `${mode === 'create' ? 'Create' : 'Save Changes'}`}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {mode === 'create' ? 'Creating' : 'Saving'} Bot...
+                </>
+              ) : (
+                mode === 'create' ? 'Create' : 'Save Changes'
+              )}
             </Button>
           )}
         </div>

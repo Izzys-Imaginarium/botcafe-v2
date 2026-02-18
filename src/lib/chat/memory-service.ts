@@ -319,21 +319,28 @@ export async function generateConversationMemory(
     const lastIndex = conversation.last_summarized_message_index || 0
     console.log(`[Memory Service] Fetching messages for conversation ${conversationId}, lastIndex=${lastIndex}`)
 
+    // Fetch newest messages first to avoid the limit:100 cap missing recent messages
+    // when conversations grow beyond 100 messages. We then slice to only the
+    // unsummarized portion and reverse back to chronological order.
     const messages = await payload.find({
       collection: 'message',
       where: {
         conversation: { equals: conversationId },
       },
-      sort: 'created_timestamp',
-      limit: 100, // Get enough messages
+      sort: '-created_timestamp',
+      limit: 100,
       depth: 1,
       overrideAccess: true,
     })
 
-    console.log(`[Memory Service] Found ${messages.docs.length} total messages`)
+    const totalMessageCount = messages.totalDocs
+    console.log(`[Memory Service] Found ${totalMessageCount} total messages (fetched ${messages.docs.length})`)
 
-    // Filter to messages after last summarization
-    const newMessages = messages.docs.slice(lastIndex)
+    // Extract only the unsummarized messages from the newest-first results
+    const unsummarizedCount = Math.max(totalMessageCount - lastIndex, 0)
+    const newMessages = messages.docs
+      .slice(0, Math.min(unsummarizedCount, messages.docs.length))
+      .reverse() // Reverse to chronological order (oldest first)
     console.log(`[Memory Service] ${newMessages.length} new messages to summarize (after index ${lastIndex})`)
 
     if (newMessages.length === 0) {
@@ -501,7 +508,7 @@ export async function generateConversationMemory(
       id: conversationId,
       data: {
         last_summarized_at: new Date().toISOString(),
-        last_summarized_message_index: messages.docs.length,
+        last_summarized_message_index: totalMessageCount,
         requires_summarization: false,
         conversation_metadata: {
           ...conversation.conversation_metadata,

@@ -18,6 +18,7 @@ import {
   Pin,
   MoreVertical,
   Trash2,
+  Loader2,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -53,6 +54,9 @@ export interface ConversationListProps {
   onDelete?: (id: number) => void
   onNewChat?: () => void
   isLoading?: boolean
+  hasMore?: boolean
+  isLoadingMore?: boolean
+  onLoadMore?: () => void
   showHeader?: boolean
   className?: string
 }
@@ -65,6 +69,9 @@ export function ConversationList({
   onDelete,
   onNewChat,
   isLoading = false,
+  hasMore = false,
+  isLoadingMore = false,
+  onLoadMore,
   showHeader = true,
   className,
 }: ConversationListProps) {
@@ -228,6 +235,24 @@ export function ConversationList({
               </div>
             )
           })}
+
+          {/* Load more button */}
+          {hasMore && (
+            <div className="flex justify-center py-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onLoadMore}
+                disabled={isLoadingMore}
+                className="gap-2"
+              >
+                {isLoadingMore ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : null}
+                {isLoadingMore ? 'Loading...' : 'Load more conversations'}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>

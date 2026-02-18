@@ -26,6 +26,8 @@ export function ChatHomeClient() {
   const {
     conversations,
     isLoading,
+    hasMore,
+    loadMore,
     deleteConversation,
     archiveConversation,
     refresh,
@@ -120,6 +122,9 @@ export function ChatHomeClient() {
               onDelete={handleDelete}
               onArchive={handleArchive}
               isLoading={isLoading}
+              hasMore={hasMore}
+              isLoadingMore={isLoading && conversations.length > 0}
+              onLoadMore={loadMore}
               showHeader={false}
             />
           </div>

@@ -69,7 +69,10 @@ export function MessageList({
     }
   }, [])
 
-  // Auto-scroll to bottom when new messages arrive (not when loading older)
+  // Check if any message is currently streaming
+  const hasStreamingMessage = messages.some(m => m.isStreaming)
+
+  // Auto-scroll to bottom when new messages arrive or during streaming
   useEffect(() => {
     const container = scrollRef.current
     if (!container) return
@@ -89,16 +92,38 @@ export function MessageList({
         const addedHeight = newScrollHeight - prevScrollHeightRef.current
         container.scrollTop += addedHeight
       }
+    } else if (currentCount === prevCount && hasStreamingMessage && isNearBottomRef.current) {
+      // Content changed during streaming — keep pinned to bottom.
+      // On mobile, browsers don't reliably anchor scroll as content grows,
+      // so we explicitly scroll to bottom on each streaming update.
+      container.scrollTop = container.scrollHeight - container.clientHeight
     }
 
     prevMessageCountRef.current = currentCount
     prevScrollHeightRef.current = container.scrollHeight
-  }, [messages])
+  }, [messages, hasStreamingMessage])
 
   // Handle scroll events
   const handleScroll = useCallback(() => {
     checkIfNearBottom()
   }, [checkIfNearBottom])
+
+  // Handle mobile keyboard / visual viewport resize —
+  // when the keyboard opens or closes the viewport height changes,
+  // which shifts visible content. Re-scroll to bottom if we were near it.
+  useEffect(() => {
+    const viewport = window.visualViewport
+    if (!viewport) return
+
+    const handleResize = () => {
+      if (isNearBottomRef.current && bottomRef.current) {
+        bottomRef.current.scrollIntoView({ behavior: 'instant' })
+      }
+    }
+
+    viewport.addEventListener('resize', handleResize)
+    return () => viewport.removeEventListener('resize', handleResize)
+  }, [])
 
   // Scroll to bottom on initial load
   useEffect(() => {

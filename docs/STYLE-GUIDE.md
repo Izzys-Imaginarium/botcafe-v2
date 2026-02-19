@@ -1,7 +1,7 @@
 # BotCafe v2 - Style Guide
 
-**Last Updated**: 2026-01-26
-**Version**: 3.0
+**Last Updated**: 2026-02-19
+**Version**: 3.1
 
 ---
 
@@ -588,6 +588,64 @@ For multi-step wizards, show simplified progress on mobile:
   ))}
 </div>
 ```
+
+---
+
+## Accessibility
+
+BotCafe includes built-in accessibility options available to all visitors (no login required). Settings are stored in `localStorage` and persist across sessions.
+
+### AccessibilityProvider
+
+The `AccessibilityProvider` (`/src/components/AccessibilityProvider.tsx`) wraps the app in `layout.tsx` and provides a React context with two toggles:
+
+```tsx
+import { useAccessibility } from '@/components/AccessibilityProvider'
+
+const { reduceAnimations, easyReadFont, toggleReduceAnimations, toggleEasyReadFont } =
+  useAccessibility()
+```
+
+### Floating Settings Button
+
+The `AccessibilitySettings` component (`/src/components/accessibility-settings.tsx`) renders a floating button in the bottom-left corner of every page. It opens a popover with Switch toggles for both settings.
+
+### Reduce Animations
+
+When enabled, adds `.reduce-animations` to `<html>`. This:
+- Zeros out all `animation-duration`, `animation-delay`, and `transition-duration` site-wide via `!important`
+- Conditionally hides animated elements in `MagicalBackground` (fireflies, glow orbs, SVG decorations)
+- Respects `prefers-reduced-motion: reduce` as the default on first visit
+
+```css
+.reduce-animations *,
+.reduce-animations *::before,
+.reduce-animations *::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition-duration: 0s !important;
+}
+```
+
+### Easy Read Font
+
+When enabled, adds `.easy-read-font` to `<html>`. This overrides the `--font-display` (Cinzel Decorative) and `--font-lore` (Crimson Text) CSS variables to use the body font (Inter) instead.
+
+The CSS rule targets `html.easy-read-font body` to beat the specificity of Next.js font loader classes applied on `<body>`:
+
+```css
+html.easy-read-font body {
+  --font-display: var(--font-body), sans-serif;
+  --font-lore: var(--font-body), sans-serif;
+}
+```
+
+### localStorage Keys
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `botcafe-reduce-animations` | `"true"` / `"false"` | OS `prefers-reduced-motion` | Disable animations |
+| `botcafe-easy-read-font` | `"true"` / `"false"` | `"false"` | Switch to Inter everywhere |
 
 ---
 

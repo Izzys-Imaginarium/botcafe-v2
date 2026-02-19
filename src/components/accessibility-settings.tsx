@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { Accessibility } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
@@ -8,11 +9,15 @@ import { useAccessibility } from '@/components/AccessibilityProvider'
 
 export const AccessibilitySettings = () => {
   const [open, setOpen] = useState(false)
+  const pathname = usePathname()
   const { reduceAnimations, easyReadFont, toggleReduceAnimations, toggleEasyReadFont } =
     useAccessibility()
 
+  // Bump up above the chat input bar on conversation pages
+  const isOnChatPage = pathname?.startsWith('/chat/') && pathname !== '/chat/new'
+
   return (
-    <div className="fixed bottom-4 left-4 z-50">
+    <div className={`fixed left-4 z-50 ${isOnChatPage ? 'bottom-24' : 'bottom-4'}`}>
       {/* Floating trigger button */}
       <button
         onClick={() => setOpen((prev) => !prev)}

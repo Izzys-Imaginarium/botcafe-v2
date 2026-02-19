@@ -12,7 +12,7 @@ import {
 export const BotSort = () => {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const currentSort = searchParams.get('sort') || 'recent'
+  const currentSort = searchParams.get('sort') || 'random'
 
   const handleSortChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString())

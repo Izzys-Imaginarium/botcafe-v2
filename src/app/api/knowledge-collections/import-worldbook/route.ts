@@ -57,10 +57,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
-    // Decode base64 JSON
+    // Decode base64 JSON with proper UTF-8 handling
+    // atob() treats output as Latin-1, corrupting multi-byte UTF-8 chars (smart quotes, accents, etc.)
     let jsonContent: unknown
     try {
-      const decoded = atob(file)
+      const binaryString = atob(file)
+      const bytes = Uint8Array.from(binaryString, c => c.charCodeAt(0))
+      const decoded = new TextDecoder('utf-8').decode(bytes)
       jsonContent = JSON.parse(decoded)
     } catch {
       return NextResponse.json({ error: 'Invalid JSON file. Please upload a valid SillyTavern World Book.' }, { status: 400 })

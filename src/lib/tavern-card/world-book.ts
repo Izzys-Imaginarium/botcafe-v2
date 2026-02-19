@@ -28,8 +28,8 @@ export function parseWorldBook(json: unknown): WorldBook {
 
     parsedEntries[key] = {
       uid: typeof raw.uid === 'number' ? raw.uid : parseInt(key) || 0,
-      key: Array.isArray(raw.key) ? raw.key.filter((k): k is string => typeof k === 'string') : [],
-      keysecondary: Array.isArray(raw.keysecondary) ? raw.keysecondary.filter((k): k is string => typeof k === 'string') : [],
+      key: parseKeywords(raw.key),
+      keysecondary: parseKeywords(raw.keysecondary),
       comment: typeof raw.comment === 'string' ? raw.comment : '',
       content: raw.content as string,
       constant: raw.constant === true,
@@ -72,6 +72,20 @@ export function parseWorldBook(json: unknown): WorldBook {
   }
 
   return { entries: parsedEntries }
+}
+
+/**
+ * Parse keywords from a World Book entry, handling both array and comma-separated string formats.
+ * Some SillyTavern versions store keys as a comma-separated string instead of an array.
+ */
+function parseKeywords(raw: unknown): string[] {
+  if (Array.isArray(raw)) {
+    return raw.filter((k): k is string => typeof k === 'string')
+  }
+  if (typeof raw === 'string' && raw.trim()) {
+    return raw.split(',').map(k => k.trim()).filter(Boolean)
+  }
+  return []
 }
 
 function parseCharacterFilter(raw: unknown): WorldBookEntry['characterFilter'] {

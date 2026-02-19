@@ -4,6 +4,8 @@ import { ClerkProvider } from '@clerk/nextjs'
 import { Toaster } from '@/components/ui/sonner'
 import { Navbar } from '@/modules/home/ui/components/navbar'
 import { Footer } from '@/modules/home/ui/components/footer'
+import { AccessibilityProvider } from '@/components/AccessibilityProvider'
+import { AccessibilitySettings } from '@/components/accessibility-settings'
 import './styles.css'
 
 const inter = Inter({
@@ -41,10 +43,13 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
         <body
           className={`${inter.variable} ${quintessential.variable} ${crimsonText.variable} font-body antialiased min-h-screen flex flex-col`}
         >
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <Toaster />
+          <AccessibilityProvider>
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <Footer />
+            <AccessibilitySettings />
+            <Toaster />
+          </AccessibilityProvider>
         </body>
       </html>
     </ClerkProvider>

@@ -393,11 +393,65 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     const sort = searchParams.get('sort') || '-createdAt'
 
+    // Determine if user has access to the requested collection (owned or shared)
+    let hasCollectionAccess = false
+    if (collectionId) {
+      // Check if user owns the collection
+      const ownedCheck = await payload.find({
+        collection: 'knowledgeCollections',
+        where: {
+          and: [
+            { id: { equals: collectionId } },
+            { user: { equals: payloadUser.id } },
+          ],
+        },
+        limit: 1,
+        overrideAccess: true,
+      })
+
+      if (ownedCheck.docs.length > 0) {
+        hasCollectionAccess = true
+      } else {
+        // Check if user has shared access via AccessControl
+        const sharedCheck = await payload.find({
+          collection: 'access-control',
+          where: {
+            and: [
+              { user: { equals: payloadUser.id } },
+              { resource_type: { equals: 'knowledgeCollection' } },
+              { resource_id: { equals: String(collectionId) } },
+              { is_revoked: { equals: false } },
+            ],
+          },
+          limit: 1,
+          overrideAccess: true,
+        })
+
+        if (sharedCheck.docs.length > 0) {
+          hasCollectionAccess = true
+        }
+      }
+    }
+
     // Build where clause
-    const whereClause: Record<string, unknown> = {
-      user: {
+    // When accessing a shared collection, don't filter by user ownership
+    const whereClause: Record<string, unknown> = {}
+
+    if (collectionId && hasCollectionAccess) {
+      // User has access to this collection (owned or shared) - fetch by collection, not user
+      whereClause.knowledge_collection = {
+        equals: collectionId,
+      }
+    } else {
+      // No specific collection or no access - only show user's own entries
+      whereClause.user = {
         equals: payloadUser.id,
-      },
+      }
+      if (collectionId) {
+        whereClause.knowledge_collection = {
+          equals: collectionId,
+        }
+      }
     }
 
     // By default, exclude legacy memory entries from knowledge views
@@ -406,12 +460,6 @@ export async function GET(request: NextRequest) {
     if (!includeMemories) {
       whereClause.is_legacy_memory = {
         not_equals: true,
-      }
-    }
-
-    if (collectionId) {
-      whereClause.knowledge_collection = {
-        equals: collectionId,
       }
     }
 

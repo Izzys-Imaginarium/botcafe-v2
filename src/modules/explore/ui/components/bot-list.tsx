@@ -39,7 +39,7 @@ export const BotList = () => {
     const excludeOwn = searchParams.get('excludeOwn')
     const liked = searchParams.get('liked')
     const favorited = searchParams.get('favorited')
-    if (sort) params.sort = sort
+    params.sort = sort || 'random'
     if (search) params.search = search
     if (classifications) params.classifications = classifications
     if (excludeOwn) params.excludeOwn = excludeOwn

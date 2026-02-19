@@ -286,7 +286,8 @@
 }
 
 /* Accessibility: Easy Read Font - switch decorative fonts to Inter */
-.easy-read-font {
+/* Target body from html.easy-read-font to beat Next.js font loader class specificity */
+html.easy-read-font body {
   --font-display: var(--font-body), sans-serif;
   --font-lore: var(--font-body), sans-serif;
 }

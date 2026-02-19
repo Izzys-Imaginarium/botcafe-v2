@@ -126,7 +126,7 @@
 
 | Endpoint | Methods | Description |
 |----------|---------|-------------|
-| `/api/knowledge` | GET, POST | List and create knowledge entries. Query params: `collection`, `page`, `limit`, `includeMemories` (default: false - excludes legacy memory entries) |
+| `/api/knowledge` | GET, POST | List and create knowledge entries. When `collection` is specified, returns entries if user owns the collection OR has shared access via AccessControl. Query params: `collection`, `page`, `limit`, `includeMemories` (default: false - excludes legacy memory entries), `search`, `sort` |
 | `/api/knowledge/[id]` | GET, PATCH, DELETE | Get, update, or delete knowledge entry |
 | `/api/knowledge-collections` | GET, POST | List and create collections. Query params: `includeMemoryTomes` (default: false), `onlyMemoryTomes` (default: false), `limit` (default: 500, max: 500), `page`, `search`, `sort` |
 | `/api/knowledge-collections/[id]` | GET, PATCH, DELETE | Get, update, or delete collection. DELETE cascades to remove all entries in the collection |

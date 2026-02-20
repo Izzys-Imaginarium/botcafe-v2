@@ -261,7 +261,9 @@ export async function POST(request: NextRequest) {
         personality: body.personality || '',
         appearance_description: body.appearance_description || '',
         backstory: body.backstory || '',
-        additional_details: body.additional_details || [],
+        additional_details: (body.additional_details || []).filter(
+          (d): d is { label: string; content: string } => Boolean(d.label && d.content)
+        ),
         interaction_preferences: body.interaction_preferences || {
           preferred_topics: [],
           avoid_topics: [],

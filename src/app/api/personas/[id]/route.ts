@@ -212,10 +212,16 @@ export async function PUT(
     }
 
     // Clean up body - filter empty strings for select fields (Payload doesn't accept empty strings)
+    // Also filter additional_details to only include complete entries (label + content required)
     const cleanedBody = {
       ...body,
       gender: body.gender || undefined,
       pronouns: body.pronouns || undefined,
+      additional_details: body.additional_details
+        ? body.additional_details.filter(
+            (d): d is { label: string; content: string } => Boolean(d.label && d.content)
+          )
+        : undefined,
     }
 
     // Update persona

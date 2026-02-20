@@ -134,6 +134,57 @@ export const Personas: CollectionConfig = {
       ],
     },
     {
+      name: 'personality',
+      type: 'textarea',
+      maxLength: 5000,
+      admin: {
+        description: 'Core personality, psychology, emotional landscape, mannerisms',
+      },
+    },
+    {
+      name: 'appearance_description',
+      type: 'textarea',
+      maxLength: 5000,
+      admin: {
+        description: 'Physical description, wardrobe, distinctive features, scent, etc.',
+      },
+    },
+    {
+      name: 'backstory',
+      type: 'textarea',
+      maxLength: 5000,
+      admin: {
+        description: 'History, origin story, relationships, key life events',
+      },
+    },
+    {
+      name: 'additional_details',
+      type: 'array',
+      fields: [
+        {
+          name: 'label',
+          type: 'text',
+          required: true,
+          maxLength: 100,
+          admin: {
+            description: 'Section name (e.g. "Combat Style", "Sensory Profile", "Relationships")',
+          },
+        },
+        {
+          name: 'content',
+          type: 'textarea',
+          required: true,
+          maxLength: 5000,
+          admin: {
+            description: 'Section content',
+          },
+        },
+      ],
+      admin: {
+        description: 'Custom sections for any additional character details',
+      },
+    },
+    {
       name: 'interaction_preferences',
       type: 'group',
       fields: [
@@ -195,6 +246,7 @@ export const Personas: CollectionConfig = {
     {
       name: 'custom_instructions',
       type: 'textarea',
+      maxLength: 5000,
       admin: {
         description: 'Additional context or instructions for bots when using this persona',
       },

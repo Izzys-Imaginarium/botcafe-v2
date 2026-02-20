@@ -465,6 +465,28 @@ async function buildBotSystemPrompt(
       parts.push(`User details: ${details.join(', ')}`)
     }
 
+    // Rich character fields
+    if (persona.personality) {
+      parts.push(`\nPersonality:\n${persona.personality}`)
+    }
+
+    if (persona.appearance_description) {
+      parts.push(`\nAppearance:\n${persona.appearance_description}`)
+    }
+
+    if (persona.backstory) {
+      parts.push(`\nBackstory:\n${persona.backstory}`)
+    }
+
+    // User-defined additional detail sections
+    if (persona.additional_details && persona.additional_details.length > 0) {
+      for (const detail of persona.additional_details) {
+        if (detail.label && detail.content) {
+          parts.push(`\n${detail.label}:\n${detail.content}`)
+        }
+      }
+    }
+
     // Interaction preferences
     if (persona.interaction_preferences) {
       if (persona.interaction_preferences.preferred_topics?.length) {

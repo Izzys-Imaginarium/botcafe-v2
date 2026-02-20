@@ -185,6 +185,10 @@ export async function POST(request: NextRequest) {
       appearance?: {
         avatar?: number | null
       }
+      personality?: string | null
+      appearance_description?: string | null
+      backstory?: string | null
+      additional_details?: Array<{ label?: string; content?: string }> | null
       interaction_preferences?: {
         preferred_topics?: Array<{ topic?: string }>
         avoid_topics?: Array<{ topic?: string }>
@@ -254,6 +258,10 @@ export async function POST(request: NextRequest) {
         pronouns: body.pronouns || undefined,
         custom_pronouns: body.custom_pronouns,
         appearance: body.appearance || {},
+        personality: body.personality || '',
+        appearance_description: body.appearance_description || '',
+        backstory: body.backstory || '',
+        additional_details: body.additional_details || [],
         interaction_preferences: body.interaction_preferences || {
           preferred_topics: [],
           avoid_topics: [],

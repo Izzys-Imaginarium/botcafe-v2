@@ -165,6 +165,10 @@ export async function PUT(
       appearance?: {
         avatar?: number | null
       }
+      personality?: string | null
+      appearance_description?: string | null
+      backstory?: string | null
+      additional_details?: Array<{ label?: string; content?: string }> | null
       interaction_preferences?: {
         preferred_topics?: Array<{ topic?: string }>
         avoid_topics?: Array<{ topic?: string }>
@@ -324,6 +328,7 @@ export async function DELETE(
         // Child tables (CASCADE may not work in D1)
         { name: 'personas_interaction_preferences_preferred_topics', sql: 'DELETE FROM personas_interaction_preferences_preferred_topics WHERE _parent_id = ?' },
         { name: 'personas_interaction_preferences_avoid_topics', sql: 'DELETE FROM personas_interaction_preferences_avoid_topics WHERE _parent_id = ?' },
+        { name: 'personas_additional_details', sql: 'DELETE FROM personas_additional_details WHERE _parent_id = ?' },
         // Own _rels table
         { name: 'personas_rels', sql: 'DELETE FROM personas_rels WHERE parent_id = ?' },
       ]

@@ -25,7 +25,10 @@ import {
   Plus,
   X,
   ImageIcon,
-  Upload
+  Upload,
+  Brain,
+  BookOpen,
+  Layers,
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -45,6 +48,10 @@ interface PersonaFormData {
   appearance?: {
     avatar?: AvatarValue
   }
+  personality: string
+  appearance_description: string
+  backstory: string
+  additional_details: Array<{ label?: string; content?: string; id?: string }>
   interaction_preferences: {
     preferred_topics?: Array<{ topic?: string; id?: string }>
     avoid_topics?: Array<{ topic?: string; id?: string }>
@@ -69,6 +76,10 @@ const defaultFormData: PersonaFormData = {
   appearance: {
     avatar: null,
   },
+  personality: '',
+  appearance_description: '',
+  backstory: '',
+  additional_details: [],
   interaction_preferences: {
     preferred_topics: [],
     avoid_topics: [],
@@ -105,6 +116,10 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
       ...defaultFormData.appearance,
       ...initialData?.appearance,
     },
+    personality: initialData?.personality || '',
+    appearance_description: initialData?.appearance_description || '',
+    backstory: initialData?.backstory || '',
+    additional_details: initialData?.additional_details || [],
     interaction_preferences: {
       ...defaultFormData.interaction_preferences,
       ...initialData?.interaction_preferences,
@@ -258,6 +273,30 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
         ...prev.interaction_preferences,
         avoid_topics: (prev.interaction_preferences.avoid_topics || []).filter(t => t.topic !== topicToRemove),
       },
+    }))
+  }
+
+  // Additional details handlers
+  const addAdditionalDetail = () => {
+    setFormData(prev => ({
+      ...prev,
+      additional_details: [...prev.additional_details, { label: '', content: '' }],
+    }))
+  }
+
+  const updateAdditionalDetail = (index: number, field: 'label' | 'content', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      additional_details: prev.additional_details.map((detail, i) =>
+        i === index ? { ...detail, [field]: value } : detail
+      ),
+    }))
+  }
+
+  const removeAdditionalDetail = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      additional_details: prev.additional_details.filter((_, i) => i !== index),
     }))
   }
 
@@ -423,18 +462,44 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
           </CardContent>
         </Card>
 
-        {/* Avatar */}
+        {/* Personality */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5" />
+              Personality
+            </CardTitle>
+            <CardDescription>
+              Core personality, psychology, emotional landscape, mannerisms
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Textarea
+              value={formData.personality}
+              onChange={(e) => setFormData(prev => ({ ...prev, personality: e.target.value }))}
+              placeholder="Describe your persona's personality, temperament, emotional traits, mannerisms, and psychology..."
+              rows={6}
+              maxLength={5000}
+            />
+            <p className="text-xs text-muted-foreground">
+              {formData.personality.length}/5000 characters
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Appearance */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ImageIcon className="h-5 w-5" />
-              Avatar
+              Appearance
             </CardTitle>
             <CardDescription>
-              Upload an image to represent this persona (optional)
+              Avatar image and physical description
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
+            {/* Avatar upload */}
             <div className="flex flex-col items-center gap-4">
               {avatarPreview ? (
                 <div className="space-y-4">
@@ -499,6 +564,105 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
                 </div>
               )}
             </div>
+
+            {/* Physical description */}
+            <div className="space-y-2">
+              <Label>Physical Description</Label>
+              <Textarea
+                value={formData.appearance_description}
+                onChange={(e) => setFormData(prev => ({ ...prev, appearance_description: e.target.value }))}
+                placeholder="Height, build, hair, eyes, skin, distinctive features, wardrobe, piercings, scent, etc."
+                rows={5}
+                maxLength={5000}
+              />
+              <p className="text-xs text-muted-foreground">
+                {formData.appearance_description.length}/5000 characters
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Backstory */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              Backstory
+            </CardTitle>
+            <CardDescription>
+              History, origin story, relationships, key life events
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Textarea
+              value={formData.backstory}
+              onChange={(e) => setFormData(prev => ({ ...prev, backstory: e.target.value }))}
+              placeholder="Your persona's history, origin story, important relationships, key life events..."
+              rows={6}
+              maxLength={5000}
+            />
+            <p className="text-xs text-muted-foreground">
+              {formData.backstory.length}/5000 characters
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Additional Details */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Layers className="h-5 w-5" />
+              Additional Details
+            </CardTitle>
+            <CardDescription>
+              Add custom sections for anything else — combat style, abilities, sensory profile, relationship dynamics, triggers, etc.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {formData.additional_details.map((detail, idx) => (
+              <div key={idx} className="border rounded-lg p-4 space-y-3 relative">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute top-2 right-2 h-6 w-6 p-0 text-muted-foreground hover:text-red-500"
+                  onClick={() => removeAdditionalDetail(idx)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+                <div className="space-y-1 pr-8">
+                  <Label>Section Name</Label>
+                  <Input
+                    value={detail.label || ''}
+                    onChange={(e) => updateAdditionalDetail(idx, 'label', e.target.value)}
+                    placeholder="e.g. Combat Style, Sensory Profile, Relationships..."
+                    maxLength={100}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Content</Label>
+                  <Textarea
+                    value={detail.content || ''}
+                    onChange={(e) => updateAdditionalDetail(idx, 'content', e.target.value)}
+                    placeholder="Describe this aspect of your persona..."
+                    rows={4}
+                    maxLength={5000}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {(detail.content || '').length}/5000 characters
+                  </p>
+                </div>
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addAdditionalDetail}
+              className="w-full"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Section
+            </Button>
           </CardContent>
         </Card>
 
@@ -613,7 +777,11 @@ export const PersonaForm = ({ initialData, personaId, mode }: PersonaFormProps) 
                 onChange={(e) => setFormData(prev => ({ ...prev, custom_instructions: e.target.value }))}
                 placeholder="Additional context or instructions for bots when using this persona..."
                 rows={4}
+                maxLength={5000}
               />
+              <p className="text-xs text-muted-foreground">
+                {formData.custom_instructions.length}/5000 characters
+              </p>
             </div>
 
             <div className="flex items-center justify-between">

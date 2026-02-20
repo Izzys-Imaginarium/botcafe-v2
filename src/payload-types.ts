@@ -787,7 +787,7 @@ export interface Knowledge {
     | null;
   tokens?: number | null;
   entry: string;
-  knowledge_collection?: (number | null) | KnowledgeCollection;
+  knowledge_collection: number | KnowledgeCollection;
   /**
    * Whether this is a converted memory from conversations
    */
@@ -1176,6 +1176,34 @@ export interface Persona {
   appearance?: {
     avatar?: (number | null) | Media;
   };
+  /**
+   * Core personality, psychology, emotional landscape, mannerisms
+   */
+  personality?: string | null;
+  /**
+   * Physical description, wardrobe, distinctive features, scent, etc.
+   */
+  appearance_description?: string | null;
+  /**
+   * History, origin story, relationships, key life events
+   */
+  backstory?: string | null;
+  /**
+   * Custom sections for any additional character details
+   */
+  additional_details?:
+    | {
+        /**
+         * Section name (e.g. "Combat Style", "Sensory Profile", "Relationships")
+         */
+        label: string;
+        /**
+         * Section content
+         */
+        content: string;
+        id?: string | null;
+      }[]
+    | null;
   interaction_preferences?: {
     /**
      * Topics you enjoy discussing
@@ -3507,6 +3535,16 @@ export interface PersonasSelect<T extends boolean = true> {
     | T
     | {
         avatar?: T;
+      };
+  personality?: T;
+  appearance_description?: T;
+  backstory?: T;
+  additional_details?:
+    | T
+    | {
+        label?: T;
+        content?: T;
+        id?: T;
       };
   interaction_preferences?:
     | T

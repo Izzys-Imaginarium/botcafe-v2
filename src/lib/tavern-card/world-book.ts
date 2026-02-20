@@ -80,7 +80,14 @@ export function parseWorldBook(json: unknown): WorldBook {
  */
 function parseKeywords(raw: unknown): string[] {
   if (Array.isArray(raw)) {
-    return raw.filter((k): k is string => typeof k === 'string')
+    // Some SillyTavern versions store all keywords as a single comma-separated
+    // string inside a one-element array (e.g. ["keyword1, keyword2"]).
+    // Flatten by splitting each element on commas, then filter empty strings.
+    return raw
+      .filter((k): k is string => typeof k === 'string')
+      .flatMap(k => k.split(','))
+      .map(k => k.trim())
+      .filter(Boolean)
   }
   if (typeof raw === 'string' && raw.trim()) {
     return raw.split(',').map(k => k.trim()).filter(Boolean)

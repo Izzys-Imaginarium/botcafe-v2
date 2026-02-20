@@ -535,8 +535,8 @@ export async function PATCH(
             setClauses.push('activation_settings_match_in_system_prompts = ?')
             values.push(body.activation_settings.match_in_system_prompts ? 1 : 0)
           }
-          // Note: primary_keys and secondary_keys are stored in separate tables
-          // They require separate INSERT/DELETE operations which we skip for now
+          // primary_keys and secondary_keys are stored in separate child tables.
+          // We handle them with DELETE + INSERT after the main UPDATE below.
         }
 
         // Handle positioning
@@ -608,6 +608,30 @@ export async function PATCH(
           const sql = `UPDATE knowledge SET ${setClauses.join(', ')} WHERE id = ?`
           console.log('D1 update SQL:', sql, 'with', values.length, 'values')
           await d1.prepare(sql).bind(...values).run()
+        }
+
+        // Update keyword arrays in their child tables (DELETE + INSERT)
+        if (body.activation_settings) {
+          const primaryKeys = (body.activation_settings.primary_keys || []).filter(k => k.trim())
+          const secondaryKeys = (body.activation_settings.secondary_keys || []).filter(k => k.trim())
+
+          // Always replace primary_keys when activation_settings is provided
+          await d1.prepare('DELETE FROM knowledge_activation_settings_primary_keys WHERE _parent_id = ?').bind(numericId).run()
+          for (let i = 0; i < primaryKeys.length; i++) {
+            const rowId = `pk_${numericId}_${i}_${Date.now()}`
+            await d1.prepare(
+              'INSERT INTO knowledge_activation_settings_primary_keys (_order, _parent_id, id, keyword) VALUES (?, ?, ?, ?)'
+            ).bind(i + 1, numericId, rowId, primaryKeys[i]).run()
+          }
+
+          // Always replace secondary_keys when activation_settings is provided
+          await d1.prepare('DELETE FROM knowledge_activation_settings_secondary_keys WHERE _parent_id = ?').bind(numericId).run()
+          for (let i = 0; i < secondaryKeys.length; i++) {
+            const rowId = `sk_${numericId}_${i}_${Date.now()}`
+            await d1.prepare(
+              'INSERT INTO knowledge_activation_settings_secondary_keys (_order, _parent_id, id, keyword) VALUES (?, ?, ?, ?)'
+            ).bind(i + 1, numericId, rowId, secondaryKeys[i]).run()
+          }
         }
 
         // Fetch the updated record

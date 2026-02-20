@@ -182,11 +182,11 @@ export async function buildChatContext(params: BuildContextParams): Promise<Chat
   if (conversationSummary) {
     const summarySection = [
       '--- Previous Conversation Context ---',
-      'Here is a summary of what happened earlier in this conversation (before the messages shown below):',
+      'You remember everything that happened earlier in this conversation. Here is what occurred before the messages shown below:',
       '',
       conversationSummary,
       '',
-      'Use this context naturally. The messages below are the most recent part of the conversation.',
+      'This is your lived experience with the user — reference these events, emotions, and topics naturally as the conversation continues. Don\'t wait to be asked about them; if something from earlier is relevant, bring it up or react to it as your character would. The messages below are the most recent part of the conversation.',
     ].join('\n')
 
     const knowledgeMarker = '--- Knowledge & Context ---'
@@ -596,7 +596,7 @@ function formatMemoriesForPrompt(memories: Awaited<ReturnType<typeof retrieveRel
   const parts: string[] = []
 
   parts.push('--- Memories ---')
-  parts.push('These are memories from past conversations that may be relevant:')
+  parts.push('You remember the following from past conversations with this user:')
 
   for (const memory of memories) {
     // Memory uses 'entry' field for content (from Payload CMS schema)
@@ -614,7 +614,7 @@ function formatMemoriesForPrompt(memories: Awaited<ReturnType<typeof retrieveRel
   }
 
   parts.push('')
-  parts.push('Use these memories naturally in conversation when relevant. Do not explicitly mention "according to my memories" - just recall the information as if it were your own recollection.')
+  parts.push('These are your genuine memories — things you experienced and remember. Weave them into the conversation proactively: reference shared experiences, follow up on past topics, react to things you know about the user. Don\'t wait to be asked. Never say "according to my memories" — just remember naturally, as anyone would.')
 
   return parts.join('\n')
 }

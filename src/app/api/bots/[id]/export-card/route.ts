@@ -128,12 +128,16 @@ export async function GET(
       .replace(/[^a-zA-Z0-9_-]/g, '_')
       .substring(0, 100)
 
-    return new NextResponse(resultPng, {
+    // Convert Buffer to Uint8Array — Cloudflare Workers doesn't serialize
+    // Node.js Buffer as a response body (results in 0-byte download)
+    const pngBytes = new Uint8Array(resultPng)
+
+    return new NextResponse(pngBytes, {
       status: 200,
       headers: {
         'Content-Type': 'image/png',
         'Content-Disposition': `attachment; filename="${safeName}.png"`,
-        'Content-Length': resultPng.length.toString(),
+        'Content-Length': pngBytes.byteLength.toString(),
       },
     })
   } catch (error: unknown) {

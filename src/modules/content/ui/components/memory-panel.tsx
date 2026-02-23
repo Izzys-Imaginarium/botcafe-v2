@@ -616,21 +616,6 @@ export const MemoryPanel = () => {
             {tomes.length} {tomes.length === 1 ? 'tome' : 'tomes'} • Organize your conversation memories
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            onClick={() => setIsCreateTomeOpen(true)}
-            className="bg-forest hover:bg-forest/90 text-white"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New Tome
-          </Button>
-          <Link href="/memories/import">
-            <Button variant="outline" className="ornate-border">
-              <Upload className="w-4 h-4 mr-2" />
-              Import
-            </Button>
-          </Link>
-        </div>
       </div>
 
       {/* Search, Filter, and Sort Controls */}
@@ -743,21 +728,6 @@ export const MemoryPanel = () => {
               <p className="text-parchment/60 font-lore italic mb-4 max-w-md">
                 Memory tomes help you organize your conversation memories. Create your first tome or import memories to get started.
               </p>
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => setIsCreateTomeOpen(true)}
-                  className="bg-forest hover:bg-forest/90 text-white"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Tome
-                </Button>
-                <Link href="/memories/import">
-                  <Button variant="outline" className="ornate-border">
-                    <Upload className="w-4 h-4 mr-2" />
-                    Import Memories
-                  </Button>
-                </Link>
-              </div>
             </div>
           </CardContent>
         </Card>

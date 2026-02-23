@@ -33,17 +33,18 @@ export function embedTavernCardInPng(
   })
 
   // Build new tEXt chunk with base64-encoded JSON
+  // encode() returns { name: 'tEXt', data: Uint8Array } — push directly into chunks
   const jsonString = JSON.stringify(cardData)
   const base64Data = Buffer.from(jsonString, 'utf-8').toString('base64')
-  const newTextChunkData = encode('chara', base64Data)
+  const newTextChunk = encode('chara', base64Data)
 
   // Insert before IEND chunk (last chunk in a valid PNG)
   const iendIndex = filteredChunks.findIndex((c) => c.name === 'IEND')
   if (iendIndex === -1) {
     // If no IEND found, append at the end (shouldn't happen with valid PNGs)
-    filteredChunks.push({ name: 'tEXt', data: newTextChunkData })
+    filteredChunks.push(newTextChunk)
   } else {
-    filteredChunks.splice(iendIndex, 0, { name: 'tEXt', data: newTextChunkData })
+    filteredChunks.splice(iendIndex, 0, newTextChunk)
   }
 
   return Buffer.from(encodeChunks(filteredChunks))

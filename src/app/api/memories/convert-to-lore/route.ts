@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
           case_sensitive: false,
           match_whole_words: false,
           use_regex: false,
-          vector_similarity_threshold: 0.7,
+          vector_similarity_threshold: 0.4,
           max_vector_results: 5,
           probability: 100,
           use_probability: false,

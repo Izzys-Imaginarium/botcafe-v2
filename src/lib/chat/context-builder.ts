@@ -101,6 +101,7 @@ export async function buildChatContext(params: BuildContextParams): Promise<Chat
           minActivations: 0,
         },
         env,
+        botName: bot.name,
       })
 
       // If we have activated entries, insert them into the prompt

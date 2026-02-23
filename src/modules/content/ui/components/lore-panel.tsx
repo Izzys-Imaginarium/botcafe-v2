@@ -137,7 +137,7 @@ export const LorePanel = () => {
   // Edit entry activation settings (separate from create)
   const [editActivationSettings, setEditActivationSettings] = useState<ActivationSettingsValue>({
     activation_mode: 'vector',
-    vector_similarity_threshold: 0.7,
+    vector_similarity_threshold: 0.4,
     max_vector_results: 5,
     probability: 100,
     use_probability: false,
@@ -173,7 +173,7 @@ export const LorePanel = () => {
   // Activation settings state
   const [activationSettings, setActivationSettings] = useState<ActivationSettingsValue>({
     activation_mode: 'vector',
-    vector_similarity_threshold: 0.7,
+    vector_similarity_threshold: 0.4,
     max_vector_results: 5,
     probability: 100,
     use_probability: false,
@@ -502,7 +502,7 @@ export const LorePanel = () => {
 
         setActivationSettings({
           activation_mode: 'vector',
-          vector_similarity_threshold: 0.7,
+          vector_similarity_threshold: 0.4,
           max_vector_results: 5,
           probability: 100,
           use_probability: false,
@@ -587,7 +587,7 @@ export const LorePanel = () => {
             case_sensitive: k.activation_settings.case_sensitive || false,
             match_whole_words: k.activation_settings.match_whole_words || false,
             use_regex: k.activation_settings.use_regex || false,
-            vector_similarity_threshold: k.activation_settings.vector_similarity_threshold ?? 0.7,
+            vector_similarity_threshold: k.activation_settings.vector_similarity_threshold ?? 0.4,
             max_vector_results: k.activation_settings.max_vector_results ?? 5,
             probability: k.activation_settings.probability ?? 100,
             use_probability: k.activation_settings.use_probability || false,

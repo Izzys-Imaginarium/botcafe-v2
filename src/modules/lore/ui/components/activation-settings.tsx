@@ -239,11 +239,11 @@ export const ActivationSettings = ({
                 <div className="flex items-center justify-between">
                   <Label className="text-parchment">Similarity Threshold</Label>
                   <span className="text-sm text-gold-rich">
-                    {((activationSettings.vector_similarity_threshold || 0.7) * 100).toFixed(0)}%
+                    {((activationSettings.vector_similarity_threshold || 0.4) * 100).toFixed(0)}%
                   </span>
                 </div>
                 <Slider
-                  value={[(activationSettings.vector_similarity_threshold || 0.7) * 100]}
+                  value={[(activationSettings.vector_similarity_threshold || 0.4) * 100]}
                   onValueChange={([value]) => onActivationSettingsChange({ ...activationSettings, vector_similarity_threshold: value / 100 })}
                   min={0}
                   max={100}

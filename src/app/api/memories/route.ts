@@ -452,7 +452,7 @@ export async function POST(request: NextRequest) {
           },
           activation_settings: {
             activation_mode: 'constant', // Memories are always active
-            vector_similarity_threshold: 0.7,
+            vector_similarity_threshold: 0.4,
             max_vector_results: 5,
             probability: 100,
             use_probability: false,

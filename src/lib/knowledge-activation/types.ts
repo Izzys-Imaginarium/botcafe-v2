@@ -91,6 +91,8 @@ export interface ActivationContext {
     AI?: any
   }
   payload?: any // Payload instance
+  /** Bot name - used to enrich vector queries with character context */
+  botName?: string
 }
 
 export interface ActivatedEntry {

@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
       case_sensitive: body.activation_settings?.case_sensitive ?? false,
       match_whole_words: body.activation_settings?.match_whole_words ?? false,
       use_regex: body.activation_settings?.use_regex ?? false,
-      vector_similarity_threshold: body.activation_settings?.vector_similarity_threshold ?? 0.7,
+      vector_similarity_threshold: body.activation_settings?.vector_similarity_threshold ?? 0.4,
       max_vector_results: body.activation_settings?.max_vector_results ?? 5,
       probability: body.activation_settings?.probability ?? 100,
       use_probability: body.activation_settings?.use_probability ?? false,

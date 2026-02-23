@@ -380,7 +380,7 @@ export async function POST(request: NextRequest) {
           match_in_bot_messages: k.activation_settings?.match_in_bot_messages ?? true,
           match_in_system_prompts: false,
           // Vector settings (for vector/hybrid modes)
-          vector_similarity_threshold: k.activation_settings?.vector_similarity_threshold ?? 0.7,
+          vector_similarity_threshold: k.activation_settings?.vector_similarity_threshold ?? 0.4,
           max_vector_results: k.activation_settings?.max_vector_results ?? 5,
           // Probability settings
           probability: k.activation_settings?.probability ?? 100,

@@ -69,6 +69,7 @@ export class ActivationEngine {
         context.messages,
         context.filters,
         context.env,
+        context.botName,
       )
 
       // Run constant activation (entries with activation_mode: 'constant')
@@ -247,6 +248,7 @@ export class ActivationEngine {
     messages: Message[],
     filters: FilterConfig,
     env?: { VECTORIZE?: any; AI?: any },
+    botName?: string,
   ): Promise<ActivatedEntry[]> {
     if (!env?.VECTORIZE || !env?.AI) {
       console.warn('[VectorActivation] Vectorize or AI binding not available, skipping vector activation')
@@ -269,13 +271,24 @@ export class ActivationEngine {
       return []
     }
 
-    // Build query from recent messages
-    const queryText = messages
-      .slice(-2)
+    // Build query from recent messages (use last 5 for richer context)
+    const messageTexts = messages
+      .slice(-5)
       .map((m) => this.keywordMatcher['extractMessageText'](m))
-      .join(' ')
+      .filter((t) => t.trim().length > 0)
 
-    console.log('[VectorActivation] Query text:', queryText.substring(0, 200))
+    // Enrich query with bot name for better domain-specific matching.
+    // Lore entries often reference the bot's world/characters by name, so
+    // including the bot name helps the embedding model bridge the semantic gap
+    // between indirect user queries and stored lore content.
+    const queryParts: string[] = []
+    if (botName) {
+      queryParts.push(botName)
+    }
+    queryParts.push(...messageTexts)
+    const queryText = queryParts.join(' ')
+
+    console.log('[VectorActivation] Query text (bot:', botName || 'none', ', msgs:', messageTexts.length, '):', queryText.substring(0, 200))
 
     if (!queryText.trim()) {
       console.log('[VectorActivation] Empty query text, skipping')
@@ -285,9 +298,10 @@ export class ActivationEngine {
     // Search vector database scoped to the bot's knowledge entries.
     // We pass entryIds to filter at the Vectorize level so results aren't drowned
     // out by vectors from other bots/users in the global index.
+    // Use a low floor threshold here (0.25) so per-entry thresholds can do the real filtering.
     const entryIds = vectorEntries.map((e) => String(e.id))
     const searchOptions: VectorSearchOptions = {
-      similarityThreshold: 0.4, // Default threshold - most RAG systems use 0.3-0.5
+      similarityThreshold: 0.25, // Floor threshold — per-entry thresholds do the real filtering
       maxResults: 20,
       filters: {
         entryIds, // Scope vector search to this bot's knowledge entries only

@@ -204,7 +204,52 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
 
     setIsExporting(true)
     try {
-      const response = await fetch(`/api/bots/${bot.id}/export-card`)
+      // Try to convert the bot's avatar to PNG client-side (handles JPEG, WebP, etc.)
+      let pngBlob: Blob | null = null
+      const pic = bot.picture
+      const imageUrl =
+        pic && typeof pic === 'object' && 'url' in pic && pic.url
+          ? pic.url
+          : typeof pic === 'string'
+            ? pic
+            : null
+
+      if (imageUrl) {
+        try {
+          pngBlob = await new Promise<Blob | null>((resolve) => {
+            const img = new Image()
+            img.crossOrigin = 'anonymous'
+            img.onload = () => {
+              const canvas = document.createElement('canvas')
+              canvas.width = img.naturalWidth
+              canvas.height = img.naturalHeight
+              const ctx = canvas.getContext('2d')
+              if (ctx) {
+                ctx.drawImage(img, 0, 0)
+                canvas.toBlob(
+                  (blob) => resolve(blob),
+                  'image/png',
+                )
+              } else {
+                resolve(null)
+              }
+            }
+            img.onerror = () => resolve(null)
+            img.src = imageUrl
+          })
+        } catch {
+          // Image conversion failed, server will use fallback
+        }
+      }
+
+      // POST the PNG to the export endpoint so it gets embedded with card metadata
+      const response = pngBlob
+        ? await fetch(`/api/bots/${bot.id}/export-card`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'image/png' },
+            body: pngBlob,
+          })
+        : await fetch(`/api/bots/${bot.id}/export-card`)
 
       if (!response.ok) {
         const errorData = await response.json().catch((): null => null) as { error?: string } | null

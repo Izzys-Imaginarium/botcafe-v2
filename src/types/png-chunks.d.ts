@@ -21,7 +21,11 @@ declare module 'png-chunk-text' {
     keyword: string
     text: string
   }
-  function encode(keyword: string, text: string): Uint8Array
+  interface PngChunk {
+    name: string
+    data: Uint8Array
+  }
+  function encode(keyword: string, text: string): PngChunk
   function decode(data: Uint8Array): TextChunkData
   export { encode, decode }
 }

@@ -57,110 +57,52 @@ export function MessageList({
   const isNearBottomRef = useRef(true)
   const prevMessageCountRef = useRef(0)
   const prevScrollHeightRef = useRef(0)
-  // Prevents onScroll from mis-detecting "not near bottom" during programmatic scrolls
-  const isProgrammaticScrollRef = useRef(false)
-  // Throttle streaming scroll updates to one per animation frame
-  const rafIdRef = useRef<number | null>(null)
 
-  // Check if user is near the bottom — skipped during programmatic scrolls
-  const checkIfNearBottom = useCallback(() => {
-    if (isProgrammaticScrollRef.current) return
-    const container = scrollRef.current
-    if (container) {
-      const threshold = 100
-      const isNear =
-        container.scrollHeight - container.scrollTop - container.clientHeight < threshold
-      isNearBottomRef.current = isNear
-    }
-  }, [])
-
-  // Check if any message is currently streaming
-  const hasStreamingMessage = messages.some(m => m.isStreaming)
-
-  // Helper: instantly scroll to bottom without triggering isNearBottom = false
-  const scrollToBottom = useCallback(() => {
-    const container = scrollRef.current
-    if (!container) return
-    isProgrammaticScrollRef.current = true
-    container.scrollTop = container.scrollHeight - container.clientHeight
-    // Reset flag after the browser has processed the scroll event
-    requestAnimationFrame(() => {
-      isProgrammaticScrollRef.current = false
-    })
-  }, [])
-
-  // Handle structural changes (new messages added, history loaded).
+  // Single scroll effect — handles initial load, new messages, history, and streaming.
   // useLayoutEffect runs synchronously after DOM mutation but before paint,
-  // so the user never sees the old scroll position flash.
+  // so the user never sees a frame at the wrong scroll position.
   useLayoutEffect(() => {
     const container = scrollRef.current
     if (!container) return
 
     const prevCount = prevMessageCountRef.current
     const currentCount = messages.length
+    const prevHeight = prevScrollHeightRef.current
+    const currentHeight = container.scrollHeight
 
-    if (currentCount > prevCount && prevCount > 0) {
-      if (currentCount - prevCount <= 2 && isNearBottomRef.current) {
-        // New message(s) near bottom — scroll instantly.
-        // Using instant (not smooth) avoids a long-running animation that
-        // conflicts with the streaming scroll updates that follow.
-        scrollToBottom()
-      } else if (currentCount - prevCount > 2) {
-        // Many messages added at once — likely loading older history.
-        // Preserve scroll position so user stays at the same visible message.
-        isProgrammaticScrollRef.current = true
-        const newScrollHeight = container.scrollHeight
-        const addedHeight = newScrollHeight - prevScrollHeightRef.current
-        container.scrollTop += addedHeight
-        requestAnimationFrame(() => {
-          isProgrammaticScrollRef.current = false
-        })
-      }
+    if (prevCount === 0 && currentCount > 0) {
+      // Initial load — jump to bottom
+      container.scrollTop = currentHeight - container.clientHeight
+    } else if (currentCount > prevCount + 2) {
+      // Bulk insert (loading older history) — keep user at same visual position
+      container.scrollTop += currentHeight - prevHeight
+    } else if (isNearBottomRef.current) {
+      // New messages or streaming content growth — stay pinned to bottom
+      container.scrollTop = currentHeight - container.clientHeight
     }
 
     prevMessageCountRef.current = currentCount
-    prevScrollHeightRef.current = container.scrollHeight
-  }, [messages.length, scrollToBottom])
+    prevScrollHeightRef.current = currentHeight
+  }, [messages])
 
-  // Streaming content scroll — keep pinned to bottom as content grows.
-  // Throttled to one update per animation frame to prevent scroll thrashing.
-  useEffect(() => {
-    if (!hasStreamingMessage || !isNearBottomRef.current) return
-
-    if (rafIdRef.current !== null) {
-      cancelAnimationFrame(rafIdRef.current)
-    }
-
-    rafIdRef.current = requestAnimationFrame(() => {
-      rafIdRef.current = null
-      if (isNearBottomRef.current) {
-        scrollToBottom()
-      }
-    })
-
-    return () => {
-      if (rafIdRef.current !== null) {
-        cancelAnimationFrame(rafIdRef.current)
-        rafIdRef.current = null
-      }
-    }
-  }, [messages, hasStreamingMessage, scrollToBottom])
-
-  // Handle scroll events
+  // Track whether the user has scrolled away from the bottom
   const handleScroll = useCallback(() => {
-    checkIfNearBottom()
-  }, [checkIfNearBottom])
+    const container = scrollRef.current
+    if (!container) return
+    const threshold = 100
+    isNearBottomRef.current =
+      container.scrollHeight - container.scrollTop - container.clientHeight < threshold
+  }, [])
 
-  // Handle mobile keyboard / visual viewport resize —
-  // when the keyboard opens or closes the viewport height changes,
-  // which shifts visible content. Re-scroll to bottom if we were near it.
+  // Mobile keyboard resize — stay at bottom if we were there
   useEffect(() => {
     const viewport = window.visualViewport
     if (!viewport) return
 
     const handleResize = () => {
-      if (isNearBottomRef.current && bottomRef.current) {
-        bottomRef.current.scrollIntoView({ behavior: 'instant' })
+      if (isNearBottomRef.current && scrollRef.current) {
+        const container = scrollRef.current
+        container.scrollTop = container.scrollHeight - container.clientHeight
       }
     }
 
@@ -168,23 +110,12 @@ export function MessageList({
     return () => viewport.removeEventListener('resize', handleResize)
   }, [])
 
-  // Scroll to bottom on initial load
-  useEffect(() => {
-    if (messages.length > 0 && bottomRef.current) {
-      bottomRef.current.scrollIntoView()
-      // After initial scroll, capture baseline
-      if (scrollRef.current) {
-        prevMessageCountRef.current = messages.length
-        prevScrollHeightRef.current = scrollRef.current.scrollHeight
-      }
-    }
-  }, [messages.length > 0])
-
   return (
     <div
       ref={scrollRef}
       onScroll={handleScroll}
       className={cn('overflow-y-auto overflow-x-hidden', className)}
+      style={{ overflowAnchor: 'none' }}
     >
       <div className="flex flex-col px-4 py-6">
         {/* Load more button */}

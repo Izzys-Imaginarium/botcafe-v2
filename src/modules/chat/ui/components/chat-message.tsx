@@ -8,7 +8,7 @@
  * inline editing for user messages, and message deletion.
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, memo } from 'react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -59,7 +59,7 @@ export interface ChatMessageProps {
   canDelete?: boolean
 }
 
-export function ChatMessage({
+export const ChatMessage = memo(function ChatMessage({
   content,
   reasoning,
   isAI,
@@ -130,14 +130,15 @@ export function ChatMessage({
 
   // Auto-expand reasoning while it's actively streaming, collapse when content starts
   const [isReasoningOpen, setIsReasoningOpen] = useState(false)
+  const hasContent = content.length > 0
   useEffect(() => {
     if (isReasoningStreaming) {
       setIsReasoningOpen(true)
-    } else if (isStreaming && content) {
+    } else if (isStreaming && hasContent) {
       // Content has started arriving, collapse reasoning
       setIsReasoningOpen(false)
     }
-  }, [isReasoningStreaming, isStreaming, content])
+  }, [isReasoningStreaming, isStreaming, hasContent])
 
   return (
     <div
@@ -197,8 +198,13 @@ export function ChatMessage({
                 <ChevronRight className={cn('h-3 w-3 transition-transform duration-200', isReasoningOpen && 'rotate-90')} />
               </button>
             </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="mb-3 p-3 rounded-md bg-muted/30 border border-border/50 text-xs text-muted-foreground leading-relaxed max-h-96 overflow-y-auto">
+            <CollapsibleContent forceMount={isStreaming || isReasoningStreaming ? true : undefined}>
+              <div
+                className={cn(
+                  'mb-3 p-3 rounded-md bg-muted/30 border border-border/50 text-xs text-muted-foreground leading-relaxed max-h-96 overflow-y-auto',
+                  (isStreaming || isReasoningStreaming) && 'animation-duration-[0s]'
+                )}
+              >
                 <DiscordMarkdown content={reasoning} />
                 {isReasoningStreaming && (
                   <span className="inline-block w-1.5 h-3 bg-muted-foreground/50 ml-0.5 animate-pulse" />
@@ -364,4 +370,4 @@ export function ChatMessage({
       </div>
     </div>
   )
-}
+})

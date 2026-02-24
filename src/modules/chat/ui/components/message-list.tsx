@@ -6,7 +6,7 @@
  * Scrollable container for chat messages with auto-scroll.
  */
 
-import { useRef, useEffect, useCallback } from 'react'
+import { useRef, useEffect, useLayoutEffect, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import { ChatMessage, type ChatMessageProps } from './chat-message'
 import { Button } from '@/components/ui/button'
@@ -57,9 +57,14 @@ export function MessageList({
   const isNearBottomRef = useRef(true)
   const prevMessageCountRef = useRef(0)
   const prevScrollHeightRef = useRef(0)
+  // Prevents onScroll from mis-detecting "not near bottom" during programmatic scrolls
+  const isProgrammaticScrollRef = useRef(false)
+  // Throttle streaming scroll updates to one per animation frame
+  const rafIdRef = useRef<number | null>(null)
 
-  // Check if user is near the bottom
+  // Check if user is near the bottom — skipped during programmatic scrolls
   const checkIfNearBottom = useCallback(() => {
+    if (isProgrammaticScrollRef.current) return
     const container = scrollRef.current
     if (container) {
       const threshold = 100
@@ -72,8 +77,22 @@ export function MessageList({
   // Check if any message is currently streaming
   const hasStreamingMessage = messages.some(m => m.isStreaming)
 
-  // Auto-scroll to bottom when new messages arrive or during streaming
-  useEffect(() => {
+  // Helper: instantly scroll to bottom without triggering isNearBottom = false
+  const scrollToBottom = useCallback(() => {
+    const container = scrollRef.current
+    if (!container) return
+    isProgrammaticScrollRef.current = true
+    container.scrollTop = container.scrollHeight - container.clientHeight
+    // Reset flag after the browser has processed the scroll event
+    requestAnimationFrame(() => {
+      isProgrammaticScrollRef.current = false
+    })
+  }, [])
+
+  // Handle structural changes (new messages added, history loaded).
+  // useLayoutEffect runs synchronously after DOM mutation but before paint,
+  // so the user never sees the old scroll position flash.
+  useLayoutEffect(() => {
     const container = scrollRef.current
     if (!container) return
 
@@ -81,27 +100,51 @@ export function MessageList({
     const currentCount = messages.length
 
     if (currentCount > prevCount && prevCount > 0) {
-      // New messages were added
       if (currentCount - prevCount <= 2 && isNearBottomRef.current) {
-        // Small number of new messages (user sent or bot replied) and near bottom — auto-scroll
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+        // New message(s) near bottom — scroll instantly.
+        // Using instant (not smooth) avoids a long-running animation that
+        // conflicts with the streaming scroll updates that follow.
+        scrollToBottom()
       } else if (currentCount - prevCount > 2) {
-        // Many messages added at once — likely loading older messages
-        // Preserve scroll position so user stays at the same visible message
+        // Many messages added at once — likely loading older history.
+        // Preserve scroll position so user stays at the same visible message.
+        isProgrammaticScrollRef.current = true
         const newScrollHeight = container.scrollHeight
         const addedHeight = newScrollHeight - prevScrollHeightRef.current
         container.scrollTop += addedHeight
+        requestAnimationFrame(() => {
+          isProgrammaticScrollRef.current = false
+        })
       }
-    } else if (currentCount === prevCount && hasStreamingMessage && isNearBottomRef.current) {
-      // Content changed during streaming — keep pinned to bottom.
-      // On mobile, browsers don't reliably anchor scroll as content grows,
-      // so we explicitly scroll to bottom on each streaming update.
-      container.scrollTop = container.scrollHeight - container.clientHeight
     }
 
     prevMessageCountRef.current = currentCount
     prevScrollHeightRef.current = container.scrollHeight
-  }, [messages, hasStreamingMessage])
+  }, [messages.length, scrollToBottom])
+
+  // Streaming content scroll — keep pinned to bottom as content grows.
+  // Throttled to one update per animation frame to prevent scroll thrashing.
+  useEffect(() => {
+    if (!hasStreamingMessage || !isNearBottomRef.current) return
+
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current)
+    }
+
+    rafIdRef.current = requestAnimationFrame(() => {
+      rafIdRef.current = null
+      if (isNearBottomRef.current) {
+        scrollToBottom()
+      }
+    })
+
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current)
+        rafIdRef.current = null
+      }
+    }
+  }, [messages, hasStreamingMessage, scrollToBottom])
 
   // Handle scroll events
   const handleScroll = useCallback(() => {

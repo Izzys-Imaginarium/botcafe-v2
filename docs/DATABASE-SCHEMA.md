@@ -1,7 +1,7 @@
 # BotCafe v2 - Database Schema
 
-**Last Updated**: 2026-02-14
-**Version**: 3.19
+**Last Updated**: 2026-02-24
+**Version**: 3.20
 **Database**: Cloudflare D1 (SQLite) via Payload CMS
 
 ---
@@ -38,19 +38,15 @@ Primary user authentication collection (integrated with Clerk).
 |-------|------|-------------|
 | `id` | string | Primary key |
 | `email` | email | User email (required, unique) - **Primary lookup field** |
-| `displayName` | text | Display name |
-| `bio` | textarea | User biography |
-| `avatar` | relationship (Media) | Profile image |
-| `location` | text | User location |
-| `role` | select | User role (admin, moderator, user) |
+| `role` | select | User role (admin, moderator, user) - default: user |
+| `avatar` | upload (Media) | Profile image |
 | `name` | text | Display name used when not using a persona |
+| `migration_completed` | checkbox | Whether user data migration is complete (default: false) |
+| `old_user_id` | text | Legacy user ID reference (shown when migration_completed is true) |
 | `nickname` | text | What bots should call you (e.g., "Alex", "Captain") |
 | `pronouns` | select | Pronouns: he/him, she/her, they/them, other |
 | `custom_pronouns` | text | Custom pronouns if "other" selected |
 | `description` | textarea | Brief description about yourself for bots |
-| `subscriptionTier` | relationship | Current subscription |
-| `tokenBalance` | number | Current token balance |
-| `preferences` | json | User preferences |
 | `createdAt` | date | Auto-generated |
 | `updatedAt` | date | Auto-generated |
 
@@ -98,6 +94,7 @@ AI companion definitions.
 | `personality_traits` | group | Communication style settings (see below) |
 | `behavior_settings` | group | Response behavior settings (see below) |
 | `signature_phrases` | array | Catchphrases or expressions |
+| `classifications` | array | Content classifications (see below) |
 | `tags` | array | Category tags for discovery |
 | `is_public` | checkbox | Public visibility (legacy - use `sharing_visibility`) |
 | `sharing_visibility` | select | Visibility: **private**, **shared**, **public** (default: private) |
@@ -133,6 +130,23 @@ AI companion definitions.
 | Field | Type | Options/Description |
 |-------|------|---------------------|
 | `visibility` | select | **private** (owner only), **shared** (specific users via AccessControl), **public** (anyone can view) |
+
+#### Bot Classifications (array)
+
+Content classification tags for categorizing bots:
+
+| Value | Description |
+|-------|-------------|
+| `conversational-ai` | Conversational AI |
+| `creative-writing` | Creative Writing |
+| `fantasy-rpg` | Fantasy/RPG |
+| `gaming` | Gaming |
+| `fanfic` | Fanfic |
+| `oc` | OC (Original Character) |
+| `dead-dove` | Dead Dove (mature/dark themes) |
+| `comedy-parody` | Comedy/Parody |
+| `long-form` | Long-form |
+| `one-shot` | One-shot |
 
 > **Note**: Bots CAN be made public from the UI. The `is_public` field is maintained for backwards compatibility and is synced with `sharing.visibility`.
 
@@ -503,6 +517,7 @@ Individual chat messages with full attribution and tracking.
 | Field | Type | Description |
 |-------|------|-------------|
 | `source_bot_id` | relationship (Bot) | Bot that generated this message |
+| `persona_id` | relationship (Personas) | Persona active when this message was sent |
 | `is_ai_generated` | checkbox | Whether message is AI-generated |
 | `model_used` | text | LLM model used (e.g., "gpt-4", "claude-3") |
 | `confidence_score` | number | AI confidence score (0-1) |
@@ -593,18 +608,24 @@ User personas/masks for conversations. Personas are always private to the user.
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | string | Primary key |
-| `name` | text | Persona name (required) - what bots call you |
-| `description` | textarea | Persona description (required) |
-| `user` | relationship (Users) | Owner |
+| `name` | text | Persona name (required, max 100) - what bots call you |
+| `description` | textarea | Persona description (required, max 500) |
+| `user` | relationship (Users) | Owner (required) |
 | `gender` | select | Gender: male, female, non-binary, unspecified, other |
-| `age` | number | Age of the persona (optional) |
+| `age` | number | Age of the persona (1-150) |
 | `pronouns` | select | Pronouns: he-him, she-her, they-them, he-they, she-they, any, other |
-| `custom_pronouns` | text | Custom pronouns if "other" is selected |
+| `custom_pronouns` | text | Custom pronouns if "other" is selected (max 50) |
 | `appearance` | group | Appearance settings (contains avatar) |
+| `appearance_description` | textarea | Physical description, wardrobe, distinctive features, scent (max 5000) |
+| `personality` | textarea | Core personality, psychology, emotional landscape, mannerisms (max 5000) |
+| `backstory` | textarea | History, origin story, relationships, key life events (max 5000) |
+| `additional_details` | array | Custom detail sections: `{ label: string, content: string }` |
 | `interaction_preferences` | group | Topics preferences (see below) |
 | `is_default` | checkbox | Default persona flag |
-| `usage_count` | number | Number of times this persona has been used |
-| `custom_instructions` | textarea | Custom instructions for how bots should interact — **injected into system prompt** |
+| `usage_count` | number | Number of times this persona has been used (read-only) |
+| `custom_instructions` | textarea | Custom instructions for how bots should interact (max 5000) — **injected into system prompt** |
+| `created_timestamp` | date | Creation timestamp |
+| `modified_timestamp` | date | Modification timestamp |
 | `createdAt` | date | Auto-generated |
 | `updatedAt` | date | Auto-generated |
 
@@ -773,20 +794,31 @@ Token purchasing options.
 
 ### AccessControl
 
-Fine-grained permissions for sharing bots and knowledge collections.
+Fine-grained permissions for sharing bots, knowledge, conversations, and other resources.
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | string | Primary key |
-| `user` | relationship (Users) | User who receives access |
-| `resource_type` | select | Type: **bot**, **knowledgeCollection** |
-| `resource_id` | text | Resource ID reference |
-| `permission_type` | select | Permission: **read** (readonly), **write** (editor), **admin** (owner) |
-| `granted_by` | relationship (Users) | User who granted access |
-| `is_revoked` | checkbox | Whether access has been revoked |
-| `revoked_at` | date | When access was revoked |
+| `resource_type` | select | Type: **bot**, **knowledge**, **knowledgeCollection**, **memory**, **conversation**, **persona**, **creatorProfile** (required) |
+| `resource_id` | text | Resource ID reference (required) |
+| `resource_title` | text | Display title for the resource |
+| `permission_type` | select | Permission: **read**, **write**, **admin**, **share**, **delete** (required) |
+| `permission_scope` | select | Scope: **full**, **limited**, **view-only**, **comment-only**, **share-only** (default: full) |
+| `user` | relationship (Users) | User who receives access (required) |
+| `granted_by` | relationship (Users) | User who granted access (required) |
+| `granted_reason` | textarea | Reason for granting access |
+| `grant_method` | select | Method: **direct-share**, **collaboration-invite**, **public-access**, **program-membership**, **role-assignment**, **system-generated** (default: direct-share) |
+| `created_timestamp` | date | When access was granted |
+| `last_used` | date | When access was last used |
+| `expiration_date` | date | Optional expiration date |
+| `access_count` | number | Times accessed (read-only, default: 0) |
+| `is_revoked` | checkbox | Whether access has been revoked (default: false) |
 | `revoked_by` | relationship (Users) | User who revoked access |
-| `expires_at` | date | Optional expiration date |
+| `revoked_reason` | textarea | Reason for revocation |
+| `revoked_timestamp` | date | When access was revoked |
+| `notify_on_access` | checkbox | Notify owner when resource is accessed (default: true) |
+| `tags` | array | Tags for organizing access records |
+| `conditions` | textarea | Custom conditions or notes for this access |
 | `createdAt` | date | Auto-generated |
 | `updatedAt` | date | Auto-generated |
 
@@ -797,6 +829,8 @@ Fine-grained permissions for sharing bots and knowledge collections.
 | Owner | `admin` | Full access: view, edit, manage shares, delete |
 | Editor | `write` | View and edit content |
 | Read-only | `read` | View only |
+| Sharer | `share` | View and share with others |
+| Deleter | `delete` | View and delete |
 
 > **Usage Pattern**: When sharing a bot or lore book with another user, an AccessControl record is created with the recipient user and appropriate permission type. The original creator (stored in the resource's `user` field) is implicit owner and does not have an AccessControl record.
 

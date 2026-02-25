@@ -1,7 +1,7 @@
 # BotCafe v2 - Complete Sitemap
 
-**Last Updated**: 2026-02-14
-**Version**: 2.40
+**Last Updated**: 2026-02-24
+**Version**: 2.41
 **Status**: ~98% Complete
 
 ---
@@ -91,6 +91,7 @@
 | Route | Status | Description |
 |-------|--------|-------------|
 | `/help` | ✅ Complete | Help hub with search and categories |
+| `/help/all` | ✅ Complete | View all help articles on a single page |
 | `/help/[slug]` | ✅ Complete | Individual help article viewer |
 | `/help/category/[category]` | ✅ Complete | Category browsing page |
 
@@ -263,6 +264,7 @@
 | `/api/chat/conversations` | GET, POST | List conversations, create new (with bot access check) |
 | `/api/chat/conversations/[id]` | GET, PATCH, DELETE | Get, update (add/remove bots with access check), or delete |
 | `/api/chat/conversations/[id]/messages` | GET, DELETE | Get messages (paginated), clear chat history. Query params: `page` (default: 1), `limit` (default: 500), `before` (message ID for loading older), `after` (message ID for loading newer). Returns most recent messages first with `hasPrevPage` indicating older messages exist. |
+| `/api/chat/messages/[id]` | PATCH, DELETE | Edit user messages (with edit history tracking) or delete individual messages |
 | `/api/chat/send` | POST | Send message and trigger LLM response |
 | `/api/chat/regenerate` | POST | Regenerate/retry an AI message |
 | `/api/chat/stream/[messageId]` | GET | SSE endpoint for streaming LLM responses. Events: `start` (model/provider info), `reasoning` (thinking/reasoning content), `chunk` (response content), `end` (usage/finishReason). |
@@ -298,11 +300,11 @@
 | Mood | 0 | 1 | 1 |
 | Analytics | 2 | 1 | 3 |
 | Legal | 4 | 0 | 4 |
-| Help | 3 | 0 | 3 |
+| Help | 4 | 0 | 4 |
 | Chat | 3 | 0 | 3 |
-| **Frontend Total** | **33** | **2** | **35** |
-| API Endpoints | 73 | 0 | 73 |
-| **Grand Total** | **106** | **2** | **108** |
+| **Frontend Total** | **34** | **2** | **36** |
+| API Endpoints | 74 | 0 | 74 |
+| **Grand Total** | **108** | **2** | **110** |
 
 *Note: "Redirect" routes automatically redirect to the Account page with the appropriate tab.*
 *Note: API count includes 15 admin/migration endpoints for internal tooling.*
@@ -362,6 +364,7 @@ BotCafe
 │   ├── Bots (/analytics/bots)
 │   └── Usage (/analytics/usage)
 ├── Help (/help)
+│   ├── All Articles (/help/all)
 │   ├── Article (/help/[slug])
 │   └── Category (/help/category/[category])
 ├── Legal (/legal)

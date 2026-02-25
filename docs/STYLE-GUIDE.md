@@ -1,7 +1,7 @@
 # BotCafe v2 - Style Guide
 
-**Last Updated**: 2026-02-19
-**Version**: 3.1
+**Last Updated**: 2026-02-24
+**Version**: 3.2
 
 ---
 
@@ -65,6 +65,52 @@ BotCafe v2 uses a **fantasy dark forest theme** inspired by magical RPG aestheti
 }
 ```
 
+### Chart Variables
+
+Used for data visualization components (e.g., analytics charts):
+
+```css
+/* Light mode */
+--chart-1: 84 80% 27%;   /* Forest green */
+--chart-2: 46 65% 52%;   /* Gold */
+--chart-3: 174 72% 50%;  /* Teal */
+--chart-4: 42 43% 39%;   /* Ancient gold */
+--chart-5: 142 69% 58%;  /* Magic green */
+
+/* Dark mode */
+--chart-1: 142 69% 58%;  /* Magic green */
+--chart-2: 46 65% 52%;   /* Gold */
+--chart-3: 174 72% 50%;  /* Teal */
+--chart-4: 84 80% 40%;   /* Lighter forest */
+--chart-5: 42 43% 50%;   /* Lighter ancient gold */
+```
+
+### Sidebar Variables
+
+Dedicated color tokens for the sidebar component:
+
+```css
+/* Light mode */
+--sidebar: 38 40% 92%;
+--sidebar-foreground: 21 42% 12%;
+--sidebar-primary: 84 80% 27%;
+--sidebar-primary-foreground: 38 47% 95%;
+--sidebar-accent: 46 65% 52%;
+--sidebar-accent-foreground: 21 42% 12%;
+--sidebar-border: 42 43% 70%;
+--sidebar-ring: 46 65% 52%;
+
+/* Dark mode */
+--sidebar: 120 29% 8%;
+--sidebar-foreground: 38 47% 81%;
+--sidebar-primary: 46 65% 52%;
+--sidebar-primary-foreground: 120 29% 10%;
+--sidebar-accent: 84 80% 27%;
+--sidebar-accent-foreground: 38 47% 95%;
+--sidebar-border: 42 43% 25%;
+--sidebar-ring: 46 65% 52%;
+```
+
 ---
 
 ## Typography
@@ -73,18 +119,18 @@ BotCafe v2 uses a **fantasy dark forest theme** inspired by magical RPG aestheti
 
 | Font | CSS Variable | Usage |
 |------|--------------|-------|
-| Cinzel Decorative | `--font-display` | Headlines, titles, magical text |
+| Quintessential | `--font-display` | Headlines, titles, magical text |
 | Crimson Text | `--font-lore` | Body text, descriptions, narratives |
 | Inter | `--font-body` | UI elements, forms, labels |
 
 ### Font Loading (Next.js)
 
 ```typescript
-import { Cinzel_Decorative, Crimson_Text, Inter } from 'next/font/google'
+import { Quintessential, Crimson_Text, Inter } from 'next/font/google'
 
-const cinzelDecorative = Cinzel_Decorative({
+const quintessential = Quintessential({
   subsets: ['latin'],
-  weight: ['400', '700', '900'],
+  weight: ['400'],
   variable: '--font-display',
 })
 
@@ -104,8 +150,8 @@ const inter = Inter({
 
 | Element | Class | Font |
 |---------|-------|------|
-| Page Title | `text-4xl md:text-5xl font-display` | Cinzel Decorative |
-| Section Heading | `text-2xl md:text-3xl font-display` | Cinzel Decorative |
+| Page Title | `text-4xl md:text-5xl font-display` | Quintessential |
+| Section Heading | `text-2xl md:text-3xl font-display` | Quintessential |
 | Card Title | `text-xl font-semibold` | Inter |
 | Body Text | `text-base font-lore` | Crimson Text |
 | Small Text | `text-sm text-muted-foreground` | Inter |
@@ -233,9 +279,9 @@ Decorative corner borders that expand on hover:
 
 ## Component Library
 
-BotCafe uses **shadcn/ui** components with custom styling. All components are located in `/src/components/ui/`.
+BotCafe uses **shadcn/ui** components with custom styling. All 54 components are located in `/src/components/ui/`.
 
-### Available Components
+### Core Components
 
 | Component | Path | Description |
 |-----------|------|-------------|
@@ -252,6 +298,45 @@ BotCafe uses **shadcn/ui** components with custom styling. All components are lo
 | Tooltip | `/components/ui/tooltip` | Hover tooltips |
 | ScrollArea | `/components/ui/scroll-area` | Scrollable containers |
 | InfiniteScrollTrigger | `/components/ui/infinite-scroll-trigger` | Infinite scroll loading trigger |
+
+### Additional Components
+
+| Component | Path | Description |
+|-----------|------|-------------|
+| Accordion | `/components/ui/accordion` | Collapsible content sections |
+| Alert / AlertDialog | `/components/ui/alert`, `alert-dialog` | Notifications and confirmation dialogs |
+| Breadcrumb | `/components/ui/breadcrumb` | Navigation breadcrumbs |
+| ButtonGroup | `/components/ui/button-group` | Grouped button layouts |
+| Calendar | `/components/ui/calendar` | Date picker calendar |
+| Carousel | `/components/ui/carousel` | Content carousel/slider |
+| Chart | `/components/ui/chart` | Data visualization charts |
+| Checkbox | `/components/ui/checkbox` | Checkbox inputs |
+| Command | `/components/ui/command` | Command palette / search |
+| ContextMenu | `/components/ui/context-menu` | Right-click menus |
+| Drawer | `/components/ui/drawer` | Bottom/side drawers |
+| DropdownMenu | `/components/ui/dropdown-menu` | Dropdown menus |
+| Empty | `/components/ui/empty` | Empty state UI with variants |
+| Form / Field | `/components/ui/form`, `field` | Form wrappers with validation |
+| HoverCard | `/components/ui/hover-card` | Cards shown on hover |
+| InputGroup | `/components/ui/input-group` | Input with addons |
+| InputOTP | `/components/ui/input-otp` | One-time password inputs |
+| Kbd | `/components/ui/kbd` | Keyboard shortcut display |
+| Label | `/components/ui/label` | Form labels |
+| Menubar | `/components/ui/menubar` | Menu bar navigation |
+| NavigationMenu | `/components/ui/navigation-menu` | Top-level navigation |
+| Pagination | `/components/ui/pagination` | Page navigation |
+| Popover | `/components/ui/popover` | Floating content panels |
+| RadioGroup | `/components/ui/radio-group` | Radio button groups |
+| Resizable | `/components/ui/resizable` | Resizable panels |
+| Separator | `/components/ui/separator` | Visual dividers |
+| Sheet | `/components/ui/sheet` | Slide-out panels |
+| Sidebar | `/components/ui/sidebar` | Sidebar layout with context provider |
+| Skeleton | `/components/ui/skeleton` | Loading placeholder shapes |
+| Slider | `/components/ui/slider` | Range slider inputs |
+| Spinner | `/components/ui/spinner` | Lightweight loading spinner (Loader2Icon) |
+| Switch | `/components/ui/switch` | Toggle switches |
+| Table | `/components/ui/table` | Data tables |
+| Toggle / ToggleGroup | `/components/ui/toggle`, `toggle-group` | Toggle buttons |
 
 ### ScrollArea Usage Caution
 
@@ -629,7 +714,7 @@ When enabled, adds `.reduce-animations` to `<html>`. This:
 
 ### Easy Read Font
 
-When enabled, adds `.easy-read-font` to `<html>`. This overrides the `--font-display` (Cinzel Decorative) and `--font-lore` (Crimson Text) CSS variables to use the body font (Inter) instead.
+When enabled, adds `.easy-read-font` to `<html>`. This overrides the `--font-display` (Quintessential) and `--font-lore` (Crimson Text) CSS variables to use the body font (Inter) instead.
 
 The CSS rule targets `html.easy-read-font body` to beat the specificity of Next.js font loader classes applied on `<body>`:
 
@@ -666,6 +751,27 @@ BotCafe defaults to dark mode. The theme is controlled via:
     Text content
   </p>
 </div>
+```
+
+### Custom Scrollbar (Dark Mode)
+
+The app applies themed scrollbar styling in dark mode via WebKit pseudo-elements:
+
+```css
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: hsl(120, 29%, 14%); /* Forest dark */
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(42, 43%, 39%); /* Ancient gold */
+  border-radius: 5px;
+  border: 2px solid hsl(120, 29%, 14%);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(46, 65%, 52%); /* Bright gold */
+}
 ```
 
 ---
@@ -706,7 +812,15 @@ BotCafe defaults to dark mode. The theme is controlled via:
 
 ## Loading States
 
-### Spinner
+### Spinner Component
+
+```tsx
+import { Spinner } from '@/components/ui/spinner'
+
+<Spinner />
+```
+
+### Manual Spinner (alternative)
 
 ```tsx
 import { RefreshCw } from 'lucide-react'
@@ -718,7 +832,7 @@ import { RefreshCw } from 'lucide-react'
 
 ```tsx
 <div className="flex items-center justify-center py-20">
-  <RefreshCw className="h-8 w-8 animate-spin text-purple-500" />
+  <Spinner />
 </div>
 ```
 

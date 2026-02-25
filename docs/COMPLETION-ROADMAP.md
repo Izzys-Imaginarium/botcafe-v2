@@ -238,9 +238,9 @@ By building foundational systems first, we avoid rework and ensure chat has all 
 - [x] Implement persona library with search and filtering ✅
 - [x] Add default persona management (auto-unset others when setting new default) ✅
 - [x] **Schema Simplification (2026-01-08)**: Removed personality_traits, behavior_settings, tags, signature_phrases (moved to Bot collection)
-- [ ] Add persona switching interface (Pending - requires Chat UI, Phase 9)
-- [ ] Connect personas to user sessions (Pending - requires Chat system)
-- [ ] Add persona analytics (Pending - Phase 7 Analytics)
+- [x] Add persona switching interface ✅ (PersonaSwitcher component in chat, hot-swap mid-conversation)
+- [x] Connect personas to user sessions ✅ (per-message persona attribution via message_attribution.persona_id)
+- [x] Add persona analytics ✅ (PersonaAnalytics collection created)
 
 ### **PHASE 6: Creator Profiles & Showcase** (Week 12-13) ✅ **COMPLETED**
 - [x] Create `/creators` creator directory ✅
@@ -255,14 +255,14 @@ By building foundational systems first, we avoid rework and ensure chat has all 
 - [x] Social links management (website, GitHub, Twitter, LinkedIn, YouTube, Discord) ✅
 - [x] Profile visibility controls (public/unlisted/private) ✅
 - [x] Verification badges (verified, premium) and featured creator highlighting ✅
-- [ ] Add creator dashboard with analytics (Pending - Phase 7)
+- [ ] Add creator-specific analytics dashboard (Pending - Phase 7)
 
 ### **PHASE 7: Supporting Systems** (Week 14-15)
 - [x] Create `/memories` memory management system ✅ **COMPLETED**
   - [x] Memory dashboard and library ✅
   - [x] Memory import from legacy platforms ✅
   - [x] Convert memories to permanent lore ✅
-  - [ ] Memory editing and organization (Edit pending)
+  - [x] Memory editing and organization ✅ (Edit dialog in memory library view)
   - [ ] Export and sharing tools (Pending)
 - [x] Create `/wellbeing` mental health tracking ✅ **COMPLETED**
   - [x] Wellbeing dashboard with mood overview and usage stats
@@ -296,7 +296,7 @@ By building foundational systems first, we avoid rework and ensure chat has all 
   - [x] `/api/help/[slug]` - GET article by slug with view tracking
   - [x] `/api/help/tutorials` - GET tutorials with filtering
 
-### **PHASE 9: Chat Interface** 🎬 (Week 17-18) **IN PROGRESS**
+### **PHASE 9: Chat Interface** 🎬 (Week 17-18) ✅ **COMPLETED**
 - [x] Create LLM provider abstraction layer (`/lib/llm/`)
   - [x] OpenAI provider with GPT-5.x, GPT-4.x models
   - [x] Anthropic provider with Claude 4.5 series
@@ -346,9 +346,17 @@ By building foundational systems first, we avoid rework and ensure chat has all 
   - [x] Enhanced importance scoring (7 signal categories: personal revelations, commitments, emotional intensity, life events, narrative, deep questions, plans)
   - [x] Add memory deduplication logic (Jaccard similarity on keywords)
   - [x] Add memory consolidation API (merge related memories with AI summarization)
-- [ ] Add wellness gate checks before sending
-- [ ] Implement voice input capabilities
-- [ ] Add file sharing in chat
+- [x] **Message Editing/Deletion** — `PATCH/DELETE /api/chat/messages/[id]` with edit history tracking ✅
+- [x] **Message Regeneration** — `POST /api/chat/regenerate` to retry AI responses ✅
+- [x] **Conversation Archive** — Archive/unarchive conversations from chat menu ✅
+- [x] **API Key Management** — Full CRUD at `/api/api-keys` and `/api/api-keys/[id]` ✅
+- [x] **Account Data Export** — GDPR-compliant export at `/api/account/export` ✅
+- [x] **User Preferences API** — `GET/PATCH /api/user/preferences` for chat preferences ✅
+- [x] **Conversation Sharing/Permissions** — `/api/sharing` endpoints for resource access control ✅
+- [x] **Help: All Articles Page** — `/help/all` for viewing all articles on a single page ✅
+- [ ] Add wellness gate checks before sending (Pending)
+- [ ] Implement voice input capabilities (Pending)
+- [ ] Add file sharing in chat (Pending)
 - [x] **GLM Streaming** - Resolved: GLM provider switched to streaming mode (`stream: true`) with SSE parsing. H2 issues no longer occur. Also added `thinking: { type: 'enabled' }` for reasoning support. ✅
 - [x] **Reasoning/Thinking Support** - All 7 LLM providers now capture reasoning tokens (GLM, DeepSeek, OpenAI, Anthropic, Google, OpenRouter, ElectronHub). Reasoning is streamed via new `reasoning` SSE event, persisted in `reasoning_content` field on Message, and displayed in a collapsible "Thinking" box in the chat UI. ✅
 - [x] **Memory trigger adjustment** - First memory now triggers after 5 messages (was 4000 tokens). `firstMemoryThreshold` replaces old `tokenThreshold` in `MemoryTriggerConfig`. ✅
@@ -401,7 +409,7 @@ By building foundational systems first, we avoid rework and ensure chat has all 
   - [x] Created `AccessibilityProvider` context with localStorage persistence ✅
   - [x] Created floating `AccessibilitySettings` button (bottom-left, all pages, no login required) ✅
   - [x] Reduce Animations toggle: disables all CSS animations/transitions, hides MagicalBackground effects ✅
-  - [x] Easy Read Font toggle: switches decorative fonts (Cinzel Decorative, Crimson Text) to Inter site-wide ✅
+  - [x] Easy Read Font toggle: switches decorative fonts (Quintessential, Crimson Text) to Inter site-wide ✅
   - [x] Respects `prefers-reduced-motion` OS setting as default for animations ✅
   - [x] Updated Style Guide documentation ✅
 
@@ -431,8 +439,8 @@ By building foundational systems first, we avoid rework and ensure chat has all 
 ## 📊 **PROGRESS TRACKING**
 
 **Total Estimated Timeline: 21 weeks (5 months) for full completion**
-**Current ~97% complete**
-**Remaining Work: ~3% of the total project (Chat polish and minor enhancements)**
+**Current ~99% complete**
+**Remaining Work: ~1% of the total project (wellness gates, voice input, file sharing, memory export, testing & deployment)**
 
 ### **Completed:**
 - ✅ **Home Page**: Complete splash page with magical effects
@@ -478,7 +486,7 @@ By building foundational systems first, we avoid rework and ensure chat has all 
 
 ### **Fantasy Theme Requirements:**
 - **Colors**: Ultra-dark background (#020402), forest greens (#4d7c0f), gold accents (#d4af37)
-- **Typography**: Cinzel Decorative (headers), Crimson Text (body), Inter (UI)
+- **Typography**: Quintessential (headers), Crimson Text (body), Inter (UI)
 - **Effects**: Glass rune styling, ornate borders, floating animations, magical backgrounds
 - **Components**: All components must follow the established fantasy aesthetic
 
@@ -1525,7 +1533,7 @@ When you add new Payload collections or modify existing ones:
   - `/analytics/usage` - Usage statistics
 - ✅ Fixed TypeScript errors (collection slugs, type assertions)
 - ✅ Updated completion status to ~80%
-- ✅ Only Chat Interface (Phase 9) remains as major system
+- ✅ Chat Interface (Phase 9) complete with multi-provider LLM support, multi-bot conversations, RAG integration, message editing, and SillyTavern import/export
 
 ### **2026-01-04 Updates (Night):**
 - ✅ **Wellbeing System Complete (Phase 7 partial)**
@@ -1718,8 +1726,8 @@ const filtered = all.docs.filter(conv =>
 
 ---
 
-**Last Updated**: 2026-02-06
-**Version**: 3.34
-**Total Tasks**: 185
-**Completed**: 180
-**Progress**: ~97% (Memory system collection mismatch fix)
+**Last Updated**: 2026-02-24
+**Version**: 3.35
+**Total Tasks**: 193
+**Completed**: 192
+**Progress**: ~99% (Chat polish items remain: wellness gates, voice input, file sharing, memory export)

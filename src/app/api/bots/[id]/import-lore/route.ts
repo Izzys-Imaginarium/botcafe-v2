@@ -83,12 +83,14 @@ export async function POST(
     }
 
     // Create a KnowledgeCollection for this lore book
+    // Collection is owned by the bot owner, not the importing user (who may be an editor)
+    const botOwnerId = typeof bot.user === 'object' ? (bot.user as any).id : bot.user
     const collectionName = characterBook.name || `${bot.name}'s Imported Lore`
     const knowledgeCollection = await payload.create({
       collection: 'knowledgeCollections',
       data: {
         name: collectionName,
-        user: payloadUser.id,
+        user: botOwnerId,
         bot: [parseInt(id)],
         description: characterBook.description || `Lore imported from SillyTavern character card for ${bot.name}`,
         sharing_settings: {
@@ -132,7 +134,7 @@ export async function POST(
         const newKnowledge = await payload.create({
           collection: 'knowledge',
           data: {
-            user: payloadUser.id,
+            user: botOwnerId,
             knowledge_collection: knowledgeCollection.id,
             type: 'text',
             entry: entry.content,
@@ -202,7 +204,7 @@ export async function POST(
             const chunks = chunkText(entry.content, chunkConfig)
 
             if (chunks.length > 0) {
-              const tenant_id = String(payloadUser.id)
+              const tenant_id = String(botOwnerId)
               const vectorizeRecords: VectorRecord[] = []
 
               const chunkTexts = chunks.map((c) => c.text)
@@ -215,7 +217,7 @@ export async function POST(
 
                 const metadata: VectorMetadata = {
                   type: 'lore' as any,
-                  user_id: payloadUser.id,
+                  user_id: botOwnerId,
                   tenant_id,
                   source_type: 'knowledge',
                   source_id: String(newKnowledge.id),
@@ -237,7 +239,7 @@ export async function POST(
                     vector_id,
                     source_type: 'knowledge',
                     source_id: String(newKnowledge.id),
-                    user_id: payloadUser.id,
+                    user_id: botOwnerId,
                     tenant_id,
                     chunk_index: chunk.index,
                     total_chunks: chunk.totalChunks,

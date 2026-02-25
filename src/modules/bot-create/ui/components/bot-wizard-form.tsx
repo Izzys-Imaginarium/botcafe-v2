@@ -145,12 +145,12 @@ export function BotWizardForm({ mode, initialData, botId, initialPictureUrl, onS
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false)
   const [picturePreview, setPicturePreview] = useState<string | null>(null)
 
-  // Set creator_display_name from Clerk username
+  // Set creator_display_name from Clerk username (only in create mode)
   useEffect(() => {
-    if (clerkUser?.username && !botData.creator_display_name) {
+    if (mode === 'create' && clerkUser?.username && !botData.creator_display_name) {
       setBotData(prev => ({ ...prev, creator_display_name: clerkUser.username || '' }))
     }
-  }, [clerkUser?.username])
+  }, [clerkUser?.username, mode])
 
   // Creator username for URL display
   const [creatorUsername, setCreatorUsername] = useState<string | null>(null)
@@ -457,7 +457,7 @@ export function BotWizardForm({ mode, initialData, botId, initialPictureUrl, onS
 
       const cleanedData = {
         name: botData.name,
-        creator_display_name: clerkUser?.username || botData.creator_display_name,
+        creator_display_name: mode === 'edit' ? botData.creator_display_name : (clerkUser?.username || botData.creator_display_name),
         description: botData.description,
         system_prompt: botData.system_prompt,
         greeting: botData.greeting,
@@ -543,10 +543,10 @@ export function BotWizardForm({ mode, initialData, botId, initialPictureUrl, onS
             <div className="space-y-2">
               <Label htmlFor="creator_display_name">Creator Name</Label>
               <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md border border-gold-ancient/30">
-                <span className="text-parchment font-medium">@{clerkUser?.username || 'Loading...'}</span>
+                <span className="text-parchment font-medium">@{mode === 'edit' ? (botData.creator_display_name || 'Loading...') : (clerkUser?.username || 'Loading...')}</span>
               </div>
               <p className="text-sm text-muted-foreground">
-                Your username from your account. This cannot be changed here.
+                {mode === 'edit' ? "The bot creator's username. This cannot be changed." : "Your username from your account. This cannot be changed here."}
               </p>
             </div>
 

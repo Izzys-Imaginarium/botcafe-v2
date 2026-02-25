@@ -61,6 +61,8 @@ interface Tome {
   sharing_settings?: {
     sharing_level?: 'private' | 'shared' | 'public'
   }
+  access_level?: 'owner' | 'editor' | 'readonly'
+  is_shared_with_me?: boolean
 }
 
 interface KnowledgeEntry {
@@ -1015,31 +1017,37 @@ export const LoreTomesView = () => {
                     </Badge>
                   )}
                   <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openShareDialog(tome)}
-                      className="h-8 w-8 p-0 text-parchment/60 hover:text-forest"
-                      title="Share"
-                    >
-                      <Share2 className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openEditTome(tome)}
-                      className="h-8 w-8 p-0 text-parchment/60 hover:text-gold-rich"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteTome(tome.id)}
-                      className="h-8 w-8 p-0 text-parchment/60 hover:text-red-400"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    {(!tome.access_level || tome.access_level === 'owner') && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openShareDialog(tome)}
+                        className="h-8 w-8 p-0 text-parchment/60 hover:text-forest"
+                        title="Share"
+                      >
+                        <Share2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {(!tome.access_level || tome.access_level === 'owner' || tome.access_level === 'editor') && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEditTome(tome)}
+                        className="h-8 w-8 p-0 text-parchment/60 hover:text-gold-rich"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {(!tome.access_level || tome.access_level === 'owner') && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteTome(tome.id)}
+                        className="h-8 w-8 p-0 text-parchment/60 hover:text-red-400"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1047,7 +1055,8 @@ export const LoreTomesView = () => {
               {/* Tome Content (Expanded) */}
               {expandedTomeId === tome.id && (
                 <div className="border-t border-gold-ancient/20">
-                  {/* Add Entry Button */}
+                  {/* Add Entry Button - editor+ only */}
+                  {(!tome.access_level || tome.access_level === 'owner' || tome.access_level === 'editor') && (
                   <div className="p-4 border-b border-gold-ancient/10 bg-[#0a140a]/20">
                     {showCreateEntry === tome.id ? (
                       <div className="space-y-4">
@@ -1234,6 +1243,7 @@ export const LoreTomesView = () => {
                       </Button>
                     )}
                   </div>
+                  )}
 
                   {/* Entries List */}
                   <div className="p-4">
@@ -1294,24 +1304,26 @@ export const LoreTomesView = () => {
                                   )}
                                 </div>
                               </div>
-                              <div className="flex items-center gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => openEditEntry(entry)}
-                                  className="h-8 w-8 p-0 text-parchment/60 hover:text-gold-rich"
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDeleteEntry(entry)}
-                                  className="h-8 w-8 p-0 text-parchment/60 hover:text-red-400"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
+                              {(!tome.access_level || tome.access_level === 'owner' || tome.access_level === 'editor') && (
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openEditEntry(entry)}
+                                    className="h-8 w-8 p-0 text-parchment/60 hover:text-gold-rich"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeleteEntry(entry)}
+                                    className="h-8 w-8 p-0 text-parchment/60 hover:text-red-400"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           </div>
                         ))}

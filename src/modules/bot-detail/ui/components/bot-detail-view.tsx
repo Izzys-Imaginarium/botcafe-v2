@@ -49,7 +49,6 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
   const [bot, setBot] = useState<BotData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [isOwner, setIsOwner] = useState(false)
   const [liked, setLiked] = useState(false)
   const [favorited, setFavorited] = useState(false)
   const [likesCount, setLikesCount] = useState(0)
@@ -86,9 +85,8 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
             }
             setLiked(statusData.liked)
             setFavorited(statusData.favorited)
-            // User can view bot details if they are owner or editor
+            // User can edit if they are owner or editor
             setCanEditBot(statusData.permission === 'owner' || statusData.permission === 'editor')
-            setIsOwner(statusData.permission === 'owner')
           }
         }
 
@@ -433,7 +431,7 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
                   {favorited ? 'Favorited' : 'Favorite'}
                 </Button>
 
-                {isOwner && (
+                {canEditBot && (
                   <Button
                     onClick={handleEdit}
                     variant="outline"
@@ -480,7 +478,7 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
           </Card>
         )}
 
-        {/* Greeting Section - Only visible to creators/editors */}
+        {/* Greeting Section - Only visible to editors/owners */}
         {canEditBot && bot.greeting && (
           <Card className="glass-rune mb-6">
             <CardHeader>
@@ -494,7 +492,7 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
           </Card>
         )}
 
-        {/* Speech Examples - Only visible to creators/editors */}
+        {/* Speech Examples - Only visible to editors/owners */}
         {canEditBot && bot.speech_examples && bot.speech_examples.length > 0 && (
           <Card className="glass-rune mb-6">
             <CardHeader>
@@ -515,7 +513,7 @@ export function BotDetailView({ username, botSlug }: BotDetailViewProps) {
           </Card>
         )}
 
-        {/* Knowledge Collections - Only visible to creators/editors */}
+        {/* Knowledge Collections - Only visible to editors/owners */}
         {canEditBot && bot.knowledge_collections && bot.knowledge_collections.length > 0 && (
           <Card className="glass-rune">
             <CardHeader>

@@ -19,6 +19,7 @@ export function EditBotForm({ username, botSlug }: EditBotFormProps) {
   const [existingPictureUrl, setExistingPictureUrl] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [permissionDenied, setPermissionDenied] = useState(false)
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -41,6 +42,19 @@ export function EditBotForm({ username, botSlug }: EditBotFormProps) {
 
         // Store the bot ID for updates
         setBotId(data.id)
+
+        // Check if user has edit permission before showing the form
+        const statusResponse = await fetch(`/api/bots/${data.id}/status`)
+        if (statusResponse.ok) {
+          const statusData = await statusResponse.json() as {
+            permission: 'owner' | 'editor' | 'readonly' | null
+          }
+          if (statusData.permission !== 'owner' && statusData.permission !== 'editor') {
+            setPermissionDenied(true)
+            setIsLoading(false)
+            return
+          }
+        }
 
         // Store existing picture URL for preview
         if (typeof data.picture === 'object' && data.picture?.url) {
@@ -105,6 +119,24 @@ export function EditBotForm({ username, botSlug }: EditBotFormProps) {
 
   if (!user) {
     return null // Will redirect
+  }
+
+  if (permissionDenied) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-parchment-dim font-lore text-lg mb-4">
+            You do not have permission to edit this bot. You have read-only access.
+          </p>
+          <button
+            onClick={() => router.push(`/${username}/${botSlug}`)}
+            className="text-gold-rich hover:text-glow-gold font-lore"
+          >
+            Return to Bot
+          </button>
+        </div>
+      </div>
+    )
   }
 
   if (error || !botData || !botId) {

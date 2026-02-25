@@ -3,6 +3,7 @@ import { currentUser } from '@clerk/nextjs/server'
 import { getPayloadHMR } from '@payloadcms/next/utilities'
 import config from '@payload-config'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
+import { checkResourceAccess } from '@/lib/permissions/check-access'
 import {
   deleteVectorsBySource,
   generateEmbeddings,
@@ -135,15 +136,31 @@ export async function GET(
       )
     }
 
-    // Check ownership
+    // Check access: entry creator always has access, otherwise check collection permissions
     // @ts-ignore
-    const isOwner = knowledge.user === payloadUser.id || knowledge.user?.id === payloadUser.id
+    const isEntryCreator = knowledge.user === payloadUser.id || knowledge.user?.id === payloadUser.id
 
-    if (!isOwner) {
-      return NextResponse.json(
-        { message: 'Unauthorized - You do not have access to this entry' },
-        { status: 403 }
-      )
+    if (!isEntryCreator) {
+      // Check collection-level permissions (readonly+ can view)
+      // @ts-ignore
+      const collectionId = typeof knowledge.knowledge_collection === 'object'
+        ? knowledge.knowledge_collection?.id
+        : knowledge.knowledge_collection
+
+      if (!collectionId) {
+        return NextResponse.json(
+          { message: 'Unauthorized - You do not have access to this entry' },
+          { status: 403 }
+        )
+      }
+
+      const accessResult = await checkResourceAccess(payload, payloadUser.id, 'knowledgeCollection', collectionId)
+      if (!accessResult.hasAccess) {
+        return NextResponse.json(
+          { message: 'Unauthorized - You do not have access to this entry' },
+          { status: 403 }
+        )
+      }
     }
 
     return NextResponse.json({
@@ -219,12 +236,30 @@ export async function PATCH(
       )
     }
 
+    // Check access: entry creator always has edit access, otherwise check collection permissions (editor+)
     // @ts-ignore
-    if (existingKnowledge.user !== payloadUser.id && existingKnowledge.user?.id !== payloadUser.id) {
-      return NextResponse.json(
-        { message: 'Unauthorized - You do not own this knowledge entry' },
-        { status: 403 }
-      )
+    const isEntryCreator = existingKnowledge.user === payloadUser.id || existingKnowledge.user?.id === payloadUser.id
+
+    if (!isEntryCreator) {
+      // @ts-ignore
+      const collectionId = typeof existingKnowledge.knowledge_collection === 'object'
+        ? existingKnowledge.knowledge_collection?.id
+        : existingKnowledge.knowledge_collection
+
+      if (!collectionId) {
+        return NextResponse.json(
+          { message: 'Unauthorized - You do not have permission to edit this entry' },
+          { status: 403 }
+        )
+      }
+
+      const accessResult = await checkResourceAccess(payload, payloadUser.id, 'knowledgeCollection', collectionId)
+      if (!accessResult.hasAccess || (accessResult.permission !== 'owner' && accessResult.permission !== 'editor')) {
+        return NextResponse.json(
+          { message: 'Unauthorized - You do not have permission to edit this entry' },
+          { status: 403 }
+        )
+      }
     }
 
     // Check if content changed (requires re-vectorization)
@@ -850,13 +885,30 @@ export async function DELETE(
       )
     }
 
-    // Check if user owns this knowledge entry
+    // Check access: entry creator always has delete access, otherwise check collection permissions (editor+)
     // @ts-ignore - Payload types are complex
-    if (knowledge.user !== payloadUser.id && knowledge.user?.id !== payloadUser.id) {
-      return NextResponse.json(
-        { message: 'Unauthorized - You do not own this knowledge entry' },
-        { status: 403 }
-      )
+    const isEntryCreatorForDelete = knowledge.user === payloadUser.id || knowledge.user?.id === payloadUser.id
+
+    if (!isEntryCreatorForDelete) {
+      // @ts-ignore
+      const collectionId = typeof knowledge.knowledge_collection === 'object'
+        ? knowledge.knowledge_collection?.id
+        : knowledge.knowledge_collection
+
+      if (!collectionId) {
+        return NextResponse.json(
+          { message: 'Unauthorized - You do not have permission to delete this entry' },
+          { status: 403 }
+        )
+      }
+
+      const accessResult = await checkResourceAccess(payload, payloadUser.id, 'knowledgeCollection', collectionId)
+      if (!accessResult.hasAccess || (accessResult.permission !== 'owner' && accessResult.permission !== 'editor')) {
+        return NextResponse.json(
+          { message: 'Unauthorized - You do not have permission to delete this entry' },
+          { status: 403 }
+        )
+      }
     }
 
     // Delete associated vectors if entry is vectorized

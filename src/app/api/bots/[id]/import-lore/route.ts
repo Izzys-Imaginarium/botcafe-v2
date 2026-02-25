@@ -54,11 +54,11 @@ export async function POST(
 
     const payloadUser = payloadUsers.docs[0]
 
-    // Check permission - only owners can import lore
+    // Check permission - owners and editors can import lore
     const access = await checkResourceAccess(payload, payloadUser.id, 'bot', parseInt(id))
-    if (!access || access.permission !== 'owner') {
+    if (!access.hasAccess || (access.permission !== 'owner' && access.permission !== 'editor')) {
       return NextResponse.json(
-        { error: 'Only the bot owner can import lore.' },
+        { error: 'You do not have permission to import lore for this bot.' },
         { status: 403 },
       )
     }

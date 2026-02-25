@@ -3,6 +3,7 @@ import { currentUser } from '@clerk/nextjs/server'
 import { getPayloadHMR } from '@payloadcms/next/utilities'
 import config from '@payload-config'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
+import { checkResourceAccess } from '@/lib/permissions/check-access'
 import {
   generateEmbeddings,
   insertVectors,
@@ -117,6 +118,19 @@ export async function POST(request: NextRequest) {
     }
 
     const payloadUser = payloadUsers.docs[0]
+
+    // Check that user has editor+ access to the target collection
+    const targetCollectionId = typeof body.knowledge_collection === 'string'
+      ? parseInt(body.knowledge_collection)
+      : body.knowledge_collection
+
+    const accessResult = await checkResourceAccess(payload, payloadUser.id, 'knowledgeCollection', targetCollectionId)
+    if (!accessResult.hasAccess || (accessResult.permission !== 'owner' && accessResult.permission !== 'editor')) {
+      return NextResponse.json(
+        { message: 'Unauthorized - You do not have permission to add entries to this collection' },
+        { status: 403 }
+      )
+    }
 
     // Estimate token count (rough approximation: 1 token ≈ 4 characters)
     const estimatedTokens = Math.ceil(body.entry.length / 4)

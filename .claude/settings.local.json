@@ -6,7 +6,9 @@
       "Bash(npx wrangler d1 execute:*)",
       "WebFetch(domain:tokyodebunker.miraheze.org)",
       "Bash(# Windows doesn''t have strings - use grep with binary search grep -boa -P \"\"https?://[^\\\\x00]+\"\" /tmp/tkdb-unpack/apk_contents/assets/bin/Data/Managed/Metadata/global-metadata.dat)",
-      "Bash(# Search specifically for game-related URLs, not generic Unity URLs grep -boa -P \"\"https?://[^\\\\x00]+\"\" /tmp/tkdb-unpack/apk_contents/assets/bin/Data/Managed/Metadata/global-metadata.dat)"
+      "Bash(# Search specifically for game-related URLs, not generic Unity URLs grep -boa -P \"\"https?://[^\\\\x00]+\"\" /tmp/tkdb-unpack/apk_contents/assets/bin/Data/Managed/Metadata/global-metadata.dat)",
+      "Bash(wc -l \"/c/Users/isabe/tkdb-data/files/\"*.json)",
+      "Bash(sed 's/^[A-Z][a-z]*Char//')"
     ]
   }
 }

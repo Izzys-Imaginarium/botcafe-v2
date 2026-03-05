@@ -19,7 +19,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
     try {
       await db.run(statement)
     } catch (e: any) {
-      if (!e.message?.includes('duplicate column')) throw e
+      if (!e.message?.includes('duplicate column name')) throw e
     }
   }
 
@@ -52,7 +52,7 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
     try {
       await db.run(statement)
     } catch (e: any) {
-      if (!e.message?.includes('duplicate column')) throw e
+      if (!e.message?.includes('duplicate column name')) throw e
     }
   }
 

@@ -51,8 +51,12 @@ interface CreatorProfile {
   }
   social_links?: {
     website?: string
-    github?: string
     twitter?: string
+    instagram?: string
+    discord?: string
+    youtube?: string
+    kofi?: string
+    patreon?: string
   }
   creator_info?: {
     creator_type?: string

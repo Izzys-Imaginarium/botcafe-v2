@@ -474,11 +474,12 @@ export async function POST(request: NextRequest) {
       bio: string
       social_links?: {
         website?: string
-        github?: string
         twitter?: string
-        linkedin?: string
+        instagram?: string
         discord?: string
         youtube?: string
+        kofi?: string
+        patreon?: string
         other_links?: Array<{ platform: string; url: string }>
       }
       creator_info?: {

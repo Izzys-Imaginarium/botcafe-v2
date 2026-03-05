@@ -415,17 +415,13 @@ export interface CreatorProfile {
      */
     website?: string | null;
     /**
-     * GitHub profile URL
-     */
-    github?: string | null;
-    /**
      * Twitter/X profile URL
      */
     twitter?: string | null;
     /**
-     * LinkedIn profile URL
+     * Instagram profile URL
      */
-    linkedin?: string | null;
+    instagram?: string | null;
     /**
      * Discord username or server invite
      */
@@ -434,6 +430,14 @@ export interface CreatorProfile {
      * YouTube channel URL
      */
     youtube?: string | null;
+    /**
+     * Ko-fi page URL
+     */
+    kofi?: string | null;
+    /**
+     * Patreon page URL
+     */
+    patreon?: string | null;
     /**
      * Additional social media or professional links
      */
@@ -3589,11 +3593,12 @@ export interface CreatorProfilesSelect<T extends boolean = true> {
     | T
     | {
         website?: T;
-        github?: T;
         twitter?: T;
-        linkedin?: T;
+        instagram?: T;
         discord?: T;
         youtube?: T;
+        kofi?: T;
+        patreon?: T;
         other_links?:
           | T
           | {

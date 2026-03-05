@@ -354,9 +354,8 @@ export async function PUT(
       }
       social_links?: {
         website?: string
-        github?: string
         twitter?: string
-        linkedin?: string
+        instagram?: string
         discord?: string
         youtube?: string
         kofi?: string

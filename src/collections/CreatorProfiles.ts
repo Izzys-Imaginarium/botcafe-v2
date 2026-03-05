@@ -113,13 +113,6 @@ export const CreatorProfiles: CollectionConfig = {
           },
         },
         {
-          name: 'github',
-          type: 'text',
-          admin: {
-            description: 'GitHub profile URL',
-          },
-        },
-        {
           name: 'twitter',
           type: 'text',
           admin: {
@@ -127,10 +120,10 @@ export const CreatorProfiles: CollectionConfig = {
           },
         },
         {
-          name: 'linkedin',
+          name: 'instagram',
           type: 'text',
           admin: {
-            description: 'LinkedIn profile URL',
+            description: 'Instagram profile URL',
           },
         },
         {
@@ -145,6 +138,20 @@ export const CreatorProfiles: CollectionConfig = {
           type: 'text',
           admin: {
             description: 'YouTube channel URL',
+          },
+        },
+        {
+          name: 'kofi',
+          type: 'text',
+          admin: {
+            description: 'Ko-fi page URL',
+          },
+        },
+        {
+          name: 'patreon',
+          type: 'text',
+          admin: {
+            description: 'Patreon page URL',
           },
         },
         {

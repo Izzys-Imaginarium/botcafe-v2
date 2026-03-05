@@ -360,6 +360,8 @@ export async function PUT(
         youtube?: string
         kofi?: string
         patreon?: string
+        subscribestar?: string
+        facebook?: string
         other_links?: Array<{ platform: string; url: string }>
       }
       creator_info?: {

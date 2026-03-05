@@ -15,6 +15,7 @@ import * as migration_20260204_172029_system_prompts from './20260204_172029_sys
 import * as migration_20260214_032939 from './20260214_032939';
 import * as migration_20260219_000000_enhanced_personas from './20260219_000000_enhanced_personas';
 import * as migration_20260305_040556 from './20260305_040556';
+import * as migration_20260305_043817 from './20260305_043817';
 
 export const migrations = [
   {
@@ -100,6 +101,11 @@ export const migrations = [
   {
     up: migration_20260305_040556.up,
     down: migration_20260305_040556.down,
-    name: '20260305_040556'
+    name: '20260305_040556',
+  },
+  {
+    up: migration_20260305_043817.up,
+    down: migration_20260305_043817.down,
+    name: '20260305_043817'
   },
 ];

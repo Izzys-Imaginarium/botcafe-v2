@@ -155,6 +155,20 @@ export const CreatorProfiles: CollectionConfig = {
           },
         },
         {
+          name: 'subscribestar',
+          type: 'text',
+          admin: {
+            description: 'SubscribeStar page URL',
+          },
+        },
+        {
+          name: 'facebook',
+          type: 'text',
+          admin: {
+            description: 'Facebook page URL',
+          },
+        },
+        {
           name: 'other_links',
           type: 'array',
           fields: [

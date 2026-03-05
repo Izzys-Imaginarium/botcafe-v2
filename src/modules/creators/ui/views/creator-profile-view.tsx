@@ -25,6 +25,7 @@ import {
   Settings,
   Coffee,
   CircleDollarSign,
+  Facebook,
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -58,6 +59,8 @@ interface CreatorProfile {
     youtube?: string
     kofi?: string
     patreon?: string
+    subscribestar?: string
+    facebook?: string
     other_links?: Array<{ platform: string; url: string }>
   }
   creator_info?: {
@@ -777,6 +780,30 @@ export const CreatorProfileView = ({ username }: CreatorProfileViewProps) => {
                     <ExternalLink className="h-4 w-4 text-muted-foreground" />
                   </a>
                 )}
+                {creator.social_links?.subscribestar && (
+                  <a
+                    href={creator.social_links.subscribestar}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors"
+                  >
+                    <Star className="h-5 w-5" />
+                    <span className="flex-1">SubscribeStar</span>
+                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                  </a>
+                )}
+                {creator.social_links?.facebook && (
+                  <a
+                    href={creator.social_links.facebook}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors"
+                  >
+                    <Facebook className="h-5 w-5" />
+                    <span className="flex-1">Facebook</span>
+                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                  </a>
+                )}
                 {creator.social_links?.other_links?.map((link, idx) => (
                   <a
                     key={idx}
@@ -799,6 +826,8 @@ export const CreatorProfileView = ({ username }: CreatorProfileViewProps) => {
                 !creator.social_links?.discord &&
                 !creator.social_links?.kofi &&
                 !creator.social_links?.patreon &&
+                !creator.social_links?.subscribestar &&
+                !creator.social_links?.facebook &&
                 (!creator.social_links?.other_links || creator.social_links.other_links.length === 0) && (
                   <div className="text-center py-8 text-muted-foreground">
                     <Globe className="h-12 w-12 mx-auto mb-4 opacity-50" />

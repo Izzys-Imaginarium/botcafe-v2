@@ -439,6 +439,14 @@ export interface CreatorProfile {
      */
     patreon?: string | null;
     /**
+     * SubscribeStar page URL
+     */
+    subscribestar?: string | null;
+    /**
+     * Facebook page URL
+     */
+    facebook?: string | null;
+    /**
      * Additional social media or professional links
      */
     other_links?:
@@ -3599,6 +3607,8 @@ export interface CreatorProfilesSelect<T extends boolean = true> {
         youtube?: T;
         kofi?: T;
         patreon?: T;
+        subscribestar?: T;
+        facebook?: T;
         other_links?:
           | T
           | {

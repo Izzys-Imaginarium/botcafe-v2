@@ -78,6 +78,8 @@ interface CreatorFormData {
     youtube: string
     kofi: string
     patreon: string
+    subscribestar: string
+    facebook: string
   }
   profile_settings: {
     profile_visibility: string
@@ -153,6 +155,8 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
       youtube: '',
       kofi: '',
       patreon: '',
+      subscribestar: '',
+      facebook: '',
     },
     profile_settings: {
       profile_visibility: 'public',
@@ -220,6 +224,8 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
               youtube?: string
               kofi?: string
               patreon?: string
+              subscribestar?: string
+              facebook?: string
             }
             profile_settings?: {
               profile_visibility?: string
@@ -283,6 +289,8 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
               youtube: creator.social_links?.youtube || '',
               kofi: creator.social_links?.kofi || '',
               patreon: creator.social_links?.patreon || '',
+              subscribestar: creator.social_links?.subscribestar || '',
+              facebook: creator.social_links?.facebook || '',
             },
             profile_settings: {
               profile_visibility: creator.profile_settings?.profile_visibility || 'public',
@@ -1097,6 +1105,30 @@ export const CreatorEditForm = ({ username }: CreatorEditFormProps) => {
                       updateNestedFormData('social_links', 'patreon', e.target.value)
                     }
                     placeholder="https://patreon.com/username"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="subscribestar">SubscribeStar</Label>
+                  <Input
+                    id="subscribestar"
+                    value={formData.social_links.subscribestar}
+                    onChange={(e) =>
+                      updateNestedFormData('social_links', 'subscribestar', e.target.value)
+                    }
+                    placeholder="https://subscribestar.com/username"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="facebook">Facebook</Label>
+                  <Input
+                    id="facebook"
+                    value={formData.social_links.facebook}
+                    onChange={(e) =>
+                      updateNestedFormData('social_links', 'facebook', e.target.value)
+                    }
+                    placeholder="https://facebook.com/username"
                   />
                 </div>
               </CardContent>

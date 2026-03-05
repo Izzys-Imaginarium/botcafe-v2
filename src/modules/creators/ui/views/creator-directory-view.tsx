@@ -57,6 +57,8 @@ interface CreatorProfile {
     youtube?: string
     kofi?: string
     patreon?: string
+    subscribestar?: string
+    facebook?: string
   }
   creator_info?: {
     creator_type?: string

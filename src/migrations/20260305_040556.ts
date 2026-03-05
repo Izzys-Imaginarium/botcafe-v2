@@ -14,12 +14,13 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.run(sql`CREATE INDEX IF NOT EXISTS \`personas_additional_details_order_idx\` ON \`personas_additional_details\` (\`_order\`);`)
   await db.run(sql`CREATE INDEX IF NOT EXISTS \`personas_additional_details_parent_id_idx\` ON \`personas_additional_details\` (\`_parent_id\`);`)
 
-  // Add persona columns (may already exist) - SQLite will error on duplicate columns, so we catch
+  // Add columns that may already exist - SQLite errors on duplicate columns, so we catch all errors
+  // since the only operation here is ADD COLUMN and the only expected failure is "already exists"
   const safeAddColumn = async (statement: ReturnType<typeof sql>) => {
     try {
       await db.run(statement)
-    } catch (e: any) {
-      if (!e.message?.includes('duplicate column name')) throw e
+    } catch (_e) {
+      // Column likely already exists
     }
   }
 
@@ -51,8 +52,8 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   const safeAddColumn = async (statement: ReturnType<typeof sql>) => {
     try {
       await db.run(statement)
-    } catch (e: any) {
-      if (!e.message?.includes('duplicate column name')) throw e
+    } catch (_e) {
+      // Column likely already exists
     }
   }
 

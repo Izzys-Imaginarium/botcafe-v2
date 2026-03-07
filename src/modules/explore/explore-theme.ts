@@ -59,7 +59,6 @@ const mainClassifications = [
   { value: 'gaming', label: 'Gaming' },
   { value: 'fanfic', label: 'Fanfic' },
   { value: 'oc', label: 'OC (Original Characters)' },
-  { value: 'dead-dove', label: 'Dead Dove' },
   { value: 'comedy-parody', label: 'Comedy/Parody' },
   { value: 'long-form', label: 'Long-form' },
   { value: 'one-shot', label: 'One-shot' },
@@ -74,6 +73,7 @@ const backroomsClassifications = [
   { value: 'collab', label: 'Collab' },
   { value: 'showcase', label: 'Showcase' },
   { value: 'niche', label: 'Niche' },
+  { value: 'dead-dove', label: 'Dead Dove' },
 ]
 
 export const mainTheme: ExploreTheme = {

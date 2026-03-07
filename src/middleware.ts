@@ -16,17 +16,24 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   if (isBackrooms) {
-    // Require auth for backrooms
-    const { userId } = await auth()
-    if (!userId) {
-      const signInUrl = new URL('/sign-in', req.url)
-      signInUrl.searchParams.set('redirect_url', req.url)
-      return NextResponse.redirect(signInUrl)
+    const pathname = req.nextUrl.pathname
+
+    // Allow auth-related paths through without auth check (prevents redirect loop)
+    const isAuthPath = pathname.startsWith('/sign-in') || pathname.startsWith('/sign-up')
+
+    // Require auth for backrooms (except auth pages themselves)
+    if (!isAuthPath) {
+      const { userId } = await auth()
+      if (!userId) {
+        const signInUrl = new URL('/sign-in', req.url)
+        signInUrl.searchParams.set('redirect_url', req.url)
+        return NextResponse.redirect(signInUrl)
+      }
     }
 
     // Rewrite root and non-backrooms paths to /backrooms internally
     const url = req.nextUrl.clone()
-    if (!url.pathname.startsWith('/backrooms') && !url.pathname.startsWith('/api') && !url.pathname.startsWith('/sign-in') && !url.pathname.startsWith('/sign-up') && !url.pathname.startsWith('/_next') && !url.pathname.startsWith('/admin')) {
+    if (!pathname.startsWith('/backrooms') && !pathname.startsWith('/api') && !isAuthPath && !pathname.startsWith('/_next') && !pathname.startsWith('/admin')) {
       url.pathname = `/backrooms${url.pathname === '/' ? '' : url.pathname}`
       const response = NextResponse.rewrite(url)
       response.cookies.set('subdomain', 'backrooms', { path: '/' })

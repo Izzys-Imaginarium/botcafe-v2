@@ -16,6 +16,7 @@ import * as migration_20260214_032939 from './20260214_032939';
 import * as migration_20260219_000000_enhanced_personas from './20260219_000000_enhanced_personas';
 import * as migration_20260305_040556 from './20260305_040556';
 import * as migration_20260305_043817 from './20260305_043817';
+import * as migration_20260306_000000_add_backrooms from './20260306_000000_add_backrooms';
 
 export const migrations = [
   {
@@ -106,6 +107,11 @@ export const migrations = [
   {
     up: migration_20260305_043817.up,
     down: migration_20260305_043817.down,
-    name: '20260305_043817'
+    name: '20260305_043817',
+  },
+  {
+    up: migration_20260306_000000_add_backrooms.up,
+    down: migration_20260306_000000_add_backrooms.down,
+    name: '20260306_000000_add_backrooms',
   },
 ];

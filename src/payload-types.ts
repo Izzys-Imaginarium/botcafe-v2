@@ -365,6 +365,21 @@ export interface Bot {
       }[]
     | null;
   /**
+   * Which site this bot appears on (main stage, backrooms, or both)
+   */
+  venue?: ('main' | 'backrooms' | 'both') | null;
+  /**
+   * Backrooms-specific content tags (used on the backrooms subdomain)
+   */
+  backrooms_classifications?:
+    | {
+        classification?:
+          | ('experimental' | 'deep-lore' | 'spicy' | 'unhinged' | 'wip' | 'collab' | 'showcase' | 'niche')
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
    * URL slug for this bot (must be unique within creator profile)
    */
   slug: string;
@@ -2905,6 +2920,13 @@ export interface BotSelect<T extends boolean = true> {
         id?: T;
       };
   classifications?:
+    | T
+    | {
+        classification?: T;
+        id?: T;
+      };
+  venue?: T;
+  backrooms_classifications?:
     | T
     | {
         classification?: T;

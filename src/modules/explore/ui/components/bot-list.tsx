@@ -12,6 +12,7 @@ import { toast } from 'sonner'
 import { useAuth } from '@clerk/nextjs'
 import { useInfiniteList } from '@/hooks/use-infinite-list'
 import { InfiniteScrollTrigger } from '@/components/ui/infinite-scroll-trigger'
+import { type ExploreTheme, mainTheme } from '../../explore-theme'
 
 interface BotData {
   id: string | number
@@ -25,28 +26,34 @@ interface BotData {
   is_public: boolean
   slug: string
   creator_username: string
+  backrooms_classifications?: Array<{ classification: string }>
 }
 
-export const BotList = () => {
+interface BotListProps {
+  theme?: ExploreTheme
+}
+
+export const BotList = ({ theme = mainTheme }: BotListProps) => {
   const searchParams = useSearchParams()
+  const t = theme
 
   // Build initial params from URL
   const getInitialParams = useCallback(() => {
-    const params: Record<string, string> = {}
+    const params: Record<string, string> = { venue: t.venue }
     const sort = searchParams.get('sort')
     const search = searchParams.get('search')
-    const classifications = searchParams.get('classifications')
+    const classifications = searchParams.get(t.classificationParam)
     const excludeOwn = searchParams.get('excludeOwn')
     const liked = searchParams.get('liked')
     const favorited = searchParams.get('favorited')
     params.sort = sort || 'random'
     if (search) params.search = search
-    if (classifications) params.classifications = classifications
+    if (classifications) params[t.classificationParam] = classifications
     if (excludeOwn) params.excludeOwn = excludeOwn
     if (liked) params.liked = liked
     if (favorited) params.favorited = favorited
     return params
-  }, [searchParams])
+  }, [searchParams, t.venue, t.classificationParam])
 
   const {
     items: bots,
@@ -69,16 +76,16 @@ export const BotList = () => {
   }, [searchParams, setParams, getInitialParams])
 
   if (isLoading && bots.length === 0) {
-    return <BotListSkeleton />
+    return <BotListSkeleton theme={t} />
   }
 
   if (error) {
     return (
       <div className="text-center py-12">
-        <p className="text-parchment-dim font-lore">{error}</p>
+        <p className={`${t.classes.textDim} font-lore`}>{error}</p>
         <Button
           onClick={() => window.location.reload()}
-          className="mt-4 bg-forest hover:bg-forest/90 text-white"
+          className={`mt-4 ${t.classes.retryButtonBg}`}
         >
           Try Again
         </Button>
@@ -89,9 +96,9 @@ export const BotList = () => {
   if (bots.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-parchment-dim font-lore text-lg">No bots found</p>
-        <p className="text-parchment-dim font-lore text-sm mt-2">
-          Try adjusting your filters or create your own bot!
+        <p className={`${t.classes.textDim} font-lore text-lg`}>{t.strings.emptyTitle}</p>
+        <p className={`${t.classes.textDim} font-lore text-sm mt-2`}>
+          {t.strings.emptySubtitle}
         </p>
       </div>
     )
@@ -101,7 +108,7 @@ export const BotList = () => {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {bots.map((bot) => (
-          <BotCard key={bot.id} bot={bot} />
+          <BotCard key={bot.id} bot={bot} theme={t} />
         ))}
       </div>
 
@@ -109,7 +116,7 @@ export const BotList = () => {
         onLoadMore={loadMore}
         hasMore={hasMore}
         isLoading={isLoadingMore}
-        endMessage="You've seen all the bots!"
+        endMessage={t.strings.endMessage}
       />
     </div>
   )
@@ -117,9 +124,10 @@ export const BotList = () => {
 
 interface BotCardProps {
   bot: BotData
+  theme?: ExploreTheme
 }
 
-const BotCard = ({ bot }: BotCardProps) => {
+export const BotCard = ({ bot, theme = mainTheme }: BotCardProps) => {
   const router = useRouter()
   const { isSignedIn } = useAuth()
   const [isStartingChat, setIsStartingChat] = useState(false)
@@ -129,6 +137,7 @@ const BotCard = ({ bot }: BotCardProps) => {
   const [favoritesCount, setFavoritesCount] = useState(bot.favorites_count || 0)
   const [isLiking, setIsLiking] = useState(false)
   const [isFavoriting, setIsFavoriting] = useState(false)
+  const t = theme.classes
 
   // Fetch user's interaction status
   useEffect(() => {
@@ -234,7 +243,6 @@ const BotCard = ({ bot }: BotCardProps) => {
       .slice(0, 2)
   }
 
-  // Handle picture - it could be a media ID, URL, or Media object
   const getPictureUrl = (picture?: string | number | { id: number; url?: string; filename?: string } | null) => {
     if (!picture) return undefined
     if (typeof picture === 'string') return picture
@@ -270,27 +278,27 @@ const BotCard = ({ bot }: BotCardProps) => {
   }
 
   return (
-    <Card className="glass-rune hover:shadow-[0_10px_40px_-10px_rgba(212,175,55,0.3)] transition-all duration-300">
+    <Card className={`${t.glassPanel} ${t.cardHoverShadow} transition-all duration-300`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <Avatar className="h-12 w-12 border-2 border-gold-ancient/30">
+            <Avatar className={`h-12 w-12 border-2 ${t.avatarBorder}`}>
               <AvatarImage src={getPictureUrl(bot.picture)} />
-              <AvatarFallback className="bg-[#0a140a] text-gold-rich font-display">
+              <AvatarFallback className={`${t.avatarFallbackBg} ${t.avatarFallbackText} font-display`}>
                 {getInitials(bot.name)}
               </AvatarFallback>
             </Avatar>
             <div>
-              <CardTitle className="text-parchment font-display text-lg">
+              <CardTitle className={`${t.text} font-display text-lg`}>
                 {bot.name}
               </CardTitle>
               <div className="flex items-center gap-2 mt-1">
                 {bot.gender && (
-                  <span className="text-xs text-parchment-dim">{getGenderIcon(bot.gender)}</span>
+                  <span className={`text-xs ${t.textDim}`}>{getGenderIcon(bot.gender)}</span>
                 )}
                 <Link
                   href={`/creators/${bot.creator_username}`}
-                  className="text-xs text-parchment-dim font-lore hover:text-gold-rich transition-colors"
+                  className={`text-xs ${t.textDim} font-lore ${t.accentHover} transition-colors`}
                   onClick={(e) => e.stopPropagation()}
                 >
                   by {bot.creator_username || bot.creator_display_name}
@@ -301,7 +309,7 @@ const BotCard = ({ bot }: BotCardProps) => {
           {bot.is_public && (
             <Badge
               variant="secondary"
-              className="bg-gold-ancient/20 text-gold-rich border-gold-ancient/30"
+              className={`${t.badgeBg} ${t.badgeText} ${t.badgeBorder}`}
             >
               Public
             </Badge>
@@ -310,29 +318,44 @@ const BotCard = ({ bot }: BotCardProps) => {
       </CardHeader>
 
       <CardContent className="pt-0">
-        <p className="text-parchment-dim font-lore text-sm mb-3 line-clamp-3">
+        <p className={`${t.textDim} font-lore text-sm mb-3 line-clamp-3`}>
           {bot.description || 'No description provided'}
         </p>
 
+        {/* Backrooms tags */}
+        {bot.backrooms_classifications && bot.backrooms_classifications.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {bot.backrooms_classifications.map((c, i) => (
+              <Badge
+                key={i}
+                variant="secondary"
+                className={`${t.badgeBg} ${t.badgeText} ${t.badgeBorder} text-xs`}
+              >
+                {c.classification}
+              </Badge>
+            ))}
+          </div>
+        )}
+
         {/* Share Link */}
-        <div className="flex items-center gap-2 mb-3 p-2 bg-[#0a140a]/30 rounded-md border border-gold-ancient/20">
-          <Link2 className="h-3.5 w-3.5 text-parchment-dim flex-shrink-0" />
+        <div className={`flex items-center gap-2 mb-3 p-2 ${t.linkBg} rounded-md border ${t.linkBorder}`}>
+          <Link2 className={`h-3.5 w-3.5 ${t.textDim} flex-shrink-0`} />
           <Link
             href={botUrl}
-            className="text-xs text-parchment-dim font-mono truncate hover:text-gold-rich transition-colors flex-1"
+            className={`text-xs ${t.textDim} font-mono truncate ${t.accentHover} transition-colors flex-1`}
             onClick={(e) => e.stopPropagation()}
           >
             {bot.creator_username}/{bot.slug}
           </Link>
           <button
             onClick={handleCopyLink}
-            className="p-1 hover:bg-gold-ancient/20 rounded transition-colors flex-shrink-0"
+            className={`p-1 ${t.buttonHover} rounded transition-colors flex-shrink-0`}
             title="Copy link"
           >
             {copied ? (
-              <Check className="h-3.5 w-3.5 text-magic-teal" />
+              <Check className={`h-3.5 w-3.5 ${t.copySuccessText}`} />
             ) : (
-              <Copy className="h-3.5 w-3.5 text-parchment-dim" />
+              <Copy className={`h-3.5 w-3.5 ${t.textDim}`} />
             )}
           </button>
         </div>
@@ -343,9 +366,7 @@ const BotCard = ({ bot }: BotCardProps) => {
               onClick={handleLike}
               disabled={isLiking}
               className={`flex items-center gap-1 px-2 py-1 rounded-md transition-colors ${
-                liked
-                  ? 'bg-magic-glow/20 text-magic-glow'
-                  : 'hover:bg-magic-glow/10 text-parchment-dim hover:text-magic-glow'
+                liked ? t.likeActive : t.likeHover
               }`}
               title={liked ? 'Unlike' : 'Like'}
             >
@@ -356,9 +377,7 @@ const BotCard = ({ bot }: BotCardProps) => {
               onClick={handleFavorite}
               disabled={isFavoriting}
               className={`flex items-center gap-1 px-2 py-1 rounded-md transition-colors ${
-                favorited
-                  ? 'bg-magic-teal/20 text-magic-teal'
-                  : 'hover:bg-magic-teal/10 text-parchment-dim hover:text-magic-teal'
+                favorited ? t.favoriteActive : t.favoriteHover
               }`}
               title={favorited ? 'Unfavorite' : 'Favorite'}
             >
@@ -371,7 +390,7 @@ const BotCard = ({ bot }: BotCardProps) => {
             <Button
               variant="outline"
               size="sm"
-              className="ornate-border hover:bg-gold-ancient/20 hover:border-gold-rich"
+              className={t.buttonBorder}
               asChild
             >
               <Link href={botUrl}>
@@ -382,7 +401,7 @@ const BotCard = ({ bot }: BotCardProps) => {
             <Button
               variant="outline"
               size="sm"
-              className="ornate-border hover:bg-gold-ancient/20 hover:border-gold-rich"
+              className={t.buttonBorder}
               onClick={handleStartChat}
               disabled={isStartingChat}
             >
@@ -399,35 +418,40 @@ const BotCard = ({ bot }: BotCardProps) => {
   )
 }
 
-export const BotListSkeleton = () => {
+interface BotListSkeletonProps {
+  theme?: ExploreTheme
+}
+
+export const BotListSkeleton = ({ theme = mainTheme }: BotListSkeletonProps) => {
+  const t = theme.classes
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
       {[...Array(8)].map((_, i) => (
-        <Card key={i} className="glass-rune animate-pulse">
+        <Card key={i} className={`${t.glassPanel} animate-pulse`}>
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className="h-12 w-12 bg-[#0a140a] rounded-full border-2 border-gold-ancient/30" />
+                <div className={`h-12 w-12 ${t.skeletonBg} rounded-full border-2 ${t.skeletonBorder}`} />
                 <div className="space-y-2">
-                  <div className="h-4 bg-[#0a140a] rounded w-24" />
-                  <div className="h-3 bg-[#0a140a] rounded w-16" />
+                  <div className={`h-4 ${t.skeletonBg} rounded w-24`} />
+                  <div className={`h-3 ${t.skeletonBg} rounded w-16`} />
                 </div>
               </div>
-              <div className="h-6 bg-[#0a140a] rounded w-12" />
+              <div className={`h-6 ${t.skeletonBg} rounded w-12`} />
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-2 mb-4">
-              <div className="h-3 bg-[#0a140a] rounded w-full" />
-              <div className="h-3 bg-[#0a140a] rounded w-3/4" />
-              <div className="h-3 bg-[#0a140a] rounded w-1/2" />
+              <div className={`h-3 ${t.skeletonBg} rounded w-full`} />
+              <div className={`h-3 ${t.skeletonBg} rounded w-3/4`} />
+              <div className={`h-3 ${t.skeletonBg} rounded w-1/2`} />
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="h-4 bg-[#0a140a] rounded w-8" />
-                <div className="h-4 bg-[#0a140a] rounded w-8" />
+                <div className={`h-4 ${t.skeletonBg} rounded w-8`} />
+                <div className={`h-4 ${t.skeletonBg} rounded w-8`} />
               </div>
-              <div className="h-8 bg-[#0a140a] rounded w-16" />
+              <div className={`h-8 ${t.skeletonBg} rounded w-16`} />
             </div>
           </CardContent>
         </Card>

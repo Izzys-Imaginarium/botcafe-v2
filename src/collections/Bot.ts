@@ -282,6 +282,42 @@ export const Bot: CollectionConfig = {
       ],
     },
     {
+      name: 'venue',
+      type: 'select',
+      defaultValue: 'main',
+      options: [
+        { label: 'Main', value: 'main' },
+        { label: 'Backrooms', value: 'backrooms' },
+        { label: 'Both', value: 'both' },
+      ],
+      admin: {
+        description: 'Which site this bot appears on (main stage, backrooms, or both)',
+      },
+    },
+    {
+      name: 'backrooms_classifications',
+      type: 'array',
+      admin: {
+        description: 'Backrooms-specific content tags (used on the backrooms subdomain)',
+      },
+      fields: [
+        {
+          name: 'classification',
+          type: 'select',
+          options: [
+            { label: 'Experimental', value: 'experimental' },
+            { label: 'Deep Lore', value: 'deep-lore' },
+            { label: 'Spicy', value: 'spicy' },
+            { label: 'Unhinged', value: 'unhinged' },
+            { label: 'WIP', value: 'wip' },
+            { label: 'Collab', value: 'collab' },
+            { label: 'Showcase', value: 'showcase' },
+            { label: 'Niche', value: 'niche' },
+          ],
+        },
+      ],
+    },
+    {
       name: 'slug',
       type: 'text',
       required: true,

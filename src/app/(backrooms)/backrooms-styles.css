@@ -1,0 +1,261 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Backrooms Burlesque Theme - "Back of House" */
+:root {
+  --radius: 0.375rem;
+
+  --background: 0 0% 95%;
+  --foreground: 350 20% 15%;
+
+  --card: 350 15% 90%;
+  --card-foreground: 350 20% 15%;
+
+  --popover: 350 15% 90%;
+  --popover-foreground: 350 20% 15%;
+
+  --primary: 345 60% 40%;
+  --primary-foreground: 0 0% 98%;
+
+  --secondary: 35 50% 45%;
+  --secondary-foreground: 0 0% 98%;
+
+  --muted: 350 10% 85%;
+  --muted-foreground: 350 10% 45%;
+
+  --accent: 35 65% 50%;
+  --accent-foreground: 350 20% 15%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 350 15% 70%;
+  --input: 350 15% 75%;
+  --ring: 345 60% 40%;
+
+  --chart-1: 345 60% 40%;
+  --chart-2: 35 65% 50%;
+  --chart-3: 280 40% 50%;
+  --chart-4: 15 50% 45%;
+  --chart-5: 350 50% 60%;
+
+  --sidebar: 350 15% 90%;
+  --sidebar-foreground: 350 20% 15%;
+  --sidebar-primary: 345 60% 40%;
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent: 35 65% 50%;
+  --sidebar-accent-foreground: 350 20% 15%;
+  --sidebar-border: 350 15% 70%;
+  --sidebar-ring: 345 60% 40%;
+}
+
+.dark {
+  /* Dark mode - burlesque backstage */
+  --background: 350 15% 4%; /* Deep dark wine-black */
+  --foreground: 35 30% 80%;
+
+  --card: 350 20% 10%;
+  --card-foreground: 35 30% 80%;
+
+  --popover: 350 20% 10%;
+  --popover-foreground: 35 30% 80%;
+
+  --primary: 345 55% 50%;
+  --primary-foreground: 350 20% 10%;
+
+  --secondary: 350 20% 16%;
+  --secondary-foreground: 35 30% 80%;
+
+  --muted: 350 15% 18%;
+  --muted-foreground: 35 20% 55%;
+
+  --accent: 35 60% 45%;
+  --accent-foreground: 0 0% 98%;
+
+  --destructive: 0 62% 40%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 345 30% 22%;
+  --input: 345 30% 18%;
+  --ring: 345 55% 50%;
+
+  --chart-1: 345 55% 50%;
+  --chart-2: 35 65% 50%;
+  --chart-3: 280 40% 50%;
+  --chart-4: 15 50% 45%;
+  --chart-5: 350 50% 60%;
+
+  --sidebar: 350 20% 7%;
+  --sidebar-foreground: 35 30% 80%;
+  --sidebar-primary: 345 55% 50%;
+  --sidebar-primary-foreground: 350 20% 10%;
+  --sidebar-accent: 35 60% 45%;
+  --sidebar-accent-foreground: 0 0% 98%;
+  --sidebar-border: 345 30% 22%;
+  --sidebar-ring: 345 55% 50%;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  /* Burlesque theme custom colors */
+  --color-velvet: hsl(345, 55%, 50%);
+  --color-velvet-deep: hsl(345, 60%, 30%);
+  --color-curtain: hsl(350, 20%, 10%);
+  --color-curtain-dark: hsl(350, 15%, 4%);
+  --color-brass: hsl(35, 65%, 50%);
+  --color-brass-dim: hsl(35, 40%, 35%);
+  --color-cream: hsl(35, 30%, 80%);
+  --color-cream-dim: hsl(35, 20%, 55%);
+  --color-spotlight: hsl(40, 80%, 65%);
+  --color-rouge: hsl(0, 55%, 45%);
+  --color-plum: hsl(280, 40%, 35%);
+
+  /* Font families */
+  --font-display: var(--font-display), cursive;
+  --font-lore: var(--font-lore), serif;
+  --font-body: var(--font-body), sans-serif;
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-curtain-reveal: curtain-reveal 0.6s ease-out;
+
+  @keyframes accordion-down {
+    from { height: 0; }
+    to { height: var(--radix-accordion-content-height); }
+  }
+  @keyframes accordion-up {
+    from { height: var(--radix-accordion-content-height); }
+    to { height: 0; }
+  }
+  @keyframes curtain-reveal {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* Burlesque utility classes */
+.text-glow-velvet {
+  text-shadow: 0 0 15px hsla(345, 55%, 50%, 0.4), 0 0 30px hsla(345, 55%, 50%, 0.2);
+}
+
+.text-glow-brass {
+  text-shadow: 0 0 10px hsla(35, 65%, 50%, 0.3);
+}
+
+.glass-backstage {
+  background: linear-gradient(135deg, hsla(350, 20%, 12%, 0.85), hsla(350, 15%, 6%, 0.95));
+  backdrop-filter: blur(8px);
+  border: 1px solid hsla(345, 30%, 30%, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 0 1px hsla(345, 55%, 50%, 0.1);
+}
+
+.velvet-border {
+  position: relative;
+}
+.velvet-border::before,
+.velvet-border::after {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid hsl(345, 30%, 30%);
+  transition: all 0.3s ease;
+}
+.velvet-border::before {
+  top: -2px;
+  left: -2px;
+  border-right: 0;
+  border-bottom: 0;
+}
+.velvet-border::after {
+  bottom: -2px;
+  right: -2px;
+  border-left: 0;
+  border-top: 0;
+}
+.velvet-border:hover::before,
+.velvet-border:hover::after {
+  width: 100%;
+  height: 100%;
+  border-color: hsl(345, 55%, 50%);
+}
+
+/* Custom scrollbar for burlesque theme */
+.dark ::-webkit-scrollbar {
+  width: 10px;
+}
+.dark ::-webkit-scrollbar-track {
+  background: hsl(350, 20%, 10%);
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(345, 30%, 25%);
+  border-radius: 5px;
+  border: 2px solid hsl(350, 20%, 10%);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: hsl(345, 55%, 50%);
+}
+
+/* Accessibility: Reduce Animations */
+.reduce-animations *,
+.reduce-animations *::before,
+.reduce-animations *::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition-duration: 0s !important;
+}
+
+html.easy-read-font body {
+  --font-display: var(--font-body), sans-serif;
+  --font-lore: var(--font-body), sans-serif;
+}

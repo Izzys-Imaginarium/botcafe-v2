@@ -11,6 +11,8 @@ export async function GET(request: NextRequest) {
     const sort = searchParams.get('sort') || 'recent'
     const search = searchParams.get('search') || ''
     const classifications = searchParams.get('classifications')?.split(',').filter(Boolean) || []
+    const venue = searchParams.get('venue') || 'main' // 'main' | 'backrooms'
+    const backroomsClassifications = searchParams.get('backrooms_classifications')?.split(',').filter(Boolean) || []
     const includeShared = searchParams.get('includeShared') !== 'false' // Default true
     const excludeOwn = searchParams.get('excludeOwn') === 'true'
     const filterLiked = searchParams.get('liked') === 'true'
@@ -161,9 +163,28 @@ export async function GET(request: NextRequest) {
       where = { or: orConditions }
     }
 
+    // Filter by venue (main shows 'main' + 'both', backrooms shows 'backrooms' + 'both')
+    where.and = where.and || []
+    if (venue === 'backrooms') {
+      where.and.push({
+        or: [
+          { venue: { equals: 'backrooms' } },
+          { venue: { equals: 'both' } },
+        ],
+      })
+    } else {
+      // Default: main venue — show 'main', 'both', and bots with no venue set (backwards compat)
+      where.and.push({
+        or: [
+          { venue: { equals: 'main' } },
+          { venue: { equals: 'both' } },
+          { venue: { exists: false } },
+        ],
+      })
+    }
+
     // If excludeOwn is true, explicitly exclude user's bots
     if (excludeOwn && payloadUserId) {
-      where.and = where.and || []
       where.and.push({ user: { not_equals: payloadUserId } })
     }
 
@@ -242,7 +263,7 @@ export async function GET(request: NextRequest) {
     // Fetch bots from Payload with creator profile populated
     // If filtering by classifications, liked/favorited, using in-memory sort, or fetching shared bots separately,
     // we need to fetch more due to D1/SQLite limitations
-    const needsInMemoryProcessing = classifications.length > 0 || useInMemorySort || fetchSharedBotsSeparately || filterLiked || filterFavorited
+    const needsInMemoryProcessing = classifications.length > 0 || backroomsClassifications.length > 0 || useInMemorySort || fetchSharedBotsSeparately || filterLiked || filterFavorited
     const fetchLimit = needsInMemoryProcessing ? Math.max(limit * 3, 100) : limit
 
     const result = await payload.find({
@@ -331,6 +352,16 @@ export async function GET(request: NextRequest) {
         if (!bot.classifications || bot.classifications.length === 0) return false
         return bot.classifications.some((c: any) =>
           classifications.includes(c.classification)
+        )
+      })
+    }
+
+    // Filter by backrooms classifications if specified
+    if (backroomsClassifications.length > 0) {
+      filteredDocs = filteredDocs.filter((bot: any) => {
+        if (!bot.backrooms_classifications || bot.backrooms_classifications.length === 0) return false
+        return bot.backrooms_classifications.some((c: any) =>
+          backroomsClassifications.includes(c.classification)
         )
       })
     }
